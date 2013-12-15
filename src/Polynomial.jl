@@ -36,7 +36,7 @@ copy(p::Poly) = Poly(copy(p.a[1+p.nzfirst:end]))
 zero{T}(p::Poly{T}) = Poly([zero(T)])
 one{T}(p::Poly{T}) = Poly([one(T)])
 
-function show(io::IO,p::Poly)
+function show(io::IO, p::Poly)
     n = length(p)
     print(io,"Poly(")
     if n <= 0
@@ -57,25 +57,25 @@ function show(io::IO,p::Poly)
     print(io,")")
 end
 
-function show{T<:Complex}(p::Poly{T})
+function show{T<:Complex}(io::IO, p::Poly{T})
     n = length(p)
-    print("Poly(")
+    print(io,"Poly(")
     if n <= 0
-        print("0")
+        print(io,"0")
     elseif n == 1
-        print("[$(p[1])]")
+        print(io,"[$(p[1])]")
     else
-        print("[$(p[1])]x^$(n-1)")
+        print(io,"[$(p[1])]x^$(n-1)")
         for i = 2:n-1
             if p[i] != 0
-                print(" + [$(p[i])]x^$(n-i)")
+                print(io," + [$(p[i])]x^$(n-i)")
             end
         end
         if p[n] != 0
-            print(" + [$(p[n])]")
+            print(io," + [$(p[n])]")
         end
     end
-    print(")")
+    print(io,")")
 end
 
 *(c::Number, p::Poly) = Poly(c * p.a[1+p.nzfirst:end])
@@ -191,16 +191,9 @@ function polyval{T}(p::Poly{T}, x::Number)
     end
 end
 
-function polyval(p::Poly, x::AbstractVector)
-    y = zeros(size(x))
-    for i = 1:length(x)
-        y[i] = polyval(p, x[i])
-    end
-    return y
-end
+polyval(p::Poly, v::AbstractVector) = map(x->polyval(p, x), v)
 
-polyint(p::Poly) = polyint(p, 0)
-function polyint{T}(p::Poly{T}, k::Number)
+function polyint{T}(p::Poly{T}, k::Number=0)
     R = promote_type(promote_type(T, Float64), typeof(k))
     n = length(p)
     a2 = Array(R, n+1)

@@ -1,5 +1,5 @@
 # assert file to test polynomial implementation
-using Test
+using Base.Test
 using Polynomial
 
 pNULL = Poly(Float32[])
