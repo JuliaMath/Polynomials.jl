@@ -9,7 +9,7 @@ export Poly, polyval, polyint, polydir, poly, roots
 import Base.length, Base.endof, Base.ref, Base.assign, Base.copy, Base.zero, Base.one
 import Base.show, Base.*, Base./, Base.-, Base.+, Base.==
 
-type Poly{T<:Number}
+immutable Poly{T<:Number}
     a::Vector{T}
     nzfirst::Int #for effiencicy, track the first non-zero index
     function Poly(a::Vector{T})
