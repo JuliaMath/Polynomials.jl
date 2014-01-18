@@ -4,7 +4,8 @@ module Polynomial
 #todo: division
 #todo: sparse polynomials?
 
-export Poly, polyval, polyint, polydir, poly, roots
+export Poly, polyval, polyint, polyder, poly, roots
+export polydir #Deprecated
 
 import Base.length, Base.endof, Base.ref, Base.assign, Base.copy, Base.zero, Base.one
 import Base.show, Base.*, Base./, Base.-, Base.+, Base.==
@@ -204,7 +205,9 @@ function polyint{T}(p::Poly{T}, k::Number=0)
     Poly(a2)
 end
 
-function polydir{T}(p::Poly{T})
+@deprecate polydir polyder
+
+function polyder{T}(p::Poly{T})
     n = length(p)
     if n > 0
         a2 = Array(T, n-1)
