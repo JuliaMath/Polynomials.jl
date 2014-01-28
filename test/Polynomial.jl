@@ -51,3 +51,16 @@ a_roots = copy(pN.a)
 @test p2 - 2 == -2 + p2 == Poly([1,-1])
 @test 2 - p2 == Poly([-1,1])
 
+p0 = Poly([0])
+p1 = Poly([1])
+p2 = Poly([4, 2, -3, 6, 5])
+p3 = Poly([6, 2, -3, 7])
+p4 = p2 * p3
+@test divrem(p4, p2) == (p3, zero(p3))
+@test p3%p2 == Poly([6.0,2.0,-3.0,7.0])
+@test p2/p3 - Poly([2/3,1/9]) == zero(Poly{Float64})
+@test divrem(p0,p1) == (p0,p0)
+@test divrem(p1,p1) == (p1,p0)
+@test divrem(p2,p2) == (p1,p0)
+@test_throws p1/p0
+@test_throws divrem(p0,p0)

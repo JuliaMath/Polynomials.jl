@@ -4,11 +4,14 @@ module Polynomial
 #todo: division
 #todo: sparse polynomials?
 
-export Poly, polyval, polyint, polyder, poly, roots
+export Poly, polyval, polyint, polyder, poly, roots, degree
 export polydir #Deprecated
 
-import Base.length, Base.endof, Base.ref, Base.assign, Base.copy, Base.zero, Base.one
-import Base.show, Base.*, Base./, Base.-, Base.+, Base.==
+import Base: length, endof, getindex, setindex!, copy, zero, one, convert
+import Base: show, *, /, //, -, +, ==, divrem, rem
+
+eps{I<:Integer}(::Type{I}) = oftype(I,0)
+eps(x) = Base.eps(x)
 
 immutable Poly{T<:Number}
     a::Vector{T}
@@ -16,7 +19,7 @@ immutable Poly{T<:Number}
     function Poly(a::Vector{T})
         nzfirst = 0 #find and chop leading zeros
         for i = 1:length(a)
-            if a[i] != 0 then
+            if abs(a[i]) > 2*eps(T) then
                 break
             end
             nzfirst = i
@@ -27,15 +30,23 @@ end
 
 Poly{T<:Number}(a::Vector{T}) = Poly{T}(a)
 
+convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a))
+promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
+eltype{T}(::Poly{T}) = T
+
 length(p::Poly) = length(p.a)-p.nzfirst
 endof(p::Poly) = length(p)
-ref(p::Poly, i) = p.a[i+p.nzfirst]
-assign(p::Poly, v, i) = (p.a[i+p.nzfirst] = v)
+deg(p::Poly) = length(p) - 1
+
+getindex(p::Poly, i) = p.a[i+p.nzfirst]
+setindex!(p::Poly, v, i) = (p.a[i+p.nzfirst] = v)
 
 copy(p::Poly) = Poly(copy(p.a[1+p.nzfirst:end]))
 
 zero{T}(p::Poly{T}) = Poly([zero(T)])
+zero{T}(::Type{Poly{T}}) = Poly([zero(T)])
 one{T}(p::Poly{T}) = Poly([one(T)])
+one{T}(::Type{Poly{T}}) = Poly([one(T)])
 
 function show(io::IO, p::Poly)
     n = length(p)
@@ -169,6 +180,38 @@ function *{T,S}(p1::Poly{T}, p2::Poly{S})
     Poly(a)
 end
 
+function divrem{T, S}(num::Poly{T}, den::Poly{S})
+    m = length(den)
+    if m == 0
+        throw(DivideError())
+    end
+    R = promote_type(T,S,Float64)
+    n = length(num)
+    deg = n-m+1
+    if deg <= 0
+        return zero(Poly{R}), convert(Poly{R}, num)
+    end
+    d = zeros(R, n)
+    q = zeros(R, deg)
+    r = convert(Poly{R},num).a
+    for i = 1:deg
+        quot = r[i] / den[1]
+        q[i] = quot
+        if i > 1
+            d[i-1] = 0
+            r[i-1] = 0
+        end
+        for j = 1:m
+            k = i+j-1
+            elem = den[j]*quot
+            d[k] = elem
+            r[k] -= elem
+        end
+    end
+    return Poly(q), Poly(r)
+end
+/(num::Poly, den::Poly) = divrem(num, den)[1]
+rem(num::Poly, den::Poly) = divrem(num, den)[2]
 
 function ==(p1::Poly, p2::Poly)
     if length(p1) != length(p2)
