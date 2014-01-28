@@ -10,7 +10,7 @@ julia> Poly([1,0,3,4])
 Poly(1x^3 + 3x^1 + 4)
 ```
 
-Leading zeros are stripped
+Leading zeros are stripped.
 
 ```julia
 julia> Poly([0,1,2,3])
@@ -75,11 +75,11 @@ julia> polyint(Poly([1, 0, -1]), 2)
 Poly(0.3333333333333333x^3 + -1.0x^1 + 2.0)
 ```
 
-#### polydir(p::Poly)
+#### polyder(p::Poly)
 Differentiate the polynomial `p` term by term. The order of the resulting polynomial is one lower than the order of `p`.
 
 ```julia
-julia> polydir(Poly([1, 3, -1]))
+julia> polyder(Poly([1, 3, -1]))
 Poly(2x^1 + 3)
 ```
 
