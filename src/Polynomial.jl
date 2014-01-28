@@ -8,7 +8,7 @@ export Poly, polyval, polyint, polyder, poly, roots, degree
 export polydir #Deprecated
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
-import Base: show, *, /, //, -, +, ==, divrem, rem
+import Base: show, *, /, //, -, +, ==, divrem, rem, eltype
 
 eps{I<:Integer}(::Type{I}) = oftype(I,0)
 eps(x) = Base.eps(x)
@@ -277,19 +277,21 @@ poly(A::Matrix) = poly(eig(A)[1])
 
 # compute the roots of a polynomial
 function roots{T}(p::Poly{T})
+    R = promote_type(T, Float64)
     num_zeros = 0
-    if length(p) == 0 return zeros(T,0) end
-    while p[end-num_zeros] == 0
+    if length(p) == 0
+        return zeros(R, 0)
+    end
+    while abs(p[end-num_zeros]) <= 2*eps(T)
         if num_zeros == length(p)-1
-            return zeros(T, 0)
+            return zeros(R, 0)
         end
         num_zeros += 1
     end
     n = length(p)-num_zeros-1
     if n < 1
-        return zeros(T, length(p)-1)
+        return zeros(R, length(p)-1)
     end
-    R = promote_type(T, Float64)
     companion = zeros(R, n, n)
     a0 = p[end-num_zeros]
     for i = 1:n-1
@@ -298,17 +300,9 @@ function roots{T}(p::Poly{T})
     end
     companion[1,end] = -p[1] / a0
     D,V = eig(companion)
-    T_r = typeof(real(D[1]))
-    T_i = typeof(imag(D[1]))
-    if all(imag(D) .< 2*eps(T_i))
-        r = zeros(T_r, length(p)-1)
-        r[1:n] = 1./real(D)
-        return r
-    else
-        r = zeros(typeof(D[1]),length(p)-1)
-        r[1:n] = 1./D
-        return r
-    end
+    r = zeros(eltype(D),length(p)-1)
+    r[1:n] = 1./D
+    return r
 end
 
 end # module Poly

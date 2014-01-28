@@ -98,8 +98,8 @@ julia> roots(Poly([1, 0, 1]))
  0.0+1.0im
 
 julia> roots(Poly([1, 0, 0]))
-2-element Array{Int64,1}:
- 0
- 0
+2-element Array{Float64,1}:
+ 0.0
+ 0.0
 ```
 

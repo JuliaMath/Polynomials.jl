@@ -34,10 +34,10 @@ sprint(show, pNULL)
 @test polyval(pN, -.125) == 276.9609375
 @test polyval(pNULL, 10) == 0
 @test polyval(p0, -10) == 0
-@test polydir(polyint(pN)) == pN
+@test polyder(polyint(pN)) == pN
 @test polyint(pNULL,1) == p1
-@test polydir(p3) == Poly([2,2])
-@test polydir(p1) == polydir(p0) == polydir(pNULL) == pNULL
+@test polyder(p3) == Poly([2,2])
+@test polyder(p1) == polyder(p0) == polyder(pNULL) == pNULL
 
 @test poly([-1,-1]) == p3
 @test roots(p0)==roots(p1)==roots(pNULL)==[] 
