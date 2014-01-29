@@ -9,16 +9,13 @@ export polydir #Deprecated
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
 import Base: show, *, /, //, -, +, ==, divrem, rem, eltype
 
-eps{I<:Integer}(::Type{I}) = oftype(I,0)
-eps(x) = Base.eps(x)
-
 immutable Poly{T<:Number}
     a::Vector{T}
     nzfirst::Int #for effiencicy, track the first non-zero index
     function Poly(a::Vector{T})
         nzfirst = 0 #find and chop leading zeros
         for i = 1:length(a)
-            if abs(a[i]) > 2*eps(T) then
+            if a[i] != 0 then
                 break
             end
             nzfirst = i
@@ -184,7 +181,7 @@ function divrem{T, S}(num::Poly{T}, den::Poly{S})
     if m == 0
         throw(DivideError())
     end
-    R = promote_type(T,S,Float64)
+    R = typeof(one(T)/one(S))
     n = length(num)
     deg = n-m+1
     if deg <= 0
@@ -238,8 +235,8 @@ end
 polyval(p::Poly, v::AbstractVector) = map(x->polyval(p, x), v)
 
 function polyint{T}(p::Poly{T}, k::Number=0)
-    R = promote_type(promote_type(T, Float64), typeof(k))
     n = length(p)
+    R = typeof(one(T)/1)
     a2 = Array(R, n+1)
     for i = 1:n
         a2[i] = p[i] / (n-i+1)
@@ -275,6 +272,8 @@ function poly{T}(r::AbstractVector{T})
 end
 poly(A::Matrix) = poly(eig(A)[1])
 
+roots{T}(p::Poly{Rational{T}}) = roots(convert(Poly{promote_type(T, Float64)}, p))
+
 # compute the roots of a polynomial
 function roots{T}(p::Poly{T})
     R = promote_type(T, Float64)
@@ -282,7 +281,7 @@ function roots{T}(p::Poly{T})
     if length(p) == 0
         return zeros(R, 0)
     end
-    while abs(p[end-num_zeros]) <= 2*eps(T)
+    while p[end-num_zeros] == 0
         if num_zeros == length(p)-1
             return zeros(R, 0)
         end
