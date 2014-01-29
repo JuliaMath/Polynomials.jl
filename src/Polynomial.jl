@@ -1,7 +1,6 @@
 # Poly type manipulations
 
 module Polynomial
-#todo: division
 #todo: sparse polynomials?
 
 export Poly, polyval, polyint, polyder, poly, roots, degree
@@ -193,7 +192,8 @@ function divrem{T, S}(num::Poly{T}, den::Poly{S})
     end
     d = zeros(R, n)
     q = zeros(R, deg)
-    r = convert(Poly{R},num).a
+    r = zeros(R, n)
+    r[:] = num.a[1+num.nzfirst:end]
     for i = 1:deg
         quot = r[i] / den[1]
         q[i] = quot
