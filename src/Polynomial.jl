@@ -9,13 +9,16 @@ export polydir #Deprecated
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
 import Base: show, *, /, //, -, +, ==, divrem, rem, eltype
 
+eps{T}(::Type{T}) = convert(T,0)
+eps{F<:FloatingPoint}(x::Type{F}) = Base.eps(F)
+
 immutable Poly{T<:Number}
     a::Vector{T}
     nzfirst::Int #for effiencicy, track the first non-zero index
     function Poly(a::Vector{T})
         nzfirst = 0 #find and chop leading zeros
         for i = 1:length(a)
-            if a[i] != 0 then
+            if abs(a[i]) > 2*eps(T)
                 break
             end
             nzfirst = i
@@ -281,7 +284,7 @@ function roots{T}(p::Poly{T})
     if length(p) == 0
         return zeros(R, 0)
     end
-    while p[end-num_zeros] == 0
+    while abs(p[end-num_zeros]) <= 2*eps(T)
         if num_zeros == length(p)-1
             return zeros(R, 0)
         end
