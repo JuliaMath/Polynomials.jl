@@ -2,6 +2,8 @@
 
 Basic arithmetic, integration, differentiation, evaluation, and root finding over dense polynomials.
 
+[![Build Status](https://travis-ci.org/vtjnash/Polynomial.jl.png?branch=master)](https://travis-ci.org/vtjnash/Polynomial.jl)
+
 #### Poly{T<:Number}(a::Vector)
 Construct a polynomial from its coefficients, highest order first.
 
