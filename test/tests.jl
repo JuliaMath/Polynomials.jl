@@ -70,3 +70,13 @@ p4 = p2 * p3
 @test divrem(pR, pR) == (one(pR), zero(pR))
 @test_throws p1/p0
 @test_throws divrem(p0,p0)
+
+#Tests for multivariable support
+pX = Poly([1, 2, 3, 4, 5])
+pS = Poly([1, 2, 3, 4, 5], 's')
+@test pX != pS
+@test_throws pS + pX
+@test_throws pS - pX
+@test_throws pS * pX
+@test_throws pS / pX
+@test_throws pS % pX

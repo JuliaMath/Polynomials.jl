@@ -9,14 +9,21 @@ Construct a polynomial from its coefficients, highest order first.
 
 ```julia
 julia> Poly([1,0,3,4])
-Poly(1x^3 + 3x^1 + 4)
+Poly(x^3 + 3 x + 4)
 ```
 
 Leading zeros are stripped.
 
 ```julia
 julia> Poly([0,1,2,3])
-Poly(1x^2 + 2x^1 + 3)
+Poly(x^2 + 2 x + 3)
+```
+
+An optional variable parameter can be added.
+
+```julia
+julia> Poly([1,2,3], 's')
+Poly(s^2 + 2 s + 3)
 ```
 
 #### poly(r::AbstractVector)
@@ -25,37 +32,43 @@ Construct a polynomial from its roots. This is in contrast to the `Poly` constru
 ```julia
 // Represents (x - 1)*(x-2)*(x-3)
 julia> poly([1,2,3])
-Poly(1x^3 + -6x^2 + 11x^1 + -6)
+Poly(x^3 - 6 x^2 + 11 x - 6)
 ```
 
 #### +, -, *, /, ==
 
-The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars. Division by a polynomial is currently unimplemented. See [#1](https://github.com/vtjnash/Polynomial.jl/issues/1).
+The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars. 
 
 ```julia
 julia> a = Poly([1,2])
-Poly(1x^1 + 2)
+Poly(x + 2)
 
 julia> b = Poly([1, 0, -1])
-Poly(1x^2 + -1)
+Poly(x^2 - 1)
 
 julia> 2*a
-Poly(2x^1 + 4)
+Poly(2 x + 4)
 
 julia> 2 + a
-Poly(1x^1 + 4)
+Poly(x + 4)
 
 julia> a - b
-Poly(-1x^2 + 1x^1 + 3)
+Poly(x^2 + x + 3)
 
 julia> a*b
-Poly(1x^3 + 2x^2 + -1x^1 + -2)
+Poly(x^3 + 2 x^2 - x - 2)
 
 julia> b/2
-Poly(0.5x^2 + -0.5)
+Poly(0.5 x^2 - 0.5)
+```
 
-julia> a/b
-ERROR: no method /(Poly{Int64}, Poly{Int64})
+Note that operations involving polynomials with different variables will error.
+
+```julia
+julia> a = Poly([1,2,3], 'x');
+julia> b = Poly([1,2,3], 's');
+julia> a + b
+ERROR: Polynomials must have same variable.
 ```
 
 #### polyval(p::Poly, x::Number)
@@ -71,10 +84,10 @@ Integrate the polynomial `p` term by term, optionally adding constant term `k`. 
 
 ```julia
 julia> polyint(Poly([1, 0, -1]))
-Poly(0.3333333333333333x^3 + -1.0x^1)
+Poly(0.3333 x^3 - x)
 
 julia> polyint(Poly([1, 0, -1]), 2)
-Poly(0.3333333333333333x^3 + -1.0x^1 + 2.0)
+Poly(0.3333 x^3 - x + 2)
 ```
 
 #### polyder(p::Poly)
@@ -82,7 +95,7 @@ Differentiate the polynomial `p` term by term. The order of the resulting polyno
 
 ```julia
 julia> polyder(Poly([1, 3, -1]))
-Poly(2x^1 + 3)
+Poly(2 x + 3)
 ```
 
 #### roots(p::Poly)
