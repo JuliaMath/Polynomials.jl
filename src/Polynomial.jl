@@ -85,7 +85,13 @@ function print{T}(io::IO, p::Poly{T})
                         parens && print(io,')')
                     end
                 end
-                i < n && print(io, p.var, '^', n-i)
+                exp = n-i
+                if exp > 0
+                    print(io, p.var)
+                    if exp > 1
+                        print(io, '^', exp)
+                    end
+                end
             end
         end
     end
