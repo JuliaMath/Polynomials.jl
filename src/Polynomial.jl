@@ -59,34 +59,32 @@ function print{T}(io::IO, p::Poly{T})
     n = length(p)
     if n <= 0
         print(io,"0")
-    elseif n == 1
-        parens && print(io,'(')
-        print(io,p[1])
-        parens && print(io,')')
     else
         for i = 1:n
             pi = p[i]
             if abs(pi) > 2*eps(T)
                 i > 1 && print(io," + ")
-                parens && print(io,'(')
-                if T <: Complex
-                    if real(pi) > 2*eps(T)
-                        if imag(pi) > 2*eps(T)
-                            print(io,pi)
+                if i == n || abs(pi-1) > 2*eps(T)
+                    if T <: Complex
+                        if real(pi) > 2*eps(T)
+                            if imag(pi) > 2*eps(T)
+                                print(io,'(',pi,')')
+                            else
+                                print(io,real(pi))
+                            end
                         else
-                            print(io,real(pi))
+                            if imag(pi) > 2*eps(T)
+                                print(io,'(',imag(pi),"im)")
+                            else
+                                print(io,'0')
+                            end
                         end
                     else
-                        if imag(pi) > 2*eps(T)
-                            print(io,imag(pi),"im")
-                        else
-                            print(io,'0')
-                        end
+                        parens && print(io,'(')
+                        print(io, pi)
+                        parens && print(io,')')
                     end
-                else
-                    print(io, pi)
                 end
-                parens && print(io,')')
                 i < n && print(io, p.var, '^', n-i)
             end
         end
