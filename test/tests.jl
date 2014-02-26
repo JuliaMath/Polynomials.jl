@@ -73,10 +73,14 @@ p4 = p2 * p3
 
 #Tests for multivariable support
 pX = Poly([1, 2, 3, 4, 5])
-pS = Poly([1, 2, 3, 4, 5], "s")
-@test pX != pS
-@test_throws pS + pX
-@test_throws pS - pX
-@test_throws pS * pX
-@test_throws pS / pX
-@test_throws pS % pX
+pS1 = Poly([1, 2, 3, 4, 5], "s")
+pS2 = Poly([1, 2, 3, 4, 5], 's')
+pS3 = Poly([1, 2, 3, 4, 5], :s)
+@test pX != pS1
+@test pS1 == pS2
+@test pS1 == pS3
+@test_throws pS1 + pX
+@test_throws pS1 - pX
+@test_throws pS1 * pX
+@test_throws pS1 / pX
+@test_throws pS1 % pX

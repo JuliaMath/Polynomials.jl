@@ -17,8 +17,8 @@ eps{T<:FloatingPoint}(x::Type{Complex{T}}) = Base.eps(T)
 immutable Poly{T<:Number}
     a::Vector{T}
     nzfirst::Int #for effiencicy, track the first non-zero index
-    var::String
-    function Poly(a::Vector{T}, var::String)
+    var::Symbol
+    function Poly(a::Vector{T}, var::Symbol)
         nzfirst = 0 #find and chop leading zeros
         for i = 1:length(a)
             if abs(a[i]) > 2*eps(T)
@@ -30,7 +30,9 @@ immutable Poly{T<:Number}
     end
 end
 
-Poly{T<:Number}(a::Vector{T}, var::String="x") = Poly{T}(a, var)
+Poly{T<:Number}(a::Vector{T}, var::Symbol=:x) = Poly{T}(a, var)
+Poly{T<:Number}(a::Vector{T}, var::String) = Poly{T}(a, symbol(var))
+Poly{T<:Number}(a::Vector{T}, var::Char) = Poly{T}(a, symbol(var))
 
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
@@ -281,7 +283,7 @@ function polyder{T}(p::Poly{T})
 end
 
 # create a Poly object from its roots
-function poly{T}(r::AbstractVector{T}, var="x")
+function poly{T}(r::AbstractVector{T}, var=:x)
     n = length(r)
     c = zeros(T, n+1)
     c[1] = 1
@@ -290,7 +292,9 @@ function poly{T}(r::AbstractVector{T}, var="x")
     end
     return Poly(c, var)
 end
-poly(A::Matrix, var="x") = poly(eig(A)[1], var)
+poly(A::Matrix, var=:x) = poly(eig(A)[1], var)
+poly(A::Matrix, var::String) = poly(eig(A)[1], symbol(var))
+poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
 
 roots{T}(p::Poly{Rational{T}}) = roots(convert(Poly{promote_type(T, Float64)}, p))
 
