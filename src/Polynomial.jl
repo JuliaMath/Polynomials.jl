@@ -54,38 +54,68 @@ function show(io::IO, p::Poly)
     print(io,p)
     print(io,")")
 end
-function print{T}(io::IO, p::Poly{T})
-    parens = !(T<:Real)
+
+function print{T<:Real}(io::IO, p::Poly{T})
     n = length(p)
     if n <= 0
         print(io,"0")
     else
-        for i = 1:n
-            pi = p[i]
-            if abs(pi) > 2*eps(T)
-                i > 1 && print(io," + ")
-                if i == n || abs(pi-1) > 2*eps(T)
-                    if T <: Complex
-                        if real(pi) > 2*eps(T)
-                            if imag(pi) > 2*eps(T)
-                                print(io,'(',pi,')')
-                            else
-                                print(io,real(pi))
-                            end
-                        else
-                            if imag(pi) > 2*eps(T)
-                                print(io,'(',imag(pi),"im)")
-                            else
-                                print(io,'0')
-                            end
-                        end
-                    else
-                        parens && print(io,'(')
-                        print(io, pi)
-                        parens && print(io,')')
+        for j = 1:n
+            pj = p[j]
+            magpj = abs(pj)
+            if magpj > 2*eps(T)
+                if j == 1 
+                    pj < 0 && print(io, "-")    #Prepend - if first and negative
+                else
+                    pj < 0 ? print(io," - ") : print(" + ")
+                end
+                #Print pj if pj is the last coefficient, or pj is not identically 1
+                if j == n || abs(magpj - 1) > 2*eps(T)
+                    print(io, magpj)
+                end
+                exp = n-j
+                if exp > 0
+                    print(io, p.var)
+                    if exp > 1
+                        print(io, '^', exp)
                     end
                 end
-                exp = n-i
+            end
+        end
+    end
+end
+
+function print{T<:ComplexPair}(io::IO, p::Poly{T})
+    n = length(p)
+    if n <= 0
+        print(io,"0")
+    else
+        for j = 1:n
+            pj = p[j]
+            abs_repj = abs(real(pj))
+            abs_impj = abs(imag(pj))
+            if abs(pj) > 2*eps(T)
+                if !(abs_impj > 2*eps(T))
+                    if j > 1 
+                        real(pj) < 0 ? print(io," - ") : print(" + ")
+                    else
+                        real(pj) < 0 && print(io, "-")    #Prepend - if first and negative
+                    end
+                else
+                    j > 1 && print(io, " + ")
+                end
+                if abs_repj > 2*eps(T)    #Real part is not 0
+                    if abs_impj > 2*eps(T)    #Imag part is not 0
+                        print(io,'(',pj,')')
+                    elseif abs(abs_repj - 1) > 2*eps(T) || j == n 
+                        print(io,abs_repj)
+                    end
+                else
+                    if abs_impj > 2*eps(T)
+                        print(io,'(', imag(pj),"im)")
+                    end
+                end
+                exp = n-j
                 if exp > 0
                     print(io, p.var)
                     if exp > 1
