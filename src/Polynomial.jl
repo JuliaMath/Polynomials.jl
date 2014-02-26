@@ -55,7 +55,7 @@ function show(io::IO, p::Poly)
     print(io,")")
 end
 
-function print{T<:Real}(io::IO, p::Poly{T})
+function print{T}(io::IO, p::Poly{T})
     n = length(p)
     if n <= 0
         print(io,"0")
@@ -85,7 +85,7 @@ function print{T<:Real}(io::IO, p::Poly{T})
     end
 end
 
-function print{T<:ComplexPair}(io::IO, p::Poly{T})
+function print{T<:Complex}(io::IO, p::Poly{T})
     n = length(p)
     if n <= 0
         print(io,"0")
