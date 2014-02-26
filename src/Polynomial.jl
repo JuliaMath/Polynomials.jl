@@ -7,18 +7,17 @@ export Poly, polyval, polyint, polyder, poly, roots, degree
 export polydir #Deprecated
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
-import Base: string, show, *, /, //, -, +, ==, divrem, rem, eltype
+import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
 
 eps{T}(::Type{T}) = convert(T,0)
-eps{T}(::Type{Complex{T}}) = convert(T,0)
 eps{F<:FloatingPoint}(x::Type{F}) = Base.eps(F)
-eps{T<:FloatingPoint}(x::Type{Complex{T}}) = Base.eps(T)
+eps{T}(x::Type{Complex{T}}) = eps(T)
 
 immutable Poly{T<:Number}
     a::Vector{T}
     nzfirst::Int #for effiencicy, track the first non-zero index
     var::Symbol
-    function Poly(a::Vector{T}, var::Symbol)
+    function Poly(a::Vector{T}, var)
         nzfirst = 0 #find and chop leading zeros
         for i = 1:length(a)
             if abs(a[i]) > 2*eps(T)
@@ -26,13 +25,11 @@ immutable Poly{T<:Number}
             end
             nzfirst = i
         end
-        new(a, nzfirst, var)
+        new(a, nzfirst, symbol(var))
     end
 end
 
-Poly{T<:Number}(a::Vector{T}, var::Symbol=:x) = Poly{T}(a, var)
-Poly{T<:Number}(a::Vector{T}, var::String) = Poly{T}(a, symbol(var))
-Poly{T<:Number}(a::Vector{T}, var::Char) = Poly{T}(a, symbol(var))
+Poly{T<:Number}(a::Vector{T}, var::Union(String,Symbol,Char)=:x) = Poly{T}(a, var)
 
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
@@ -53,46 +50,48 @@ one{T}(p::Poly{T}) = Poly([one(T)], p.var)
 one{T}(::Type{Poly{T}}) = Poly([one(T)])
 
 function show(io::IO, p::Poly)
-    n = length(p)
     print(io,"Poly(")
-    if n <= 0
-        print(io,"0")
-    elseif n == 1
-        print(io,p[1])
-    else
-        print(io,"$(p[1])$(p.var)^$(n-1)");
-        for i = 2:n-1
-            if p[i] != 0
-                print(io," + $(p[i])$(p.var)^$(n-i)")
-            end
-        end
-        if p[n] != 0
-            print(io," + $(p[n])")
-        end
-    end
+    print(io,p)
     print(io,")")
 end
-
-function show{T<:Complex}(io::IO, p::Poly{T})
+function print{T}(io::IO, p::Poly{T})
+    parens = !(T<:Real)
     n = length(p)
-    print(io,"Poly(")
     if n <= 0
         print(io,"0")
     elseif n == 1
-        print(io,"[$(p[1])]")
+        parens && print(io,'(')
+        print(io,p[1])
+        parens && print(io,')')
     else
-        print(io,"[$(p[1])]$(p.var)^$(n-1)")
-        for i = 2:n-1
-            if p[i] != 0
-                print(io," + [$(p[i])]$(p.var)^$(n-i)")
+        for i = 1:n
+            pi = p[i]
+            if abs(pi) > 2*eps(T)
+                i > 1 && print(io," + ")
+                parens && print(io,'(')
+                if T <: Complex
+                    if real(pi) > 2*eps(T)
+                        if imag(pi) > 2*eps(T)
+                            print(io,pi)
+                        else
+                            print(io,real(pi))
+                        end
+                    else
+                        if imag(pi) > 2*eps(T)
+                            print(io,imag(pi),"im")
+                        else
+                            print(io,'0')
+                        end
+                    end
+                else
+                    print(io, pi)
+                end
+                parens && print(io,')')
+                i < n && print(io, p.var, '^', n-i)
             end
         end
-        if p[n] != 0
-            print(io," + [$(p[n])]")
-        end
     end
-    print(io,")")
-end 
+end
 
 *(c::Number, p::Poly) = Poly(c * p.a[1+p.nzfirst:end], p.var)
 *(p::Poly, c::Number) = Poly(c * p.a[1+p.nzfirst:end], p.var)
