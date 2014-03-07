@@ -9,7 +9,7 @@ export polydir #Deprecated
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
 import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
 
-eps{T}(::Type{T}) = convert(T,0)
+eps{T}(::Type{T}) = zero(T)
 eps{F<:FloatingPoint}(x::Type{F}) = Base.eps(F)
 eps{T}(x::Type{Complex{T}}) = eps(T)
 
@@ -67,7 +67,7 @@ function print{T}(io::IO, p::Poly{T})
                 if j == 1 
                     pj < 0 && print(io, "-")    #Prepend - if first and negative
                 else
-                    pj < 0 ? print(io," - ") : print(" + ")
+                    pj < 0 ? print(io," - ") : print(io," + ")
                 end
                 #Print pj if pj is the last coefficient, or pj is not identically 1
                 if j == n || abs(magpj - 1) > 2*eps(T)
@@ -97,7 +97,7 @@ function print{T<:Complex}(io::IO, p::Poly{T})
             if abs(pj) > 2*eps(T)
                 if !(abs_impj > 2*eps(T))
                     if j > 1 
-                        real(pj) < 0 ? print(io," - ") : print(" + ")
+                        real(pj) < 0 ? print(io," - ") : print(io," + ")
                     else
                         real(pj) < 0 && print(io, "-")    #Prepend - if first and negative
                     end
