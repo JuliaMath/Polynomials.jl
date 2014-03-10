@@ -3,8 +3,7 @@
 module Polynomial
 #todo: sparse polynomials?
 
-export Poly, polyval, polyint, polyder, poly, roots, degree
-export polydir #Deprecated
+export Poly, polyval, polyint, polyder, poly, roots
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
 import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
@@ -37,7 +36,6 @@ eltype{T}(::Poly{T}) = T
 
 length(p::Poly) = length(p.a)-p.nzfirst
 endof(p::Poly) = length(p)
-deg(p::Poly) = length(p) - 1
 
 getindex(p::Poly, i) = p.a[i+p.nzfirst]
 setindex!(p::Poly, v, i) = (p.a[i+p.nzfirst] = v)
@@ -299,8 +297,6 @@ function polyint{T}(p::Poly{T}, k::Number=0)
     a2[end] = k
     Poly(a2, p.var)
 end
-
-@deprecate polydir polyder
 
 function polyder{T}(p::Poly{T})
     n = length(p)
