@@ -27,7 +27,7 @@ promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
 
 length(p::Poly) = length(p.a)
-endof(p::Poly) = length(p)
+endof(p::Poly) = length(p) - 1
 
 getindex{T}(p::Poly{T}, i) = (i+1 > length(p.a) ? zero(T) : p.a[i+1])
 function setindex!(p::Poly, v, i) 
@@ -67,12 +67,13 @@ function printterm{T}(io::IO,p::Poly{T},j,first)
     if pj == zero(T)
         return false
     end
-    neg = abs(pj) < 0 
+    neg = pj < 0
     if first
         neg && print(io, "-")    #Prepend - if first and negative
     else
         neg ? print(io, " - ") : print(io," + ")
     end
+    pj = abs(pj)
     if pj != one(T) || j == 0
         show(io,pj)
     end
@@ -154,10 +155,23 @@ function -{T}(c::Number, p::Poly{T})
     end
 end
 
-+{T,S}(p1::Poly{T}, p2::Poly{S}) = Poly([p1[i] + p2[i] for i = 0:max(length(p1),length(p2))])
--{T,S}(p1::Poly{T}, p2::Poly{S}) = Poly([p1[i] - p2[i] for i = 0:max(length(p1),length(p2))])
+function +{T,S}(p1::Poly{T}, p2::Poly{S})
+    if p1.var != p2.var
+        error("Polynomials must have same variable")
+    end
+    Poly([p1[i] + p2[i] for i = 0:max(length(p1),length(p2))])
+end
+function -{T,S}(p1::Poly{T}, p2::Poly{S})
+    if p1.var != p2.var
+        error("Polynomials must have same variable")
+    end
+    Poly([p1[i] - p2[i] for i = 0:max(length(p1),length(p2))])
+end
 
 function *{T,S}(p1::Poly{T}, p2::Poly{S})
+    if p1.var != p2.var
+        error("Polynomials must have same variable")
+    end
     R = promote_type(T,S)
     n = length(p1)
     m = length(p2)
@@ -170,39 +184,43 @@ function *{T,S}(p1::Poly{T}, p2::Poly{S})
     a
 end
 
+function degree{T}(p::Poly{T})
+    for i = length(p):-1:0
+        if p[i] > 2*eps(T)
+            return i
+        end
+    end
+    return -1
+end
+
 function divrem{T, S}(num::Poly{T}, den::Poly{S})
     if num.var != den.var
         error("Polynomials must have same variable")
     end
-    m = length(den)
-    if m == 0
+    m = degree(den)
+    if m < 0
         throw(DivideError())
     end
     R = typeof(one(T)/one(S))
-    n = length(num)
+    n = degree(num)
     deg = n-m+1
     if deg <= 0
-        return zero(Poly{R}), convert(Poly{R}, num)
+        return convert(Poly{R}, zero(num)), convert(Poly{R}, num)
     end
-    d = zeros(R, n)
-    q = zeros(R, deg)
-    r = zeros(R, n)
-    r[:] = num.a
-    for i = 1:deg
-        quot = r[i] / den[1]
-        q[i] = quot
-        if i > 1
-            d[i-1] = 0
-            r[i-1] = 0
-        end
-        for j = 1:m
-            k = i+j-1
+    # We will still modify q,r, but already wrap it in a
+    # polynomial, so the indexing below is more natural
+    pQ = Poly(zeros(R, deg), num.var)
+    pR = Poly(zeros(R, n+1), num.var)
+    pR.a[:] = num.a[1:(n+1)]
+    for i = n:-1:m
+        quot = pR[i] / den[m]
+        pQ[i-m] = quot
+        for j = 0:m
             elem = den[j]*quot
-            d[k] = elem
-            r[k] -= elem
+            pR[i-(m-j)] -= elem
         end
     end
-    return Poly(q, num.var), Poly(r, num.var)
+    return pQ, pR
 end
 /(num::Poly, den::Poly) = divrem(num, den)[1]
 rem(num::Poly, den::Poly) = divrem(num, den)[2]
@@ -227,7 +245,7 @@ function polyval{T}(p::Poly{T}, x::Number)
         return zero(R)
     else
         y = convert(R, p[end])
-        for i = (lenp-1):-1:0
+        for i = (endof(p)-1):-1:0
             y = p[i] + x.*y
         end
         return y
@@ -277,34 +295,50 @@ poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
 
 roots{T}(p::Poly{Rational{T}}) = roots(convert(Poly{promote_type(T, Float64)}, p))
 
+
 # compute the roots of a polynomial
 function roots{T}(p::Poly{T})
     R = promote_type(T, Float64)
-    num_zeros = 0
-    if length(p) == 0
-        return zeros(R, 0)
-    end
-    while abs(p[num_zeros]) <= 2*eps(T)
-        if num_zeros == length(p)-1
+    length(p) == 0 && return zeros(R, 0)
+
+    num_leading_zeros = 0
+    while abs(p[num_leading_zeros]) <= 2*eps(T)
+        if num_leading_zeros == length(p)-1
             return zeros(R, 0)
         end
-        num_zeros += 1
+        num_leading_zeros += 1
     end
-    n = length(p)-num_zeros-1
-    if n < 1
-        return zeros(R, length(p)-1)
+
+    num_trailing_zeros = 0
+    while abs(p[end - num_trailing_zeros]) <= 2*eps(T)
+        num_trailing_zeros += 1
     end
+
+    n = endof(p)-(num_leading_zeros + num_trailing_zeros)
+
+    n < 1 && return zeros(R, length(p) - num_trailing_zeros - 1)
+
     companion = zeros(R, n, n)
-    a0 = p[num_zeros]
+    an = p[end-num_trailing_zeros]
     for i = 1:n-1
-        companion[1,i] = -p[num_zeros+i] / a0
+        companion[i,n] = -p[num_leading_zeros + i - 1] / an
         companion[i+1,i] = 1;
     end
-    companion[1,end] = -p[end] / a0
-    D,V = eig(companion)
-    r = zeros(eltype(D),length(p)-1)
-    r[1:n] = 1./D
+    companion[end,end] = -p[end-num_trailing_zeros-1] / an
+    D = eigvals(companion)
+    r = zeros(eltype(D),length(p)-num_trailing_zeros-1)
+    r[1:n] = D
     return r
 end
 
+function gcd{T<:FloatingPoint, S<:FloatingPoint}(a::Poly{T}, b::Poly{S})
+    #Finds the Greatest Common Denominator of two polynomials recursively using
+    #Euclid's algorithm: http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm
+    if all(abs(b.a).<=2*eps(S))
+        return a
+    else
+        s, r = divrem(a, b)
+        return gcd(b, r)
+    end
+end
 end # module Poly

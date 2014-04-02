@@ -53,17 +53,17 @@ a_roots = copy(pN.a)
 @test roots(pR) == [1//2, 3//2]
 
 @test pNULL + 2 == p0 + 2 == 2 + p0 == Poly([2])
-@test p2 - 2 == -2 + p2 == Poly([1,-1])
-@test 2 - p2 == Poly([-1,1])
+@test p2 - 2 == -2 + p2 == Poly([-1,1])
+@test 2 - p2 == Poly([1,-1])
 
 p0 = Poly([0])
 p1 = Poly([1])
-p2 = Poly([4, 2, -3, 6, 5])
-p3 = Poly([6, 2, -3, 7])
+p2 = Poly([5, 6, -3, 2 ,4])
+p3 = Poly([7, -3, 2, 6])
 p4 = p2 * p3
 @test divrem(p4, p2) == (p3, zero(p3))
 @test p3%p2 == p3
-@test all((abs((p2/p3 - Poly([2/3,1/9])).a)) .< eps())
+@test all((abs((p2/p3 - Poly([1/9,2/3])).a)) .< eps())
 @test divrem(p0,p1) == (p0,p0)
 @test divrem(p1,p1) == (p1,p0)
 @test divrem(p2,p2) == (p1,p0)
