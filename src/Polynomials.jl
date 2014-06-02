@@ -279,6 +279,9 @@ function polyder{T}(p::Poly{T})
     end
 end
 
+polyder{T}(a::Array{Poly{T}}) = [polyder(p) for p in a]
+polyint{T}(a::Array{Poly{T}}) = [polyint(p) for p in a]
+
 # create a Poly object from its roots
 function poly{T}(r::AbstractVector{T}, var=:x)
     n = length(r)
