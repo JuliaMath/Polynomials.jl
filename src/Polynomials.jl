@@ -266,26 +266,30 @@ function polyint{T}(p::Poly{T}, k::Number=0)
     p2
 end
 
-function polyder{T}(p::Poly{T})
+function polyder{T}(p::Poly{T}, order::Int=1)
     n = length(p)
-    if n > 0
-        p2 = Poly(Array(T, n-1), p.var)
-        for i = 1:(n-1)
-            p2[i-1] = p[i] * i
+    if order < 0
+        error("Order of derivative must be non-negative")
+    elseif n <= order
+        return Poly(zeros(T,0),p.var)
+    elseif order == 0
+        return p
+    else
+        p2 = Poly(Array(T, n-order), p.var)
+        for i = order:n-1
+            p2[i-order] = p[i] * factorial(i)/factorial(i-order)
         end
         return p2
-    else
-        return Poly(zeros(T, 0), p.var)
     end
 end
 
-polyder{T}(a::Array{Poly{T}}) = [polyder(p) for p in a]
-polyint{T}(a::Array{Poly{T}}) = [polyint(p) for p in a]
+polyint{n,T}(a::Array{Poly{T},n}, k::Number  = 0) = map(p->polyint(p,k),a)
+polyder{n,T}(a::Array{Poly{T},n}, order::Int = 1) = map(p->polyder(p,order),a)
 
 # create a Poly object from its roots
 function poly{T}(r::AbstractVector{T}, var=:x)
     n = length(r)
-    c = zeros(T, n+1)               
+    c = zeros(T, n+1)
     c[1] = 1
     for j = 1:n
         c[2:j+1] = c[2:j+1]-r[j]*c[1:j]
