@@ -106,7 +106,7 @@ function printterm{T<:Complex}(io::IO,p::Poly{T},j,first)
         if abs_impj > 2*eps(T)    #Imag part is not 0
             print(io,'(',neg ? -pj : pj,')')
         else
-            print(io, real(pj))
+            print(io, neg ? -real(pj) : real(pj))
         end
     else
         if abs_impj > 2*eps(T)
