@@ -283,6 +283,8 @@ function polyder{T}(p::Poly{T}, order::Int=1)
     end
 end
 
+polyint{T}(a::Array{Poly{T},1}, k::Number  = 0) = [ polyint(p,k) for p in a ]
+polyder{T}(a::Array{Poly{T},1}, order::Int = 1) = [ polyder(p,order) for p in a ]
 polyint{n,T}(a::Array{Poly{T},n}, k::Number  = 0) = map(p->polyint(p,k),a)
 polyder{n,T}(a::Array{Poly{T},n}, order::Int = 1) = map(p->polyder(p,order),a)
 
