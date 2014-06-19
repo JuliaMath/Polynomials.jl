@@ -186,7 +186,7 @@ end
 
 function degree{T}(p::Poly{T})
     for i = length(p):-1:0
-        if p[i] > 2*eps(T)
+        if abs(p[i]) > 2*eps(T)
             return i
         end
     end
