@@ -68,8 +68,8 @@ p4 = p2 * p3
 @test divrem(p1,p1) == (p1,p0)
 @test divrem(p2,p2) == (p1,p0)
 @test divrem(pR, pR) == (one(pR), zero(pR))
-@test_throws p1/p0
-@test_throws divrem(p0,p0)
+@test_throws DivideError p1/p0
+@test_throws DivideError divrem(p0,p0)
 
 #Tests for multivariable support
 pX = Poly([1, 2, 3, 4, 5])
@@ -79,8 +79,8 @@ pS3 = Poly([1, 2, 3, 4, 5], :s)
 @test pX != pS1
 @test pS1 == pS2
 @test pS1 == pS3
-@test_throws pS1 + pX
-@test_throws pS1 - pX
-@test_throws pS1 * pX
-@test_throws pS1 / pX
-@test_throws pS1 % pX
+@test_throws ErrorException pS1 + pX
+@test_throws ErrorException pS1 - pX
+@test_throws ErrorException pS1 * pX
+@test_throws ErrorException pS1 / pX
+@test_throws ErrorException pS1 % pX
