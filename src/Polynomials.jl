@@ -168,16 +168,17 @@ function -{T,S}(p1::Poly{T}, p2::Poly{S})
     Poly([p1[i] - p2[i] for i = 0:max(length(p1),length(p2))])
 end
 
+
 function *{T,S}(p1::Poly{T}, p2::Poly{S})
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
     R = promote_type(T,S)
-    n = length(p1)
-    m = length(p2)
-    a = Poly(zeros(R,m+n+2))
-    for i = 0:length(p1)
-        for j = 0:length(p2)
+    n = degree(p1)
+    m = degree(p2)
+    a = Poly(zeros(R,m+n+1))
+    for i = 0:n
+        for j = 0:m
             a[i+j] += p1[i] * p2[j]
         end
     end
