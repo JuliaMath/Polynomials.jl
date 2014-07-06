@@ -191,7 +191,7 @@ function degree{T}(p::Poly{T})
             return i
         end
     end
-    return -1
+    return 0
 end
 
 function divrem{T, S}(num::Poly{T}, den::Poly{S})
@@ -278,7 +278,7 @@ function polyder{T}(p::Poly{T}, order::Int=1)
     else
         p2 = Poly(Array(T, n-order), p.var)
         for i = order:n-1
-            p2[i-order] = p[i] * factorial(i)/factorial(i-order)
+            p2[i-order] = p[i] * prod((i-order+1):i)
         end
         return p2
     end
