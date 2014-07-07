@@ -199,7 +199,7 @@ function divrem{T, S}(num::Poly{T}, den::Poly{S})
         error("Polynomials must have same variable")
     end
     m = degree(den)
-    if m < 0
+    if m == 0 && den[0] == 0
         throw(DivideError())
     end
     R = typeof(one(T)/one(S))

@@ -32,6 +32,8 @@ sprint(show, pNULL)
 @test pNULL^3 == pNULL
 @test pNULL*pNULL == pNULL
 
+@test map(Polynomials.degree, [pNULL,p0,p1,p2,p3,p4,p5,pN,pR,p1000]) == [0,0,0,1,2,3,4,4,2,999] 
+
 @test polyval(pN, -.125) == 276.9609375
 @test polyval(pNULL, 10) == 0
 @test polyval(p0, -10) == 0
