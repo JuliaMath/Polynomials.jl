@@ -6,7 +6,7 @@ module Polynomials
 export Poly, polyval, polyint, polyder, poly, roots
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
-import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
+import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype, promote_rule
 
 eps{T}(::Type{T}) = zero(T)
 eps{F<:FloatingPoint}(x::Type{F}) = Base.eps(F)
@@ -23,14 +23,17 @@ end
 Poly{T<:Number}(a::Vector{T}, var::Union(String,Symbol,Char)=:x) = Poly{T}(a, var)
 
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
+convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
+convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}) = map(el->convert(Poly{promote_type(T,S)},el),x)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
+promote_rule{T, S<:Number}(::Type{Poly{T}}, ::Type{S}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
 
 length(p::Poly) = length(p.a)
 endof(p::Poly) = length(p) - 1
 
 getindex{T}(p::Poly{T}, i) = (i+1 > length(p.a) ? zero(T) : p.a[i+1])
-function setindex!(p::Poly, v, i) 
+function setindex!(p::Poly, v, i)
     n = length(p.a)
     if n < i+1
         resize!(p.a,i+1)
@@ -90,10 +93,10 @@ function printterm{T<:Complex}(io::IO,p::Poly{T},j,first)
     end
 
     # We show a negative sign either for any complex number with negative
-    # real part (and then negate the immaginary part) of for complex 
+    # real part (and then negate the immaginary part) of for complex
     # numbers that are pure imaginary with negative imaginary part
 
-    neg = ((abs_repj > 2*eps(T)) && real(pj) < 0) || 
+    neg = ((abs_repj > 2*eps(T)) && real(pj) < 0) ||
             ((abs_impj > 2*eps(T)) && imag(pj) < 0)
 
     if first
@@ -129,22 +132,15 @@ function print{T}(io::IO, p::Poly{T})
     printed_anything || print(io,zero(T))
 end
 
-*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a)
-*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c)
-/(p::Poly, c::Number) = Poly(p.a / c)
+for op in (:+,:-,:*,:/,:(==),:divrem,:rem)
+    eval(quote
+        ($op)(x::Number,y::Poly) = ($op)(promote(x,y)...)
+        ($op)(x::Poly,y::Number) = ($op)(promote(x,y)...)
+    end)
+end
+
 -(p::Poly) = Poly(-p.a)
 
--(p::Poly, c::Number) = +(p, -c)
-+(c::Number, p::Poly) = +(p, c)
-function +(p::Poly, c::Number)
-    if length(p) < 1
-        return Poly([c,])
-    else
-        p2 = copy(p)
-        p2.a[1] += c;
-        return p2;
-    end
-end
 function -{T}(c::Number, p::Poly{T})
     if length(p) < 1
         return Poly(T[c,])
@@ -232,7 +228,7 @@ function ==(p1::Poly, p2::Poly)
     else
         for i = 1:max(length(p1),length(p2))
             if p1[i] != p2[i]
-                return false    
+                return false
             end
         end
         return true
