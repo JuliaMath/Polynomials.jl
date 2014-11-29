@@ -23,6 +23,8 @@ end
 Poly{T<:Number}(a::Vector{T}, var::Union(String,Symbol,Char)=:x) = Poly{T}(a, var)
 
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
+convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
+convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}) = map(el->convert(Poly{promote_type(T,S)},el),x)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
 
