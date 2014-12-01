@@ -4,6 +4,7 @@ module Polynomials
 #todo: sparse polynomials?
 
 export Poly, polyval, polyint, polyder, poly, roots
+export Pade, padeval
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
 import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
@@ -351,4 +352,7 @@ function gcd{T<:FloatingPoint, S<:FloatingPoint}(a::Poly{T}, b::Poly{S})
         return gcd(b, r)
     end
 end
+
+include("pade.jl")
+
 end # module Poly
