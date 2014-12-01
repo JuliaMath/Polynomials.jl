@@ -342,7 +342,7 @@ function roots{T}(p::Poly{T})
     return r
 end
 
-function gcd{T<:FloatingPoint, S<:FloatingPoint}(a::Poly{T}, b::Poly{S})
+function gcd{T, S}(a::Poly{T}, b::Poly{S})
     #Finds the Greatest Common Denominator of two polynomials recursively using
     #Euclid's algorithm: http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm
     if all(abs(b.a).<=2*eps(S))

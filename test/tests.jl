@@ -86,3 +86,30 @@ pS3 = Poly([1, 2, 3, 4, 5], :s)
 @test_throws ErrorException pS1 * pX
 @test_throws ErrorException pS1 / pX
 @test_throws ErrorException pS1 % pX
+
+#Tests for Pade approximants
+
+println("Test for the exponential function.")
+a = Poly(1.//convert(Vector{Int},gamma(1:17)),"x")
+PQexp = Pade(a,8,8)
+@test padeval(PQexp,1.0) == exp(1.0)
+@test padeval(PQexp,-1.0) == exp(-1.0)
+
+println("Test for the sine function.")
+b = Poly(convert(Vector{BigInt},sinpi((0:16)/2)).//convert(Vector{BigInt},gamma(BigFloat("1.0"):BigFloat("17.0"))),"x")
+PQsin = Pade(b,8,7)
+@test isapprox(padeval(PQsin,1.0),sin(1.0))
+@test isapprox(padeval(PQsin,-1.0),sin(-1.0))
+
+println("Test for the cosine function.")
+c = Poly(convert(Vector{BigInt},sinpi((1:17)/2)).//convert(Vector{BigInt},gamma(BigFloat("1.0"):BigFloat("17.0"))),"x")
+PQcos = Pade(c,8,8)
+@test isapprox(padeval(PQcos,1.0),cos(1.0))
+@test isapprox(padeval(PQcos,-1.0),cos(-1.0))
+
+println("Test for the summation of a factorially divergent series.")
+d = Poly(convert(Vector{BigInt},(-1).^(0:60).*gamma(BigFloat("1.0"):BigFloat("61.0"))).//1,"x")
+PQexpint = Pade(d,30,30)
+println("The approximate sum of the divergent series is:  ",float64(padeval(PQexpint,1.0)))
+println("The approximate sum of the convergent series is: ",exp(1)*(-γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
+@test isapprox(padeval(PQexpint,1.0) , exp(1)*(-γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
