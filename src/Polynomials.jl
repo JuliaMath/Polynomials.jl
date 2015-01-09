@@ -296,7 +296,7 @@ function poly{T}(r::AbstractVector{T}, var=:x)
     c = zeros(T, n+1)
     c[1] = 1
     for j = 1:n
-        for i = 1:j
+        for i = j:-1:1
             c[i+1] = c[i+1]-r[j]*c[i]
         end
     end
