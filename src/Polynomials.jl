@@ -296,7 +296,9 @@ function poly{T}(r::AbstractVector{T}, var=:x)
     c = zeros(T, n+1)
     c[1] = 1
     for j = 1:n
-        c[2:j+1] = c[2:j+1]-r[j]*c[1:j]
+        for i = 1:j
+            c[i+1] = c[i+1]-r[j]*c[i]
+        end
     end
     return Poly(reverse(c), var)
 end
