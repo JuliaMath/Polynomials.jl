@@ -118,21 +118,14 @@ println("The approximate sum of the convergent series is: ",exp(1)*(-γ-sum([(-1
 
 #Tests for orthogonal polynomials
 
-function orthogonal_poly_test(F,Ps,num=[],test_small=false)
+function orthogonal_poly_test(F,Ps,num=[])
     if num == []
-        num = ones(length(Ps))
+        num = ones(eltype(Ps[1]), length(Ps))
     end
     for n=0:length(Ps)-1
-        diff = F(n) - Poly(Ps[n+1])/num[n+1]
-        # println("$(n): $(F(n)) - ($(Poly(Ps[n+1])/num[n+1])) = $(diff) @ 1.1 = $(polyval(diff, 1.1))")
-        if test_small == false
-            @test F(n) == Poly(Ps[n+1])/num[n+1]
-        else
-            # Since some fractions cannot be represented exactly by
-            # floating point arithmetic, we test if the polynomials are
-            # "close" at a certain point of evaluation.
-            @test_approx_eq_eps polyval(diff, test_small) 0 1e-14
-        end
+        p = Poly(Ps[n+1])//num[n+1]
+        # println("$(n): $(F(n)) - ($(p)) = $(F(n) - p)")
+        @test F(n) == p
     end
 end
 
