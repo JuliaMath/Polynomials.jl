@@ -134,6 +134,7 @@ end
 *{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a)
 *{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c)
 /(p::Poly, c::Number) = Poly(p.a / c)
+//(p::Poly, c::Number) = Poly(p.a // c)
 -(p::Poly) = Poly(-p.a)
 
 -(p::Poly, c::Number) = +(p, -c)
