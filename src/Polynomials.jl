@@ -5,6 +5,7 @@ module Polynomials
 
 export Poly, polyval, polyint, polyder, poly, roots
 export Pade, padeval
+export Orthogonal
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
 import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
@@ -133,6 +134,7 @@ end
 *{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a)
 *{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c)
 /(p::Poly, c::Number) = Poly(p.a / c)
+//(p::Poly, c::Number) = Poly(p.a // c)
 -(p::Poly) = Poly(-p.a)
 
 -(p::Poly, c::Number) = +(p, -c)
@@ -354,5 +356,6 @@ function gcd{T, S}(a::Poly{T}, b::Poly{S})
 end
 
 include("pade.jl")
+include("orthogonal.jl")
 
 end # module Poly
