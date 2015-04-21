@@ -87,6 +87,11 @@ pS3 = Poly([1, 2, 3, 4, 5], :s)
 @test_throws ErrorException pS1 / pX
 @test_throws ErrorException pS1 % pX
 
+#Testing copying.
+pcpy1 = Poly([1,2,3,4,5], :y)
+pcpy2 = copy(pcpy1)
+@test pcpy1 == pcpy2
+
 #Tests for Pade approximants
 
 println("Test for the exponential function.")
