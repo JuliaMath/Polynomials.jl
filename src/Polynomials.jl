@@ -41,7 +41,7 @@ function setindex!(p::Poly, v, i)
     v
 end
 
-copy(p::Poly) = Poly(copy(p.a))
+copy(p::Poly) = Poly(copy(p.a), p.var)
 
 zero{T}(p::Poly{T}) = zero(Poly{T})
 zero{T}(::Type{Poly{T}}) = Poly(T[])
