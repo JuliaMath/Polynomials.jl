@@ -8,6 +8,7 @@ export Pade, padeval
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
 import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
+import Base: promote_rule
 
 eps{T}(::Type{T}) = zero(T)
 eps{F<:FloatingPoint}(x::Type{F}) = Base.eps(F)
@@ -24,6 +25,8 @@ end
 Poly{T<:Number}(a::Vector{T}, var::Union(String,Symbol,Char)=:x) = Poly{T}(a, var)
 
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
+convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
+convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}) = map(el->convert(Poly{promote_type(T,S)},el),x)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
 
@@ -31,7 +34,7 @@ length(p::Poly) = length(p.a)
 endof(p::Poly) = length(p) - 1
 
 getindex{T}(p::Poly{T}, i) = (i+1 > length(p.a) ? zero(T) : p.a[i+1])
-function setindex!(p::Poly, v, i) 
+function setindex!(p::Poly, v, i)
     n = length(p.a)
     if n < i+1
         resize!(p.a,i+1)
@@ -43,9 +46,9 @@ end
 
 copy(p::Poly) = Poly(copy(p.a), p.var)
 
-zero{T}(p::Poly{T}) = zero(Poly{T})
+zero{T}(p::Poly{T}) = Poly([zero(T)], p.var)
 zero{T}(::Type{Poly{T}}) = Poly(T[])
-one{T}(p::Poly{T}) = one(Poly{T})
+one{T}(p::Poly{T}) = Poly([one(T)], p.var)
 one{T}(::Type{Poly{T}}) = Poly([one(T)])
 
 function show(io::IO, p::Poly)
@@ -91,10 +94,10 @@ function printterm{T<:Complex}(io::IO,p::Poly{T},j,first)
     end
 
     # We show a negative sign either for any complex number with negative
-    # real part (and then negate the immaginary part) of for complex 
+    # real part (and then negate the immaginary part) of for complex
     # numbers that are pure imaginary with negative imaginary part
 
-    neg = ((abs_repj > 2*eps(T)) && real(pj) < 0) || 
+    neg = ((abs_repj > 2*eps(T)) && real(pj) < 0) ||
             ((abs_impj > 2*eps(T)) && imag(pj) < 0)
 
     if first
@@ -130,16 +133,16 @@ function print{T}(io::IO, p::Poly{T})
     printed_anything || print(io,zero(T))
 end
 
-*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a)
-*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c)
-/(p::Poly, c::Number) = Poly(p.a / c)
--(p::Poly) = Poly(-p.a)
+*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
+*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
+/(p::Poly, c::Number) = Poly(p.a / c, p.var)
+-(p::Poly) = Poly(-p.a, p.var)
 
 -(p::Poly, c::Number) = +(p, -c)
 +(c::Number, p::Poly) = +(p, c)
 function +(p::Poly, c::Number)
     if length(p) < 1
-        return Poly([c,])
+        return Poly([c,], p.var)
     else
         p2 = copy(p)
         p2.a[1] += c;
@@ -148,7 +151,7 @@ function +(p::Poly, c::Number)
 end
 function -{T}(c::Number, p::Poly{T})
     if length(p) < 1
-        return Poly(T[c,])
+        return Poly(T[c,], p.var)
     else
         p2 = -p;
         p2.a[1] += c;
@@ -160,13 +163,13 @@ function +{T,S}(p1::Poly{T}, p2::Poly{S})
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
-    Poly([p1[i] + p2[i] for i = 0:max(length(p1),length(p2))])
+    Poly([p1[i] + p2[i] for i = 0:max(length(p1),length(p2))], p1.var)
 end
 function -{T,S}(p1::Poly{T}, p2::Poly{S})
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
-    Poly([p1[i] - p2[i] for i = 0:max(length(p1),length(p2))])
+    Poly([p1[i] - p2[i] for i = 0:max(length(p1),length(p2))], p1.var)
 end
 
 
@@ -177,7 +180,7 @@ function *{T,S}(p1::Poly{T}, p2::Poly{S})
     R = promote_type(T,S)
     n = degree(p1)
     m = degree(p2)
-    a = Poly(zeros(R,m+n+1))
+    a = Poly(zeros(R,m+n+1), p1.var)
     for i = 0:n
         for j = 0:m
             a[i+j] += p1[i] * p2[j]
@@ -233,22 +236,22 @@ function ==(p1::Poly, p2::Poly)
     else
         for i = 1:max(length(p1),length(p2))
             if p1[i] != p2[i]
-                return false    
+                return false
             end
         end
         return true
     end
 end
 
-function polyval{T}(p::Poly{T}, x::Number)
-    R = promote_type(T, typeof(x))
+function polyval{T,S}(p::Poly{T}, x::S)
+    R = promote_type(T,S)
     lenp = length(p)
     if lenp == 0
         return zero(R)
     else
         y = convert(R, p[end])
         for i = (endof(p)-1):-1:0
-            y = p[i] + x.*y
+            y = p[i] + x*y
         end
         return y
     end
