@@ -1,4 +1,4 @@
-# Polynomial
+# Polynomials
 
 Basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate polynomials.
 
