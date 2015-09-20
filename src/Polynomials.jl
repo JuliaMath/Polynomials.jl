@@ -3,6 +3,8 @@
 module Polynomials
 #todo: sparse polynomials?
 
+using Compat
+
 export Poly, polyval, polyint, polyder, poly, roots
 export Pade, padeval
 
@@ -11,7 +13,7 @@ import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
 import Base: promote_rule
 
 eps{T}(::Type{T}) = zero(T)
-eps{F<:FloatingPoint}(x::Type{F}) = Base.eps(F)
+eps{F<:AbstractFloat}(x::Type{F}) = Base.eps(F)
 eps{T}(x::Type{Complex{T}}) = eps(T)
 
 immutable Poly{T<:Number}
@@ -22,7 +24,7 @@ immutable Poly{T<:Number}
     end
 end
 
-Poly{T<:Number}(a::Vector{T}, var::Union(String,Symbol,Char)=:x) = Poly{T}(a, var)
+@compat Poly{T<:Number}(a::Vector{T}, var::Union{AbstractString,Symbol,Char}=:x) = Poly{T}(a, var)
 
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
 convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
@@ -304,7 +306,7 @@ function poly{T}(r::AbstractVector{T}, var=:x)
     return Poly(reverse(c), var)
 end
 poly(A::Matrix, var=:x) = poly(eig(A)[1], var)
-poly(A::Matrix, var::String) = poly(eig(A)[1], symbol(var))
+poly(A::Matrix, var::AbstractString) = poly(eig(A)[1], symbol(var))
 poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
 
 roots{T}(p::Poly{Rational{T}}) = roots(convert(Poly{promote_type(T, Float64)}, p))

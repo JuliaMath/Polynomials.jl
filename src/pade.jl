@@ -13,7 +13,7 @@ Pade{T<:Number,S<:Number}(p::Poly{T}, q::Poly{S}) = Pade{T,S}(p,q)
 
 function Pade{T}(c::Poly{T},m::Int,n::Int)
     @assert m+n < length(c)
-    rold,rnew = Poly([zeros(T,m+n+1),one(T)],c.var),Poly(c.a[1:m+n+1],c.var)
+    rold,rnew = Poly([zeros(T,m+n+1);one(T)],c.var),Poly(c.a[1:m+n+1],c.var)
     uold,vold = Poly([one(T)],c.var),Poly([zero(T)],c.var)
     unew,vnew = vold,uold
     for i=1:n
