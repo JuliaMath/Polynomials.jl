@@ -1,14 +1,10 @@
-language: cpp
-compiler:
-  - clang
+language: julia
+os:
+    - linux
+    - osx
+julia:
+    - 0.3
+    - 0.4
+    - nightly
 notifications:
   email: false
-before_install:
-  - sudo add-apt-repository ppa:staticfloat/julia-deps -y
-  - sudo add-apt-repository ppa:staticfloat/julianightlies -y
-  - sudo apt-get update -qq -y
-  - sudo apt-get install libpcre3-dev julia -y
-script:
-  - julia -e 'Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir())/Polynomial`); Pkg.resolve()'
-  - julia -e 'using Polynomial; @assert isdefined(:Polynomial); @assert typeof(Polynomial) === Module'
-  - julia test/tests.jl

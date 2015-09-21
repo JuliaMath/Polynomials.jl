@@ -2,7 +2,7 @@
 
 Basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate polynomials.
 
-[![Build Status](https://travis-ci.org/vtjnash/Polynomial.jl.png?branch=master)](https://travis-ci.org/vtjnash/Polynomial.jl)
+[![Build Status](https://travis-ci.org/Keno/Polynomials.jl.png?branch=master)](https://travis-ci.org/Keno/Polynomials.jl)
 
 #### Poly{T<:Number}(a::Vector)
 Construct a polynomial from its coefficients, lowest order first.
