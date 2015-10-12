@@ -14,7 +14,10 @@ pN = Poly([276,3,87,15,24,0])
 pR = Poly([3//4, -2//1, 1//1])
 p1000 = Poly(randn(1000))
 
-@test length(pNULL) == 0
+@test length(pNULL) == 1
+@test length(p1000-p1000) == 1
+@test length(p1000^0) == 1
+@test length(0*p1000) == 1
 @test length(p1000) == 1000
 sprint(show, p1000)
 sprint(show, pNULL)
@@ -33,7 +36,7 @@ sprint(show, pNULL)
 @test pNULL^3 == pNULL
 @test pNULL*pNULL == pNULL
 
-@test map(Polynomials.degree, [pNULL,p0,p1,p2,p3,p4,p5,pN,pR,p1000]) == [0,0,0,1,2,3,4,4,2,999]
+@test map(degree, [pNULL,p0,p1,p2,p3,p4,p5,pN,pR,p1000]) == [0,0,0,1,2,3,4,4,2,999]
 
 @test polyval(pN, -.125) == 276.9609375
 @test polyval(pNULL, 10) == 0
@@ -47,7 +50,7 @@ sprint(show, pNULL)
 @test polyder(p1) == polyder(p0) == polyder(pNULL) == pNULL
 
 @test poly([-1,-1]) == p3
-@test roots(p0)==roots(p1)==roots(pNULL)==[] 
+@test roots(p0)==roots(p1)==roots(pNULL)==[]
 @test roots(p2) == [-1]
 a_roots = copy(pN.a)
 @test all(abs(sort(roots(poly(a_roots))) - sort(a_roots)) .< 1e6)
