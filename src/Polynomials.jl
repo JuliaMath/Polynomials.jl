@@ -6,7 +6,7 @@ module Polynomials
 using Compat
 
 export Poly, polyval, polyint, polyder, poly, roots
-export Pade, padeval
+export Pade, padeval, degree
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
 import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
@@ -23,7 +23,14 @@ immutable Poly{T<:Number}
     a::Vector{T}
     var::Symbol
     function Poly(a::Vector{T}, var)
-        new(a, symbol(var))
+        # if a == [] we replace it with a = [0]
+        if length(a) == 0
+            return new(zeros(T,1), symbol(var))
+        else
+            # determine the last nonzero element and truncate a accordingly
+            a_last = max(1,findlast( p->(abs(p) > 2*eps(T)), a))
+            new(a[1:a_last], symbol(var))
+        end
     end
 end
 
@@ -36,6 +43,7 @@ promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
 
 length(p::Poly) = length(p.a)
+degree(p::Poly) = length(p)-1
 endof(p::Poly) = length(p) - 1
 
 getindex{T}(p::Poly{T}, i) = (i+1 > length(p.a) ? zero(T) : p.a[i+1])
@@ -183,53 +191,48 @@ function *{T,S}(p1::Poly{T}, p2::Poly{S})
         error("Polynomials must have same variable")
     end
     R = promote_type(T,S)
-    n = degree(p1)
-    m = degree(p2)
-    a = Poly(zeros(R,m+n+1), p1.var)
+    n = length(p1)-1
+    m = length(p2)-1
+    a = zeros(R,m+n+1)
+
     for i = 0:n
         for j = 0:m
-            a[i+j] += p1[i] * p2[j]
+            a[i+j+1] += p1[i] * p2[j]
         end
     end
-    a
-end
-
-function degree{T}(p::Poly{T})
-    for i = length(p):-1:0
-        if abs(p[i]) > 2*eps(T)
-            return i
-        end
-    end
-    return 0
+    Poly(a,p1.var)
 end
 
 function divrem{T, S}(num::Poly{T}, den::Poly{S})
     if num.var != den.var
         error("Polynomials must have same variable")
     end
-    m = degree(den)
+    m = length(den)-1
     if m == 0 && den[0] == 0
         throw(DivideError())
     end
     R = typeof(one(T)/one(S))
-    n = degree(num)
+    n = length(num)-1
     deg = n-m+1
     if deg <= 0
         return convert(Poly{R}, zero(num)), convert(Poly{R}, num)
     end
-    # We will still modify q,r, but already wrap it in a
-    # polynomial, so the indexing below is more natural
-    pQ = Poly(zeros(R, deg), num.var)
-    pR = Poly(zeros(R, n+1), num.var)
-    pR.a[:] = num.a[1:(n+1)]
+
+    aQ = zeros(R, deg)
+    # aR = deepcopy(num.a)
+    @show num.a
+    aR = R[ num.a[i] for i = 1:n+1 ]
     for i = n:-1:m
-        quot = pR[i] / den[m]
-        pQ[i-m] = quot
+        quot = aR[i+1] / den[m]
+        aQ[i-m+1] = quot
         for j = 0:m
             elem = den[j]*quot
-            pR[i-(m-j)] -= elem
+            aR[i-(m-j)+1] -= elem
         end
     end
+    pQ = Poly(aQ, num.var)
+    pR = Poly(aR, num.var)
+
     return pQ, pR
 end
 /(num::Poly, den::Poly) = divrem(num, den)[1]
@@ -239,12 +242,7 @@ function ==(p1::Poly, p2::Poly)
     if p1.var != p2.var
         return false
     else
-        for i = 1:max(length(p1),length(p2))
-            if p1[i] != p2[i]
-                return false
-            end
-        end
-        return true
+        return p1.a == p2.a
     end
 end
 
@@ -273,11 +271,10 @@ function polyint{T}(p::Poly{T}, k::Number=0)
     R = typeof(one(T)/1)
     a2 = Array(R, n+1)
     a2[1] = k
-    p2 = Poly(a2, p.var)
     for i = 1:n
-        p2[i] = p[i-1] / i
+        a2[i+1] = p[i-1] / i
     end
-    p2
+    return Poly(a2, p.var)
 end
 
 function polyder{T}(p::Poly{T}, order::Int=1)
@@ -289,11 +286,11 @@ function polyder{T}(p::Poly{T}, order::Int=1)
     elseif order == 0
         return p
     else
-        p2 = Poly(Array(T, n-order), p.var)
+        a2 = Array(T, n-order)
         for i = order:n-1
-            p2[i-order] = p[i] * prod((i-order+1):i)
+            a2[i-order+1] = p[i] * prod((i-order+1):i)
         end
-        return p2
+        return Poly(a2, p.var)
     end
 end
 

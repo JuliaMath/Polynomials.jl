@@ -53,6 +53,18 @@ Poly(0.5 - 0.5x^2)
 
 Note that operations involving polynomials with different variables will error.
 
+To get the degree of the polynomial use `degree` method
+```
+julia> degree(p)
+1
+
+julia> degree(p^2)
+2
+
+julia> degree(p-p)
+0
+```
+
 ```julia
 julia> p = Poly([1, 2, 3], :x)
 julia> q = Poly([1, 2, 3], :s)
