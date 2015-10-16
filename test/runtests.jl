@@ -46,6 +46,11 @@ sprint(show, pNULL)
 @test polyder(p3) == Poly([2,2])
 @test polyder(p1) == polyder(p0) == polyder(pNULL) == pNULL
 
+if VERSION >= v"0.4"
+    @test pN(-.125) == 276.9609375
+    @test pN([0.1, 0.2, 0.3]) == polyval(pN, [0.1, 0.2, 0.3])
+end 
+
 @test poly([-1,-1]) == p3
 @test roots(p0)==roots(p1)==roots(pNULL)==[] 
 @test roots(p2) == [-1]
