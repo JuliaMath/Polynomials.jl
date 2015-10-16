@@ -11,6 +11,9 @@ export Pade, padeval
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
 import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
 import Base: promote_rule
+if VERSION >= v"0.4"
+    import Base.call
+end
 
 eps{T}(::Type{T}) = zero(T)
 eps{F<:AbstractFloat}(x::Type{F}) = Base.eps(F)
@@ -260,6 +263,10 @@ function polyval{T,S}(p::Poly{T}, x::S)
 end
 
 polyval(p::Poly, v::AbstractVector) = map(x->polyval(p, x), v)
+
+if VERSION >= v"0.4"
+    call(p::Poly, x) = polyval(p, x)
+end
 
 function polyint{T}(p::Poly{T}, k::Number=0)
     n = length(p)
