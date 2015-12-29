@@ -235,7 +235,7 @@ function divrem{T, S}(num::Poly{T}, den::Poly{S})
 
     return pQ, pR
 end
-/(num::Poly, den::Poly) = divrem(num, den)[1]
+div(num::Poly, den::Poly) = divrem(num, den)[1]
 rem(num::Poly, den::Poly) = divrem(num, den)[2]
 
 function ==(p1::Poly, p2::Poly)
