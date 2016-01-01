@@ -8,7 +8,7 @@ using Compat
 export Poly, polyval, polyint, polyder, poly, roots
 export Pade, padeval, degree
 
-import Base: length, endof, getindex, setindex!, copy, zero, one, convert
+import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype
 import Base: promote_rule
 if VERSION >= v"0.4"
@@ -19,6 +19,43 @@ eps{T}(::Type{T}) = zero(T)
 eps{F<:AbstractFloat}(x::Type{F}) = Base.eps(F)
 eps{T}(x::Type{Complex{T}}) = eps(T)
 
+
+"""
+
+* `Poly{T<:Number}(a::Vector)`: Construct a polynomial from its coefficients, lowest order first. That is if `p=a_n x^n + ... + a_2 x^2 + a_1 x^1 + a_0`, we construct this through `Poly([a_0, a_1, ..., a_n])`.
+
+Example:
+```
+Poly([1,0,3,4])    # Poly(1 + 3x^2 + 4x^3)
+```
+
+An optional variable parameter can be added:
+
+```
+Poly([1,2,3], :s)       # Poly(1 + 2s + 3s^2)
+```
+
+The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.
+
+```
+p = Poly([1,2])        # Poly(1 + 2x)
+q = Poly([1, 0, -1])   # Poly(1 - x^2)
+2p                     # Poly(2 + 4x)
+2+p                    # Poly(3 + 2x)
+p - q                  # Poly(2x + x^2)
+p*q                    # Poly(1 + 2x - x^2 - 2x^3)
+q/2                    # Poly(0.5 - 0.5x^2)
+```
+
+Note that operations involving polynomials with different variables will error:
+
+```j
+p = Poly([1, 2, 3], :x)
+q = Poly([1, 2, 3], :s)
+p + q                  # ERROR: Polynomials must have same variable.
+```
+
+"""
 immutable Poly{T<:Number}
     a::Vector{T}
     var::Symbol
@@ -36,16 +73,48 @@ end
 
 @compat Poly{T<:Number}(a::Vector{T}, var::Union{AbstractString,Symbol,Char}=:x) = Poly{T}(a, var)
 
+include("show.jl")
+
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
 convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
 convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}) = map(el->convert(Poly{promote_type(T,S)},el),x)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
 
+"""
+
+`legnth(p::Poly)`: return length of coefficient vector
+
+"""
 length(p::Poly) = length(p.a)
-degree(p::Poly) = length(p)-1
+
+"""
+
+`degree(p::Poly)`: return degree of polynomial `p`
+
+"""
+degree(p::Poly) = length(p) - 1
 endof(p::Poly) = length(p) - 1
 
+"""
+
+`coeffs(p::Poly)`: return coefficient vector [a_0, a_1, ..., a_n]
+
+"""
+coeffs(p::Poly) = p.a
+
+"""
+
+* `norm(q::Poly, [p])`: return `p` norm of polynomial `q`
+
+"""
+norm(q::Poly, args...) = norm(coeffs(q), args...)
+
+"""
+
+* `getindex(p::Poly, i)`: If `p=a_n x^n + a_{n-1}x^{n-1} + ... + a_1 x^1 + a_0`, then `p[i]` returns `a_i`.
+
+"""
 getindex{T}(p::Poly{T}, i) = (i+1 > length(p.a) ? zero(T) : p.a[i+1])
 function setindex!(p::Poly, v, i)
     n = length(p.a)
@@ -64,93 +133,11 @@ zero{T}(::Type{Poly{T}}) = Poly(T[])
 one{T}(p::Poly{T}) = Poly([one(T)], p.var)
 one{T}(::Type{Poly{T}}) = Poly([one(T)])
 
-function show(io::IO, p::Poly)
-    print(io,"Poly(")
-    print(io,p)
-    print(io,")")
-end
-
-function printexponent(io,var,i)
-    if i == 0
-    elseif i == 1
-        print(io,var)
-    else
-        print(io,var,"^",i)
-    end
-end
-
-function printterm{T}(io::IO,p::Poly{T},j,first)
-    pj = p[j]
-    if pj == zero(T)
-        return false
-    end
-    neg = pj < 0
-    if first
-        neg && print(io, "-")    #Prepend - if first and negative
-    else
-        neg ? print(io, " - ") : print(io," + ")
-    end
-    pj = abs(pj)
-    if pj != one(T) || j == 0
-        show(io,pj)
-    end
-    printexponent(io,p.var,j)
-    true
-end
-
-function printterm{T<:Complex}(io::IO,p::Poly{T},j,first)
-    pj = p[j]
-    abs_repj = abs(real(pj))
-    abs_impj = abs(imag(pj))
-    if abs_repj < 2*eps(T) && abs_impj < 2*eps(T)
-        return false
-    end
-
-    # We show a negative sign either for any complex number with negative
-    # real part (and then negate the immaginary part) of for complex
-    # numbers that are pure imaginary with negative imaginary part
-
-    neg = ((abs_repj > 2*eps(T)) && real(pj) < 0) ||
-            ((abs_impj > 2*eps(T)) && imag(pj) < 0)
-
-    if first
-        neg && print(io, "-")    #Prepend - if first and negative
-    else
-        neg ? print(io," - ") : print(io," + ")
-    end
-
-    if abs_repj > 2*eps(T)    #Real part is not 0
-        if abs_impj > 2*eps(T)    #Imag part is not 0
-            print(io,'(',neg ? -pj : pj,')')
-        else
-            print(io, neg ? -real(pj) : real(pj))
-        end
-    else
-        if abs_impj > 2*eps(T)
-            print(io,'(', imag(pj),"im)")
-        end
-    end
-    printexponent(io,p.var,j)
-    true
-end
-
-function print{T}(io::IO, p::Poly{T})
-    first = true
-    printed_anything = false
-    n = length(p)-1
-    for i = 0:n
-        printed = printterm(io,p,i,first)
-        first &= !printed
-        printed_anything |= printed
-    end
-    printed_anything || print(io,zero(T))
-end
-
+## Overload arithmetic operators for polynomial operations between polynomials and scalars
 *{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 *{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 /(p::Poly, c::Number) = Poly(p.a / c, p.var)
 -(p::Poly) = Poly(-p.a, p.var)
-
 -(p::Poly, c::Number) = +(p, -c)
 +(c::Number, p::Poly) = +(p, c)
 function +(p::Poly, c::Number)
@@ -220,7 +207,7 @@ function divrem{T, S}(num::Poly{T}, den::Poly{S})
 
     aQ = zeros(R, deg)
     # aR = deepcopy(num.a)
-    @show num.a
+    # @show num.a
     aR = R[ num.a[i] for i = 1:n+1 ]
     for i = n:-1:m
         quot = aR[i+1] / den[m]
@@ -248,6 +235,22 @@ function ==(p1::Poly, p2::Poly)
     end
 end
 
+"""                  
+* `polyval(p::Poly, x::Number)`: Evaluate the polynomial `p` at `x` using Horner's method.
+
+Example:
+```
+polyval(Poly([1, 0, -1]), 0.1)  # 0.99
+```
+
+For `julia` version `0.4` or greater, the `call` method can be used:
+
+```
+p = Poly([1,2,3])
+p(4)   # 57 = 1 + 2*4 + 3*4^2
+```
+
+"""
 function polyval{T,S}(p::Poly{T}, x::S)
     R = promote_type(T,S)
     lenp = length(p)
@@ -268,6 +271,19 @@ if VERSION >= v"0.4"
     call(p::Poly, x) = polyval(p, x)
 end
 
+"""
+
+* `polyint(p::Poly, k::Number=0)`: Integrate the polynomial `p` term
+  by term, optionally adding constant term `k`. The order of the
+  resulting polynomial is one higher than the order of `p`.
+
+Examples:
+```
+polyint(Poly([1, 0, -1]))     # Poly(x - 0.3333333333333333x^3)
+polyint(Poly([1, 0, -1]), 2)  # Poly(2.0 + x - 0.3333333333333333x^3)
+```
+
+"""                  
 function polyint{T}(p::Poly{T}, k::Number=0)
     n = length(p)
     R = typeof(one(T)/1)
@@ -279,6 +295,17 @@ function polyint{T}(p::Poly{T}, k::Number=0)
     return Poly(a2, p.var)
 end
 
+"""
+
+* `polyder(p::Poly)`: Differentiate the polynomial `p` term by
+  term. The order of the resulting polynomial is one lower than the
+  order of `p`.
+
+Example:
+```
+polyder(Poly([1, 3, -1]))   # Poly(3 - 2x)
+```
+"""
 function polyder{T}(p::Poly{T}, order::Int=1)
     n = length(p)
     if order < 0
@@ -301,7 +328,19 @@ polyder{T}(a::Array{Poly{T},1}, order::Int = 1) = [ polyder(p,order) for p in a 
 polyint{n,T}(a::Array{Poly{T},n}, k::Number  = 0) = map(p->polyint(p,k),a)
 polyder{n,T}(a::Array{Poly{T},n}, order::Int = 1) = map(p->polyder(p,order),a)
 
-# create a Poly object from its roots
+                  # create a Poly object from its roots
+"""
+
+* `poly(r::AbstractVector)`: Construct a polynomial from its
+  roots. This is in contrast to the `Poly` constructor, which
+  constructs a polynomial from its coefficients.
+
+Example:
+```
+## Represents (x-1)*(x-2)*(x-3)
+poly([1,2,3])     # Poly(-6 + 11x - 6x^2 + x^3)
+```
+"""
 function poly{T}(r::AbstractVector{T}, var=:x)
     n = length(r)
     c = zeros(T, n+1)
@@ -317,10 +356,24 @@ poly(A::Matrix, var=:x) = poly(eig(A)[1], var)
 poly(A::Matrix, var::AbstractString) = poly(eig(A)[1], symbol(var))
 poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
 
+                  
 roots{T}(p::Poly{Rational{T}}) = roots(convert(Poly{promote_type(T, Float64)}, p))
 
 
-# compute the roots of a polynomial
+                  # compute the roots of a polynomial
+"""
+
+* `roots(p::Poly)`: Return the roots (zeros) of `p`, with
+  multiplicity. The number of roots returned is equal to the order of
+  `p`. The returned roots may be real or complex.
+
+Examples:
+```
+roots(Poly([1, 0, -1]))    # [-1.0, 1.0]
+roots(Poly([1, 0, 1]))     # [0.0+1.0im, 0.0-1.0im]
+roots(Poly([0, 0, 1]))     # [0.0, 0.0]
+```
+"""
 function roots{T}(p::Poly{T})
     R = promote_type(T, Float64)
     length(p) == 0 && return zeros(R, 0)
@@ -355,9 +408,18 @@ function roots{T}(p::Poly{T})
     return r
 end
 
+"""
+
+* `gcd(a::Poly, b::Poly)`: Finds the Greatest Common Denominator of
+    two polynomials recursively using [Euclid's
+    algorithm](http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm).
+
+Example:
+```
+gcd(poly([1,1,2]), poly([1,2,3])) # returns (x-1)*(x-2)
+```
+"""
 function gcd{T, S}(a::Poly{T}, b::Poly{S})
-    #Finds the Greatest Common Denominator of two polynomials recursively using
-    #Euclid's algorithm: http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm
     if all(abs(b.a).<=2*eps(S))
         return a
     else
@@ -366,6 +428,7 @@ function gcd{T, S}(a::Poly{T}, b::Poly{S})
     end
 end
 
+### Pull in others
 include("pade.jl")
 
 end # module Poly
