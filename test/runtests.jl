@@ -74,12 +74,12 @@ p3 = Poly([7, -3, 2, 6])
 p4 = p2 * p3
 @test divrem(p4, p2) == (p3, zero(p3))
 @test p3%p2 == p3
-@test all((abs((p2/p3 - Poly([1/9,2/3])).a)) .< eps())
+@test all((abs((p2 ÷ p3 - Poly([1/9,2/3])).a)) .< eps())
 @test divrem(p0,p1) == (p0,p0)
 @test divrem(p1,p1) == (p1,p0)
 @test divrem(p2,p2) == (p1,p0)
 @test divrem(pR, pR) == (one(pR), zero(pR))
-@test_throws DivideError p1/p0
+@test_throws DivideError p1 ÷ p0
 @test_throws DivideError divrem(p0,p0)
 
 #Tests for multivariable support
@@ -93,7 +93,7 @@ pS3 = Poly([1, 2, 3, 4, 5], :s)
 @test_throws ErrorException pS1 + pX
 @test_throws ErrorException pS1 - pX
 @test_throws ErrorException pS1 * pX
-@test_throws ErrorException pS1 / pX
+@test_throws ErrorException pS1 ÷ pX
 @test_throws ErrorException pS1 % pX
 
 #Testing copying.

@@ -9,7 +9,7 @@ export Poly, polyval, polyint, polyder, poly, roots
 export Pade, padeval, degree
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert
-import Base: show, print, *, /, //, -, +, ==, divrem, rem, eltype
+import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype
 import Base: promote_rule
 if VERSION >= v"0.4"
     import Base.call
@@ -235,7 +235,7 @@ function divrem{T, S}(num::Poly{T}, den::Poly{S})
 
     return pQ, pR
 end
-/(num::Poly, den::Poly) = divrem(num, den)[1]
+div(num::Poly, den::Poly) = divrem(num, den)[1]
 rem(num::Poly, den::Poly) = divrem(num, den)[2]
 
 function ==(p1::Poly, p2::Poly)

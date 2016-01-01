@@ -25,8 +25,8 @@ function Pade{T}(c::Poly{T},m::Int,n::Int)
     end
     if vnew[0] == 0
         d = gcd(rnew,vnew)
-        rnew /= d
-        vnew /= d
+        rnew = rnew ÷ d
+        vnew = vnew ÷ d
     end
     Pade(rnew/vnew[0],vnew/vnew[0])
 end
