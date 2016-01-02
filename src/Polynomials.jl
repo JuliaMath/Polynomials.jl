@@ -99,8 +99,8 @@ function poly{T}(r::AbstractVector{T}, var=:x)
     end
     return Poly(reverse(c), var)
 end
-poly(A::Matrix, var=:x) = poly(eig(A)[1], var)
-poly(A::Matrix, var::AbstractString) = poly(eig(A)[1], symbol(var))
+poly(A::Matrix, var=:x) = poly(eigvals(A), var)
+poly(A::Matrix, var::AbstractString) = poly(eigvals(A), symbol(var))
 poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
 
 
