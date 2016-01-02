@@ -5,8 +5,10 @@ module Polynomials
 
 using Compat
 
-export Poly, polyval, polyint, polyder, poly, roots
-export Pade, padeval, degree
+export Poly, poly
+export degree, coeffs
+export polyval, polyint, polyder, roots, polyfit, polyinterpolate
+export Pade, padeval
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype
@@ -73,7 +75,36 @@ end
 
 @compat Poly{T<:Number}(a::Vector{T}, var::Union{AbstractString,Symbol,Char}=:x) = Poly{T}(a, var)
 
-include("show.jl")
+# create a Poly object from its roots
+"""
+
+* `poly(r::AbstractVector)`: Construct a polynomial from its
+  roots. This is in contrast to the `Poly` constructor, which
+  constructs a polynomial from its coefficients.
+
+Example:
+```
+## Represents (x-1)*(x-2)*(x-3)
+poly([1,2,3])     # Poly(-6 + 11x - 6x^2 + x^3)
+```
+"""
+function poly{T}(r::AbstractVector{T}, var=:x)
+    n = length(r)
+    c = zeros(T, n+1)
+    c[1] = 1
+    for j = 1:n
+        for i = j:-1:1
+            c[i+1] = c[i+1]-r[j]*c[i]
+        end
+    end
+    return Poly(reverse(c), var)
+end
+poly(A::Matrix, var=:x) = poly(eig(A)[1], var)
+poly(A::Matrix, var::AbstractString) = poly(eig(A)[1], symbol(var))
+poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
+
+
+include("show.jl") # display polynomials.
 
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
 convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
@@ -328,39 +359,14 @@ polyder{T}(a::Array{Poly{T},1}, order::Int = 1) = [ polyder(p,order) for p in a 
 polyint{n,T}(a::Array{Poly{T},n}, k::Number  = 0) = map(p->polyint(p,k),a)
 polyder{n,T}(a::Array{Poly{T},n}, order::Int = 1) = map(p->polyder(p,order),a)
 
-                  # create a Poly object from its roots
-"""
-
-* `poly(r::AbstractVector)`: Construct a polynomial from its
-  roots. This is in contrast to the `Poly` constructor, which
-  constructs a polynomial from its coefficients.
-
-Example:
-```
-## Represents (x-1)*(x-2)*(x-3)
-poly([1,2,3])     # Poly(-6 + 11x - 6x^2 + x^3)
-```
-"""
-function poly{T}(r::AbstractVector{T}, var=:x)
-    n = length(r)
-    c = zeros(T, n+1)
-    c[1] = 1
-    for j = 1:n
-        for i = j:-1:1
-            c[i+1] = c[i+1]-r[j]*c[i]
-        end
-    end
-    return Poly(reverse(c), var)
-end
-poly(A::Matrix, var=:x) = poly(eig(A)[1], var)
-poly(A::Matrix, var::AbstractString) = poly(eig(A)[1], symbol(var))
-poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
-
-                  
-roots{T}(p::Poly{Rational{T}}) = roots(convert(Poly{promote_type(T, Float64)}, p))
 
 
-                  # compute the roots of a polynomial
+##################################################
+##
+## Some functions on polynomials...
+
+
+# compute the roots of a polynomial
 """
 
 * `roots(p::Poly)`: Return the roots (zeros) of `p`, with
@@ -372,6 +378,7 @@ Examples:
 roots(Poly([1, 0, -1]))    # [-1.0, 1.0]
 roots(Poly([1, 0, 1]))     # [0.0+1.0im, 0.0-1.0im]
 roots(Poly([0, 0, 1]))     # [0.0, 0.0]
+roots(poly([1,2,3,4]))     # [1.0,2.0,3.0,4.0] 
 ```
 """
 function roots{T}(p::Poly{T})
@@ -407,7 +414,9 @@ function roots{T}(p::Poly{T})
     r[1:n] = D
     return r
 end
+roots{T}(p::Poly{Rational{T}}) = roots(convert(Poly{promote_type(T, Float64)}, p))
 
+## compute gcd of two polynomials
 """
 
 * `gcd(a::Poly, b::Poly)`: Finds the Greatest Common Denominator of
@@ -428,6 +437,72 @@ function gcd{T, S}(a::Poly{T}, b::Poly{S})
     end
 end
 
+
+## Fit degree n polynomial to points
+"""
+
+`polyfit(x::AbstractVector, y::AbstractVector)`: Fit a polynomial of degree `n` through the points specified by `x` and `y` where `n <= length(x) - 1` using least squares fit.
+
+Example:
+
+```
+xs = linspace(0, pi, 5)
+ys = map(sin, xs)
+polyfit(xs, ys, 2)
+```
+
+Original by [ggggggggg](https://github.com/Keno/Polynomials.jl/issues/19)
+"""
+function polyfit(x, y, n)
+    length(x) == length(y) || throw(DomainError)
+    n <= length(x) - 1 || throw(DomainError)
+    
+    A = [ float(x[i])^p for i = 1:length(x), p = 0:n ]
+    Poly(A \ y)
+end
+
+## Find interpolating polynomial through the points
+"""
+
+* `polyinterpolate(x, y)`: Return interpolating polynomial of degree `n-1` or less.
+
+Example
+
+```
+xs = linspace(0, pi, 3)
+ys = map(sin, xs)
+polyinterpolate(xs, ys)
+```
+
+This uses [Algorithm 1](http://www.ams.org/journals/mcom/1970-24-109/S0025-5718-1970-0258240-X/S0025-5718-1970-0258240-X.pdf) of Krogh, *Efficient Algorithms for Polynomial Interpolation and Numerical Differentiation*.
+"""
+function polyinterpolate(xs, ys; xvar=:x)
+    length(unique(xs)) == length(xs) || throw(DomainError)
+    n = length(xs) - 1
+    etype = eltype(float(ys))
+    x = Poly([0, one(etype,)])
+
+    omega = 1
+    π = 1
+    p = Poly(ys[1:1], xvar)
+    
+    Vii = zeros(etype, n + 1)
+    Vii[1] = ys[1]
+    
+    for k = 1:n
+        V_ik = ys[k+1]
+        for i=0:(k-1)
+            V_ik = (Vii[i+1] - V_ik) / (xs[i+1] - xs[k+1])
+        end
+        Vii[k+1] = V_ik
+        omega = x - xs[k-1 + 1]
+        π = omega * π
+        p = p + π * Vii[k+1]
+    end
+
+    p
+end
+   
 ### Pull in others
 include("pade.jl")
 
