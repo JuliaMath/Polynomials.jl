@@ -133,11 +133,8 @@ println("The approximate sum of the convergent series is: ",exp(1)*(-γ-sum([(-1
 ## polyfit
 xs = linspace(0, pi, 10)
 ys = sin(xs)
+p = polyfit(xs, ys)
+p = polyfit(xs, ys, :t)
 p = polyfit(xs, ys, 2)
 @test maximum(abs(map(x->polyval(p, x), xs) - ys)) <= 0.03
 
-## polyinterpolate
-xs = linspace(0, pi, 3)
-ys = sin(xs)
-p = polyinterpolate(xs, ys)
-@test maximum(abs(map(x->polyval(p, x), xs) - ys)) <= 10*eps()

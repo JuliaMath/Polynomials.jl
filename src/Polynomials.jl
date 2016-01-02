@@ -7,7 +7,7 @@ using Compat
 
 export Poly, poly
 export degree, coeffs
-export polyval, polyint, polyder, roots, polyfit, polyinterpolate
+export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
@@ -441,7 +441,11 @@ end
 ## Fit degree n polynomial to points
 """
 
-`polyfit(x::AbstractVector, y::AbstractVector)`: Fit a polynomial of degree `n` through the points specified by `x` and `y` where `n <= length(x) - 1` using least squares fit.
+`polyfit(x, y, n=length(x)-1, sym=:x )`: Fit a polynomial of degree
+`n` through the points specified by `x` and `y` where `n <= length(x)
+- 1` using least squares fit. When `n=length(x)-1` (the default), the
+interpolating polynomial is returned. The optional fourth argument can
+be used to pass the symbol for the returned polynomial.
 
 Example:
 
@@ -453,55 +457,14 @@ polyfit(xs, ys, 2)
 
 Original by [ggggggggg](https://github.com/Keno/Polynomials.jl/issues/19)
 """
-function polyfit(x, y, n)
+function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     length(x) == length(y) || throw(DomainError)
-    n <= length(x) - 1 || throw(DomainError)
+    1 <= n <= length(x) - 1 || throw(DomainError)
     
     A = [ float(x[i])^p for i = 1:length(x), p = 0:n ]
-    Poly(A \ y)
+    Poly(A \ y, sym)
 end
-
-## Find interpolating polynomial through the points
-"""
-
-* `polyinterpolate(x, y)`: Return interpolating polynomial of degree `n-1` or less.
-
-Example
-
-```
-xs = linspace(0, pi, 3)
-ys = map(sin, xs)
-polyinterpolate(xs, ys)
-```
-
-This uses [Algorithm 1](http://www.ams.org/journals/mcom/1970-24-109/S0025-5718-1970-0258240-X/S0025-5718-1970-0258240-X.pdf) of Krogh, *Efficient Algorithms for Polynomial Interpolation and Numerical Differentiation*.
-"""
-function polyinterpolate(xs, ys; xvar=:x)
-    length(unique(xs)) == length(xs) || throw(DomainError)
-    n = length(xs) - 1
-    etype = eltype(float(ys))
-    x = Poly([0, one(etype,)])
-
-    omega = 1
-    π = 1
-    p = Poly(ys[1:1], xvar)
-    
-    Vii = zeros(etype, n + 1)
-    Vii[1] = ys[1]
-    
-    for k = 1:n
-        V_ik = ys[k+1]
-        for i=0:(k-1)
-            V_ik = (Vii[i+1] - V_ik) / (xs[i+1] - xs[k+1])
-        end
-        Vii[k+1] = V_ik
-        omega = x - xs[k-1 + 1]
-        π = omega * π
-        p = p + π * Vii[k+1]
-    end
-
-    p
-end
+polyfit(x,y,sym::Symbol) = polyfit(x,y,length(x)-1, sym)
    
 ### Pull in others
 include("pade.jl")
