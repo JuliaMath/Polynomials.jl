@@ -12,6 +12,7 @@ p4 = Poly([1,3,3,1,0,0])
 p5 = Poly([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
 pN = Poly([276,3,87,15,24,0])
 pR = Poly([3//4, -2//1, 1//1])
+X = Poly([0.0, 1.0])
 p1000 = Poly(randn(1000))
 
 @test length(pNULL) == 1
@@ -41,6 +42,8 @@ sprint(show, pNULL)
 @test polyval(pN, -.125) == 276.9609375
 @test polyval(pNULL, 10) == 0
 @test polyval(p0, -10) == 0
+@test isa(polyval(p0, X), Poly)
+@test isa(polyval(p1, X), Poly)
 @test polyval(poly([1//2, 3//2]), 1//2) == 0//1
 @test polyder(polyint(pN)) == pN
 @test polyder(pR) == Poly([-2//1,2//1])

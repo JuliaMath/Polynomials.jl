@@ -286,9 +286,9 @@ function polyval{T,S}(p::Poly{T}, x::S)
     R = promote_type(T,S)
     lenp = length(p)
     if lenp == 0
-        return zero(R)
+        return zero(R) * x
     else
-        y = convert(R, p[end])
+        y = convert(R, p[end]) + 0*x
         for i = (endof(p)-1):-1:0
             y = p[i] + x*y
         end
