@@ -353,6 +353,7 @@ function polyder{T}(p::Poly{T}, order::Int=1)
         return Poly(a2, p.var)
     end
 end
+Base.ctranspose{T}(p::Poly{T}) = polyder(p)
 
 polyint{T}(a::Array{Poly{T},1}, k::Number  = 0) = [ polyint(p,k) for p in a ]
 polyder{T}(a::Array{Poly{T},1}, order::Int = 1) = [ polyder(p,order) for p in a ]
