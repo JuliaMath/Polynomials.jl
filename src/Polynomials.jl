@@ -9,10 +9,11 @@ export Poly, poly
 export degree, coeffs
 export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
+export truncate!
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype
-import Base: promote_rule
+import Base: promote_rule, truncate
 if VERSION >= v"0.4"
     import Base.call
 end
@@ -67,7 +68,7 @@ immutable Poly{T<:Number}
             return new(zeros(T,1), symbol(var))
         else
             # determine the last nonzero element and truncate a accordingly
-            a_last = max(1,findlast( p->(abs(p) > 2*eps(T)), a))
+            a_last = max(1,findlast(a))
             new(a[1:a_last], symbol(var))
         end
     end
@@ -133,6 +134,18 @@ endof(p::Poly) = length(p) - 1
 
 """
 coeffs(p::Poly) = p.a
+
+"""
+
+`truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))`: returns a polynomial with coefficients a_i truncated to zero if |a_i| <= reltol*maxabs(a)+abstol
+
+"""
+function truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))
+    a = coeffs(p)
+    amax = maxabs(a)
+    anew = map(ai -> abs(ai) <= amax*reltol+abstol ? zero(T) : ai, a)
+    return Poly(anew)
+end
 
 """
 
@@ -253,7 +266,7 @@ function divrem{T, S}(num::Poly{T}, den::Poly{S})
 
     return pQ, pR
 end
-                  
+
 @deprecate /(num::Poly, den::Poly)                div(num::Poly, den::Poly)
 div(num::Poly, den::Poly) = divrem(num, den)[1]
 rem(num::Poly, den::Poly) = divrem(num, den)[2]
@@ -266,7 +279,7 @@ function ==(p1::Poly, p2::Poly)
     end
 end
 
-"""                  
+"""
 * `polyval(p::Poly, x::Number)`: Evaluate the polynomial `p` at `x` using Horner's method.
 
 Example:
@@ -314,7 +327,7 @@ polyint(Poly([1, 0, -1]))     # Poly(x - 0.3333333333333333x^3)
 polyint(Poly([1, 0, -1]), 2)  # Poly(2.0 + x - 0.3333333333333333x^3)
 ```
 
-"""                  
+"""
 function polyint{T}(p::Poly{T}, k::Number=0)
     n = length(p)
     R = typeof(one(T)/1)
@@ -379,7 +392,7 @@ Examples:
 roots(Poly([1, 0, -1]))    # [-1.0, 1.0]
 roots(Poly([1, 0, 1]))     # [0.0+1.0im, 0.0-1.0im]
 roots(Poly([0, 0, 1]))     # [0.0, 0.0]
-roots(poly([1,2,3,4]))     # [1.0,2.0,3.0,4.0] 
+roots(poly([1,2,3,4]))     # [1.0,2.0,3.0,4.0]
 ```
 """
 function roots{T}(p::Poly{T})
@@ -461,12 +474,12 @@ Original by [ggggggggg](https://github.com/Keno/Polynomials.jl/issues/19)
 function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     length(x) == length(y) || throw(DomainError)
     1 <= n <= length(x) - 1 || throw(DomainError)
-    
+
     A = [ float(x[i])^p for i = 1:length(x), p = 0:n ]
     Poly(A \ y, sym)
 end
 polyfit(x,y,sym::Symbol) = polyfit(x,y,length(x)-1, sym)
-   
+
 ### Pull in others
 include("pade.jl")
 

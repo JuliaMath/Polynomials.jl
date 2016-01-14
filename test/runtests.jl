@@ -55,7 +55,7 @@ sprint(show, pNULL)
 if VERSION >= v"0.4"
     @test pN(-.125) == 276.9609375
     @test pN([0.1, 0.2, 0.3]) == polyval(pN, [0.1, 0.2, 0.3])
-end 
+end
 
 @test poly([-1,-1]) == p3
 @test roots(p0)==roots(p1)==roots(pNULL)==[]
@@ -141,3 +141,15 @@ p = polyfit(xs, ys, :t)
 p = polyfit(xs, ys, 2)
 @test maximum(abs(map(x->polyval(p, x), xs) - ys)) <= 0.03
 
+
+## truncation
+p1 = Poly([1,1]/10)
+p2 = Poly([1,2]/10)
+p3 = Poly([1,3]/10)
+psum = p1 + p2 - p3
+@test degree(psum) == 1         # will have wrong degree
+@test degree(truncate(psum)) == 0 # the degree should be correct after truncation
+
+@test truncate(Poly([2,1]),reltol=1/2,abstol=0) == Poly([2])
+@test truncate(Poly([2,1]),reltol=1,abstol=0)   == Poly([0])
+@test truncate(Poly([2,1]),reltol=0,abstol=1)   == Poly([2])
