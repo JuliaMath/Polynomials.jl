@@ -57,23 +57,32 @@ q = Poly([1, 2, 3], :s)
 p + q                  # ERROR: Polynomials must have same variable.
 ```
 
+The full constructor, `Poly(cfs, var, atol, rtol)`, allows the passing of tolerances. Use `atol` for
+an absolute tolerance and `rtol` for a relative tolerance, which grows
+as the polynomial is acted on. These are used to trim leading terms
+that are near 0. The defaults are `atol=2*eps(T)`, where `eps` is `0`
+for integer or rational types, and `rtol=zero(T)`. Setting `atol` to
+`0`, will prevent any trimming.
+
 """
 immutable Poly{T<:Number}
     a::Vector{T}
     var::Symbol
-    function Poly(a::Vector{T}, var)
+    atol::T
+    rtol::T
+    function Poly(a::Vector{T}, var, atol, rtol)
         # if a == [] we replace it with a = [0]
         if length(a) == 0
-            return new(zeros(T,1), symbol(var))
+            return new(zeros(T,1), symbol(var), atol, rtol)
         else
             # determine the last nonzero element and truncate a accordingly
-            a_last = max(1,findlast( p->(abs(p) > 2*eps(T)), a))
-            new(a[1:a_last], symbol(var))
+            a_last = max(1,findlast( p->(abs(p) > atol + max(1,abs(p))*rtol), a))
+            new(a[1:a_last], symbol(var), atol, rtol)
         end
     end
 end
 
-@compat Poly{T<:Number}(a::Vector{T}, var::Union{AbstractString,Symbol,Char}=:x) = Poly{T}(a, var)
+@compat Poly{T<:Number}(a::Vector{T}, var::Union{AbstractString,Symbol,Char}=:x, atol=2*eps(T), rtol=zero(T)) = Poly{T}(a, var, atol, rtol)
 
 # create a Poly object from its roots
 """
@@ -88,7 +97,7 @@ Example:
 poly([1,2,3])     # Poly(-6 + 11x - 6x^2 + x^3)
 ```
 """
-function poly{T}(r::AbstractVector{T}, var=:x)
+function poly{T}(r::AbstractVector{T}, var=:x, atol=2*eps(T), rtol=zero(T))
     n = length(r)
     c = zeros(T, n+1)
     c[1] = 1
@@ -97,7 +106,7 @@ function poly{T}(r::AbstractVector{T}, var=:x)
             c[i+1] = c[i+1]-r[j]*c[i]
         end
     end
-    return Poly(reverse(c), var)
+    return Poly(reverse(c), var, atol, n*rtol)
 end
 poly(A::Matrix, var=:x) = poly(eigvals(A), var)
 poly(A::Matrix, var::AbstractString) = poly(eigvals(A), symbol(var))
@@ -140,8 +149,10 @@ coeffs(p::Poly) = p.a
 
 """
 norm(q::Poly, args...) = norm(coeffs(q), args...)
+Base.maxabs(p::Poly) = maxabs(coeffs(p))
 
 """
+
 
 * `getindex(p::Poly, i)`: If `p=a_n x^n + a_{n-1}x^{n-1} + ... + a_1 x^1 + a_0`, then `p[i]` returns `a_i`.
 
@@ -157,35 +168,39 @@ function setindex!(p::Poly, v, i)
     v
 end
 
-copy(p::Poly) = Poly(copy(p.a), p.var)
+copy(p::Poly) = Poly(copy(p.a), p.var, p.atol, p.rtol)
 
-zero{T}(p::Poly{T}) = Poly([zero(T)], p.var)
+zero{T}(p::Poly{T}) = Poly([zero(T)], p.var, p.atol, p.rtol)
 zero{T}(::Type{Poly{T}}) = Poly(T[])
-one{T}(p::Poly{T}) = Poly([one(T)], p.var)
+one{T}(p::Poly{T}) = Poly([one(T)], p.var, p.atol, p.rtol)
 one{T}(::Type{Poly{T}}) = Poly([one(T)])
 
 ## Overload arithmetic operators for polynomial operations between polynomials and scalars
-*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
-*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
-/(p::Poly, c::Number) = Poly(p.a / c, p.var)
--(p::Poly) = Poly(-p.a, p.var)
--(p::Poly, c::Number) = +(p, -c)
-+(c::Number, p::Poly) = +(p, c)
+*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var, p.atol, max(1, abs(c)) * p.rtol)
+*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var, p.atol, max(1, abs(c)) * p.rtol)
+/(p::Poly, c::Number) = Poly(p.a / c, p.var, p.atol, max(1, 1/abs(c)) * p.rtol)
+-(p::Poly) = Poly(-p.a, p.var, p.atol, p.rtol)
+-(p::Poly, c::Number) = +(p, -c, p.atol, max(1, abs(c))*p.rtol)
++(c::Number, p::Poly) = +(p, c,  p.atol, max(1, abs(c))*p.rtol)
 function +(p::Poly, c::Number)
     if length(p) < 1
-        return Poly([c,], p.var)
+        return Poly([c,], p.var, p.atol, p.atol)
     else
-        p2 = copy(p)
-        p2.a[1] += c;
+        cfs = copy(coeffs(p))
+        cfs[1] += c;
+        rtol = max(1, abs(c)) * p.rtol
+        p2 = Poly(cfs, p.var, p.atol, rtol)
         return p2;
     end
 end
 function -{T}(c::Number, p::Poly{T})
     if length(p) < 1
-        return Poly(T[c,], p.var)
+        return Poly(T[c,], p.var, p.atol, p.rtol)
     else
-        p2 = -p;
-        p2.a[1] += c;
+        cfs = copy(coeffs(-p))
+        cfs[1] += c;
+        rtol = max(1, abs(c)) * p.rtol
+        p2 = Poly(cfs, p.var, p.atol, rtol)
         return p2;
     end
 end
@@ -194,13 +209,20 @@ function +{T,S}(p1::Poly{T}, p2::Poly{S})
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
-    Poly([p1[i] + p2[i] for i = 0:max(length(p1),length(p2))], p1.var)
+    as = [p1[i] + p2[i] for i = 0:max(length(p1),length(p2))]
+    atol = max(p1.atol, p2.atol)
+    rtol =  max(1, (maxabs(p1)+maxabs(p2))) * max(p1.rtol, p2.rtol)
+    Poly(as, p1.var, atol, rtol)
+
 end
 function -{T,S}(p1::Poly{T}, p2::Poly{S})
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
-    Poly([p1[i] - p2[i] for i = 0:max(length(p1),length(p2))], p1.var)
+    as = [p1[i] - p2[i] for i = 0:max(length(p1),length(p2))]
+    atol = max(p1.atol, p2.atol)
+    rtol =  max(1, maxabs(p1)+maxabs(p2)) * max(p1.rtol, p2.rtol)
+    Poly(as, p1.var, atol, rtol)
 end
 
 
@@ -218,7 +240,9 @@ function *{T,S}(p1::Poly{T}, p2::Poly{S})
             a[i+j+1] += p1[i] * p2[j]
         end
     end
-    Poly(a,p1.var)
+    atol = max(p1.atol, p2.atol)
+    rtol = max(1, maxabs(p1)*maxabs(p2)) * max(p1.rtol, p2.rtol)
+    Poly(a, p1.var,  atol, rtol)
 end
 
 function divrem{T, S}(num::Poly{T}, den::Poly{S})
@@ -248,8 +272,8 @@ function divrem{T, S}(num::Poly{T}, den::Poly{S})
             aR[i-(m-j)+1] -= elem
         end
     end
-    pQ = Poly(aQ, num.var)
-    pR = Poly(aR, num.var)
+    pQ = Poly(aQ, num.var, max(num.atol, den.rtol), max(num.rtol, den.rtol))
+    pR = Poly(aR, num.var,  max(num.atol, den.rtol), max(num.rtol, den.rtol))
 
     return pQ, pR
 end
@@ -323,7 +347,7 @@ function polyint{T}(p::Poly{T}, k::Number=0)
     for i = 1:n
         a2[i+1] = p[i-1] / i
     end
-    return Poly(a2, p.var)
+    return Poly(a2, p.var, p.atol, min(1,degree(p)) * p.rtol)
 end
 
 """
@@ -350,7 +374,7 @@ function polyder{T}(p::Poly{T}, order::Int=1)
         for i = order:n-1
             a2[i-order+1] = p[i] * prod((i-order+1):i)
         end
-        return Poly(a2, p.var)
+        return Poly(a2, p.var, p.atol, min(1, degree(p))*p.rtol)
     end
 end
 Base.ctranspose{T}(p::Poly{T}) = polyder(p)
