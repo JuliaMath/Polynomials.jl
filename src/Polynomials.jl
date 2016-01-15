@@ -57,6 +57,13 @@ q = Poly([1, 2, 3], :s)
 p + q                  # ERROR: Polynomials must have same variable.
 ```
 
+The full constructor, `Poly(cfs, var, atol, rtol)`, allows the passing of tolerances. Use `atol` for
+an absolute tolerance and `rtol` for a relative tolerance, which grows
+as the polynomial is acted on. These are used to trim leading terms
+that are near 0. The defaults are `atol=2*eps(T)`, where `eps` is `0`
+for integer or rational types, and `rtol=zero(T)`. Setting `atol` to
+`0`, will prevent any trimming.
+
 """
 immutable Poly{T<:Number}
     a::Vector{T}
@@ -179,7 +186,7 @@ function +(p::Poly, c::Number)
     if length(p) < 1
         return Poly([c,], p.var, p.atol, p.atol)
     else
-        cfs = coeffs(p)
+        cfs = copy(coeffs(p))
         cfs[1] += c;
         rtol = max(1, abs(c)) * p.rtol
         p2 = Poly(cfs, p.var, p.atol, rtol)
@@ -190,7 +197,7 @@ function -{T}(c::Number, p::Poly{T})
     if length(p) < 1
         return Poly(T[c,], p.var, p.atol, p.rtol)
     else
-        cfs = coeffs(-p)
+        cfs = copy(coeffs(-p))
         cfs[1] += c;
         rtol = max(1, abs(c)) * p.rtol
         p2 = Poly(cfs, p.var, p.atol, rtol)
