@@ -6,14 +6,14 @@ module Polynomials
 using Compat
 
 export Poly, poly
-export degree, coeffs
+export degree, coeffs, variable
 export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 export truncate!
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype
-import Base: promote_rule, truncate
+import Base: promote_rule, truncate, chop
 if VERSION >= v"0.4"
     import Base.call
 end
@@ -119,6 +119,7 @@ eltype{T}(::Poly{T}) = T
 
 """
 length(p::Poly) = length(p.a)
+endof(p::Poly) = length(p) - 1
 
 """
 
@@ -126,7 +127,6 @@ length(p::Poly) = length(p.a)
 
 """
 degree(p::Poly) = length(p) - 1
-endof(p::Poly) = length(p) - 1
 
 """
 
@@ -137,6 +137,19 @@ coeffs(p::Poly) = p.a
 
 """
 
+Return the indeterminate of a polynomial, `x`.
+
+* `variable(p::Poly)`: return variable of `p` as a `Poly` object.
+* `variable(T<:Number, [:x])`: return poly one(T)*x
+* `variable([var::Symbol])`: return polynomial 1x over `Float64`.
+
+"""
+variable{T}(p::Poly{T}) = poly(zeros(T,1), p.var)
+variable{T<:Number}(::Type{T}, var=:x) = poly(zeros(T,1), var)
+variable(var::Symbol=:x) = poly([0.0], var)
+
+"""
+
 `truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))`: returns a polynomial with coefficients a_i truncated to zero if |a_i| <= reltol*maxabs(a)+abstol
 
 """
@@ -144,7 +157,26 @@ function truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))
     a = coeffs(p)
     amax = maxabs(a)
     anew = map(ai -> abs(ai) <= amax*reltol+abstol ? zero(T) : ai, a)
-    return Poly(anew)
+    return Poly(anew, p.var)
+end
+
+"""
+
+`chop(p::Poly{T}; kwargs...)` chop off leading values which are
+approximately zero. The tolerances are passed to `isapprox`.
+
+"""
+function chop{T}(p::Poly{T}; reltol=zero(T), abstol=2 * eps(T))
+    c = copy(p.a)
+    for k=length(c):-1:1
+        if !isapprox(c[k], zero(T); rtol=reltol, atol=abstol)
+            resize!(c, k)
+            return Poly(c, p.var)
+        end
+    end
+
+    resize!(c,0)
+    Poly(c, p.var)
 end
 
 """
