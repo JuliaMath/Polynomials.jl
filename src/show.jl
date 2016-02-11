@@ -19,7 +19,7 @@ function printterm{T}(io::IO,p::Poly{T},j,first)
     if pj == zero(T)
         return false
     end
-    neg = pj < 0
+    neg = pj < zero(T)
     if first
         neg && print(io, "-")    #Prepend - if first and negative
     else
