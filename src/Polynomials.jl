@@ -192,6 +192,7 @@ norm(q::Poly, args...) = norm(coeffs(q), args...)
 
 """
 getindex{T}(p::Poly{T}, i) = (i+1 > length(p.a) ? zero(T) : p.a[i+1])
+getindex{T}(p::Poly{T}, idx::AbstractArray) = map(i->p[i], idx)
 function setindex!(p::Poly, v, i)
     n = length(p.a)
     if n < i+1
