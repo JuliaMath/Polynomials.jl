@@ -91,7 +91,7 @@ function printterm{T<:Complex}(io::IO,p::Poly{T},j,first,latex_print::Bool)
         end
     else
         if abs_impj > 2*eps(T)
-            print(io,'(', imag(pj),"im)")
+            print(io,'(', abs(imag(pj)),"im)")
         end
     end
     printexponent(io,p.var,j)
