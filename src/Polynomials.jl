@@ -12,7 +12,7 @@ export Pade, padeval
 export truncate!
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
-import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype
+import Base: show, print, writemime, *, /, //, -, +, ==, divrem, div, rem, eltype
 import Base: promote_rule, truncate, chop
 if VERSION >= v"0.4"
     import Base.call
@@ -103,9 +103,6 @@ end
 poly(A::Matrix, var=:x) = poly(eigvals(A), var)
 poly(A::Matrix, var::AbstractString) = poly(eigvals(A), symbol(var))
 poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
-
-
-include("show.jl") # display polynomials.
 
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
 convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
@@ -514,5 +511,6 @@ polyfit(x,y,sym::Symbol) = polyfit(x,y,length(x)-1, sym)
 
 ### Pull in others
 include("pade.jl")
+include("show.jl") # display polynomials.
 
 end # module Poly
