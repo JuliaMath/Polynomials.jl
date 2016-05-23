@@ -65,11 +65,11 @@ immutable Poly{T<:Number}
     function Poly(a::Vector{T}, var)
         # if a == [] we replace it with a = [0]
         if length(a) == 0
-            return new(zeros(T,1), symbol(var))
+            return new(zeros(T,1), @compat Symbol(var))
         else
             # determine the last nonzero element and truncate a accordingly
             a_last = max(1,findlast(a))
-            new(a[1:a_last], symbol(var))
+            new(a[1:a_last], @compat Symbol(var))
         end
     end
 end
@@ -101,8 +101,8 @@ function poly{T}(r::AbstractVector{T}, var=:x)
     return Poly(reverse(c), var)
 end
 poly(A::Matrix, var=:x) = poly(eigvals(A), var)
-poly(A::Matrix, var::AbstractString) = poly(eigvals(A), symbol(var))
-poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
+poly(A::Matrix, var::AbstractString) = poly(eigvals(A), @compat Symbol(var))
+poly(A::Matrix, var::Char) = poly(eig(A)[1], @compat Symbol(var))
 
 
 include("show.jl") # display polynomials.
