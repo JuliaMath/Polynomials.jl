@@ -153,3 +153,17 @@ psum = p1 + p2 - p3
 @test truncate(Poly([2,1]),reltol=1/2,abstol=0) == Poly([2])
 @test truncate(Poly([2,1]),reltol=1,abstol=0)   == Poly([0])
 @test truncate(Poly([2,1]),reltol=0,abstol=1)   == Poly([2])
+
+## elementwise operations
+println("Test for element-wise operations")
+p1  = Poly([1, 2])
+p2  = Poly([3, 1.])
+p   = [p1, p2]
+q   = [3, p1]
+@test isa(q,Vector{Poly{Int64}})
+psum  = p+3
+pprod = p*3
+pmin  = p-3
+@test isa(psum, Vector{Poly{Float64}})
+@test isa(pprod,Vector{Poly{Float64}})
+@test isa(pmin, Vector{Poly{Float64}})
