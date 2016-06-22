@@ -163,7 +163,7 @@ p1[5] = 1
 @test p1 == Poly([1,2,1,0,0,1])
 
 
-## elementwise operations
+## elementwise operations #52
 println("Test for element-wise operations")
 p1  = Poly([1, 2])
 p2  = Poly([3, 1.])
@@ -177,3 +177,9 @@ pmin  = p-3
 @test isa(pprod,Vector{Poly{Float64}})
 @test isa(pmin, Vector{Poly{Float64}})
 
+## getindex with ranges #43
+p1 = Poly([4,5,6])
+@test all(p1[0:1] .== [4,5])
+@test all(p1[0:end] .== [4,5,6])
+p1[0:1] = [7,8]
+@test all(p1[0:end] .== [7,8,6])
