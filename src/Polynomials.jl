@@ -203,6 +203,10 @@ function setindex!(p::Poly, v, i)
     p.a[i+1] = v
     v
 end
+function setindex!(p::Poly, vs, idx::AbstractArray)
+    [setindex!(p, v, i) for (i,v) in zip(idx, vs)]
+    p
+end
 
 copy(p::Poly) = Poly(copy(p.a), p.var)
 
