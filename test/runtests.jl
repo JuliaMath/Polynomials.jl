@@ -154,6 +154,15 @@ psum = p1 + p2 - p3
 @test truncate(Poly([2,1]),reltol=1,abstol=0)   == Poly([0])
 @test truncate(Poly([2,1]),reltol=0,abstol=1)   == Poly([2])
 
+
+## setindex!
+println("Test for setindex!()")
+p1    = Poly([1,2,1])
+p1[5] = 1
+@test p1[5] == 1
+@test p1 == Poly([1,2,1,0,0,1])
+
+
 ## elementwise operations
 println("Test for element-wise operations")
 p1  = Poly([1, 2])
@@ -167,3 +176,4 @@ pmin  = p-3
 @test isa(psum, Vector{Poly{Float64}})
 @test isa(pprod,Vector{Poly{Float64}})
 @test isa(pmin, Vector{Poly{Float64}})
+

@@ -197,7 +197,7 @@ function setindex!(p::Poly, v, i)
     n = length(p.a)
     if n < i+1
         resize!(p.a,i+1)
-        p.a[n:i] = 0
+        p.a[n+1:i] = 0
     end
     p.a[i+1] = v
     v
