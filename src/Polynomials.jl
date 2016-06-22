@@ -12,7 +12,7 @@ export Pade, padeval
 export truncate!
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
-import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype
+import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype, .*, .-, .+
 import Base: promote_rule, truncate, chop
 if VERSION >= v"0.4"
     import Base.call
@@ -65,11 +65,11 @@ immutable Poly{T<:Number}
     function Poly(a::Vector{T}, var)
         # if a == [] we replace it with a = [0]
         if length(a) == 0
-            return new(zeros(T,1), symbol(var))
+            return new(zeros(T,1), @compat Symbol(var))
         else
             # determine the last nonzero element and truncate a accordingly
             a_last = max(1,findlast(a))
-            new(a[1:a_last], symbol(var))
+            new(a[1:a_last], @compat Symbol(var))
         end
     end
 end
@@ -101,8 +101,8 @@ function poly{T}(r::AbstractVector{T}, var=:x)
     return Poly(reverse(c), var)
 end
 poly(A::Matrix, var=:x) = poly(eigvals(A), var)
-poly(A::Matrix, var::AbstractString) = poly(eigvals(A), symbol(var))
-poly(A::Matrix, var::Char) = poly(eig(A)[1], symbol(var))
+poly(A::Matrix, var::AbstractString) = poly(eigvals(A), @compat Symbol(var))
+poly(A::Matrix, var::Char) = poly(eig(A)[1], @compat Symbol(var))
 
 
 include("show.jl") # display polynomials.
@@ -111,6 +111,7 @@ convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
 convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
 convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}) = map(el->convert(Poly{promote_type(T,S)},el),x)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
+promote_rule{T, S<:Number}(::Type{Poly{T}}, ::Type{S}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
 
 """
@@ -212,11 +213,17 @@ one{T}(::Type{Poly{T}}) = Poly([one(T)])
 ## Overload arithmetic operators for polynomial operations between polynomials and scalars
 *{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 *{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
+.*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
+.*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 /(p::Poly, c::Number) = Poly(p.a / c, p.var)
 -(p::Poly) = Poly(-p.a, p.var)
--(p::Poly, c::Number) = +(p, -c)
-+(c::Number, p::Poly) = +(p, c)
-function +(p::Poly, c::Number)
+-{T<:Number}(p::Poly, c::T) = +(p, -c)
+.-{T<:Number}(p::Poly, c::T) = +(p, -c)
+.-{T<:Number}(c::T, p::Poly) = +(p, -c)
++{T<:Number}(c::T, p::Poly) = +(p, c)
+.+{T<:Number}(c::T, p::Poly) = +(p, c)
+.+{T<:Number}(p::Poly, c::T) = +(p, c)
+function +{T<:Number}(p::Poly, c::T)
     if length(p) < 1
         return Poly([c,], p.var)
     else
@@ -225,7 +232,7 @@ function +(p::Poly, c::Number)
         return p2;
     end
 end
-function -{T}(c::Number, p::Poly{T})
+function -{T<:Number}(c::T, p::Poly)
     if length(p) < 1
         return Poly(T[c,], p.var)
     else
