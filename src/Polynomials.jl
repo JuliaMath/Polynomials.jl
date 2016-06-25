@@ -356,7 +356,7 @@ end
 polyval(p::Poly, v::AbstractVector) = map(x->polyval(p, x), v)
 
 if VERSION >= v"0.4"
-    call(p::Poly, x) = polyval(p, x)
+    @compat (p::Poly)(x) = polyval(p, x)
 end
 
 """
