@@ -137,14 +137,14 @@ julia> roots(Poly([0, 0, 1]))
 2-element Array{Float64,1}:
  0.0
  0.0
- ```
+```
 
 #### Polyfit
 
 * `polyfit`: fits a polynomial of minimal degree fitting the points
   specified by `x` and `y` using least squares fit.
 
-```
+```julia
 julia> xs = 1:4; ys = exp(xs); polyfit(xs, ys)
 Poly(-7.717211620141281 + 17.9146616149694x - 9.77757245502143x^2 + 2.298404288652356x^3)
 ```
@@ -175,3 +175,12 @@ Polynomial objects also have other methods:
 * `Pade`: Return the
   [Pade approximant](https://en.wikipedia.org/wiki/Pad%C3%A9_approximant)
   of order `m/n` for a polynomial as a `Pade` object.
+
+
+## See also
+
+* [MultiPoly.jl](https://github.com/daviddelaat/MultiPoly.jl) for sparse multivariate polynomials
+
+* [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series
+
+* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) a fast complex polynomial root finder

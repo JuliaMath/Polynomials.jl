@@ -9,7 +9,6 @@ export Poly, poly
 export degree, coeffs, variable
 export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
-export truncate!
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype, .*, .-, .+
