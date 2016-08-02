@@ -1,5 +1,7 @@
 # Poly type manipulations
 
+__precompile__()
+
 module Polynomials
 #todo: sparse polynomials?
 
