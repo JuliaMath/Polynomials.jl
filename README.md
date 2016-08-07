@@ -70,7 +70,7 @@ julia> p + q
 ERROR: Polynomials must have same variable.
 ```
 
-To get the degree of the polynomial use `degree` method
+To get the degree of the polynomial use the `degree` method
 
 ```
 julia> degree(p)
@@ -88,9 +88,18 @@ julia> degree(p-p)
 Evaluate the polynomial `p` at `x`.
 
 ```julia
-julia> polyval(Poly([1, 0, -1]), 0.1)
+julia> p = Poly([1, 0, -1])
+julia> polyval(p, 0.1)
 0.99
 ```
+
+A call method is also available:
+
+```julia
+julia> p(0.1)
+0.99
+```
+
 
 #### polyint(p::Poly, k::Number=0)
 
@@ -119,8 +128,8 @@ Poly(3 - 2x)
 #### roots(p::Poly)
 
 Return the roots (zeros) of `p`, with multiplicity. The number of
-roots returned is equal to the order of `p`. The returned roots may be
-real or complex.
+roots returned is equal to the order of `p`. By design, this is not type-stable,
+the returned roots may be real or complex.
 
 ```julia
 julia> roots(Poly([1, 0, -1]))
@@ -142,7 +151,7 @@ julia> roots(Poly([0, 0, 1]))
 #### Polyfit
 
 * `polyfit`: fits a polynomial of minimal degree fitting the points
-  specified by `x` and `y` using least squares fit.
+  specified by `x` and `y` using the least-squares fit.
 
 ```julia
 julia> xs = 1:4; ys = exp(xs); polyfit(xs, ys)
@@ -165,12 +174,13 @@ Polynomial objects also have other methods:
 
 * `norm`: find the `p`-norm of a polynomial
 
-* `truncate`: set to 0 small terms in a polynomial; `chop` chops off
+* `conj`: finds the conjugate of a polynomial over a complex fiel
+
+* `truncate`: set to 0 all small terms in a polynomial; `chop` chops off
   any small leading values that may arise due to floating point
   operations.
 
 * `gcd`: greatest common divisor of two polynomials.
-
 
 * `Pade`: Return the
   [Pade approximant](https://en.wikipedia.org/wiki/Pad%C3%A9_approximant)
@@ -183,4 +193,4 @@ Polynomial objects also have other methods:
 
 * [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series
 
-* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) a fast complex polynomial root finder
+* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder
