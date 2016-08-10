@@ -70,6 +70,12 @@ a_roots = copy(pN.a)
 @test p2 - 2 == -2 + p2 == Poly([-1,1])
 @test 2 - p2 == Poly([1,-1])
 
+# Test conjugation
+@test conj(Poly([1im])) == Poly([-1im])
+@test conj(Poly([2.0, 1im, 1+2im])) == Poly([2.0, -1im, 1-2im])
+@test conj(Poly([1, 2])) == Poly([1, 2])
+
+
 p0 = Poly([0])
 p1 = Poly([1])
 p2 = Poly([5, 6, -3, 2 ,4])

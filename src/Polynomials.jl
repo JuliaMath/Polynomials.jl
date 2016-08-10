@@ -13,7 +13,8 @@ export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 export truncate!
 
-import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
+import Base: length, endof, getindex, setindex!, copy, zero, one, conj
+import Base: convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype, .*, .-, .+
 import Base: promote_rule, truncate, chop
 if VERSION >= v"0.4"
@@ -137,6 +138,13 @@ degree(p::Poly) = length(p) - 1
 
 """
 coeffs(p::Poly) = p.a
+
+"""
+
+`conj(p::Poly)`: return conjugate polynomial (coefficients of `p` conjugated)
+
+"""
+Base.conj(p::Poly) = Poly(conj(p.a))
 
 """
 
