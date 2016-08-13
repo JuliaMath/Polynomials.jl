@@ -189,6 +189,14 @@ end
 """
 norm(q::Poly, args...) = norm(coeffs(q), args...)
 
+
+"""
+
+* `conj(p::Poly`): return conjugate of polynomial `p`. (Polynomial with conjugate of each coefficient.)
+
+"""
+Base.conj{T<:Complex}(p::Poly{T}) = Poly(conj(coeffs(p)))
+
 """
 
 * `getindex(p::Poly, i)`: If `p=a_n x^n + a_{n-1}x^{n-1} + ... + a_1 x^1 + a_0`, then `p[i]` returns `a_i`.

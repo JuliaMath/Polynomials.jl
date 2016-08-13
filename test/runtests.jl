@@ -183,3 +183,10 @@ p1 = Poly([4,5,6])
 @test all(p1[0:end] .== [4,5,6])
 p1[0:1] = [7,8]
 @test all(p1[0:end] .== [7,8,6])
+
+
+## conjugate of poly (issue #59)
+as = [im, 1, 2]
+bs = [1, 1, 2]
+@test conj(Poly(as)) == Poly(conj(as))
+@test conj(Poly(bs)) == Poly(conj(bs))
