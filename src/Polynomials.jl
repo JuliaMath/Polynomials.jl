@@ -1,6 +1,6 @@
 # Poly type manipulations
 
-__precompile__()
+isdefined(Base, :__precompile__) && __precompile__()
 
 module Polynomials
 #todo: sparse polynomials?
