@@ -193,3 +193,9 @@ as = [im, 1, 2]
 bs = [1, 1, 2]
 @test conj(Poly(as)) == Poly(conj(as))
 @test conj(Poly(bs)) == Poly(conj(bs))
+
+## unnecessary copy in convert #65
+p1 = Poly([1,2])
+p2 = convert(Poly{Int64}, p1)
+p2[3] = 3
+@test p1[3] == 3
