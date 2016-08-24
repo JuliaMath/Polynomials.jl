@@ -173,12 +173,9 @@ q   = [3, p1]
 psum  = p+3
 pprod = p*3
 pmin  = p-3
-all(map(eltype, psum)  .== Float64)
-all(map(eltype, pprod) .== Float64)
-all(map(eltype, pmin)  .== Float64)
-#@test isa(psum, Vector{Poly{Float64}})  ## work around #57 until #17389 gets into v0.5
-#@test isa(pprod,Vector{Poly{Float64}})
-#@test isa(pmin, Vector{Poly{Float64}})
+@test isa(psum, Vector{Poly{Float64}})  
+@test isa(pprod,Vector{Poly{Float64}})
+@test isa(pmin, Vector{Poly{Float64}})
 
 ## getindex with ranges #43
 p1 = Poly([4,5,6])
