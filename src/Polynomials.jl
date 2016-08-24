@@ -1,6 +1,6 @@
 # Poly type manipulations
 
-__precompile__()
+isdefined(Base, :__precompile__) && __precompile__()
 
 module Polynomials
 #todo: sparse polynomials?
@@ -108,6 +108,7 @@ poly(A::Matrix, var::Char) = poly(eig(A)[1], @compat Symbol(var))
 
 include("show.jl") # display polynomials.
 
+convert{T}(::Type{Poly{T}}, p::Poly{T}) = p
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
 convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
 convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}) = map(el->convert(Poly{promote_type(T,S)},el),x)
