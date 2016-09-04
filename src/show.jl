@@ -58,17 +58,17 @@ function printterm{T<:Complex}(io::IO,p::Poly{T},j,first)
     if abs_repj > 2*eps(T)    #Real part is not 0
         if abs_impj > 2*eps(T)    #Imag part is not 0
             print(io,'(',neg ? -pj : pj,')')
-            abs(pj) != 1 &&  j != 0 && print(io, "⋅")
         else
             print(io, neg ? -real(pj) : real(pj))
-            abs(pj) != 1 && j != 0 && print(io, "⋅")            
         end
     else
         if abs_impj > 2*eps(T)
             print(io,'(', abs(imag(pj)),"im)")
-            abs(pj) != 1 && j != 0 &&  print(io, "⋅")                  
         end
     end
+
+    abs(abs_repj) != 1 && j != 0 &&  print(io, "⋅")                  
+                  
     printexponent(io, p.var,j)
     true
 end
