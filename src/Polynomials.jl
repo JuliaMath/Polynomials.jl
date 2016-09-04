@@ -228,6 +228,8 @@ one{T}(::Type{Poly{T}}) = Poly([one(T)])
 ## Overload arithmetic operators for polynomial operations between polynomials and scalars
 *{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 *{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
+Base.dot{T<:Number,S}(p::Poly{S}, c::T) = p * c
+Base.dot{T<:Number,S}(c::T, p::Poly{S}) = c * p
 .*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 .*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 /(p::Poly, c::Number) = Poly(p.a / c, p.var)
