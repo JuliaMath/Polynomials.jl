@@ -115,6 +115,7 @@ convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}) = map(el->convert(Poly{p
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 promote_rule{T, S<:Number}(::Type{Poly{T}}, ::Type{S}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
+eltype{T}(::Type{Poly{T}}) = T
 
 """
 
