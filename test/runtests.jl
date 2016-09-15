@@ -196,3 +196,9 @@ p1 = Poly([1,2])
 p2 = convert(Poly{Int64}, p1)
 p2[3] = 3
 @test p1[3] == 3
+
+## eltype of a Poly type
+types = [Int, UInt8, Float64]
+for t in types
+  @test t == eltype(Poly{t})
+end
