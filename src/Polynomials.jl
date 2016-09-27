@@ -69,7 +69,7 @@ immutable Poly{T<:Number}
             return new(zeros(T,1), @compat Symbol(var))
         else
             # determine the last nonzero element and truncate a accordingly
-            a_last = max(1,findlast(a))
+            a_last = max(1,findlast(x->x!=zero(T), a))
             new(a[1:a_last], @compat Symbol(var))
         end
     end
@@ -356,7 +356,7 @@ function polyval{T,S}(p::Poly{T}, x::S)
     if lenp == 0
         return zero(R) * x
     else
-        y = convert(R, p[end]) + 0*x
+        y = convert(R, p[end]) + zero(T)*x
         for i = (endof(p)-1):-1:0
             y = p[i] + x*y
         end

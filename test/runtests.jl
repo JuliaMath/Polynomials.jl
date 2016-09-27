@@ -184,7 +184,6 @@ p1 = Poly([4,5,6])
 p1[0:1] = [7,8]
 @test all(p1[0:end] .== [7,8,6])
 
-
 ## conjugate of poly (issue #59)
 as = [im, 1, 2]
 bs = [1, 1, 2]
@@ -202,3 +201,22 @@ types = [Int, UInt8, Float64]
 for t in types
   @test t == eltype(Poly{t})
 end
+
+## Polynomials with non-Real type
+import Base: +, *, -
+immutable Mod2 <: Number
+  v::Bool
+end
++(x::Mod2,y::Mod2) = Mod2(x.v$y.v)
+*(x::Mod2,y::Mod2) = Mod2(x.v&y.v)
+-(x::Mod2,y::Mod2) = x+y
+-(x::Mod2) = x
+Base.one(::Type{Mod2}) = Mod2(true)
+Base.zero(::Type{Mod2}) = Mod2(false)
+Base.convert(::Type{Mod2},x) = Mod2(convert(Bool,x))
+Base.convert(::Type{Bool},x::Mod2) = x.v
+
+# Test that none of this throws
+p = Poly([Mod2(true),Mod2(false)])
+repr(p)
+p(Mod2(false))

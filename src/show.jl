@@ -19,6 +19,21 @@ function printterm{T}(io::IO,p::Poly{T},j,first)
     if pj == zero(T)
         return false
     end
+    first || print(io, " + ")
+    if pj != one(T) || j == 0
+        print(io, '(')
+        show(io,pj)
+        print(io, ") ")
+    end
+    printexponent(io,p.var,j)
+    true
+end
+
+function printterm{T<:Real}(io::IO,p::Poly{T},j,first)
+    pj = p[j]
+    if pj == zero(T)
+        return false
+    end
     neg = pj < zero(T)
     if first
         neg && print(io, "-")    #Prepend - if first and negative
