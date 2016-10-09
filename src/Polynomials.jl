@@ -156,6 +156,16 @@ variable(var::Symbol=:x) = poly([0.0], var)
 `truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))`: returns a polynomial with coefficients a_i truncated to zero if |a_i| <= reltol*maxabs(a)+abstol
 
 """
+function truncate{T}(p::Poly{Complex{T}}; reltol = eps(T), abstol = eps(T))
+    a = coeffs(p)
+    amax = maxabs(a)
+    thresh = amax * reltol + abstol
+    anew = map(ai -> complex(abs(real(ai)) <= thresh ? zero(T) : real(ai),
+                             abs(imag(ai)) <= thresh ? zero(T) : imag(ai)),
+               a)
+    return Poly(anew, p.var)
+end
+
 function truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))
     a = coeffs(p)
     amax = maxabs(a)
@@ -217,7 +227,9 @@ function setindex!(p::Poly, vs, idx::AbstractArray)
     [setindex!(p, v, i) for (i,v) in zip(idx, vs)]
     p
 end
+Base.eachindex{T}(p::Poly{T}) = 0:(length(p)-1)
 
+    
 copy(p::Poly) = Poly(copy(p.a), p.var)
 
 zero{T}(p::Poly{T}) = Poly([zero(T)], p.var)

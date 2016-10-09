@@ -196,3 +196,21 @@ p1 = Poly([1,2])
 p2 = convert(Poly{Int64}, p1)
 p2[3] = 3
 @test p1[3] == 3
+
+
+## changes to show
+p = Poly([1,2,3,1])  # leading coefficient of 1
+@test string(p) == "Poly(1 + 2⋅x + 3⋅x^2 + x^3)"
+p = Poly([1.0, 2.0, 3.0, 1.0])
+@test string(p) == "Poly(1.0 + 2.0⋅x + 3.0⋅x^2 + 1.0⋅x^3)"
+p = Poly([1+im, 1-im, -1+im, -1 - im])# minus signs
+@test string(p) == "Poly((1 + 1im) + (1 - 1im)⋅x - (1 - 1im)⋅x^2 - (1 + 1im)⋅x^3)"
+
+string_eval_poly(p,x) = eval(Expr(:function, Expr(:call, :f, :x), parse(string(p)[6:end-1])))(x)
+p = Poly([1,2,3]) # copy and paste
+q = Poly([1//1, 2//1, 3//1])
+r = Poly([1.0, 2, 3])
+@test string_eval_poly(p, 5) == p(5)
+@test string_eval_poly(q, 5) == q(5)
+@test string_eval_poly(r, 5) == r(5)
+    
