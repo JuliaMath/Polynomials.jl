@@ -44,16 +44,16 @@ function printterm{T<:Complex}(io::IO,p::Poly{T},j,first)
     # We show a negative sign either for any complex number with negative
     # real part (and then negate the immaginary part) of for complex
     # numbers that are pure imaginary with negative imaginary part
-    
+
     neg = ((abs_repj > 2*eps(T)) && real(pj) < 0) ||
-            ((abs_impj > 2*eps(T)) && imag(pj) < 0)
+            (abs_repj <= 2*eps(T) && abs_impj > 2*eps(T) && imag(pj) < 0)
 
     if first
         neg && print(io, "-")    #Prepend - if first and negative
     else
         neg ? print(io," - ") : print(io," + ")
     end
-    
+
     if abs_repj > 2*eps(T)    #Real part is not 0
         if abs_impj > 2*eps(T)    #Imag part is not 0
             print(io,'(',neg ? -pj : pj,')')
