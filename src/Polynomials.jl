@@ -93,7 +93,7 @@ poly([1,2,3])     # Poly(-6 + 11x - 6x^2 + x^3)
 function poly{T}(r::AbstractVector{T}, var=:x)
     n = length(r)
     c = zeros(T, n+1)
-    c[1] = 1
+    c[1] = one(T)
     for j = 1:n
         for i = j:-1:1
             c[i+1] = c[i+1]-r[j]*c[i]
@@ -147,9 +147,9 @@ Return the indeterminate of a polynomial, `x`.
 * `variable([var::Symbol])`: return polynomial 1x over `Float64`.
 
 """
-variable{T}(p::Poly{T}) = poly(zeros(T,1), p.var)
-variable{T<:Number}(::Type{T}, var=:x) = poly(zeros(T,1), var)
-variable(var::Symbol=:x) = poly([0.0], var)
+variable{T<:Number}(::Type{T}, var=:x) = Poly([zero(T), one(T)], var)
+variable{T}(p::Poly{T}) = variable(T, p.var)
+variable(var::Symbol=:x) = variable(Float64, var)
 
 """
 
