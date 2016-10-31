@@ -1,7 +1,5 @@
-## real numbers should pritn 1.0, not suppress?
-
-## Poly{T} is basically T[x]
-## T[x] may not have an order
+## Poly{T} is basically T[x], with T a Ring.
+## T[x] may not have an order so abs, comparing to 0 may not be defined.
 
 ## to handle this case we create some functions
 ## which can be modified by users for other Ts
