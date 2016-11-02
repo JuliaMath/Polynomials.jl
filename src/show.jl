@@ -5,7 +5,7 @@
 ## which can be modified by users for other Ts
 
 "`hasneg(::T)` attribute is true if: `pj < zero(T)` is defined."
-hasneg{T}(::Type{T}) = true
+hasneg{T}(::Type{T}) = false
 
 "Could value possibly be negative and if so, is it?"
 isneg{T}(pj::T) = hasneg(T) && pj < zero(T)
@@ -20,19 +20,17 @@ showone{T}(::Type{T}) = true
 #####
 
 ## Numbers
+hasneg{T<:Real}(::Type{T}) = true
+
+### Integer
 showone{T<:Integer}(::Type{T}) = false
 showone{T}(::Type{Rational{T}}) = false
 
 
-## Polynomials as coefficients
-hasneg{S}(::Type{Poly{S}}) = false
-showoone{S}(::Type{Poly{S}}) = false
 
 
-
-## Complex coefficients
-## we say neg if real(z) < 0 || real(z) == 0 and imag(g) < 0
-hasneg{T}(::Type{Complex{T}}) = true
+### Complex coefficients
+hasneg{T}(::Type{Complex{T}}) = true      ## we say neg if real(z) < 0 || real(z) == 0 and imag(g) < 0
 
 function isneg{T}(pj::Complex{T})
     real(pj) < 0 && return true
@@ -43,10 +41,16 @@ end
 showone{T}(pj::Type{Complex{T}}) = showone(T)
 
 
+### Polynomials as coefficients
+hasneg{S}(::Type{Poly{S}}) = false
+showone{S}(::Type{Poly{S}}) = false
+
+
+#####
 
 "Show different operations depending on mimetype. `l-` is leading minus sign."
-function showop(::MIME"text/html", op)
-    d = Dict("*" => "&times;", "+" => " &#43; ", "-" => " &#45; ", "l-" => "&#45;")
+function showop(::MIME"text/plain", op)
+    d = Dict("*" => "⋅", "+" => " + ", "-" => " - ", "l-" => "-")
     d[op]
 end
 
@@ -55,8 +59,8 @@ function showop(::MIME"text/latex", op)
     d[op]
 end
 
-function showop(::MIME"text/plain", op)
-    d = Dict("*" => "⋅", "+" => " + ", "-" => " - ", "l-" => "-")
+function showop(::MIME"text/html", op)
+    d = Dict("*" => "&#8729;", "+" => " &#43; ", "-" => " &#45; ", "l-" => "&#45;")
     d[op]
 end
 
@@ -77,6 +81,7 @@ end
 
 function showterm{T}(io::IO,p::Poly{T},j,first, mimetype)
     pj = p[j]
+
     pj == zero(T) && return false
 
     pj = printsign(io, pj, j, first, mimetype)
@@ -114,7 +119,7 @@ function printcoefficient{T}(io::IO, pj::Complex{T}, j, mimetype)
     
     if hasreal & hasimag
         print(io, '(')
-        showio(io, mimetype, pj)
+        show(io, mimetype, pj)
         print(io, ')')
     elseif hasreal
         a = real(pj)
@@ -135,6 +140,7 @@ function printcoefficient{T}(io::IO, pj::T, j, mimetype)
     show(io, mimetype, pj)
 end
 
+## show exponent
 function printexponent(io,var,i, mimetype::MIME"text/latex")
     if i == 0
         return
@@ -158,6 +164,7 @@ end
 
 ####
 
+## text/plain
 @compat Base.show{T}(io::IO, p::Poly{T}) = show(io, MIME("text/plain"), p)
 @compat function Base.show{T}(io::IO, mimetype::MIME"text/plain", p::Poly{T})
     print(io,"Poly(")
@@ -166,6 +173,7 @@ end
 
 end
 
+## text/latex
 @compat function Base.show{T}(io::IO, mimetype::MIME"text/latex", p::Poly{T})
     print(io, "\$")
     printpoly(io, p, mimetype)
@@ -177,5 +185,15 @@ end
 end
 
 @compat function Base.show{T<:Number}(io::IO, mimetype::MIME"text/latex", a::T)
+    print(io, a)
+end
+
+
+## text/html
+@compat function Base.show{T}(io::IO, mimetype::MIME"text/html", p::Poly{T})
+    printpoly(io, p, mimetype)
+end
+
+@compat function Base.show{T<:Number}(io::IO, mimetype::MIME"text/html", a::T)
     print(io, a)
 end

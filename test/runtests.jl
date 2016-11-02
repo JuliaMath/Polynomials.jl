@@ -184,7 +184,6 @@ p1 = Poly([4,5,6])
 p1[0:1] = [7,8]
 @test all(p1[0:end] .== [7,8,6])
 
-
 ## conjugate of poly (issue #59)
 as = [im, 1, 2]
 bs = [1, 1, 2]
@@ -198,14 +197,47 @@ p2[3] = 3
 @test p1[3] == 3
 
 
+## eltype of a Poly type
+types = [Int, UInt8, Float64]
+for t in types
+  @test t == eltype(Poly{t})
+end
+
+## Polynomials with non-Real type
+import Base: +, *, -
+immutable Mod2 <: Number
+  v::Bool
+end
++(x::Mod2,y::Mod2) = Mod2(x.v$y.v)
+*(x::Mod2,y::Mod2) = Mod2(x.v&y.v)
+-(x::Mod2,y::Mod2) = x+y
+-(x::Mod2) = x
+Base.one(::Type{Mod2}) = Mod2(true)
+Base.zero(::Type{Mod2}) = Mod2(false)
+Base.convert(::Type{Mod2},x::Integer) = Mod2(convert(Bool,x))
+Base.convert(::Type{Bool},x::Mod2) = x.v
+
+# Test that none of this throws
+p = Poly([Mod2(true),Mod2(false), Mod2(true)])
+repr(p)
+@test p(Mod2(false)) == p[0]
+
+
 ## changes to show
 p = Poly([1,2,3,1])  # leading coefficient of 1
-@test string(p) == "Poly(1 + 2⋅x + 3⋅x^2 + x^3)"
+@test repr(p) == "Poly(1 + 2⋅x + 3⋅x^2 + x^3)"
 p = Poly([1.0, 2.0, 3.0, 1.0])
-@test string(p) == "Poly(1.0 + 2.0⋅x + 3.0⋅x^2 + 1.0⋅x^3)"
+@test repr(p) == "Poly(1.0 + 2.0⋅x + 3.0⋅x^2 + 1.0⋅x^3)"
 p = Poly([1+im, 1-im, -1+im, -1 - im])# minus signs
-@test string(p) == "Poly((1 + 1im) + (1 - 1im)⋅x - (1 - 1im)⋅x^2 - (1 + 1im)⋅x^3)"
+@test repr(p) == "Poly((1 + 1im) + (1 - 1im)⋅x - (1 - 1im)⋅x^2 - (1 + 1im)⋅x^3)"
 
+p = Poly([1,2,3])
+@test reprmime("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
+p = Poly([1//2, 2//3, 1])
+@test reprmime("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
+
+
+## want to be able to copy and paste
 string_eval_poly(p,x) = eval(Expr(:function, Expr(:call, :f, :x), parse(string(p)[6:end-1])))(x)
 p = Poly([1,2,3]) # copy and paste
 q = Poly([1//1, 2//1, 3//1])
