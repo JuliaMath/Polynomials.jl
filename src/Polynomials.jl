@@ -105,6 +105,9 @@ poly(A::Matrix, var=:x) = poly(eigvals(A), var)
 poly(A::Matrix, var::AbstractString) = poly(eigvals(A), @compat Symbol(var))
 poly(A::Matrix, var::Char) = poly(eig(A)[1], @compat Symbol(var))
 
+## hash will identify equivalent polynomials
+Base.hash(f::Poly) = hash((f.a, f.var))
+
 
 include("show.jl") # display polynomials.
 
