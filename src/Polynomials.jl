@@ -69,7 +69,7 @@ immutable Poly{T<:Number}
             return new(zeros(T,1), @compat Symbol(var))
         else
             # determine the last nonzero element and truncate a accordingly
-            a_last = max(1,findlast(a))
+            a_last = max(1,findlast(x->x!=zero(T), a))
             new(a[1:a_last], @compat Symbol(var))
         end
     end
@@ -93,7 +93,7 @@ poly([1,2,3])     # Poly(-6 + 11x - 6x^2 + x^3)
 function poly{T}(r::AbstractVector{T}, var=:x)
     n = length(r)
     c = zeros(T, n+1)
-    c[1] = 1
+    c[1] = one(T)
     for j = 1:n
         for i = j:-1:1
             c[i+1] = c[i+1]-r[j]*c[i]
@@ -148,15 +148,25 @@ Return the indeterminate of a polynomial, `x`.
 * `variable([var::Symbol])`: return polynomial 1x over `Float64`.
 
 """
-variable{T}(p::Poly{T}) = poly(zeros(T,1), p.var)
-variable{T<:Number}(::Type{T}, var=:x) = poly(zeros(T,1), var)
-variable(var::Symbol=:x) = poly([0.0], var)
+variable{T<:Number}(::Type{T}, var=:x) = Poly([zero(T), one(T)], var)
+variable{T}(p::Poly{T}) = variable(T, p.var)
+variable(var::Symbol=:x) = variable(Float64, var)
 
 """
 
 `truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))`: returns a polynomial with coefficients a_i truncated to zero if |a_i| <= reltol*maxabs(a)+abstol
 
 """
+function truncate{T}(p::Poly{Complex{T}}; reltol = eps(T), abstol = eps(T))
+    a = coeffs(p)
+    amax = maxabs(a)
+    thresh = amax * reltol + abstol
+    anew = map(ai -> complex(abs(real(ai)) <= thresh ? zero(T) : real(ai),
+                             abs(imag(ai)) <= thresh ? zero(T) : imag(ai)),
+               a)
+    return Poly(anew, p.var)
+end
+
 function truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))
     a = coeffs(p)
     amax = maxabs(a)
@@ -218,7 +228,9 @@ function setindex!(p::Poly, vs, idx::AbstractArray)
     [setindex!(p, v, i) for (i,v) in zip(idx, vs)]
     p
 end
+Base.eachindex{T}(p::Poly{T}) = 0:(length(p)-1)
 
+    
 copy(p::Poly) = Poly(copy(p.a), p.var)
 
 zero{T}(p::Poly{T}) = Poly([zero(T)], p.var)
@@ -229,6 +241,8 @@ one{T}(::Type{Poly{T}}) = Poly([one(T)])
 ## Overload arithmetic operators for polynomial operations between polynomials and scalars
 *{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 *{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
+Base.dot{T<:Number,S}(p::Poly{S}, c::T) = p * c
+Base.dot{T<:Number,S}(c::T, p::Poly{S}) = c * p
 .*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 .*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 /(p::Poly, c::Number) = Poly(p.a / c, p.var)
@@ -356,7 +370,7 @@ function polyval{T,S}(p::Poly{T}, x::S)
     if lenp == 0
         return zero(R) * x
     else
-        y = convert(R, p[end]) + 0*x
+        y = convert(R, p[end]) + zero(T)*x
         for i = (endof(p)-1):-1:0
             y = p[i] + x*y
         end
