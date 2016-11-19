@@ -348,6 +348,8 @@ function ==(p1::Poly, p2::Poly)
     end
 end
 
+Base.hash(f::Poly, h::UInt) = hash(f.var, hash(f.a, h))
+
 """
 * `polyval(p::Poly, x::Number)`: Evaluate the polynomial `p` at `x` using Horner's method.
 

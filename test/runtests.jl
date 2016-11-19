@@ -246,3 +246,7 @@ r = Poly([1.0, 2, 3])
 @test string_eval_poly(q, 5) == q(5)
 @test string_eval_poly(r, 5) == r(5)
     
+## check hashing
+p = poly([1,2,3])
+q = poly([1,2,3])
+@test hash(p) == hash(q)
