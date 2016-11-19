@@ -340,13 +340,16 @@ end
 div(num::Poly, den::Poly) = divrem(num, den)[1]
 rem(num::Poly, den::Poly) = divrem(num, den)[2]
 
+# p1 == p2 if variables match, degrees match, and coefficients match
 function ==(p1::Poly, p2::Poly)
-    if p1.var != p2.var
-        return false
-    else
-        return p1.a == p2.a
-    end
+    p1.var == p2.var || return false
+    degree(p1) == degree(p2) || return false
+    return reduce(&, [p1[i] == p2[i] for i in eachindex(p1)])
 end
+
+## hash will identify polynomials if their variables match, degrees match and coefficients match
+Base.hash(f::Poly, h::UInt) = hash((map(a->hash(a,h), f.a), f.var), h)
+
 
 """
 * `polyval(p::Poly, x::Number)`: Evaluate the polynomial `p` at `x` using Horner's method.
