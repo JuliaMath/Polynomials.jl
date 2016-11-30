@@ -14,15 +14,13 @@ export Pade, padeval
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype, .*, .-, .+
-import Base: promote_rule, truncate, chop
-if VERSION >= v"0.4"
-    import Base.call
-end
+import Base: promote_rule, truncate, chop, call, conj, ctranspose, dot, hash
 
 eps{T}(::Type{T}) = zero(T)
 eps{F<:AbstractFloat}(x::Type{F}) = Base.eps(F)
 eps{T}(x::Type{Complex{T}}) = eps(T)
 
+typealias SymbolLike Union{AbstractString,Char,Symbol}
 
 """
 
@@ -60,22 +58,22 @@ p + q                  # ERROR: Polynomials must have same variable.
 ```
 
 """
-immutable Poly{T<:Number}
-    a::Vector{T}
-    var::Symbol
-    function Poly(a::Vector{T}, var)
-        # if a == [] we replace it with a = [0]
-        if length(a) == 0
-            return new(zeros(T,1), @compat Symbol(var))
-        else
-            # determine the last nonzero element and truncate a accordingly
-            a_last = max(1,findlast(x->x!=zero(T), a))
-            new(a[1:a_last], @compat Symbol(var))
-        end
+immutable Poly{T}
+  a::Vector{T}
+  var::Symbol
+  @compat function (::Type{Poly}){T<:Number}(a::Vector{T}, var::SymbolLike = :x)
+    # if a == [] we replace it with a = [0]
+    if length(a) == 0
+      return new{T}(zeros(T,1), @compat Symbol(var))
+    else
+      # determine the last nonzero element and truncate a accordingly
+      a_last = max(1,findlast(x->x!=zero(T), a))
+      new{T}(a[1:a_last], @compat Symbol(var))
     end
+  end
 end
 
-@compat Poly{T<:Number}(a::Vector{T}, var::Union{AbstractString,Symbol,Char}=:x) = Poly{T}(a, var)
+Poly(n::Number, var::SymbolLike = :x) = Poly([n], var)
 
 # create a Poly object from its roots
 """
@@ -90,7 +88,7 @@ Example:
 poly([1,2,3])     # Poly(-6 + 11x - 6x^2 + x^3)
 ```
 """
-function poly{T}(r::AbstractVector{T}, var=:x)
+function poly{T}(r::AbstractVector{T}, var::SymbolLike=:x)
     n = length(r)
     c = zeros(T, n+1)
     c[1] = one(T)
@@ -101,9 +99,7 @@ function poly{T}(r::AbstractVector{T}, var=:x)
     end
     return Poly(reverse(c), var)
 end
-poly(A::Matrix, var=:x) = poly(eigvals(A), var)
-poly(A::Matrix, var::AbstractString) = poly(eigvals(A), @compat Symbol(var))
-poly(A::Matrix, var::Char) = poly(eig(A)[1], @compat Symbol(var))
+poly(A::Matrix, var::SymbolLike=:x) = poly(eigvals(A), var)
 
 
 include("show.jl") # display polynomials.
@@ -148,9 +144,9 @@ Return the indeterminate of a polynomial, `x`.
 * `variable([var::Symbol])`: return polynomial 1x over `Float64`.
 
 """
-variable{T<:Number}(::Type{T}, var=:x) = Poly([zero(T), one(T)], var)
+variable{T<:Number}(::Type{T}, var::SymbolLike=:x) = Poly([zero(T), one(T)], var)
 variable{T}(p::Poly{T}) = variable(T, p.var)
-variable(var::Symbol=:x) = variable(Float64, var)
+variable(var::SymbolLike=:x) = variable(Float64, var)
 
 """
 
@@ -206,7 +202,7 @@ norm(q::Poly, args...) = norm(coeffs(q), args...)
 * `conj(p::Poly`): return conjugate of polynomial `p`. (Polynomial with conjugate of each coefficient.)
 
 """
-Base.conj{T<:Complex}(p::Poly{T}) = Poly(conj(coeffs(p)))
+conj{T<:Complex}(p::Poly{T}) = Poly(conj(coeffs(p)))
 
 """
 
@@ -228,12 +224,12 @@ function setindex!(p::Poly, vs, idx::AbstractArray)
     [setindex!(p, v, i) for (i,v) in zip(idx, vs)]
     p
 end
-Base.eachindex{T}(p::Poly{T}) = 0:(length(p)-1)
+eachindex{T}(p::Poly{T}) = 0:(length(p)-1)
 
-    
+
 copy(p::Poly) = Poly(copy(p.a), p.var)
 
-zero{T}(p::Poly{T}) = Poly([zero(T)], p.var)
+zero{T}(p::Poly{T}) = Poly(T[], p.var)
 zero{T}(::Type{Poly{T}}) = Poly(T[])
 one{T}(p::Poly{T}) = Poly([one(T)], p.var)
 one{T}(::Type{Poly{T}}) = Poly([one(T)])
@@ -241,8 +237,8 @@ one{T}(::Type{Poly{T}}) = Poly([one(T)])
 ## Overload arithmetic operators for polynomial operations between polynomials and scalars
 *{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 *{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
-Base.dot{T<:Number,S}(p::Poly{S}, c::T) = p * c
-Base.dot{T<:Number,S}(c::T, p::Poly{S}) = c * p
+dot{T<:Number,S}(p::Poly{S}, c::T) = p * c
+dot{T<:Number,S}(c::T, p::Poly{S}) = c * p
 .*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 .*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 /(p::Poly, c::Number) = Poly(p.a / c, p.var)
@@ -348,7 +344,7 @@ function ==(p1::Poly, p2::Poly)
     end
 end
 
-Base.hash(f::Poly, h::UInt) = hash(f.var, hash(f.a, h))
+hash(f::Poly, h::UInt) = hash(f.var, hash(f.a, h))
 
 """
 * `polyval(p::Poly, x::Number)`: Evaluate the polynomial `p` at `x` using Horner's method.
@@ -382,9 +378,7 @@ end
 
 polyval(p::Poly, v::AbstractVector) = map(x->polyval(p, x), v)
 
-if VERSION >= v"0.4"
-    @compat (p::Poly)(x) = polyval(p, x)
-end
+@compat (p::Poly)(x) = polyval(p, x)
 
 """
 
@@ -437,7 +431,7 @@ function polyder{T}(p::Poly{T}, order::Int=1)
         return Poly(a2, p.var)
     end
 end
-Base.ctranspose{T}(p::Poly{T}) = polyder(p)
+ctranspose{T}(p::Poly{T}) = polyder(p)
 
 polyint{T}(a::Array{Poly{T},1}, k::Number  = 0) = [ polyint(p,k) for p in a ]
 polyder{T}(a::Array{Poly{T},1}, order::Int = 1) = [ polyder(p,order) for p in a ]
