@@ -14,7 +14,8 @@ export Pade, padeval
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype, .*, .-, .+
-import Base: promote_rule, truncate, chop, call, conj, ctranspose, dot, hash
+import Base: promote_rule, truncate, chop, call, conj, transpose, dot, hash
+import Base: isequal
 
 eps{T}(::Type{T}) = zero(T)
 eps{F<:AbstractFloat}(x::Type{F}) = Base.eps(F)
@@ -204,6 +205,9 @@ norm(q::Poly, args...) = norm(coeffs(q), args...)
 """
 conj{T<:Complex}(p::Poly{T}) = Poly(conj(coeffs(p)))
 
+# Define the no-op `transpose` explicitly to avoid future warnings in Julia
+transpose(p::Poly) = p
+
 """
 
 * `getindex(p::Poly, i)`: If `p=a_n x^n + a_{n-1}x^{n-1} + ... + a_1 x^1 + a_0`, then `p[i]` returns `a_i`.
@@ -239,6 +243,7 @@ one{T}(::Type{Poly{T}}) = Poly([one(T)])
 *{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 dot{T<:Number,S}(p::Poly{S}, c::T) = p * c
 dot{T<:Number,S}(c::T, p::Poly{S}) = c * p
+dot(p1::Poly, p2::Poly) = p1 * p2
 .*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 .*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 /(p::Poly, c::Number) = Poly(p.a / c, p.var)
@@ -344,6 +349,7 @@ function ==(p1::Poly, p2::Poly)
 end
 
 hash(f::Poly, h::UInt) = hash(f.var, hash(f.a, h))
+isequal(p1::Poly, p2::Poly) = hash(p1) == hash(p2)
 
 """
 * `polyval(p::Poly, x::Number)`: Evaluate the polynomial `p` at `x` using Horner's method.
@@ -375,7 +381,7 @@ function polyval{T,S}(p::Poly{T}, x::S)
     end
 end
 
-polyval(p::Poly, v::AbstractVector) = map(x->polyval(p, x), v)
+polyval(p::Poly, v::AbstractArray) = map(x->polyval(p, x), v)
 
 @compat (p::Poly)(x) = polyval(p, x)
 
@@ -392,9 +398,33 @@ polyint(Poly([1, 0, -1]), 2)  # Poly(2.0 + x - 0.3333333333333333x^3)
 ```
 
 """
-function polyint{T}(p::Poly{T}, k::Number=0)
+# if we do not have any initial condition, assume k = zero(Int)
+polyint{T}(p::Poly{T}) = polyint(p, 0)
+
+# if we have coefficients that have `NaN` representation
+function polyint{T<:Union{Real,Complex},S<:Number}(p::Poly{T}, k::S)
+  any(isnan(p.a)) && return Poly(promote_type(T,S)[NaN])
+  _polyint(p, k)
+end
+
+# if we have initial condition that can represent `NaN`
+function polyint{T,S<:Union{Real,Complex}}(p::Poly{T}, k::S)
+  isnan(k) && return Poly(promote_type(T,S)[NaN])
+  _polyint(p, k)
+end
+
+# if we have both coefficients and initial condition that can take `NaN`
+function polyint{T<:Union{Real,Complex},S<:Union{Real,Complex}}(p::Poly{T}, k::S)
+  (any(isnan(p.a)) || isnan(k)) && return Poly(promote_type(T,S)[NaN])
+  _polyint(p, k)
+end
+
+# otherwise, catch all
+polyint{T,S<:Number}(p::Poly{T}, k::S) = _polyint(p, k)
+
+function _polyint{T,S<:Number}(p::Poly{T}, k::S)
     n = length(p)
-    R = typeof(one(T)/1)
+    R = promote_type(typeof(one(T)/1), S)
     a2 = Array(R, n+1)
     a2[1] = k
     for i = 1:n
@@ -414,30 +444,37 @@ Example:
 polyder(Poly([1, 3, -1]))   # Poly(3 - 2x)
 ```
 """
-function polyder{T}(p::Poly{T}, order::Int=1)
-    n = length(p)
-    if order < 0
-        error("Order of derivative must be non-negative")
-    elseif n <= order
-        return Poly(zeros(T,0),p.var)
-    elseif order == 0
-        return p
-    else
-        a2 = Array(T, n-order)
-        for i = order:n-1
-            a2[i-order+1] = p[i] * prod((i-order+1):i)
-        end
-        return Poly(a2, p.var)
-    end
+# if we have coefficients that can represent `NaN`s
+function polyder{T<:Union{Real,Complex}}(p::Poly{T}, order::Int=1)
+  n = length(p)
+  order < 0       && error("Order of derivative must be non-negative")
+  order == 0      && return p
+  any(isnan(p.a)) && return Poly(T[NaN], p.var)
+  n <= order      && return Poly(T[], p.var)
+  _polyder(p, order)
 end
-ctranspose{T}(p::Poly{T}) = polyder(p)
 
-polyint{T}(a::Array{Poly{T},1}, k::Number  = 0) = [ polyint(p,k) for p in a ]
-polyder{T}(a::Array{Poly{T},1}, order::Int = 1) = [ polyder(p,order) for p in a ]
-polyint{n,T}(a::Array{Poly{T},n}, k::Number  = 0) = map(p->polyint(p,k),a)
-polyder{n,T}(a::Array{Poly{T},n}, order::Int = 1) = map(p->polyder(p,order),a)
+# otherwise
+function polyder{T}(p::Poly{T}, order::Int=1)
+  n = length(p)
+  order < 0   && error("Order of derivative must be non-negative")
+  order == 0  && return p
+  n <= order  && return Poly(T[], p.var)
+  _polyder(p, order)
+end
 
+function _polyder{T}(p::Poly{T}, order::Int=1)
+  n = length(p)
+  a2 = Array(T, n-order)
+  for i = order:n-1
+    a2[i-order+1] = p[i] * prod((i-order+1):i)
+  end
 
+  return Poly(a2, p.var)
+end
+
+polyint{T}(a::AbstractArray{Poly{T}}, k::Number  = 0) = map(p->polyint(p,k),    a)
+polyder{T}(a::AbstractArray{Poly{T}}, order::Int = 1) = map(p->polyder(p,order),a)
 
 ##################################################
 ##
