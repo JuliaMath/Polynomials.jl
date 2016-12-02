@@ -416,20 +416,17 @@ polyder(Poly([1, 3, -1]))   # Poly(3 - 2x)
 ```
 """
 function polyder{T}(p::Poly{T}, order::Int=1)
-    n = length(p)
-    if order < 0
-        error("Order of derivative must be non-negative")
-    elseif n <= order
-        return Poly(zeros(T,0),p.var)
-    elseif order == 0
-        return p
-    else
-        a2 = Array(T, n-order)
-        for i = order:n-1
-            a2[i-order+1] = p[i] * prod((i-order+1):i)
-        end
-        return Poly(a2, p.var)
-    end
+  n     =   length(p)
+  order <   0         && error("Order of derivative must be non-negative")
+  order ==  0         && return p
+  order ≥   n         && return Poly([sum(p.a)*zero(T)], p.var)
+
+  a2 = Array(T, n-order)
+  for i = order:n-1
+    a2[i-order+1] = p[i] * prod((i-order+1):i)
+  end
+  a2[1] += sum(p[0:order-1])*zero(T)
+  return Poly(a2, p.var)
 end
 ctranspose{T}(p::Poly{T}) = polyder(p)
 

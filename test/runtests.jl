@@ -250,3 +250,9 @@ r = Poly([1.0, 2, 3])
 p = poly([1,2,3])
 q = poly([1,2,3])
 @test hash(p) == hash(q)
+
+## derivative of Inf/NaN values
+p = Poly([NaN])
+q = Poly([Inf])
+@test hash(p') == hash(Poly([NaN]))
+@test hash(q') == hash(Poly([NaN]))
