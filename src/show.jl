@@ -113,7 +113,7 @@ function printproductsign{T}(io::IO, pj::T, j, mimetype)
 end
   
 function printcoefficient{T}(io::IO, pj::Complex{T}, j, mimetype)
-        
+
     hasreal = abs(real(pj)) > 0
     hasimag = abs(imag(pj)) > 0
     
@@ -123,7 +123,7 @@ function printcoefficient{T}(io::IO, pj::Complex{T}, j, mimetype)
         print(io, ')')
     elseif hasreal
         a = real(pj)
-        (showone(T) || a != one(T)) && show(io, mimetype, a)
+        (j==0 || showone(T) || a != one(T)) && show(io, mimetype, a)
     elseif hasimag
         b = imag(pj)
         (showone(T) || b != one(T)) && show(io,  mimetype, b)
