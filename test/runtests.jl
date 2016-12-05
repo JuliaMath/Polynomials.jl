@@ -226,6 +226,8 @@ p = Poly([1,2,3,1])  # leading coefficient of 1
 @test repr(p) == "Poly(1 + 2⋅x + 3⋅x^2 + x^3)"
 p = Poly([1.0, 2.0, 3.0, 1.0])
 @test repr(p) == "Poly(1.0 + 2.0⋅x + 3.0⋅x^2 + 1.0⋅x^3)"
+p = Poly([1, im])
+@test repr(p) == "Poly(1 + im⋅x)"
 p = Poly([1+im, 1-im, -1+im, -1 - im])# minus signs
 @test repr(p) == "Poly((1 + 1im) + (1 - 1im)⋅x - (1 - 1im)⋅x^2 - (1 + 1im)⋅x^3)"
 
