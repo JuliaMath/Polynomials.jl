@@ -52,10 +52,8 @@ sprint(show, pNULL)
 @test polyder(p3) == Poly([2,2])
 @test polyder(p1) == polyder(p0) == polyder(pNULL) == pNULL
 
-if VERSION >= v"0.4"
-    @test pN(-.125) == 276.9609375
-    @test pN([0.1, 0.2, 0.3]) == polyval(pN, [0.1, 0.2, 0.3])
-end
+@test pN(-.125) == 276.9609375
+@test pN([0.1, 0.2, 0.3]) == polyval(pN, [0.1, 0.2, 0.3])
 
 @test poly([-1,-1]) == p3
 @test roots(p0)==roots(p1)==roots(pNULL)==[]
@@ -173,7 +171,7 @@ q   = [3, p1]
 psum  = p+3
 pprod = p*3
 pmin  = p-3
-@test isa(psum, Vector{Poly{Float64}})  
+@test isa(psum, Vector{Poly{Float64}})
 @test isa(pprod,Vector{Poly{Float64}})
 @test isa(pmin, Vector{Poly{Float64}})
 
@@ -245,7 +243,7 @@ r = Poly([1.0, 2, 3])
 @test string_eval_poly(p, 5) == p(5)
 @test string_eval_poly(q, 5) == q(5)
 @test string_eval_poly(r, 5) == r(5)
-    
+
 ## check hashing
 p = poly([1,2,3])
 q = poly([1,2,3])
