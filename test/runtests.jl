@@ -250,3 +250,11 @@ r = Poly([1.0, 2, 3])
 p = poly([1,2,3])
 q = poly([1,2,3])
 @test hash(p) == hash(q)
+
+## Check for Inf/NaN operations
+p1 = Poly([Inf, Inf])
+p2 = Poly([0, Inf])
+@test p1(Inf) == Inf
+@test isnan(p1(-Inf))
+@test isnan(p1(0))
+@test p2(-Inf) == -Inf

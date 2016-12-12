@@ -368,7 +368,7 @@ function polyval{T,S}(p::Poly{T}, x::S)
     if lenp == 0
         return zero(R) * x
     else
-        y = convert(R, p[end]) + zero(T)*x
+        y = convert(R, p[end])
         for i = (endof(p)-1):-1:0
             y = p[i] + x*y
         end
