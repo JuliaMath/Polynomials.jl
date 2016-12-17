@@ -47,6 +47,7 @@ sprint(show, pNULL)
 @test polyval(poly([1//2, 3//2]), 1//2) == 0//1
 @test polyder(polyint(pN)) == pN
 @test polyder(pR) == Poly([-2//1,2//1])
+@test_throws ErrorException polyder(pR, -1)
 @test polyint(pNULL,1) == p1
 @test polyint(Poly(Rational[1,2,3])) == Poly(Rational[0, 1, 1, 1])
 @test polyder(p3) == Poly([2,2])
@@ -258,3 +259,20 @@ p2 = Poly([0, Inf])
 @test isnan(p1(-Inf))
 @test isnan(p1(0))
 @test p2(-Inf) == -Inf
+
+## Check for isequal
+p1 = Poly([-0., 5., Inf])
+p2 = Poly([0., 5., Inf])
+p3 = Poly([0, NaN])
+
+@test p1 == p2 && !isequal(p1, p2)
+@test is(p3, p3) && p3 ≠ p3 && isequal(p3, p3)
+
+## Handling of `NaN`s
+p     = Poly([NaN, 1, 5])
+pder  = polyder(p)
+pint  = polyint(p)
+
+@test isnan(p(1))                 # p(1) evaluates to NaN
+@test isequal(pder, Poly([NaN]))  # derivative will give Poly([NaN])
+@test isequal(pint, Poly([NaN]))  # integral will give Poly([NaN])
