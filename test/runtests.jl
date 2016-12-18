@@ -47,15 +47,14 @@ sprint(show, pNULL)
 @test polyval(poly([1//2, 3//2]), 1//2) == 0//1
 @test polyder(polyint(pN)) == pN
 @test polyder(pR) == Poly([-2//1,2//1])
+@test_throws ErrorException polyder(pR, -1)
 @test polyint(pNULL,1) == p1
 @test polyint(Poly(Rational[1,2,3])) == Poly(Rational[0, 1, 1, 1])
 @test polyder(p3) == Poly([2,2])
 @test polyder(p1) == polyder(p0) == polyder(pNULL) == pNULL
 
-if VERSION >= v"0.4"
-    @test pN(-.125) == 276.9609375
-    @test pN([0.1, 0.2, 0.3]) == polyval(pN, [0.1, 0.2, 0.3])
-end
+@test pN(-.125) == 276.9609375
+@test pN([0.1, 0.2, 0.3]) == polyval(pN, [0.1, 0.2, 0.3])
 
 @test poly([-1,-1]) == p3
 @test roots(p0)==roots(p1)==roots(pNULL)==[]
@@ -173,7 +172,7 @@ q   = [3, p1]
 psum  = p+3
 pprod = p*3
 pmin  = p-3
-@test isa(psum, Vector{Poly{Float64}})  
+@test isa(psum, Vector{Poly{Float64}})
 @test isa(pprod,Vector{Poly{Float64}})
 @test isa(pmin, Vector{Poly{Float64}})
 
@@ -228,6 +227,8 @@ p = Poly([1,2,3,1])  # leading coefficient of 1
 @test repr(p) == "Poly(1 + 2⋅x + 3⋅x^2 + x^3)"
 p = Poly([1.0, 2.0, 3.0, 1.0])
 @test repr(p) == "Poly(1.0 + 2.0⋅x + 3.0⋅x^2 + 1.0⋅x^3)"
+p = Poly([1, im])
+@test repr(p) == "Poly(1 + im⋅x)"
 p = Poly([1+im, 1-im, -1+im, -1 - im])# minus signs
 @test repr(p) == "Poly((1 + 1im) + (1 - 1im)⋅x - (1 - 1im)⋅x^2 - (1 + 1im)⋅x^3)"
 
@@ -245,8 +246,33 @@ r = Poly([1.0, 2, 3])
 @test string_eval_poly(p, 5) == p(5)
 @test string_eval_poly(q, 5) == q(5)
 @test string_eval_poly(r, 5) == r(5)
-    
+
 ## check hashing
 p = poly([1,2,3])
 q = poly([1,2,3])
 @test hash(p) == hash(q)
+
+## Check for Inf/NaN operations
+p1 = Poly([Inf, Inf])
+p2 = Poly([0, Inf])
+@test p1(Inf) == Inf
+@test isnan(p1(-Inf))
+@test isnan(p1(0))
+@test p2(-Inf) == -Inf
+
+## Check for isequal
+p1 = Poly([-0., 5., Inf])
+p2 = Poly([0., 5., Inf])
+p3 = Poly([0, NaN])
+
+@test p1 == p2 && !isequal(p1, p2)
+@test is(p3, p3) && p3 ≠ p3 && isequal(p3, p3)
+
+## Handling of `NaN`s
+p     = Poly([NaN, 1, 5])
+pder  = polyder(p)
+pint  = polyint(p)
+
+@test isnan(p(1))                 # p(1) evaluates to NaN
+@test isequal(pder, Poly([NaN]))  # derivative will give Poly([NaN])
+@test isequal(pint, Poly([NaN]))  # integral will give Poly([NaN])
