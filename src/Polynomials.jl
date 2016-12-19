@@ -582,7 +582,7 @@ function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     # here unsure, whether similar(float(x[1]),...), or similar(x,...)
     # however similar may yield unwanted surprise in case of e.g. x::Int
     #
-    A=similar(float(x[1]), length(x), n+1)
+    A=similar(float(x[1:1]), length(x), n+1)
     #
     # TODO: add support for poly coef bitmap
     # (i.e. polynomial with some terms fixed to zero)
