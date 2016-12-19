@@ -499,7 +499,6 @@ roots(poly([1,2,3,4]))     # [1.0,2.0,3.0,4.0]
 function roots{T}(p::Poly{T})
     R = promote_type(T, Float64)
     length(p) == 0 && return zeros(R, 0)
-
     num_leading_zeros = 0
     while abs(p[num_leading_zeros]) <= 2*eps(T)
         if num_leading_zeros == length(p)-1
@@ -507,23 +506,17 @@ function roots{T}(p::Poly{T})
         end
         num_leading_zeros += 1
     end
-
     num_trailing_zeros = 0
     while abs(p[end - num_trailing_zeros]) <= 2*eps(T)
         num_trailing_zeros += 1
     end
-
     n = endof(p)-(num_leading_zeros + num_trailing_zeros)
-
     n < 1 && return zeros(R, length(p) - num_trailing_zeros - 1)
 
-    companion = zeros(R, n, n)
+    companion = diagm(ones(R, n-1), -1)
     an = p[end-num_trailing_zeros]
-    for i = 1:n-1
-        companion[i,n] = -p[num_leading_zeros + i - 1] / an
-        companion[i+1,i] = 1;
-    end
-    companion[end,end] = -p[end-num_trailing_zeros-1] / an
+    companion[1,:] = -p[(end-num_trailing_zeros-1):-1:num_leading_zeros] / an
+    
     D = eigvals(companion)
     r = zeros(eltype(D),length(p)-num_trailing_zeros-1)
     r[1:n] = D
