@@ -579,10 +579,10 @@ function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     1 <= n <= length(x) - 1 || throw(DomainError)
 
     #
-    # here unsure, whether zeros(Float64), or similar(x,...)
+    # here unsure, whether similar(float(x[1]),...), or similar(x,...)
     # however similar may yield unwanted surprise in case of e.g. x::Int
     #
-    A=zeros(Float64, length(x), n+1)
+    A=similar(float(x[1]), length(x), n+1)
     #
     # TODO: add support for poly coef bitmap
     # (i.e. polynomial with some terms fixed to zero)
