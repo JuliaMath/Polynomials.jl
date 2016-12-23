@@ -499,7 +499,6 @@ roots(poly([1,2,3,4]))     # [1.0,2.0,3.0,4.0]
 function roots{T}(p::Poly{T})
     R = promote_type(T, Float64)
     length(p) == 0 && return zeros(R, 0)
-
     num_leading_zeros = 0
     while abs(p[num_leading_zeros]) <= 2*eps(T)
         if num_leading_zeros == length(p)-1
@@ -507,23 +506,17 @@ function roots{T}(p::Poly{T})
         end
         num_leading_zeros += 1
     end
-
     num_trailing_zeros = 0
     while abs(p[end - num_trailing_zeros]) <= 2*eps(T)
         num_trailing_zeros += 1
     end
-
     n = endof(p)-(num_leading_zeros + num_trailing_zeros)
-
     n < 1 && return zeros(R, length(p) - num_trailing_zeros - 1)
 
-    companion = zeros(R, n, n)
+    companion = diagm(ones(R, n-1), -1)
     an = p[end-num_trailing_zeros]
-    for i = 1:n-1
-        companion[i,n] = -p[num_leading_zeros + i - 1] / an
-        companion[i+1,i] = 1;
-    end
-    companion[end,end] = -p[end-num_trailing_zeros-1] / an
+    companion[1,:] = -p[(end-num_trailing_zeros-1):-1:num_leading_zeros] / an
+    
     D = eigvals(companion)
     r = zeros(eltype(D),length(p)-num_trailing_zeros-1)
     r[1:n] = D
@@ -571,13 +564,29 @@ polyfit(xs, ys, 2)
 ```
 
 Original by [ggggggggg](https://github.com/Keno/Polynomials.jl/issues/19)
+More robust version by Marek Peca <mp@eltvor.cz>
+    (1. no exponentiation in system matrix construction, 2. QR least squares)
 """
 function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     length(x) == length(y) || throw(DomainError)
     1 <= n <= length(x) - 1 || throw(DomainError)
 
-    A = [ float(x[i])^p for i = 1:length(x), p = 0:n ]
-    Poly(A \ y, sym)
+    #
+    # here unsure, whether similar(float(x[1]),...), or similar(x,...)
+    # however similar may yield unwanted surprise in case of e.g. x::Int
+    #
+    A=similar(float(x[1:1]), length(x), n+1)
+    #
+    # TODO: add support for poly coef bitmap
+    # (i.e. polynomial with some terms fixed to zero)
+    #
+    A[:,1]=1
+    for i=1:n
+        A[:,i+1]=A[:,i] .* x   # cumulative product more precise than x.^n
+    end
+    Aqr=qrfact(A)   # returns QR object, not a matrix
+    p=Aqr\y         # least squares solution via QR
+    Poly(p, sym)
 end
 polyfit(x,y,sym::Symbol) = polyfit(x,y,length(x)-1, sym)
 

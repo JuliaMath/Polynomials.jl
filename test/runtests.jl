@@ -63,7 +63,7 @@ a_roots = copy(pN.a)
 @test all(abs(sort(roots(poly(a_roots))) - sort(a_roots)) .< 1e6)
 @test length(roots(p5)) == 4
 @test roots(pNULL) == []
-@test roots(pR) == [1//2, 3//2]
+@test sort(roots(pR)) == [1//2, 3//2]
 
 @test pNULL + 2 == p0 + 2 == 2 + p0 == Poly([2])
 @test p2 - 2 == -2 + p2 == Poly([-1,1])
