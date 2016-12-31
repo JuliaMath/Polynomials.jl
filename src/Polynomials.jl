@@ -13,7 +13,7 @@ export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
-import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype, .*, .-, .+
+import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype
 import Base: promote_rule, truncate, chop, call, conj, transpose, dot, hash
 import Base: isequal
 
@@ -156,7 +156,7 @@ variable(var::SymbolLike=:x) = variable(Float64, var)
 """
 function truncate{T}(p::Poly{Complex{T}}; reltol = eps(T), abstol = eps(T))
     a = coeffs(p)
-    amax = maxabs(a)
+    amax = maximum(abs,a)
     thresh = amax * reltol + abstol
     anew = map(ai -> complex(abs(real(ai)) <= thresh ? zero(T) : real(ai),
                              abs(imag(ai)) <= thresh ? zero(T) : imag(ai)),
@@ -166,7 +166,7 @@ end
 
 function truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))
     a = coeffs(p)
-    amax = maxabs(a)
+    amax = maximum(abs,a)
     anew = map(ai -> abs(ai) <= amax*reltol+abstol ? zero(T) : ai, a)
     return Poly(anew, p.var)
 end
@@ -244,16 +244,10 @@ one{T}(::Type{Poly{T}}) = Poly([one(T)])
 dot{T<:Number,S}(p::Poly{S}, c::T) = p * c
 dot{T<:Number,S}(c::T, p::Poly{S}) = c * p
 dot(p1::Poly, p2::Poly) = p1 * p2
-.*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
-.*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 /(p::Poly, c::Number) = Poly(p.a / c, p.var)
 -(p::Poly) = Poly(-p.a, p.var)
 -{T<:Number}(p::Poly, c::T) = +(p, -c)
-.-{T<:Number}(p::Poly, c::T) = +(p, -c)
-.-{T<:Number}(c::T, p::Poly) = +(p, -c)
 +{T<:Number}(c::T, p::Poly) = +(p, c)
-.+{T<:Number}(c::T, p::Poly) = +(p, c)
-.+{T<:Number}(p::Poly, c::T) = +(p, c)
 function +{T<:Number}(p::Poly, c::T)
     if length(p) < 1
         return Poly([c,], p.var)
@@ -302,6 +296,16 @@ function *{T,S}(p1::Poly{T}, p2::Poly{S})
         end
     end
     Poly(a,p1.var)
+end
+
+## older . operators
+if VERSION < v"0.6.0-dev"
+    @compat Base.:.+{T<:Number}(c::T, p::Poly) = +(p, c)
+    @compat Base.:.+{T<:Number}(p::Poly, c::T) = +(p, c)
+    @compat Base.:.-{T<:Number}(p::Poly, c::T) = +(p, -c)
+    @compat Base.:.-{T<:Number}(c::T, p::Poly) = +(p, -c)
+    @compat Base.:.*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
+    @compat Base.:.*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 end
 
 function divrem{T, S}(num::Poly{T}, den::Poly{S})
@@ -403,7 +407,7 @@ polyint{T}(p::Poly{T}) = polyint(p, 0)
 
 # if we have coefficients that have `NaN` representation
 function polyint{T<:Union{Real,Complex},S<:Number}(p::Poly{T}, k::S)
-  any(isnan(p.a)) && return Poly(promote_type(T,S)[NaN])
+  any(map(isnan,p.a)) && return Poly(promote_type(T,S)[NaN])
   _polyint(p, k)
 end
 
@@ -415,7 +419,7 @@ end
 
 # if we have both coefficients and initial condition that can take `NaN`
 function polyint{T<:Union{Real,Complex},S<:Union{Real,Complex}}(p::Poly{T}, k::S)
-  (any(isnan(p.a)) || isnan(k)) && return Poly(promote_type(T,S)[NaN])
+  (any(map(isnan,p.a)) || isnan(k)) && return Poly(promote_type(T,S)[NaN])
   _polyint(p, k)
 end
 
@@ -449,7 +453,7 @@ function polyder{T<:Union{Real,Complex}}(p::Poly{T}, order::Int=1)
   n = length(p)
   order < 0       && error("Order of derivative must be non-negative")
   order == 0      && return p
-  any(isnan(p.a)) && return Poly(T[NaN], p.var)
+  any(map(isnan,p.a)) && return Poly(T[NaN], p.var)
   n <= order      && return Poly(T[], p.var)
   _polyder(p, order)
 end
@@ -537,7 +541,7 @@ gcd(poly([1,1,2]), poly([1,2,3])) # returns (x-1)*(x-2)
 ```
 """
 function gcd{T, S}(a::Poly{T}, b::Poly{S})
-    if all(abs(b.a).<=2*eps(S))
+    if all(map(abs,b.a).<=2*eps(S))
         return a
     else
         s, r = divrem(a, b)

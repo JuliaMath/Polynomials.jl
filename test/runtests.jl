@@ -60,7 +60,7 @@ sprint(show, pNULL)
 @test roots(p0)==roots(p1)==roots(pNULL)==[]
 @test roots(p2) == [-1]
 a_roots = copy(pN.a)
-@test all(abs(sort(roots(poly(a_roots))) - sort(a_roots)) .< 1e6)
+@test all(map(abs,sort(roots(poly(a_roots))) - sort(a_roots)) .< 1e6)
 @test length(roots(p5)) == 4
 @test roots(pNULL) == []
 @test sort(roots(pR)) == [1//2, 3//2]
@@ -76,7 +76,7 @@ p3 = Poly([7, -3, 2, 6])
 p4 = p2 * p3
 @test divrem(p4, p2) == (p3, zero(p3))
 @test p3%p2 == p3
-@test all((abs((p2 ÷ p3 - Poly([1/9,2/3])).a)) .< eps())
+@test all((map(abs,(p2 ÷ p3 - Poly([1/9,2/3])).a)) .< eps())
 @test divrem(p0,p1) == (p0,p0)
 @test divrem(p1,p1) == (p1,p0)
 @test divrem(p2,p2) == (p1,p0)
@@ -106,25 +106,25 @@ pcpy2 = copy(pcpy1)
 #Tests for Pade approximants
 
 println("Test for the exponential function.")
-a = Poly(1.//convert(Vector{BigInt},gamma(BigFloat(1):BigFloat(17))),"x")
+a = Poly(1.//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
 PQexp = Pade(a,8,8)
 @test isapprox(convert(Float64, padeval(PQexp,1.0)), exp(1.0))
 @test isapprox(convert(Float64, padeval(PQexp,-1.0)), exp(-1.0))
 
 println("Test for the sine function.")
-b = Poly(convert(Vector{BigInt},sinpi((0:16)/2)).//convert(Vector{BigInt},gamma(BigFloat(1):BigFloat(17))),"x")
+b = Poly(convert(Vector{BigInt},map(sinpi,(0:16)/2)).//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
 PQsin = Pade(b,8,7)
 @test isapprox(convert(Float64, padeval(PQsin,1.0)), sin(1.0))
 @test isapprox(convert(Float64, padeval(PQsin,-1.0)),sin(-1.0))
 
 println("Test for the cosine function.")
-c = Poly(convert(Vector{BigInt},sinpi((1:17)/2)).//convert(Vector{BigInt},gamma(BigFloat(1):BigFloat(17))),"x")
+c = Poly(convert(Vector{BigInt},map(sinpi,(1:17)/2)).//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
 PQcos = Pade(c,8,8)
 @test isapprox(convert(Float64, padeval(PQcos,1.0)), cos(1.0))
 @test isapprox(convert(Float64, padeval(PQcos,-1.0)), cos(-1.0))
 
 println("Test for the summation of a factorially divergent series.")
-d = Poly(convert(Vector{BigInt},(-1).^(0:60).*gamma(BigFloat(1):BigFloat(61.0))).//1,"x")
+d = Poly(convert(Vector{BigInt},(-1).^(0:60).* map(gamma,BigFloat(1):BigFloat(61.0))).//1,"x")
 PQexpint = Pade(d,30,30)
 @compat println("The approximate sum of the divergent series is:  ", Float64(padeval(PQexpint,1.0)))
 println("The approximate sum of the convergent series is: ",exp(1)*(-γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
@@ -134,11 +134,11 @@ println("The approximate sum of the convergent series is: ",exp(1)*(-γ-sum([(-1
 
 ## polyfit
 xs = linspace(0, pi, 10)
-ys = sin(xs)
+ys = map(sin,xs)
 p = polyfit(xs, ys)
 p = polyfit(xs, ys, :t)
 p = polyfit(xs, ys, 2)
-@test maximum(abs(map(x->polyval(p, x), xs) - ys)) <= 0.03
+@test maximum(map(abs,map(x->polyval(p, x), xs) - ys)) <= 0.03
 
 
 ## truncation
@@ -207,7 +207,7 @@ import Base: +, *, -
 immutable Mod2 <: Number
   v::Bool
 end
-+(x::Mod2,y::Mod2) = Mod2(x.v$y.v)
++(x::Mod2,y::Mod2) = Mod2(xor(x.v, y.v))
 *(x::Mod2,y::Mod2) = Mod2(x.v&y.v)
 -(x::Mod2,y::Mod2) = x+y
 -(x::Mod2) = x
@@ -239,14 +239,15 @@ p = Poly([1//2, 2//3, 1])
 
 
 ## want to be able to copy and paste
-string_eval_poly(p,x) = eval(Expr(:function, Expr(:call, :f, :x), parse(string(p)[6:end-1])))(x)
-p = Poly([1,2,3]) # copy and paste
-q = Poly([1//1, 2//1, 3//1])
-r = Poly([1.0, 2, 3])
-@test string_eval_poly(p, 5) == p(5)
-@test string_eval_poly(q, 5) == q(5)
-@test string_eval_poly(r, 5) == r(5)
-
+if VERSION < v"0.6.0-dev"
+    string_eval_poly(p,x) = eval(Expr(:function, Expr(:call, :f, :x), parse(string(p)[6:end-1])))(x)
+    p = Poly([1,2,3]) # copy and paste
+    q = Poly([1//1, 2//1, 3//1])
+    r = Poly([1.0, 2, 3])
+    @test string_eval_poly(p, 5) == p(5)
+    @test string_eval_poly(q, 5) == q(5)
+    @test string_eval_poly(r, 5) == r(5)
+end
 ## check hashing
 p = poly([1,2,3])
 q = poly([1,2,3])
@@ -266,7 +267,7 @@ p2 = Poly([0., 5., Inf])
 p3 = Poly([0, NaN])
 
 @test p1 == p2 && !isequal(p1, p2)
-@test is(p3, p3) && p3 ≠ p3 && isequal(p3, p3)
+@test p3 === p3 && p3 ≠ p3 && isequal(p3, p3)
 
 ## Handling of `NaN`s
 p     = Poly([NaN, 1, 5])
