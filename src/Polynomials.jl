@@ -76,6 +76,7 @@ end
 
 Poly(n::Number, var::SymbolLike = :x) = Poly([n], var)
 
+
 # create a Poly object from its roots
 """
 
@@ -107,8 +108,9 @@ include("show.jl") # display polynomials.
 
 convert{T}(::Type{Poly{T}}, p::Poly{T}) = p
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
-convert{T, S<:Number}(::Type{Poly{T}}, x::S) = Poly(promote_type(T, S)[x])
-convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}) = map(el->convert(Poly{promote_type(T,S)},el),x)
+convert{T, S<:Number}(::Type{Poly{T}}, x::S, var::SymbolLike=:x) = Poly(promote_type(T, S)[x], var)
+convert{T, S<:Number}(::Type{Poly{T}}, x::Vector{S}, var::SymbolLike=:x) = (R = promote_type(T,S); Poly(convert(Vector{R},x), var))
+convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}, var::SymbolLike=:x) = map(el->convert(Poly{promote_type(T,S)},el,var),x)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 promote_rule{T, S<:Number}(::Type{Poly{T}}, ::Type{S}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
@@ -298,8 +300,8 @@ function *{T,S}(p1::Poly{T}, p2::Poly{S})
     Poly(a,p1.var)
 end
 
-## older . operators
-if VERSION < v"0.6.0-dev"
+## older . operators, hack to avoid warning on v0.6
+dot_operators = quote    
     @compat Base.:.+{T<:Number}(c::T, p::Poly) = +(p, c)
     @compat Base.:.+{T<:Number}(p::Poly, c::T) = +(p, c)
     @compat Base.:.-{T<:Number}(p::Poly, c::T) = +(p, -c)
@@ -307,6 +309,11 @@ if VERSION < v"0.6.0-dev"
     @compat Base.:.*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
     @compat Base.:.*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 end
+VERSION < v"0.6.0-dev" && eval(dot_operators)
+
+
+# are any values NaN
+hasnan(p::Poly) = reduce(|, (@compat isnan.(p.a)))
 
 function divrem{T, S}(num::Poly{T}, den::Poly{S})
     if num.var != den.var
@@ -373,6 +380,7 @@ p(4)   # 57 = 1 + 2*4 + 3*4^2
 """
 function polyval{T,S}(p::Poly{T}, x::S)
     R = promote_type(T,S)
+
     lenp = length(p)
     if lenp == 0
         return zero(R) * x
@@ -407,20 +415,20 @@ polyint{T}(p::Poly{T}) = polyint(p, 0)
 
 # if we have coefficients that have `NaN` representation
 function polyint{T<:Union{Real,Complex},S<:Number}(p::Poly{T}, k::S)
-  any(map(isnan,p.a)) && return Poly(promote_type(T,S)[NaN])
-  _polyint(p, k)
+    hasnan(p) && return Poly(promote_type(T,S)[NaN])
+    _polyint(p, k)
 end
 
 # if we have initial condition that can represent `NaN`
 function polyint{T,S<:Union{Real,Complex}}(p::Poly{T}, k::S)
-  isnan(k) && return Poly(promote_type(T,S)[NaN])
-  _polyint(p, k)
+    isnan(k) && return Poly(promote_type(T,S)[NaN])
+    _polyint(p, k)
 end
 
 # if we have both coefficients and initial condition that can take `NaN`
 function polyint{T<:Union{Real,Complex},S<:Union{Real,Complex}}(p::Poly{T}, k::S)
-  (any(map(isnan,p.a)) || isnan(k)) && return Poly(promote_type(T,S)[NaN])
-  _polyint(p, k)
+    hasnan(p) || isnan(k) && return Poly(promote_type(T,S)[NaN])
+    _polyint(p, k)
 end
 
 # otherwise, catch all
@@ -450,12 +458,12 @@ polyder(Poly([1, 3, -1]))   # Poly(3 - 2x)
 """
 # if we have coefficients that can represent `NaN`s
 function polyder{T<:Union{Real,Complex}}(p::Poly{T}, order::Int=1)
-  n = length(p)
-  order < 0       && error("Order of derivative must be non-negative")
-  order == 0      && return p
-  any(map(isnan,p.a)) && return Poly(T[NaN], p.var)
-  n <= order      && return Poly(T[], p.var)
-  _polyder(p, order)
+    n = length(p)
+    order < 0       && error("Order of derivative must be non-negative")
+    order == 0      && return p
+    hasnan(p)       && return Poly(T[NaN], p.var)
+    n <= order      && return Poly(T[], p.var)
+    _polyder(p, order)
 end
 
 # otherwise
@@ -541,7 +549,7 @@ gcd(poly([1,1,2]), poly([1,2,3])) # returns (x-1)*(x-2)
 ```
 """
 function gcd{T, S}(a::Poly{T}, b::Poly{S})
-    if all(map(abs,b.a).<=2*eps(S))
+    if reduce(&, (@compat abs.(b.a)) .<=2*eps(S))
         return a
     else
         s, r = divrem(a, b)

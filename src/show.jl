@@ -114,8 +114,8 @@ end
   
 function printcoefficient{T}(io::IO, pj::Complex{T}, j, mimetype)
 
-    hasreal = abs(real(pj)) > 0
-    hasimag = abs(imag(pj)) > 0
+    hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
+    hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
     
     if hasreal & hasimag
         print(io, '(')
@@ -127,6 +127,7 @@ function printcoefficient{T}(io::IO, pj::Complex{T}, j, mimetype)
     elseif hasimag
         b = imag(pj)
         (showone(T) || b != one(T)) && show(io,  mimetype, b)
+        (isnan(imag(pj)) || isinf(imag(pj))) && print(io, showop(mimetype, "*"))
         show(io, mimetype, im)
     else
         return
