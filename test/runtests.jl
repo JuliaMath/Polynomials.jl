@@ -13,6 +13,10 @@ p5 = Poly([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
 pN = Poly([276,3,87,15,24,0])
 pR = Poly([3//4, -2//1, 1//1])
 X = Poly([0.0, 1.0])
+T = Int64
+Poly{T}([zero(T), one(T)])
+Poly{T}([zero(T), one(T)], :y)
+
 p1000 = Poly(randn(1000))
 
 @test length(pNULL) == 1
@@ -279,3 +283,4 @@ pint  = polyint(p)
 @test isnan(p(1))                 # p(1) evaluates to NaN
 @test isequal(pder, Poly([NaN]))  # derivative will give Poly([NaN])
 @test isequal(pint, Poly([NaN]))  # integral will give Poly([NaN])
+

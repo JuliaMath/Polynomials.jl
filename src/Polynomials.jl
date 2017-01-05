@@ -58,22 +58,39 @@ q = Poly([1, 2, 3], :s)
 p + q                  # ERROR: Polynomials must have same variable.
 ```
 
-"""
-immutable Poly{T}
-  a::Vector{T}
-  var::Symbol
-  @compat function (::Type{Poly}){T<:Number}(a::Vector{T}, var::SymbolLike = :x)
-    # if a == [] we replace it with a = [0]
-    if length(a) == 0
-      return new{T}(zeros(T,1), @compat Symbol(var))
-    else
-      # determine the last nonzero element and truncate a accordingly
-      a_last = max(1,findlast(x->x!=zero(T), a))
-      new{T}(a[1:a_last], @compat Symbol(var))
+    """
+
+immutable Poly{T<:Number}
+    a::Vector{T}
+    var::Symbol
+    function Poly(a::Vector{T}, var::SymbolLike=:x)
+        # if a == [] we replace it with a = [0]
+        if length(a) == 0
+            return new{T}(zeros(T,1), @compat Symbol(var))
+        else
+            # determine the last nonzero element and truncate a accordingly
+            a_last = max(1,findlast(x->x!=zero(T), a))
+            new{T}(a[1:a_last], @compat Symbol(var))
+        end
     end
-  end
 end
 
+# immutable Poly{T}
+#   a::Vector{T}
+#   var::Symbol
+#   @compat function (::Type{Poly}){T<:Number}(a::Vector{T}, var::SymbolLike = :x)
+#     # if a == [] we replace it with a = [0]
+#     if length(a) == 0
+#       return new{T}(zeros(T,1), @compat Symbol(var))
+#     else
+#       # determine the last nonzero element and truncate a accordingly
+#       a_last = max(1,findlast(x->x!=zero(T), a))
+#       new{T}(a[1:a_last], @compat Symbol(var))
+#     end
+#   end
+# end
+
+Poly{T <: Number}(x::Vector{T}, var::SymbolLike=:x) = Poly{T}(x, var)
 Poly(n::Number, var::SymbolLike = :x) = Poly([n], var)
 
 
