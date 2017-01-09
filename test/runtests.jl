@@ -283,4 +283,3 @@ pint  = polyint(p)
 @test isnan(p(1))                 # p(1) evaluates to NaN
 @test isequal(pder, Poly([NaN]))  # derivative will give Poly([NaN])
 @test isequal(pint, Poly([NaN]))  # integral will give Poly([NaN])
-

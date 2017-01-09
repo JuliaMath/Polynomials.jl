@@ -59,25 +59,24 @@ p + q                  # ERROR: Polynomials must have same variable.
 ```
 
 """
-
-immutable Poly{T<:Number}
-    a::Vector{T}
-    var::Symbol
-    function Poly(a::Vector{T}, var::SymbolLike=:x)
-        # if a == [] we replace it with a = [0]
-        if length(a) == 0
-            return new{T}(zeros(T,1), @compat Symbol(var))
-        else
-            # determine the last nonzero element and truncate a accordingly
-            a_last = max(1,findlast(x->x!=zero(T), a))
-            new{T}(a[1:a_last], @compat Symbol(var))
-        end
+immutable Poly{T}
+  a::Vector{T}
+  var::Symbol
+  @compat function (::Type{Poly}){T<:Number}(a::Vector{T}, var::SymbolLike = :x)
+    # if a == [] we replace it with a = [0]
+    if length(a) == 0
+      return new{T}(zeros(T,1), @compat Symbol(var))
+    else
+      # determine the last nonzero element and truncate a accordingly
+      a_last = max(1,findlast(x->x!=zero(T), a))
+      new{T}(a[1:a_last], @compat Symbol(var))
     end
+  end
 end
 
-Poly{T <: Number}(x::Vector{T}, var::SymbolLike=:x) = Poly{T}(x, var)
 Poly(n::Number, var::SymbolLike = :x) = Poly([n], var)
-
+@compat (::Type{Poly{T}}){T,S}(x::Vector{S}, var::SymbolLike = :x) =
+  Poly(convert(Vector{T}, x), var)
 
 # create a Poly object from its roots
 """
@@ -303,7 +302,7 @@ function *{T,S}(p1::Poly{T}, p2::Poly{S})
 end
 
 ## older . operators, hack to avoid warning on v0.6
-dot_operators = quote    
+dot_operators = quote
     @compat Base.:.+{T<:Number}(c::T, p::Poly) = +(p, c)
     @compat Base.:.+{T<:Number}(p::Poly, c::T) = +(p, c)
     @compat Base.:.-{T<:Number}(p::Poly, c::T) = +(p, -c)
@@ -530,7 +529,7 @@ function roots{T}(p::Poly{T})
     companion = diagm(ones(R, n-1), -1)
     an = p[end-num_trailing_zeros]
     companion[1,:] = -p[(end-num_trailing_zeros-1):-1:num_leading_zeros] / an
-    
+
     D = eigvals(companion)
     r = zeros(eltype(D),length(p)-num_trailing_zeros-1)
     r[1:n] = D
