@@ -13,6 +13,10 @@ p5 = Poly([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
 pN = Poly([276,3,87,15,24,0])
 pR = Poly([3//4, -2//1, 1//1])
 X = Poly([0.0, 1.0])
+T = Int64
+Poly{T}([zero(T), one(T)])
+Poly{T}([zero(T), one(T)], :y)
+
 p1000 = Poly(randn(1000))
 
 @test length(pNULL) == 1
@@ -231,6 +235,8 @@ p = Poly([1, im])
 @test repr(p) == "Poly(1 + im⋅x)"
 p = Poly([1+im, 1-im, -1+im, -1 - im])# minus signs
 @test repr(p) == "Poly((1 + 1im) + (1 - 1im)⋅x - (1 - 1im)⋅x^2 - (1 + 1im)⋅x^3)"
+p = Poly([1.0, 0 + NaN*im, NaN, Inf, 0 - Inf*im]) # handle NaN or Inf appropriately
+@test repr(p) == "Poly(1.0 + NaN⋅im⋅x + NaN⋅x^2 + Inf⋅x^3 - Inf⋅im⋅x^4)"
 
 p = Poly([1,2,3])
 @test reprmime("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
