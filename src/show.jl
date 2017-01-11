@@ -94,7 +94,7 @@ end
 
 
 ## print the sign
-## returns aspos(pj) 
+## returns aspos(pj)
 function printsign{T}(io::IO, pj::T, j, first, mimetype)
     neg = isneg(pj)
     if first
@@ -111,12 +111,12 @@ function printproductsign{T}(io::IO, pj::T, j, mimetype)
     j == 0 && return
     (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
 end
-  
+
 function printcoefficient{T}(io::IO, pj::Complex{T}, j, mimetype)
 
     hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
     hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
-    
+
     if hasreal & hasimag
         print(io, '(')
         show(io, mimetype, pj)
@@ -134,8 +134,8 @@ function printcoefficient{T}(io::IO, pj::Complex{T}, j, mimetype)
     end
 end
 
-  
-## show a single term 
+
+## show a single term
 function printcoefficient{T}(io::IO, pj::T, j, mimetype)
     pj == one(T) && !(showone(T) || j == 0) && return
     show(io, mimetype, pj)
