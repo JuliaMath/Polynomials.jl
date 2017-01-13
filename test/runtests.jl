@@ -283,3 +283,9 @@ pint  = polyint(p)
 @test isnan(p(1))                 # p(1) evaluates to NaN
 @test isequal(pder, Poly([NaN]))  # derivative will give Poly([NaN])
 @test isequal(pint, Poly([NaN]))  # integral will give Poly([NaN])
+
+## proper conversions in arithmetic with different element-types #94
+p = Poly([0,one(Float64)])
+@test Poly{Complex{Float64}} == typeof(p+1im)
+@test Poly{Complex{Float64}} == typeof(1im-p)
+@test Poly{Complex{Float64}} == typeof(p*1im)
