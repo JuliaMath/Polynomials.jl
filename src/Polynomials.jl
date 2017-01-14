@@ -251,23 +251,19 @@ dot(p1::Poly, p2::Poly) = p1 * p2
 -(p::Poly) = Poly(-p.a, p.var)
 -{T<:Number}(p::Poly, c::T) = +(p, -c)
 +{T<:Number}(c::T, p::Poly) = +(p, c)
-function +{T<:Number}(p::Poly, c::T)
-    if length(p) < 1
-        return Poly([c,], p.var)
-    else
-        p2 = copy(p)
-        p2.a[1] += c;
-        return p2;
-    end
+function +{S,T<:Number}(p::Poly{S}, c::T)
+    U = promote_type(S,T)
+    degree(p) == 0 && return Poly(U[c], p.var)
+    p2 = U == S ? copy(p) : convert(Poly{U}, p)
+    p2[0] += c
+    return p2
 end
-function -{T<:Number}(c::T, p::Poly)
-    if length(p) < 1
-        return Poly(T[c,], p.var)
-    else
-        p2 = -p;
-        p2.a[1] += c;
-        return p2;
-    end
+function -{T<:Number,S}(c::T, p::Poly{S})
+    U = promote_type(S,T)
+    degree(p) == 0 && return Poly(U[c], p.var)
+    p2 = convert(Poly{U}, -p)
+    p2[0] += c
+    return p2
 end
 
 function +{T,S}(p1::Poly{T}, p2::Poly{S})
