@@ -423,7 +423,7 @@ end
 
 # if we have both coefficients and initial condition that can take `NaN`
 function polyint{T<:Union{Real,Complex},S<:Union{Real,Complex}}(p::Poly{T}, k::S)
-    hasnan(p) || isnan(k) && return Poly(promote_type(T,S)[NaN])
+    (hasnan(p) || isnan(k)) && return Poly(promote_type(T,S)[NaN])
     _polyint(p, k)
 end
 
