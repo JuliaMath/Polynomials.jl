@@ -109,9 +109,8 @@ include("show.jl") # display polynomials.
 
 convert{T}(::Type{Poly{T}}, p::Poly{T}) = p
 convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
-convert{T, S<:Number}(::Type{Poly{T}}, x::S, var::SymbolLike=:x) = Poly(promote_type(T, S)[x], var)
-convert{T, S<:Number}(::Type{Poly{T}}, x::Vector{S}, var::SymbolLike=:x) = (R = promote_type(T,S); Poly(convert(Vector{R},x), var))
-convert{T, S<:Number,n}(::Type{Poly{T}}, x::Array{S,n}, var::SymbolLike=:x) = map(el->convert(Poly{promote_type(T,S)},el,var),x)
+convert{T, S<:Number}(::Type{Poly{T}}, x::S, var::SymbolLike=:x) = Poly(T[x], var)
+convert{T, S<:Number}(::Type{Poly{T}}, x::AbstractArray{S}, var::SymbolLike=:x) = map(el->Poly(T[el],var), x)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 promote_rule{T, S<:Number}(::Type{Poly{T}}, ::Type{S}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = T
@@ -306,7 +305,7 @@ dot_operators = quote
     @compat Base.:.*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
     @compat Base.:.*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 end
-VERSION < v"0.6.0-dev" && eval(dot_operators)
+VERSION < v"0.6.0" && eval(dot_operators)
 
 
 # are any values NaN
@@ -434,7 +433,7 @@ polyint{T,S<:Number}(p::Poly{T}, k::S) = _polyint(p, k)
 function _polyint{T,S<:Number}(p::Poly{T}, k::S)
     n = length(p)
     R = promote_type(typeof(one(T)/1), S)
-    a2 = Array(R, n+1)
+    a2 = Vector{R}(n+1)
     a2[1] = k
     for i = 1:n
         a2[i+1] = p[i-1] / i
@@ -474,7 +473,7 @@ end
 
 function _polyder{T}(p::Poly{T}, order::Int=1)
   n = length(p)
-  a2 = Array(T, n-order)
+  a2 = Vector{T}(n-order)
   for i = order:n-1
     a2[i-order+1] = p[i] * prod((i-order+1):i)
   end
