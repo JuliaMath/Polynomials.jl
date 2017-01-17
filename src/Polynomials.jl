@@ -13,13 +13,9 @@ export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
 import Base: length, endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
-import Base: show, print, *, /, //, -, +, ==, divrem, div, rem, eltype
+import Base: show, print, *, /, //, -, +, ==, isapprox, divrem, div, rem, eltype
 import Base: promote_rule, truncate, chop, call, conj, transpose, dot, hash
 import Base: isequal
-
-eps{T}(::Type{T}) = zero(T)
-eps{F<:AbstractFloat}(x::Type{F}) = Base.eps(F)
-eps{T}(x::Type{Complex{T}}) = eps(T)
 
 typealias SymbolLike Union{AbstractString,Char,Symbol}
 
@@ -152,34 +148,29 @@ variable{T}(p::Poly{T}) = variable(T, p.var)
 variable(var::SymbolLike=:x) = variable(Float64, var)
 
 """
+    truncate{T}(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)), abstol::Real = 0)
 
-`truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))`: returns a polynomial with coefficients a_i truncated to zero if |a_i| <= reltol*maxabs(a)+abstol
-
+Return a polynomial with coefficients `a_i` truncated to zero if `|a_i| <= reltol*maxabs(a)+abstol`.
 """
-function truncate{T}(p::Poly{Complex{T}}; reltol = eps(T), abstol = eps(T))
+function truncate{T}(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
+  abstol::Real = 0)
     a = coeffs(p)
     amax = maximum(abs,a)
     thresh = amax * reltol + abstol
-    anew = map(ai -> complex(abs(real(ai)) <= thresh ? zero(T) : real(ai),
-                             abs(imag(ai)) <= thresh ? zero(T) : imag(ai)),
-               a)
-    return Poly(anew, p.var)
-end
-
-function truncate{T}(p::Poly{T}; reltol = eps(T), abstol = eps(T))
-    a = coeffs(p)
-    amax = maximum(abs,a)
-    anew = map(ai -> abs(ai) <= amax*reltol+abstol ? zero(T) : ai, a)
+    anew = map(ai -> abs(ai) <= thresh ? zero(T) : ai, a)
     return Poly(anew, p.var)
 end
 
 """
 
-`chop(p::Poly{T}; kwargs...)` chop off leading values which are
-approximately zero. The tolerances are passed to `isapprox`.
+    chop(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)), abstol::Real = 0)
 
+Chop off leading values which are approximately zero.
+
+The tolerances `reltol` and `abstol` are passed to `isapprox`.
 """
-function chop{T}(p::Poly{T}; reltol=zero(T), abstol=2 * eps(T))
+function chop{T}(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
+  abstol::Real = 0)
     c = copy(p.a)
     for k=length(c):-1:1
         if !isapprox(c[k], zero(T); rtol=reltol, atol=abstol)
@@ -347,13 +338,34 @@ end
 div(num::Poly, den::Poly) = divrem(num, den)[1]
 rem(num::Poly, den::Poly) = divrem(num, den)[2]
 
-function ==(p1::Poly, p2::Poly)
-    if p1.var != p2.var
-        return false
-    else
-        return p1.a == p2.a
-    end
+==(p1::Poly, p2::Poly) = (p1.var == p2.var && p1.a == p2.a)
+==(p1::Poly, n::Number) = (coeffs(p1) == [n])
+==(n::Number, p1::Poly) = (p1 == n)
+
+"""
+    isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; reltol::Real = Base.rtoldefault(T,S), abstol::Real = 0, norm::Function = vecnorm)
+
+Truncate `p1` and `p2`, and compare the coefficients with `isapprox`.
+
+The tolerances `reltol` and `abstol` are passed to both `truncate` and `isapprox`.
+"""
+function isapprox{T,S}(p1::Poly{T}, p2::Poly{S};
+  reltol::Real = Base.rtoldefault(T,S), abstol::Real = 0, norm::Function = vecnorm)
+  p1.var == p2.var || error("Polynomials must have same variable")
+  p1t = truncate(p1; reltol = reltol, abstol = abstol)
+  p2t = truncate(p2; reltol = reltol, abstol = abstol)
+  length(p1t) == length(p2t) && isapprox(coeffs(p1t), coeffs(p2t); rtol = reltol,
+    atol = abstol, norm = norm)
 end
+
+function isapprox{T,S<:Number}(p1::Poly{T}, n::S; reltol::Real = Base.rtoldefault(T,S),
+  abstol::Real = 0)
+  p1t = truncate(p1; reltol = reltol, abstol = abstol)
+  degree(p1t) == 0 && isapprox(coeffs(p1), [n]; rtol = reltol, atol = abstol)
+end
+
+isapprox{T,S<:Number}(n::S, p1::Poly{T}; reltol::Real = Base.rtoldefault(T,S),
+  abstol::Real = 0) = isapprox(p1, n; reltol = reltol, abstol = abstol)
 
 hash(f::Poly, h::UInt) = hash(f.var, hash(f.a, h))
 isequal(p1::Poly, p2::Poly) = hash(p1) == hash(p2)
@@ -507,15 +519,16 @@ roots(poly([1,2,3,4]))     # [1.0,2.0,3.0,4.0]
 function roots{T}(p::Poly{T})
     R = promote_type(T, Float64)
     length(p) == 0 && return zeros(R, 0)
+    p = truncate(p)
     num_leading_zeros = 0
-    while abs(p[num_leading_zeros]) <= 2*eps(T)
+    while p[num_leading_zeros] ≈ zero(T)
         if num_leading_zeros == length(p)-1
             return zeros(R, 0)
         end
         num_leading_zeros += 1
     end
     num_trailing_zeros = 0
-    while abs(p[end - num_trailing_zeros]) <= 2*eps(T)
+    while p[end - num_trailing_zeros] ≈ zero(T)
         num_trailing_zeros += 1
     end
     n = endof(p)-(num_leading_zeros + num_trailing_zeros)
@@ -545,12 +558,11 @@ gcd(poly([1,1,2]), poly([1,2,3])) # returns (x-1)*(x-2)
 ```
 """
 function gcd{T, S}(a::Poly{T}, b::Poly{S})
-    if reduce(&, (@compat abs.(b.a)) .<=2*eps(S))
-        return a
-    else
-        s, r = divrem(a, b)
-        return gcd(b, r)
-    end
+  R = typeof(one(T)/one(S))
+  degree(b) == 0 && b ≈ zero(b) && return convert(Poly{R}, a)
+
+  s, r = divrem(a, b)
+  return gcd(b, r)
 end
 
 

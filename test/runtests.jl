@@ -289,3 +289,23 @@ p = Poly([0,one(Float64)])
 @test Poly{Complex{Float64}} == typeof(p+1im)
 @test Poly{Complex{Float64}} == typeof(1im-p)
 @test Poly{Complex{Float64}} == typeof(p*1im)
+
+## comparison between `Number`s and `Poly`s
+p1s = Poly([1,2], :s)
+p1x = Poly([1,2], :x)
+p2s = Poly([1], :s)
+
+@test p1s == p1s
+@test p1s ≠ p1x
+@test p1s ≠ p2s
+
+@test_throws ErrorException p1s ≈ p1x
+@test p1s ≉ p2s
+@test p1s ≈ Poly([1,2.], :s)
+
+@test p2s ≈ 1. ≈ p2s
+@test p2s == 1. == p2s
+@test p2s ≠ 2. ≠ p2s
+@test p1s ≠ 2. ≠ p1s
+
+@test nnz(map(Poly, speye(5,5))) == 5
