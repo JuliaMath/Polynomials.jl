@@ -252,14 +252,12 @@ dot(p1::Poly, p2::Poly) = p1 * p2
 +{T<:Number}(c::T, p::Poly) = +(p, c)
 function +{S,T<:Number}(p::Poly{S}, c::T)
     U = promote_type(S,T)
-    degree(p) == 0 && return Poly(U[c], p.var)
     p2 = U == S ? copy(p) : convert(Poly{U}, p)
     p2[0] += c
     return p2
 end
 function -{T<:Number,S}(c::T, p::Poly{S})
     U = promote_type(S,T)
-    degree(p) == 0 && return Poly(U[c], p.var)
     p2 = convert(Poly{U}, -p)
     p2[0] += c
     return p2
