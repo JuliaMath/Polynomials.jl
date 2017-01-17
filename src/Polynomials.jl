@@ -243,14 +243,12 @@ dot(p1::Poly, p2::Poly) = p1 * p2
 +{T<:Number}(c::T, p::Poly) = +(p, c)
 function +{S,T<:Number}(p::Poly{S}, c::T)
     U = promote_type(S,T)
-    degree(p) == 0 && return Poly(U[c], p.var)
     p2 = U == S ? copy(p) : convert(Poly{U}, p)
     p2[0] += c
     return p2
 end
 function -{T<:Number,S}(c::T, p::Poly{S})
     U = promote_type(S,T)
-    degree(p) == 0 && return Poly(U[c], p.var)
     p2 = convert(Poly{U}, -p)
     p2[0] += c
     return p2
@@ -435,7 +433,7 @@ end
 
 # if we have both coefficients and initial condition that can take `NaN`
 function polyint{T<:Union{Real,Complex},S<:Union{Real,Complex}}(p::Poly{T}, k::S)
-    hasnan(p) || isnan(k) && return Poly(promote_type(T,S)[NaN])
+    (hasnan(p) || isnan(k)) && return Poly(promote_type(T,S)[NaN])
     _polyint(p, k)
 end
 

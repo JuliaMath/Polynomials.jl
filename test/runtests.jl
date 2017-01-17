@@ -309,3 +309,7 @@ p2s = Poly([1], :s)
 @test p1s ≠ 2. ≠ p1s
 
 @test nnz(map(Poly, speye(5,5))) == 5
+
+@test Poly([0.5]) + 2 == Poly([2.5])
+@test 2 - Poly([0.5]) == Poly([1.5])
+
