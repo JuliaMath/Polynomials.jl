@@ -294,7 +294,7 @@ dot_operators = quote
     @compat Base.:.*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
     @compat Base.:.*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
 end
-VERSION < v"0.6.0" && eval(dot_operators)
+VERSION < v"0.6.0-dev" && eval(dot_operators)
 
 
 # are any values NaN
