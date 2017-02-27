@@ -206,23 +206,37 @@ transpose(p::Poly) = p
 * `getindex(p::Poly, i)`: If `p=a_n x^n + a_{n-1}x^{n-1} + ... + a_1 x^1 + a_0`, then `p[i]` returns `a_i`.
 
 """
-getindex{T}(p::Poly{T}, i) = (i+1 > length(p.a) ? zero(T) : p.a[i+1])
-getindex{T}(p::Poly{T}, idx::AbstractArray) = map(i->p[i], idx)
-function setindex!(p::Poly, v, i)
-    n = length(p.a)
-    if n < i+1
-        resize!(p.a,i+1)
-        p.a[n+1:i] = 0
-    end
-    p.a[i+1] = v
-    v
-end
-function setindex!(p::Poly, vs, idx::AbstractArray)
-    [setindex!(p, v, i) for (i,v) in zip(idx, vs)]
-    p
-end
-eachindex{T}(p::Poly{T}) = 0:(length(p)-1)
+getindex{T}(p::Poly{T}, idx::Int)                     = (idx ≥ length(p.a) ? zero(T) : p.a[idx+1])
+getindex{T}(p::Poly{T}, indices::AbstractVector{Int}) = map(idx->p[idx], indices)
+getindex{T}(p::Poly{T}, ::Colon)                      = p[0:length(p)-1]
 
+function setindex!(p::Poly, value, idx::Int)
+    n = length(p.a)
+    if n ≤ idx
+        resize!(p.a, idx+1)
+        p.a[n+1:idx] = 0
+    end
+    p.a[idx+1] = value
+    return p
+end
+
+function setindex!(p::Poly, values::AbstractVector, indices::AbstractVector{Int})
+    for (idx, value) in zip(indices, values)
+      setindex!(p, value, idx)
+    end
+    return p
+end
+
+function setindex!(p::Poly, value, indices::AbstractVector{Int})
+  for idx in indices
+    setindex!(p, value, idx)
+  end
+  return p
+end
+
+setindex!(p::Poly, values, ::Colon) = setindex!(p, values, 0:length(p)-1)
+
+eachindex{T}(p::Poly{T}) = 0:(length(p)-1)
 
 copy(p::Poly) = Poly(copy(p.a), p.var)
 

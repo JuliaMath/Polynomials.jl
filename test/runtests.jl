@@ -165,6 +165,10 @@ p1[5] = 1
 @test p1[5] == 1
 @test p1 == Poly([1,2,1,0,0,1])
 
+p1[:] = 0
+@test p1 ≈ zero(p1)
+p1[:] = [1,2,1,0,0,1]
+@test p1 == Poly([1,2,1,0,0,1])
 
 ## elementwise operations #52
 println("Test for element-wise operations")
@@ -186,6 +190,8 @@ p1 = Poly([4,5,6])
 @test all(p1[0:end] .== [4,5,6])
 p1[0:1] = [7,8]
 @test all(p1[0:end] .== [7,8,6])
+
+@test p1[:] == coeffs(p1)
 
 ## conjugate of poly (issue #59)
 as = [im, 1, 2]
@@ -312,4 +318,3 @@ p2s = Poly([1], :s)
 
 @test Poly([0.5]) + 2 == Poly([2.5])
 @test 2 - Poly([0.5]) == Poly([1.5])
-
