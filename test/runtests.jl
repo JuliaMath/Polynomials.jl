@@ -205,13 +205,6 @@ p2 = convert(Poly{Int64}, p1)
 p2[3] = 3
 @test p1[3] == 3
 
-
-## eltype of a Poly type
-types = [Int, UInt8, Float64]
-for t in types
-  @test t == eltype(Poly{t})
-end
-
 ## Polynomials with non-Real type
 import Base: +, *, -
 immutable Mod2 <: Number
@@ -318,3 +311,16 @@ p2s = Poly([1], :s)
 
 @test Poly([0.5]) + 2 == Poly([2.5])
 @test 2 - Poly([0.5]) == Poly([1.5])
+
+# test size
+@test size(Poly([0.5, 0.2])) == (2,)
+@test size(Poly([0.5, 0.2]), 1) == 2
+@test size(Poly([0.5, 0.2]), 1, 2) == (2,1)
+
+# test iteration
+p1 = Poly([1,2,0,3])
+for term in p1
+  @test isa(term, Poly)
+end
+
+@test eltype(typeof(p1)) == typeof(p1)
