@@ -324,3 +324,4 @@ for term in p1
 end
 
 @test eltype(typeof(p1)) == typeof(p1)
+@test length(collect(p1)) == degree(p1)+1
