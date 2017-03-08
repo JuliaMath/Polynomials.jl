@@ -59,7 +59,7 @@ p + q                  # ERROR: Polynomials must have same variable.
 immutable Poly{T}
   a::Vector{T}
   var::Symbol
-  @compat function (::Type{Poly}){T<:Number}(a::Vector{T}, var::SymbolLike = :x)
+  @compat function (::Type{Poly}){T<:Number}(a::AbstractVector{T}, var::SymbolLike = :x)
     # if a == [] we replace it with a = [0]
     if length(a) == 0
       return new{T}(zeros(T,1), @compat Symbol(var))
@@ -72,7 +72,7 @@ immutable Poly{T}
 end
 
 Poly(n::Number, var::SymbolLike = :x) = Poly([n], var)
-@compat (::Type{Poly{T}}){T,S}(x::Vector{S}, var::SymbolLike = :x) =
+@compat (::Type{Poly{T}}){T,S}(x::AbstractVector{S}, var::SymbolLike = :x) =
   Poly(convert(Vector{T}, x), var)
 
 # create a Poly object from its roots
