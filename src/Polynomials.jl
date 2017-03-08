@@ -110,7 +110,7 @@ convert{T, S<:Number}(::Type{Poly{T}}, x::S, var::SymbolLike=:x) = Poly(T[x], va
 convert{T, S<:Number}(::Type{Poly{T}}, x::AbstractArray{S}, var::SymbolLike=:x) = map(el->Poly(T[el],var), x)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 promote_rule{T, S<:Number}(::Type{Poly{T}}, ::Type{S}) = Poly{promote_type(T, S)}
-eltype{T}(::Poly{T}) = T
+eltype{T}(::Poly{T}) = Poly{T}
 
 """
 
