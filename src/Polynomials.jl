@@ -15,10 +15,10 @@ export Pade, padeval
 import Base: start, next, done, length, size, eltype
 import Base: endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, isapprox, divrem, div, rem, eltype
-import Base: promote_rule, truncate, chop, call, conj, transpose, dot, hash
+import Base: promote_rule, truncate, chop,  conj, transpose, dot, hash
 import Base: isequal
 
-typealias SymbolLike Union{AbstractString,Char,Symbol}
+const SymbolLike = Union{AbstractString,Char,Symbol}
 
 """
 
@@ -260,9 +260,6 @@ one{T}(::Type{Poly{T}}) = Poly([one(T)])
 ## Overload arithmetic operators for polynomial operations between polynomials and scalars
 *{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
 *{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
-dot{T<:Number,S}(p::Poly{S}, c::T) = p * c
-dot{T<:Number,S}(c::T, p::Poly{S}) = c * p
-dot(p1::Poly, p2::Poly) = p1 * p2
 /(p::Poly, c::Number) = Poly(p.a / c, p.var)
 -(p::Poly) = Poly(-p.a, p.var)
 -{T<:Number}(p::Poly, c::T) = +(p, -c)
