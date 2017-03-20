@@ -50,7 +50,7 @@ showone{S}(::Type{Poly{S}}) = false
 
 "Show different operations depending on mimetype. `l-` is leading minus sign."
 function showop(::MIME"text/plain", op)
-    d = Dict("*" => "⋅", "+" => " + ", "-" => " - ", "l-" => "-")
+    d = Dict("*" => "*", "+" => " + ", "-" => " - ", "l-" => "-")
     d[op]
 end
 
