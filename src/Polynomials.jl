@@ -430,6 +430,7 @@ polyval(p::Poly, v::AbstractArray) = map(x->polyval(p, x), v)
 @compat (p::Poly)(x) = polyval(p, x)
 
 """
+Indefinite integral of a polynomial.
 
 * `polyint(p::Poly, k::Number=0)`: Integrate the polynomial `p` term
   by term, optionally adding constant term `k`. The order of the
@@ -441,6 +442,7 @@ polyint(Poly([1, 0, -1]))     # Poly(x - 0.3333333333333333x^3)
 polyint(Poly([1, 0, -1]), 2)  # Poly(2.0 + x - 0.3333333333333333x^3)
 ```
 
+See also `polyint(p, a, b)` for a definite integral over `[a,b]`.
 """
 # if we do not have any initial condition, assume k = zero(Int)
 polyint{T}(p::Poly{T}) = polyint(p, 0)
@@ -475,6 +477,22 @@ function _polyint{T,S<:Number}(p::Poly{T}, k::S)
         a2[i+1] = p[i-1] / i
     end
     return Poly(a2, p.var)
+end
+
+"""
+
+* `polyint(p::Poly, a::Number, b::Number)`: Definite integral of the polynomial `p` over the interval `[a,b]`.
+
+Examples:
+```
+x = variable()
+p = 1 - x^2
+polyint(p, 0, 1)
+```
+"""
+function polyint(p::Poly, a::Number, b::Number)
+    P = polyint(p)
+    P(b) - P(a)
 end
 
 """

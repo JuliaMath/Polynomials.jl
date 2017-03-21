@@ -51,11 +51,13 @@ sprint(show, pNULL)
 @test polyval(poly([1//2, 3//2]), 1//2) == 0//1
 @test polyder(polyint(pN)) == pN
 @test polyder(pR) == Poly([-2//1,2//1])
+@test polyder(p3) == Poly([2,2])
+@test polyder(p1) == polyder(p0) == polyder(pNULL) == pNULL
 @test_throws ErrorException polyder(pR, -1)
 @test polyint(pNULL,1) == p1
 @test polyint(Poly(Rational[1,2,3])) == Poly(Rational[0, 1, 1, 1])
-@test polyder(p3) == Poly([2,2])
-@test polyder(p1) == polyder(p0) == polyder(pNULL) == pNULL
+@test polyint(p2, 0, 2) == 4.0
+
 
 @test pN(-.125) == 276.9609375
 @test pN([0.1, 0.2, 0.3]) == polyval(pN, [0.1, 0.2, 0.3])
