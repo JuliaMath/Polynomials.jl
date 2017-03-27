@@ -2,7 +2,11 @@
 
 Basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate polynomials.
 
-[![Build Status](https://travis-ci.org/Keno/Polynomials.jl.png?branch=master)](https://travis-ci.org/Keno/Polynomials.jl)
+[![Build Status](https://travis-ci.org/JuliaMath/Polynomials.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Polynomials.jl)
+[![Coverage Status](https://coveralls.io/repos/github/JuliaMath/Polynomials.jl/badge.svg)](https://coveralls.io/github/JuliaMath/Polynomials.jl)
+[![Polynomials](http://pkg.julialang.org/badges/Polynomials_0.4.svg)](http://pkg.julialang.org/?pkg=Polynomials)
+[![Polynomials](http://pkg.julialang.org/badges/Polynomials_0.5.svg)](http://pkg.julialang.org/?pkg=Polynomials)
+[![Polynomials](http://pkg.julialang.org/badges/Polynomials_0.6.svg)](http://pkg.julialang.org/?pkg=Polynomials)
 
 #### Poly{T<:Number}(a::Vector)
 
