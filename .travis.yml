@@ -1,17 +1,15 @@
 language: julia
 os:
-    - linux
-    - osx
+  - linux
+  - osx
 julia:
-    - 0.4
-    - 0.5
-    - nightly
+  - 0.4
+  - 0.5
+  - nightly
 notifications:
   email: false
-
-# Allow for failures when it comes to `nightly` builds not to block the patches
-# that pass in supported versions.
-matrix:
-  fast_finish: true
-  allow_failures:
-    - julia: nightly
+#script: # the default script is equivalent to the following
+#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+#  - julia -e 'Pkg.clone(pwd()); Pkg.build("Polynomials"); Pkg.test("Polynomials"; coverage=true)';
+after_success:
+  - julia -e 'cd(Pkg.dir("Polynomials")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())';
