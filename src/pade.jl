@@ -2,16 +2,16 @@ immutable Pade{T<:Number,S<:Number}
     p::Poly{T}
     q::Poly{S}
     var::Symbol
-    function Pade(p::Poly{T},q::Poly{S})
+    @compat function (::Type{Pade{T,S}}){T,S}(p::Poly{T},q::Poly{S})
         if p.var != q.var
             error("Polynomials must have same variable")
         end
-        new(p, q, p.var)
+        new{T,S}(p, q, p.var)
     end
 end
-Pade{T<:Number,S<:Number}(p::Poly{T}, q::Poly{S}) = Pade{T,S}(p,q)
+@compat (::Type{Pade}){T<:Number,S<:Number}(p::Poly{T}, q::Poly{S}) = Pade{T,S}(p,q)
 
-function Pade{T}(c::Poly{T},m::Int,n::Int)
+@compat function (::Type{Pade}){T}(c::Poly{T},m::Int,n::Int)
     @assert m+n < length(c)
     rold,rnew = Poly([zeros(T,m+n+1);one(T)],c.var),Poly(c.a[1:m+n+1],c.var)
     uold,vold = Poly([one(T)],c.var),Poly([zero(T)],c.var)
