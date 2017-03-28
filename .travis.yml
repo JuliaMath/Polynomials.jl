@@ -12,5 +12,5 @@ notifications:
 #  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 #  - julia -e 'Pkg.clone(pwd()); Pkg.build("Polynomials"); Pkg.test("Polynomials"; coverage=true)';
 after_success:
-  - julie -e 'cd(Pkg.dir("Polynomials")); Pkg.add("Documenter"); using Documenter; include(joinpath("docs", "make.jl"))';
+  - julia -e 'cd(Pkg.dir("Polynomials")); Pkg.add("Documenter"); using Documenter; include(joinpath("docs", "make.jl"))';
   - julia -e 'cd(Pkg.dir("Polynomials")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())';
