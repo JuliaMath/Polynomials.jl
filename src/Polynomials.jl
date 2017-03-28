@@ -21,40 +21,54 @@ import Base: isequal
 const SymbolLike = Union{AbstractString,Char,Symbol}
 
 """
+    Poly{T<:Number}(a::AbstractVector{T}, [x])
 
-* `Poly{T<:Number}(a::Vector)`: Construct a polynomial from its coefficients, lowest order first. That is if `p=a_n x^n + ... + a_2 x^2 + a_1 x^1 + a_0`, we construct this through `Poly([a_0, a_1, ..., a_n])`.
+Construct a polynomial from its coefficients `a`, lowest order first, optionally in
+terms of the given variable `x`. `x` can be a character, symbol, or string.
 
-Example:
+If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct this through
+`Poly([a_0, a_1, ..., a_n])`.
+
+The usual arithmetic operators are overloaded to work with polynomials as well as
+with combinations of polynomials and scalars. However, operations involving two
+polynomials of different variables causes an error.
+
+# Examples
+
+```julia
+julia> Poly([1, 0, 3, 4])
+Poly(1 + 3⋅x^2 + 4⋅x^3)
+
+julia> Poly([1, 2, 3], :s)
+Poly(1 + 2⋅s + 3⋅s^2)
+
+julia> a = Poly([1, 2, 3], :x); b = Poly([1, 2, 3], :s);
+
+julia> a + b
+ERROR: Polynomials must have same variable
+...
+
+julia> p = Poly([1, 2])
+Poly(1 + 2⋅x)
+
+julia> q = Poly([1, 0, -1])
+Poly(1 - x^2)
+
+julia> 2p
+Poly(2 + 4⋅x)
+
+julia> 2 + p
+Poly(3 + 2⋅x)
+
+julia> p - q
+Poly(2⋅x + x^2)
+
+julia> p * q
+Poly(1 + 2⋅x - x^2 - 2⋅x^3)
+
+julia> q / 2
+Poly(0.5 - 0.5⋅x^2)
 ```
-Poly([1,0,3,4])    # Poly(1 + 3x^2 + 4x^3)
-```
-
-An optional variable parameter can be added:
-
-```
-Poly([1,2,3], :s)       # Poly(1 + 2s + 3s^2)
-```
-
-The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.
-
-```
-p = Poly([1,2])        # Poly(1 + 2x)
-q = Poly([1, 0, -1])   # Poly(1 - x^2)
-2p                     # Poly(2 + 4x)
-2+p                    # Poly(3 + 2x)
-p - q                  # Poly(2x + x^2)
-p*q                    # Poly(1 + 2x - x^2 - 2x^3)
-q/2                    # Poly(0.5 - 0.5x^2)
-```
-
-Note that operations involving polynomials with different variables will error:
-
-```j
-p = Poly([1, 2, 3], :x)
-q = Poly([1, 2, 3], :s)
-p + q                  # ERROR: Polynomials must have same variable.
-```
-
 """
 immutable Poly{T}
   a::Vector{T}
@@ -77,15 +91,25 @@ Poly(n::Number, var::SymbolLike = :x) = Poly([n], var)
 
 # create a Poly object from its roots
 """
+    poly(r)
 
-* `poly(r::AbstractVector)`: Construct a polynomial from its
-  roots. This is in contrast to the `Poly` constructor, which
-  constructs a polynomial from its coefficients.
+Construct a polynomial from its roots. Compare this to the `Poly` type
+constructor, which constructs a polynomial from its coefficients.
 
-Example:
-```
-## Represents (x-1)*(x-2)*(x-3)
-poly([1,2,3])     # Poly(-6 + 11x - 6x^2 + x^3)
+If `r` is a vector, the constructed polynomial is
+``(x - r_1) (x - r_2) \\cdots (x - r_n)``.
+If `r` is a matrix, the constructed polynomial is
+``(x - e_1) \\cdots (x - e_n)``, where ``e_i`` is the ``i``th eigenvalue
+of `r`.
+
+# Examples
+
+```julia
+julia> poly([1, 2, 3])   # The polynomial (x - 1)(x - 2)(x - 3)
+Poly(-6 + 11⋅x - 6⋅x^2 + x^3)
+
+julia> poly([1 2; 3 4])  # The polynomial (x - 5.37228)(x + 0.37228)
+Poly(-1.9999999999999998 - 5.0⋅x + 1.0⋅x^2)
 ```
 """
 function poly{T}(r::AbstractVector{T}, var::SymbolLike=:x)
@@ -112,11 +136,6 @@ promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 promote_rule{T, S<:Number}(::Type{Poly{T}}, ::Type{S}) = Poly{promote_type(T, S)}
 eltype{T}(::Poly{T}) = Poly{T}
 
-"""
-
-`length(p::Poly)`: return length of coefficient vector
-
-"""
 length(p::Poly) = length(coeffs(p))
 endof(p::Poly)  = length(p) - 1
 
@@ -124,36 +143,48 @@ start(p::Poly)        = start(coeffs(p)) - 1
 next(p::Poly, state)  = (temp = zeros(coeffs(p)); temp[state+1] = p[state]; (Poly(temp), state+1))
 done(p::Poly, state)  = state > degree(p)
 eltype{T}(::Type{Poly{T}}) = Poly{T}
-"""
 
-`size(p::Poly)`: return size of coefficient vector
-
-"""
 size(p::Poly) = size(p.a)
 size(p::Poly, i::Integer) = size(p.a, i)
 
 """
+    degree(p::Poly)
 
-`degree(p::Poly)`: return degree of polynomial `p`
-
+Return the degree of the polynomial `p`, i.e. the highest exponent in the polynomial that
+has a nonzero coefficient.
 """
 degree(p::Poly) = length(p) - 1
 
 """
+    coeffs(p::Poly)
 
-`coeffs(p::Poly)`: return coefficient vector [a_0, a_1, ..., a_n]
-
+Return the coefficient vector `[a_0, a_1, ..., a_n]` of a polynomial `p`.
 """
 coeffs(p::Poly) = p.a
 
 """
+    variable(p::Poly)
+    variable([T::Type,] var)
+    variable()
 
-Return the indeterminate of a polynomial, `x`.
+Return the indeterminate of a polynomial, i.e. its variable, as a `Poly` object.
+When passed no arguments, this is equivalent to `variable(Float64, :x)`.
 
-* `variable(p::Poly)`: return variable of `p` as a `Poly` object.
-* `variable(T<:Number, [:x])`: return poly one(T)*x
-* `variable([var::Symbol])`: return polynomial 1x over `Float64`.
+# Examples
 
+```julia
+julia> variable(Poly([1, 2], :x))
+Poly(x)
+
+julia> variable(:y)
+Poly(1.0⋅y)
+
+julia> variable()
+Poly(1.0⋅x)
+
+julia> variable(Float32, :x)
+Poly(1.0f0⋅x)
+```
 """
 variable{T<:Number}(::Type{T}, var::SymbolLike=:x) = Poly([zero(T), one(T)], var)
 variable{T}(p::Poly{T}) = variable(T, p.var)
@@ -174,12 +205,10 @@ function truncate{T}(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
 end
 
 """
-
     chop(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)), abstol::Real = 0)
 
-Chop off leading values which are approximately zero.
-
-The tolerances `reltol` and `abstol` are passed to `isapprox`.
+Chop off leading values from a polynomial which are approximately zero. The tolerances
+`reltol` and `abstol` are passed to `isapprox` to check for zeros.
 """
 function chop{T}(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
   abstol::Real = 0)
@@ -196,17 +225,22 @@ function chop{T}(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
 end
 
 """
+    norm(q::Poly, [p])
 
-* `norm(q::Poly, [p])`: return `p` norm of polynomial `q`
+Return the `p`-norm of a polynomial `q`. If ``q = q_0 + \\ldots + q_n x^n``, then
+the `p`-norm is
 
+``
+||q||_p = (|q_0|^p + \\ldots + |q_n|^p)^{1/p}
+``
 """
 norm(q::Poly, args...) = norm(coeffs(q), args...)
 
 
 """
+    conj(p::Poly)
 
-* `conj(p::Poly`): return conjugate of polynomial `p`. (Polynomial with conjugate of each coefficient.)
-
+Conjugate each coefficient of `p`.
 """
 conj{T<:Complex}(p::Poly{T}) = Poly(conj(coeffs(p)))
 
@@ -214,9 +248,9 @@ conj{T<:Complex}(p::Poly{T}) = Poly(conj(coeffs(p)))
 transpose(p::Poly) = p
 
 """
+    getindex(p::Poly, i)
 
-* `getindex(p::Poly, i)`: If `p=a_n x^n + a_{n-1}x^{n-1} + ... + a_1 x^1 + a_0`, then `p[i]` returns `a_i`.
-
+If ``p = a_n x^n + a_{n-1}x^{n-1} + \\ldots + a_1 x^1 + a_0``, then `p[i]` returns ``a_i``.
 """
 getindex{T}(p::Poly{T}, idx::Int)                     = (idx ≥ length(p.a) ? zero(T) : p.a[idx+1])
 getindex{T}(p::Poly{T}, indices::AbstractVector{Int}) = map(idx->p[idx], indices)
@@ -366,9 +400,9 @@ rem(num::Poly, den::Poly) = divrem(num, den)[2]
 """
     isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; reltol::Real = Base.rtoldefault(T,S), abstol::Real = 0, norm::Function = vecnorm)
 
-Truncate `p1` and `p2`, and compare the coefficients with `isapprox`.
-
-The tolerances `reltol` and `abstol` are passed to both `truncate` and `isapprox`.
+Truncate polynomials `p1` and `p2`, and compare the coefficient vectors using the
+given `norm` function. The tolerances `reltol` and `abstol` are passed to both
+`truncate` and `isapprox`.
 """
 function isapprox{T,S}(p1::Poly{T}, p2::Poly{S};
   reltol::Real = Base.rtoldefault(T,S), abstol::Real = 0, norm::Function = vecnorm)
@@ -392,20 +426,23 @@ hash(f::Poly, h::UInt) = hash(f.var, hash(f.a, h))
 isequal(p1::Poly, p2::Poly) = hash(p1) == hash(p2)
 
 """
-* `polyval(p::Poly, x::Number)`: Evaluate the polynomial `p` at `x` using Horner's method.
+    polyval(p::Poly, x::Number)
 
-Example:
-```
-polyval(Poly([1, 0, -1]), 0.1)  # 0.99
-```
+Evaluate the polynomial `p` at `x` using Horner's method. `Poly` objects
+are callable, using this function.
 
-For `julia` version `0.4` or greater, the `call` method can be used:
+# Examples
 
-```
-p = Poly([1,2,3])
-p(4)   # 57 = 1 + 2*4 + 3*4^2
-```
+```julia
+julia> p = Poly([1, 0, -1])
+Poly(1 - x^2)
 
+julia> polyval(p, 1)
+0
+
+julia> p(1)
+0
+```
 """
 function polyval{T,S}(p::Poly{T}, x::S)
     R = promote_type(T,S)
@@ -427,19 +464,20 @@ polyval(p::Poly, v::AbstractArray) = map(x->polyval(p, x), v)
 @compat (p::Poly)(x) = polyval(p, x)
 
 """
-Indefinite integral of a polynomial.
+    polyint(p::Poly, k::Number=0)
 
-* `polyint(p::Poly, k::Number=0)`: Integrate the polynomial `p` term
-  by term, optionally adding constant term `k`. The order of the
-  resulting polynomial is one higher than the order of `p`.
+Integrate the polynomial `p` term by term, optionally adding a constant term
+`k`. The order of the resulting polynomial is one higher than the order of `p`.
 
-Examples:
+# Examples
+
+```julia
+julia> polyint(Poly([1, 0, -1]))
+Poly(1.0⋅x - 0.3333333333333333⋅x^3)
+
+julia> polyint(Poly([1, 0, -1]), 2)
+Poly(2.0 + 1.0⋅x - 0.3333333333333333⋅x^3)
 ```
-polyint(Poly([1, 0, -1]))     # Poly(x - 0.3333333333333333x^3)
-polyint(Poly([1, 0, -1]), 2)  # Poly(2.0 + x - 0.3333333333333333x^3)
-```
-
-See also `polyint(p, a, b)` for a definite integral over `[a,b]`.
 """
 # if we do not have any initial condition, assume k = zero(Int)
 polyint{T}(p::Poly{T}) = polyint(p, 0)
@@ -477,14 +515,15 @@ function _polyint{T,S<:Number}(p::Poly{T}, k::S)
 end
 
 """
+    polyint(p::Poly, a::Number, b::Number)
 
-* `polyint(p::Poly, a::Number, b::Number)`: Definite integral of the polynomial `p` over the interval `[a,b]`.
+Compute the definite integral of the polynomial `p` over the interval `[a,b]`.
 
-Examples:
-```
-x = variable()
-p = 1 - x^2
-polyint(p, 0, 1)
+# Examples
+
+```julia
+julia> polyint(Poly([1, 0, -1]), 0, 1)
+0.6666666666666667
 ```
 """
 function polyint(p::Poly, a::Number, b::Number)
@@ -493,14 +532,18 @@ function polyint(p::Poly, a::Number, b::Number)
 end
 
 """
+    polyder(p::Poly, k=1)
 
-* `polyder(p::Poly)`: Differentiate the polynomial `p` term by
-  term. The order of the resulting polynomial is one lower than the
-  order of `p`.
+Compute the `k`th derivative of the polynomial `p`.
 
-Example:
-```
-polyder(Poly([1, 3, -1]))   # Poly(3 - 2x)
+# Examples
+
+```julia
+julia> polyder(Poly([1, 3, -1]))
+Poly(3 - 2⋅x)
+
+julia> polyder(Poly([1, 3, -1]), 2)
+Poly(-2)
 ```
 """
 # if we have coefficients that can represent `NaN`s
@@ -542,17 +585,36 @@ polyder{T}(a::AbstractArray{Poly{T}}, order::Int = 1) = map(p->polyder(p,order),
 
 # compute the roots of a polynomial
 """
+    roots(p::Poly)
 
-* `roots(p::Poly)`: Return the roots (zeros) of `p`, with
-  multiplicity. The number of roots returned is equal to the order of
-  `p`. The returned roots may be real or complex.
+Return the roots (zeros) of `p`, with multiplicity. The number of roots
+returned is equal to the order of `p`. The returned roots may be real or
+complex.
 
-Examples:
-```
-roots(Poly([1, 0, -1]))    # [-1.0, 1.0]
-roots(Poly([1, 0, 1]))     # [0.0+1.0im, 0.0-1.0im]
-roots(Poly([0, 0, 1]))     # [0.0, 0.0]
-roots(poly([1,2,3,4]))     # [1.0,2.0,3.0,4.0]
+# Examples
+
+```julia
+julia> roots(Poly([1, 0, -1]))
+2-element Array{Float64,1}:
+ -1.0
+  1.0
+
+julia> roots(Poly([1, 0, 1]))
+2-element Array{Complex{Float64},1}:
+ 0.0+1.0im
+ 0.0-1.0im
+
+julia> roots(Poly([0, 0, 1]))
+2-element Array{Float64,1}:
+ 0.0
+ 0.0
+
+julia> roots(poly([1,2,3,4]))
+4-element Array{Float64,1}:
+ 4.0
+ 3.0
+ 2.0
+ 1.0
 ```
 """
 function roots{T}(p::Poly{T})
@@ -586,14 +648,16 @@ roots{T}(p::Poly{Rational{T}}) = roots(convert(Poly{promote_type(T, Float64)}, p
 
 ## compute gcd of two polynomials
 """
+    gcd(a::Poly, b::Poly)
 
-* `gcd(a::Poly, b::Poly)`: Finds the Greatest Common Denominator of
-    two polynomials recursively using [Euclid's
-    algorithm](http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm).
+Find the greatest common denominator of two polynomials recursively using
+[Euclid's algorithm](http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm).
 
-Example:
-```
-gcd(poly([1,1,2]), poly([1,2,3])) # returns (x-1)*(x-2)
+# Examples
+
+```julia
+julia> gcd(poly([1,1,2]), poly([1,2,3])) # returns (x-1)*(x-2)
+Poly(4.0 - 6.0⋅x + 2.0⋅x^2)
 ```
 """
 function gcd{T, S}(a::Poly{T}, b::Poly{S})
@@ -607,24 +671,23 @@ end
 
 ## Fit degree n polynomial to points
 """
+    polyfit(x, y, n=length(x)-1, sym=:x)
 
-`polyfit(x, y, n=length(x)-1, sym=:x )`: Fit a polynomial of degree
-`n` through the points specified by `x` and `y` where `n <= length(x)
-- 1` using least squares fit. When `n=length(x)-1` (the default), the
-interpolating polynomial is returned. The optional fourth argument can
-be used to pass the symbol for the returned polynomial.
+Fit a polynomial of degree `n` through the points specified by `x` and `y`,
+where `n <= length(x) - 1`, using least squares fit. When `n=length(x)-1`
+(the default), the interpolating polynomial is returned. The optional fourth
+argument can be used to specify the symbol for the returned polynomial.
 
-Example:
+# Examples
 
+```julia
+julia> xs = linspace(0, pi, 5);
+
+julia> ys = map(sin, xs);
+
+julia> polyfit(xs, ys, 2)
+Poly(-0.004902082150108854 + 1.242031920509868⋅x - 0.39535103925413095⋅x^2)
 ```
-xs = linspace(0, pi, 5)
-ys = map(sin, xs)
-polyfit(xs, ys, 2)
-```
-
-Original by [ggggggggg](https://github.com/Keno/Polynomials.jl/issues/19)
-More robust version by Marek Peca <mp@eltvor.cz>
-    (1. no exponentiation in system matrix construction, 2. QR least squares)
 """
 function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     length(x) == length(y) || throw(DomainError)

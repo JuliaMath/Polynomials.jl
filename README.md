@@ -2,11 +2,17 @@
 
 Basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate polynomials.
 
-[![Build Status](https://travis-ci.org/JuliaMath/Polynomials.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Polynomials.jl)
-[![Coverage Status](https://coveralls.io/repos/github/JuliaMath/Polynomials.jl/badge.svg)](https://coveralls.io/github/JuliaMath/Polynomials.jl)
 [![Polynomials](http://pkg.julialang.org/badges/Polynomials_0.4.svg)](http://pkg.julialang.org/?pkg=Polynomials)
 [![Polynomials](http://pkg.julialang.org/badges/Polynomials_0.5.svg)](http://pkg.julialang.org/?pkg=Polynomials)
 [![Polynomials](http://pkg.julialang.org/badges/Polynomials_0.6.svg)](http://pkg.julialang.org/?pkg=Polynomials)
+
+Master branch:
+[![Build Status](https://travis-ci.org/JuliaMath/Polynomials.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Polynomials.jl)
+[![Coverage Status](https://coveralls.io/repos/github/JuliaMath/Polynomials.jl/badge.svg)](https://coveralls.io/github/JuliaMath/Polynomials.jl)
+
+Documentation:
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMath.github.io/Polynomials.jl/stable)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaMath.github.io/Polynomials.jl/latest)
 
 #### Poly{T<:Number}(a::Vector)
 
