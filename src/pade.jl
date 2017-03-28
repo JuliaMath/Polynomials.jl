@@ -2,7 +2,7 @@ immutable Pade{T<:Number,S<:Number}
     p::Poly{T}
     q::Poly{S}
     var::Symbol
-    @compat function (::Type{Pade}){T,S}(p::Poly{T},q::Poly{S})
+    @compat function (::Type{Pade{T,S}}){T,S}(p::Poly{T},q::Poly{S})
         if p.var != q.var
             error("Polynomials must have same variable")
         end
