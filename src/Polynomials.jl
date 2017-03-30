@@ -12,7 +12,7 @@ export degree, coeffs, variable
 export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
-import Base: start, next, done, length, size, eltype
+import Base: start, next, done, length, size, eltype, collect
 import Base: endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, isapprox, divrem, div, rem, eltype
 import Base: promote_rule, truncate, chop,  conj, transpose, dot, hash
@@ -134,7 +134,8 @@ convert{T, S<:Number}(::Type{Poly{T}}, x::S, var::SymbolLike=:x) = Poly(T[x], va
 convert{T, S<:Number}(::Type{Poly{T}}, x::AbstractArray{S}, var::SymbolLike=:x) = map(el->Poly(T[el],var), x)
 promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
 promote_rule{T, S<:Number}(::Type{Poly{T}}, ::Type{S}) = Poly{promote_type(T, S)}
-eltype{T}(::Poly{T}) = Poly{T}
+# Check JuliaLang/METADATA.jl#8528
+eltype{T}(::Poly{T}) = T
 
 length(p::Poly) = length(coeffs(p))
 endof(p::Poly)  = length(p) - 1
@@ -143,6 +144,9 @@ start(p::Poly)        = start(coeffs(p)) - 1
 next(p::Poly, state)  = (temp = zeros(coeffs(p)); temp[state+1] = p[state]; (Poly(temp), state+1))
 done(p::Poly, state)  = state > degree(p)
 eltype{T}(::Type{Poly{T}}) = Poly{T}
+
+# shortcut for collect(eltype, collection)
+collect{T}(p::Poly{T}) = collect(Poly{T}, p)
 
 size(p::Poly) = size(p.a)
 size(p::Poly, i::Integer) = size(p.a, i)
