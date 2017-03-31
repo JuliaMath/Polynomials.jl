@@ -12,7 +12,7 @@ export degree, coeffs, variable
 export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
-import Base: start, next, done, length, size, eltype, collect
+import Base: start, next, done, length, size, eltype, collect, eachindex
 import Base: endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
 import Base: show, print, *, /, //, -, +, ==, isapprox, divrem, div, rem, eltype
 import Base: promote_rule, truncate, chop,  conj, transpose, dot, hash
@@ -286,7 +286,7 @@ end
 
 setindex!(p::Poly, values, ::Colon) = setindex!(p, values, 0:length(p)-1)
 
-eachindex{T}(p::Poly{T}) = 0:(length(p)-1)
+eachindex(p::Poly) = 0:degree(p)
 
 copy(p::Poly) = Poly(copy(p.a), p.var)
 
