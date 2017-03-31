@@ -326,4 +326,16 @@ for term in p1
 end
 
 @test eltype(typeof(p1)) == typeof(p1)
+
+# after implementing the iteration interface, i.e., `start` and its friends,
+# previously throwing `collect` function (and maybe, other similar functions)
+# started giving different errors due to `eltype{T}(::Poly{T}) = T`. Changing
+# this definition has resulted in JuliaLang/METADATA.jl#8528. One small fix
+# was to direct `collect{T}(p::Poly{T})` to `collect(Poly{T}, p)`.
+
+@test eltype(p1) == Int
+@test eltype(collect(p1)) == Poly{Int}
+@test eltype(collect(Poly{Float64}, p1)) == Poly{Float64}
+@test_throws InexactError collect(Poly{Int}, Poly([1.2]))
+
 @test length(collect(p1)) == degree(p1)+1
