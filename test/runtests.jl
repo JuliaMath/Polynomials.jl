@@ -339,3 +339,5 @@ end
 @test_throws InexactError collect(Poly{Int}, Poly([1.2]))
 
 @test length(collect(p1)) == degree(p1)+1
+
+@test [p1[idx] for idx in eachindex(p1)] == [1,2,0,3]
