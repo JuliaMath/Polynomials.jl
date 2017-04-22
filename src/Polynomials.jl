@@ -624,7 +624,7 @@ julia> roots(poly([1,2,3,4]))
 function roots{T}(p::Poly{T})
     R = promote_type(T, Float64)
     length(p) == 0 && return zeros(R, 0)
-    p = truncate(p)
+
     num_leading_zeros = 0
     while p[num_leading_zeros] ≈ zero(T)
         if num_leading_zeros == length(p)-1
