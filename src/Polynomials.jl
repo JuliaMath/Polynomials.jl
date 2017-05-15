@@ -665,11 +665,19 @@ Poly(4.0 - 6.0⋅x + 2.0⋅x^2)
 ```
 """
 function gcd{T, S}(a::Poly{T}, b::Poly{S})
-  R = typeof(one(T)/one(S))
-  degree(b) == 0 && b ≈ zero(b) && return convert(Poly{R}, a)
+  U       = typeof(one(T)/one(S))
+  r₀, r₁  = convert(Poly{U}, a), truncate(convert(Poly{U}, b))
+  iter    = 1
+  itermax = degree(b) + 1
 
-  s, r = divrem(a, b)
-  return gcd(b, r)
+  while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
+    _, rtemp  = divrem(r₀, r₁)
+    r₀        = r₁
+    r₁        = truncate(rtemp)
+    iter      += 1
+  end
+
+  return r₀
 end
 
 

@@ -345,3 +345,17 @@ end
 @test length(collect(p1)) == degree(p1)+1
 
 @test [p1[idx] for idx in eachindex(p1)] == [1,2,0,3]
+
+p1 = Poly([2.,5.,1.])
+p2 = Poly([1.,2.,3.])
+
+@test degree(gcd(p1, p2))                       == 0          # no common roots
+@test degree(gcd(p1, Poly(5)))                  == 0          # ditto
+@test degree(gcd(p1, Poly(eps(0.))))            == 0          # ditto
+@test degree(gcd(p1, Poly(0)))                  == degree(p1) # Poly(0) has the roots of p1
+@test degree(gcd(p1+p2*170.10734737144486, p2)) == 0          # see, c.f., #122
+
+p1 = poly([1.,2.,3.])
+p2 = poly([1.,2.,6.])
+
+@test (res = roots(gcd(p1, p2)); 1. ∈ res && 2. ∈ res)
