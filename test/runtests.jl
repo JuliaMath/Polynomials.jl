@@ -248,6 +248,14 @@ p = Poly([1,2,3])
 p = Poly([1//2, 2//3, 1])
 @test reprmime("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
 
+# customized printing with printpoly
+function printpoly_to_string(args...; kwargs...)
+    buf = IOBuffer()
+    printpoly(buf, args...; kwargs...)
+    return Compat.String(take!(buf))
+end
+@test printpoly_to_string(Poly([1,2,3], "y")) == "1 + 2*y + 3*y^2"
+@test printpoly_to_string(Poly([1,2,3], "y"), descending_powers=true) == "3*y^2 + 2*y + 1"
 
 ## want to be able to copy and paste
 if VERSION < v"0.6.0-dev"

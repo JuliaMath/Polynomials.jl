@@ -8,7 +8,7 @@ module Polynomials
 using Compat
 
 export Poly, poly
-export degree, coeffs, variable
+export degree, coeffs, variable, printpoly
 export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
