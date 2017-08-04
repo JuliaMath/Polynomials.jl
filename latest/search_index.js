@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Polynomials.jl",
     "category": "section",
-    "text": "Polynomials.jl is a Julia package that provides basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate polynomials.To install the package, runPkg.add(\"Polynomials\")The package can then be loaded into the current session usingusing Polynomials"
+    "text": "Polynomials.jl is a Julia package that provides basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate polynomials.To install the package, runPkg.add(\"Polynomials\")The package can then be loaded into the current session usingusing PolynomialsDocTestSetup = :( using Polynomials )"
 },
 
 {
@@ -54,6 +54,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Polynomials.variable",
     "category": "Function",
     "text": "variable(p::Poly)\nvariable([T::Type,] var)\nvariable()\n\nReturn the indeterminate of a polynomial, i.e. its variable, as a Poly object. When passed no arguments, this is equivalent to variable(Float64, :x).\n\nExamples\n\njulia> variable(Poly([1, 2], :x))\nPoly(x)\n\njulia> variable(:y)\nPoly(1.0⋅y)\n\njulia> variable()\nPoly(1.0⋅x)\n\njulia> variable(Float32, :x)\nPoly(1.0f0⋅x)\n\n\n\n"
+},
+
+{
+    "location": "index.html#Polynomials.printpoly",
+    "page": "Manual",
+    "title": "Polynomials.printpoly",
+    "category": "Function",
+    "text": "printpoly(io::IO, p::Poly, mimetype = MIME\"text/plain\"(); descending_powers=false)\n\nPrint a human-readable representation of the polynomial p to io. The MIME types \"text/plain\" (default), \"text/latex\", and \"text/html\" are supported. By default, the terms are in order of ascending powers, matching the order in coeffs(p); specifying descending_powers=true reverses the order.\n\nExamples\n\njulia> printpoly(STDOUT, Poly([1,2,3], :y))\n1 + 2*y + 3*y^2\njulia> printpoly(STDOUT, Poly([1,2,3], :y), descending_powers=true)\n3*y^2 + 2*y + 1\n\n\n\n"
 },
 
 {
@@ -101,7 +109,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Functions",
     "category": "section",
-    "text": "CurrentModule = PolynomialsPoly\npoly\ndegree\ncoeffs\nvariable\npolyval\npolyint\npolyder\npolyfit\nroots"
+    "text": "CurrentModule = PolynomialsPoly\npoly\ndegree\ncoeffs\nvariable\nprintpoly\npolyval\npolyint\npolyder\npolyfit\nroots"
 },
 
 ]}
