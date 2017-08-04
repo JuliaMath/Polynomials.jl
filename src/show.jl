@@ -68,15 +68,32 @@ end
 
 ###
 
-function printpoly{T}(io::IO, p::Poly{T}, mimetype)
+"""
+    printpoly(io::IO, p::Poly, mimetype = MIME"text/plain"(); descending_powers=false)
+
+Print a human-readable representation of the polynomial `p` to `io`. The MIME
+types "text/plain" (default), "text/latex", and "text/html" are supported. By
+default, the terms are in order of ascending powers, matching the order in
+`coeffs(p)`; specifying `descending_powers=true` reverses the order.
+
+# Examples
+```jldoctest
+julia> printpoly(STDOUT, Poly([1,2,3], :y))
+1 + 2*y + 3*y^2
+julia> printpoly(STDOUT, Poly([1,2,3], :y), descending_powers=true)
+3*y^2 + 2*y + 1
+```
+"""
+function printpoly{T}(io::IO, p::Poly{T}, mimetype = MIME"text/plain"(); descending_powers=false)
     first = true
     printed_anything = false
-    for i in eachindex(p)
+    for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
         printed = showterm(io,p,i,first, mimetype)
         first &= !printed
         printed_anything |= printed
     end
     printed_anything || print(io, zero(T))
+    return nothing
 end
 
 function showterm{T}(io::IO,p::Poly{T},j,first, mimetype)
