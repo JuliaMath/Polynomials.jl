@@ -168,6 +168,38 @@ julia> xs = 1:4; ys = exp(xs); polyfit(xs, ys)
 Poly(-7.717211620141281 + 17.9146616149694x - 9.77757245502143x^2 + 2.298404288652356x^3)
 ```
 
+#### Residue
+Given a numerator (`num`) and denominator (`den`) of a polynomial fraction, return the partial fraction decomposition. Conversely, given a set of residues (`r`), poles (`p`), and direct terms (`k`), calculate the corresponding polynomial fraction.
+
+``` julia
+# Calculate residues, poles, and direct terms given polynomial fraction
+julia> num = Poly([6, 9, 16, 8, 1])
+julia> den = Poly([6, 11, 6, 1])
+julia> residue(num, den)
+([-6.0, -4.0, 3.0], [-3.0, -2.0, -1.0], [2.0, 1.0])
+# Calculate polynomial fraction coefficients given residues, poles, and direct terms
+julia> r = [-6.0, -4.0, 3.0]
+julia> p = [-3.0, -2.0, -1.0]
+julia> k = [2.0, 1.0]
+julia> residue(r, p, k)
+([6, 9, 16, 8, 1], [6, 11, 6, 1])
+```
+If there are duplicate poles, each subsequent pole has its corresponding denominator term increased by a degree. For instance, the output from the fraction:
+
+``` julia
+julia> residue(Poly([1,0,1]),Poly([0,1])*Poly([-1,1])^2)
+([-0.0, 2.0, 1.0], [1.0, 1.0, 0.0], [0.0])
+```
+Corresponds to 0/(x-1) + 2/(x-1)^2 + 1/x. It should be noted that this is not standard notation for array inputs to the Poly function, but will work correctly if used as `r, p, k` inputs to `residue`.
+
+``` julia
+julia> r = [-0.0, 2.0, 1.0]
+julia> p = [1.0, 1.0, 0.0]
+julia> k = [0.0]
+julia> residue(r, p, k)
+([1.0, 0.0, 1.0], [0.0, 1.0, -2.0, 1.0])
+```
+
 #### Other methods
 
 Polynomial objects also have other methods:
