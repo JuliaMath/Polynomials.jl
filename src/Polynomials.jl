@@ -76,11 +76,11 @@ struct Poly{T}
   function (::Type{Poly})(a::AbstractVector{T}, var::SymbolLike = :x) where {T<:Number}
     # if a == [] we replace it with a = [0]
     if length(a) == 0
-      return new{T}(zeros(T,1), @compat Symbol(var))
+      return new{T}(zeros(T,1),Symbol(var))
     else
       # determine the last nonzero element and truncate a accordingly
       a_last = max(1,findlast(x->x!=zero(T), a))
-      new{T}(a[1:a_last], @compat Symbol(var))
+      new{T}(a[1:a_last], Symbol(var))
     end
   end
 end
@@ -349,7 +349,7 @@ end
 
 
 # are any values NaN
-hasnan(p::Poly) = reduce(|, (@compat isnan.(p.a)))
+hasnan(p::Poly) = reduce(|, (isnan.(p.a)))
 
 function divrem(num::Poly{T}, den::Poly{S}) where {T, S}
     if num.var != den.var
