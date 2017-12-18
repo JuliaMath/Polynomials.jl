@@ -1,6 +1,6 @@
 # assert file to test polynomial implementation
 using Compat
-using Base.Test
+using Compat.Test
 using Polynomials
 
 pNULL = Poly(Float32[])
