@@ -1,17 +1,17 @@
-immutable Pade{T<:Number,S<:Number}
+struct Pade{T<:Number,S<:Number}
     p::Poly{T}
     q::Poly{S}
     var::Symbol
-    @compat function (::Type{Pade{T,S}}){T,S}(p::Poly{T},q::Poly{S})
+    function (::Type{Pade{T,S}})(p::Poly{T},q::Poly{S}) where {T,S}
         if p.var != q.var
             error("Polynomials must have same variable")
         end
         new{T,S}(p, q, p.var)
     end
 end
-@compat (::Type{Pade}){T<:Number,S<:Number}(p::Poly{T}, q::Poly{S}) = Pade{T,S}(p,q)
+(::Type{Pade})(p::Poly{T}, q::Poly{S}) where {T<:Number,S<:Number}= Pade{T,S}(p,q)
 
-@compat function (::Type{Pade}){T}(c::Poly{T},m::Int,n::Int)
+function (::Type{Pade})(c::Poly{T},m::Int,n::Int) where {T}
     @assert m+n < length(c)
     rold,rnew = Poly([zeros(T,m+n+1);one(T)],c.var),Poly(c.a[1:m+n+1],c.var)
     uold,vold = Poly([one(T)],c.var),Poly([zero(T)],c.var)
@@ -30,4 +30,4 @@ end
     end
     Pade(rnew/vnew[0],vnew/vnew[0])
 end
-padeval{T}(PQ::Pade{T},x) = polyval(PQ.p,x)./polyval(PQ.q,x)
+padeval(PQ::Pade{T},x) where {T} = polyval(PQ.p,x)./polyval(PQ.q,x)

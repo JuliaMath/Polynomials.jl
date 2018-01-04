@@ -70,23 +70,23 @@ julia> q / 2
 Poly(0.5 - 0.5⋅x^2)
 ```
 """
-immutable Poly{T}
+struct Poly{T}
   a::Vector{T}
   var::Symbol
-  @compat function (::Type{Poly}){T<:Number}(a::AbstractVector{T}, var::SymbolLike = :x)
+  function (::Type{Poly})(a::AbstractVector{T}, var::SymbolLike = :x) where {T<:Number}
     # if a == [] we replace it with a = [0]
     if length(a) == 0
-      return new{T}(zeros(T,1), @compat Symbol(var))
+      return new{T}(zeros(T,1),Symbol(var))
     else
       # determine the last nonzero element and truncate a accordingly
       a_last = max(1,findlast(x->x!=zero(T), a))
-      new{T}(a[1:a_last], @compat Symbol(var))
+      new{T}(a[1:a_last], Symbol(var))
     end
   end
 end
 
 Poly(n::Number, var::SymbolLike = :x) = Poly([n], var)
-@compat (::Type{Poly{T}}){T,S}(x::AbstractVector{S}, var::SymbolLike = :x) =
+(::Type{Poly{T}})(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S} =
   Poly(convert(Vector{T}, x), var)
 
 # create a Poly object from its roots
@@ -112,7 +112,7 @@ julia> poly([1 2; 3 4])  # The polynomial (x - 5.37228)(x + 0.37228)
 Poly(-1.9999999999999998 - 5.0⋅x + 1.0⋅x^2)
 ```
 """
-function poly{T}(r::AbstractVector{T}, var::SymbolLike=:x)
+function poly(r::AbstractVector{T}, var::SymbolLike=:x) where {T}
     n = length(r)
     c = zeros(T, n+1)
     c[1] = one(T)
@@ -128,25 +128,26 @@ poly(A::Matrix, var::SymbolLike=:x) = poly(eigvals(A), var)
 
 include("show.jl") # display polynomials.
 
-convert{T}(::Type{Poly{T}}, p::Poly{T}) = p
-convert{T}(::Type{Poly{T}}, p::Poly) = Poly(convert(Vector{T}, p.a), p.var)
-convert{T, S<:Number}(::Type{Poly{T}}, x::S, var::SymbolLike=:x) = Poly(T[x], var)
-convert{T, S<:Number}(::Type{Poly{T}}, x::AbstractArray{S}, var::SymbolLike=:x) = map(el->Poly(T[el],var), x)
-promote_rule{T, S}(::Type{Poly{T}}, ::Type{Poly{S}}) = Poly{promote_type(T, S)}
-promote_rule{T, S<:Number}(::Type{Poly{T}}, ::Type{S}) = Poly{promote_type(T, S)}
+convert(::Type{Poly{T}}, p::Poly{T}) where {T} = p
+convert(::Type{Poly{T}}, p::Poly) where {T} = Poly(convert(Vector{T}, p.a), p.var)
+convert(::Type{Poly{T}}, x::S, var::SymbolLike=:x) where {T, S<:Number} = Poly(T[x], var)
+convert(::Type{Poly{T}}, x::AbstractArray{S}, var::SymbolLike=:x) where {T, S<:Number} = map(el->Poly(T[el],var), x)
+promote_rule(::Type{Poly{T}}, ::Type{Poly{S}}) where {T, S} = Poly{promote_type(T, S)}
+promote_rule(::Type{Poly{T}}, ::Type{S}) where {T, S<:Number} = Poly{promote_type(T, S)}
 # Check JuliaLang/METADATA.jl#8528
-eltype{T}(::Poly{T}) = T
+eltype(::Poly{T}) where {T} = T
+eltype(::Type{Poly{T}}) where {T} = Poly{T}
 
 length(p::Poly) = length(coeffs(p))
 endof(p::Poly)  = length(p) - 1
 
 start(p::Poly)        = start(coeffs(p)) - 1
-next(p::Poly, state)  = (temp = zeros(coeffs(p)); temp[state+1] = p[state]; (Poly(temp), state+1))
+next(p::Poly, state)  = (temp = fill!(similar(coeffs(p)), 0); temp[state+1] = p[state]; (Poly(temp), state+1))
 done(p::Poly, state)  = state > degree(p)
-eltype{T}(::Type{Poly{T}}) = Poly{T}
+
 
 # shortcut for collect(eltype, collection)
-collect{T}(p::Poly{T}) = collect(Poly{T}, p)
+collect(p::Poly{T}) where {T} = collect(Poly{T}, p)
 
 size(p::Poly) = size(p.a)
 size(p::Poly, i::Integer) = size(p.a, i)
@@ -190,8 +191,8 @@ julia> variable(Float32, :x)
 Poly(1.0f0⋅x)
 ```
 """
-variable{T<:Number}(::Type{T}, var::SymbolLike=:x) = Poly([zero(T), one(T)], var)
-variable{T}(p::Poly{T}) = variable(T, p.var)
+variable(::Type{T}, var::SymbolLike=:x) where {T<:Number} = Poly([zero(T), one(T)], var)
+variable(p::Poly{T}) where {T} = variable(T, p.var)
 variable(var::SymbolLike=:x) = variable(Float64, var)
 
 """
@@ -199,8 +200,8 @@ variable(var::SymbolLike=:x) = variable(Float64, var)
 
 Return a polynomial with coefficients `a_i` truncated to zero if `|a_i| <= reltol*maxabs(a)+abstol`.
 """
-function truncate{T}(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
-  abstol::Real = 0)
+function truncate(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
+  abstol::Real = 0) where {T}
     a = coeffs(p)
     amax = maximum(abs,a)
     thresh = amax * reltol + abstol
@@ -214,8 +215,8 @@ end
 Chop off leading values from a polynomial which are approximately zero. The tolerances
 `reltol` and `abstol` are passed to `isapprox` to check for zeros.
 """
-function chop{T}(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
-  abstol::Real = 0)
+function chop(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
+  abstol::Real = 0) where {T}
     c = copy(p.a)
     for k=length(c):-1:1
         if !isapprox(c[k], zero(T); rtol=reltol, atol=abstol)
@@ -246,7 +247,7 @@ norm(q::Poly, args...) = norm(coeffs(q), args...)
 
 Conjugate each coefficient of `p`.
 """
-conj{T<:Complex}(p::Poly{T}) = Poly(conj(coeffs(p)))
+conj(p::Poly{T}) where {T<:Complex} = Poly(conj(coeffs(p)))
 
 # Define the no-op `transpose` explicitly to avoid future warnings in Julia
 transpose(p::Poly) = p
@@ -256,9 +257,9 @@ transpose(p::Poly) = p
 
 If ``p = a_n x^n + a_{n-1}x^{n-1} + \\ldots + a_1 x^1 + a_0``, then `p[i]` returns ``a_i``.
 """
-getindex{T}(p::Poly{T}, idx::Int)                     = (idx ≥ length(p.a) ? zero(T) : p.a[idx+1])
-getindex{T}(p::Poly{T}, indices::AbstractVector{Int}) = map(idx->p[idx], indices)
-getindex{T}(p::Poly{T}, ::Colon)                      = p[0:length(p)-1]
+getindex(p::Poly{T}, idx::Int)                     where {T} = (idx ≥ length(p.a) ? zero(T) : p.a[idx+1])
+getindex(p::Poly{T}, indices::AbstractVector{Int}) where {T} = map(idx->p[idx], indices)
+getindex(p::Poly{T}, ::Colon)                      where {T} = p[0:length(p)-1]
 
 function setindex!(p::Poly, value, idx::Int)
     n = length(p.a)
@@ -290,38 +291,38 @@ eachindex(p::Poly) = 0:degree(p)
 
 copy(p::Poly) = Poly(copy(p.a), p.var)
 
-zero{T}(p::Poly{T}) = Poly(T[], p.var)
-zero{T}(::Type{Poly{T}}) = Poly(T[])
-one{T}(p::Poly{T}) = Poly([one(T)], p.var)
-one{T}(::Type{Poly{T}}) = Poly([one(T)])
+zero(p::Poly{T}) where {T} = Poly(T[], p.var)
+zero(::Type{Poly{T}}) where {T} = Poly(T[])
+one(p::Poly{T}) where {T} = Poly([one(T)], p.var)
+one(::Type{Poly{T}}) where {T} = Poly([one(T)])
 
 ## Overload arithmetic operators for polynomial operations between polynomials and scalars
-*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
-*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
+*(c::T, p::Poly{S}) where {T<:Number,S} = Poly(c * p.a, p.var)
+*(p::Poly{S}, c::T) where {T<:Number,S} = Poly(p.a * c, p.var)
 /(p::Poly, c::Number) = Poly(p.a / c, p.var)
 -(p::Poly) = Poly(-p.a, p.var)
--{T<:Number}(p::Poly, c::T) = +(p, -c)
-+{T<:Number}(c::T, p::Poly) = +(p, c)
-function +{S,T<:Number}(p::Poly{S}, c::T)
+-(p::Poly, c::T) where {T<:Number} = +(p, -c)
++(c::T, p::Poly) where {T<:Number} = +(p, c)
+function +(p::Poly{S}, c::T) where {S,T<:Number}
     U = promote_type(S,T)
     p2 = U == S ? copy(p) : convert(Poly{U}, p)
     p2[0] += c
     return p2
 end
-function -{T<:Number,S}(c::T, p::Poly{S})
+function -(c::T, p::Poly{S}) where {T<:Number,S}
     U = promote_type(S,T)
     p2 = convert(Poly{U}, -p)
     p2[0] += c
     return p2
 end
 
-function +{T,S}(p1::Poly{T}, p2::Poly{S})
+function +(p1::Poly{T}, p2::Poly{S}) where {T,S}
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
     Poly([p1[i] + p2[i] for i = 0:max(length(p1),length(p2))], p1.var)
 end
-function -{T,S}(p1::Poly{T}, p2::Poly{S})
+function -(p1::Poly{T}, p2::Poly{S}) where {T,S}
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
@@ -329,7 +330,7 @@ function -{T,S}(p1::Poly{T}, p2::Poly{S})
 end
 
 
-function *{T,S}(p1::Poly{T}, p2::Poly{S})
+function *(p1::Poly{T}, p2::Poly{S}) where {T,S}
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
@@ -346,22 +347,11 @@ function *{T,S}(p1::Poly{T}, p2::Poly{S})
     Poly(a,p1.var)
 end
 
-## older . operators, hack to avoid warning on v0.6
-dot_operators = quote
-    @compat Base.:.+{T<:Number}(c::T, p::Poly) = +(p, c)
-    @compat Base.:.+{T<:Number}(p::Poly, c::T) = +(p, c)
-    @compat Base.:.-{T<:Number}(p::Poly, c::T) = +(p, -c)
-    @compat Base.:.-{T<:Number}(c::T, p::Poly) = +(p, -c)
-    @compat Base.:.*{T<:Number,S}(c::T, p::Poly{S}) = Poly(c * p.a, p.var)
-    @compat Base.:.*{T<:Number,S}(p::Poly{S}, c::T) = Poly(p.a * c, p.var)
-end
-VERSION < v"0.6.0-dev" && eval(dot_operators)
-
 
 # are any values NaN
-hasnan(p::Poly) = reduce(|, (@compat isnan.(p.a)))
+hasnan(p::Poly) = reduce(|, (isnan.(p.a)))
 
-function divrem{T, S}(num::Poly{T}, den::Poly{S})
+function divrem(num::Poly{T}, den::Poly{S}) where {T, S}
     if num.var != den.var
         error("Polynomials must have same variable")
     end
@@ -402,14 +392,14 @@ rem(num::Poly, den::Poly) = divrem(num, den)[2]
 ==(n::Number, p1::Poly) = (p1 == n)
 
 """
-    isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; reltol::Real = Base.rtoldefault(T,S), abstol::Real = 0, norm::Function = vecnorm)
+    isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; reltol::Real = Base.rtoldefault(T,S, 0), abstol::Real = 0, norm::Function = vecnorm)
 
 Truncate polynomials `p1` and `p2`, and compare the coefficient vectors using the
 given `norm` function. The tolerances `reltol` and `abstol` are passed to both
 `truncate` and `isapprox`.
 """
-function isapprox{T,S}(p1::Poly{T}, p2::Poly{S};
-  reltol::Real = Base.rtoldefault(T,S), abstol::Real = 0, norm::Function = vecnorm)
+function isapprox(p1::Poly{T}, p2::Poly{S};
+  reltol::Real = (@compat Base.rtoldefault(T,S, 0)), abstol::Real = 0, norm::Function = vecnorm) where {T,S}
   p1.var == p2.var || error("Polynomials must have same variable")
   p1t = truncate(p1; reltol = reltol, abstol = abstol)
   p2t = truncate(p2; reltol = reltol, abstol = abstol)
@@ -417,14 +407,14 @@ function isapprox{T,S}(p1::Poly{T}, p2::Poly{S};
     atol = abstol, norm = norm)
 end
 
-function isapprox{T,S<:Number}(p1::Poly{T}, n::S; reltol::Real = Base.rtoldefault(T,S),
-  abstol::Real = 0)
+function isapprox(p1::Poly{T}, n::S; reltol::Real = (@compat Base.rtoldefault(T,S, 0)),
+  abstol::Real = 0) where {T,S<:Number}
   p1t = truncate(p1; reltol = reltol, abstol = abstol)
   degree(p1t) == 0 && isapprox(coeffs(p1), [n]; rtol = reltol, atol = abstol)
 end
 
-isapprox{T,S<:Number}(n::S, p1::Poly{T}; reltol::Real = Base.rtoldefault(T,S),
-  abstol::Real = 0) = isapprox(p1, n; reltol = reltol, abstol = abstol)
+isapprox(n::S, p1::Poly{T}; reltol::Real= (@compat Base.rtoldefault(T,S, 0)),
+  abstol::Real = 0)  where {T,S<:Number}  = isapprox(p1, n; reltol = reltol, abstol = abstol)
 
 hash(f::Poly, h::UInt) = hash(f.var, hash(f.a, h))
 isequal(p1::Poly, p2::Poly) = hash(p1) == hash(p2)
@@ -448,7 +438,7 @@ julia> p(1)
 0
 ```
 """
-function polyval{T,S}(p::Poly{T}, x::S)
+function polyval(p::Poly{T}, x::S) where {T,S}
     R = promote_type(T,S)
 
     lenp = length(p)
@@ -465,7 +455,7 @@ end
 
 polyval(p::Poly, v::AbstractArray) = map(x->polyval(p, x), v)
 
-@compat (p::Poly)(x) = polyval(p, x)
+(p::Poly)(x) = polyval(p, x)
 
 """
     polyint(p::Poly, k::Number=0)
@@ -484,33 +474,33 @@ Poly(2.0 + 1.0⋅x - 0.3333333333333333⋅x^3)
 ```
 """
 # if we do not have any initial condition, assume k = zero(Int)
-polyint{T}(p::Poly{T}) = polyint(p, 0)
+polyint(p::Poly{T}) where {T} = polyint(p, 0)
 
 # if we have coefficients that have `NaN` representation
-function polyint{T<:Union{Real,Complex},S<:Number}(p::Poly{T}, k::S)
+function polyint(p::Poly{T}, k::S) where {T<:Union{Real,Complex},S<:Number}
     hasnan(p) && return Poly(promote_type(T,S)[NaN])
     _polyint(p, k)
 end
 
 # if we have initial condition that can represent `NaN`
-function polyint{T,S<:Union{Real,Complex}}(p::Poly{T}, k::S)
+function polyint(p::Poly{T}, k::S) where {T,S<:Union{Real,Complex}}
     isnan(k) && return Poly(promote_type(T,S)[NaN])
     _polyint(p, k)
 end
 
 # if we have both coefficients and initial condition that can take `NaN`
-function polyint{T<:Union{Real,Complex},S<:Union{Real,Complex}}(p::Poly{T}, k::S)
+function polyint(p::Poly{T}, k::S) where {T<:Union{Real,Complex},S<:Union{Real,Complex}}
     (hasnan(p) || isnan(k)) && return Poly(promote_type(T,S)[NaN])
     _polyint(p, k)
 end
 
 # otherwise, catch all
-polyint{T,S<:Number}(p::Poly{T}, k::S) = _polyint(p, k)
+polyint(p::Poly{T}, k::S) where {T,S<:Number} = _polyint(p, k)
 
-function _polyint{T,S<:Number}(p::Poly{T}, k::S)
+function _polyint(p::Poly{T}, k::S) where {T,S<:Number}
     n = length(p)
     R = promote_type(typeof(one(T)/1), S)
-    a2 = Vector{R}(n+1)
+    a2 = @compat Vector{R}(uninitialized, n+1)
     a2[1] = k
     for i = 1:n
         a2[i+1] = p[i-1] / i
@@ -551,7 +541,7 @@ Poly(-2)
 ```
 """
 # if we have coefficients that can represent `NaN`s
-function polyder{T<:Union{Real,Complex}}(p::Poly{T}, order::Int=1)
+function polyder(p::Poly{T}, order::Int=1) where {T<:Union{Real,Complex}}
     n = length(p)
     order < 0       && error("Order of derivative must be non-negative")
     order == 0      && return p
@@ -561,7 +551,7 @@ function polyder{T<:Union{Real,Complex}}(p::Poly{T}, order::Int=1)
 end
 
 # otherwise
-function polyder{T}(p::Poly{T}, order::Int=1)
+function polyder(p::Poly{T}, order::Int=1) where {T}
   n = length(p)
   order < 0   && error("Order of derivative must be non-negative")
   order == 0  && return p
@@ -569,9 +559,9 @@ function polyder{T}(p::Poly{T}, order::Int=1)
   _polyder(p, order)
 end
 
-function _polyder{T}(p::Poly{T}, order::Int=1)
+function _polyder(p::Poly{T}, order::Int=1) where {T}
   n = length(p)
-  a2 = Vector{T}(n-order)
+  a2 = @compat Vector{T}(uninitialized, n-order)
   for i = order:n-1
     a2[i-order+1] = p[i] * prod((i-order+1):i)
   end
@@ -579,8 +569,8 @@ function _polyder{T}(p::Poly{T}, order::Int=1)
   return Poly(a2, p.var)
 end
 
-polyint{T}(a::AbstractArray{Poly{T}}, k::Number  = 0) = map(p->polyint(p,k),    a)
-polyder{T}(a::AbstractArray{Poly{T}}, order::Int = 1) = map(p->polyder(p,order),a)
+polyint(a::AbstractArray{Poly{T}}, k::Number  = 0) where {T} = map(p->polyint(p,k),    a)
+polyder(a::AbstractArray{Poly{T}}, order::Int = 1) where {T} = map(p->polyder(p,order),a)
 
 ##################################################
 ##
@@ -621,7 +611,7 @@ julia> roots(poly([1,2,3,4]))
  1.0
 ```
 """
-function roots{T}(p::Poly{T})
+function roots(p::Poly{T}) where {T}
     R = promote_type(T, Float64)
     length(p) == 0 && return zeros(R, 0)
 
@@ -639,7 +629,7 @@ function roots{T}(p::Poly{T})
     n = endof(p)-(num_leading_zeros + num_trailing_zeros)
     n < 1 && return zeros(R, length(p) - num_trailing_zeros - 1)
 
-    companion = diagm(ones(R, n-1), -1)
+    companion = @compat diagm(-1 => ones(R, n-1))
     an = p[end-num_trailing_zeros]
     companion[1,:] = -p[(end-num_trailing_zeros-1):-1:num_leading_zeros] / an
 
@@ -648,7 +638,7 @@ function roots{T}(p::Poly{T})
     r[1:n] = D
     return r
 end
-roots{T}(p::Poly{Rational{T}}) = roots(convert(Poly{promote_type(T, Float64)}, p))
+roots(p::Poly{Rational{T}}) where {T} = roots(convert(Poly{promote_type(T, Float64)}, p))
 
 ## compute gcd of two polynomials
 """
@@ -664,7 +654,7 @@ julia> gcd(poly([1,1,2]), poly([1,2,3])) # returns (x-1)*(x-2)
 Poly(4.0 - 6.0⋅x + 2.0⋅x^2)
 ```
 """
-function gcd{T, S}(a::Poly{T}, b::Poly{S})
+function gcd(a::Poly{T}, b::Poly{S}) where {T, S}
   U       = typeof(one(T)/one(S))
   r₀, r₁  = convert(Poly{U}, a), truncate(convert(Poly{U}, b))
   iter    = 1
@@ -703,6 +693,7 @@ Poly(-0.004902082150108854 + 1.242031920509868⋅x - 0.39535103925413095⋅x^2)
 """
 function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     length(x) == length(y) || throw(DomainError)
+    n == 0 && all(y .== y[1]) == 1 && return Poly(y[1:1], sym)
     1 <= n <= length(x) - 1 || throw(DomainError)
 
     #

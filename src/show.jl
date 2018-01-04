@@ -5,45 +5,45 @@
 ## which can be modified by users for other Ts
 
 "`hasneg(::T)` attribute is true if: `pj < zero(T)` is defined."
-hasneg{T}(::Type{T}) = false
+hasneg(::Type{T}) where {T} = false
 
 "Could value possibly be negative and if so, is it?"
-isneg{T}(pj::T) = hasneg(T) && pj < zero(T)
+isneg(pj::T) where {T} = hasneg(T) && pj < zero(T)
 
 "Make `pj` positive if it is negative. (Don't call `abs` as that may not be defined, or appropriate.)"
-aspos{T}(pj::T) = (hasneg(T) && isneg(pj)) ? -pj : pj
+aspos(pj::T) where {T} = (hasneg(T) && isneg(pj)) ? -pj : pj
 
 "Should a value of `one(T)` be shown as a coefficient of monomial `x^i`, `i >= 1`? (`1.0x^2` is shown, `1 x^2` is not)"
-showone{T}(::Type{T}) = true
+showone(::Type{T}) where {T} = true
 
 
 #####
 
 ## Numbers
-hasneg{T<:Real}(::Type{T}) = true
+hasneg(::Type{T}) where {T<:Real} = true
 
 ### Integer
-showone{T<:Integer}(::Type{T}) = false
-showone{T}(::Type{Rational{T}}) = false
+showone(::Type{T}) where {T<:Integer} = false
+showone(::Type{Rational{T}}) where {T<:Integer} = false
 
 
 
 
 ### Complex coefficients
-hasneg{T}(::Type{Complex{T}}) = true      ## we say neg if real(z) < 0 || real(z) == 0 and imag(g) < 0
+hasneg(::Type{Complex{T}}) where {T} = true      ## we say neg if real(z) < 0 || real(z) == 0 and imag(g) < 0
 
-function isneg{T}(pj::Complex{T})
+function isneg(pj::Complex{T}) where {T}
     real(pj) < 0 && return true
     (real(pj) == 0 && imag(pj) < 0) && return(true)
     return false
 end
 
-showone{T}(pj::Type{Complex{T}}) = showone(T)
+showone(pj::Type{Complex{T}}) where {T} = showone(T)
 
 
 ### Polynomials as coefficients
-hasneg{S}(::Type{Poly{S}}) = false
-showone{S}(::Type{Poly{S}}) = false
+hasneg(::Type{Poly{S}}) where {S} = false
+showone(::Type{Poly{S}}) where {S} = false
 
 
 #####
@@ -84,7 +84,7 @@ julia> printpoly(STDOUT, Poly([1,2,3], :y), descending_powers=true)
 3*y^2 + 2*y + 1
 ```
 """
-function printpoly{T}(io::IO, p::Poly{T}, mimetype = MIME"text/plain"(); descending_powers=false)
+function printpoly(io::IO, p::Poly{T}, mimetype = MIME"text/plain"(); descending_powers=false) where {T}
     first = true
     printed_anything = false
     for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
@@ -96,7 +96,7 @@ function printpoly{T}(io::IO, p::Poly{T}, mimetype = MIME"text/plain"(); descend
     return nothing
 end
 
-function showterm{T}(io::IO,p::Poly{T},j,first, mimetype)
+function showterm(io::IO,p::Poly{T},j,first, mimetype) where {T}
     pj = p[j]
 
     pj == zero(T) && return false
@@ -112,7 +112,7 @@ end
 
 ## print the sign
 ## returns aspos(pj)
-function printsign{T}(io::IO, pj::T, j, first, mimetype)
+function printsign(io::IO, pj::T, j, first, mimetype) where {T}
     neg = isneg(pj)
     if first
         neg && print(io, showop(mimetype, "l-"))    #Prepend - if first and negative
@@ -124,12 +124,12 @@ function printsign{T}(io::IO, pj::T, j, first, mimetype)
 end
 
 ## print * or cdot, ...
-function printproductsign{T}(io::IO, pj::T, j, mimetype)
+function printproductsign(io::IO, pj::T, j, mimetype) where {T}
     j == 0 && return
     (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
 end
 
-function printcoefficient{T}(io::IO, pj::Complex{T}, j, mimetype)
+function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
 
     hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
     hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
@@ -153,7 +153,7 @@ end
 
 
 ## show a single term
-function printcoefficient{T}(io::IO, pj::T, j, mimetype)
+function printcoefficient(io::IO, pj::T, j, mimetype) where {T}
     pj == one(T) && !(showone(T) || j == 0) && return
     show(io, mimetype, pj)
 end
@@ -183,8 +183,8 @@ end
 ####
 
 ## text/plain
-@compat Base.show{T}(io::IO, p::Poly{T}) = show(io, MIME("text/plain"), p)
-@compat function Base.show{T}(io::IO, mimetype::MIME"text/plain", p::Poly{T})
+Base.show(io::IO, p::Poly{T}) where {T} = show(io, MIME("text/plain"), p)
+function Base.show(io::IO, mimetype::MIME"text/plain", p::Poly{T}) where {T}
     print(io,"Poly(")
     printpoly(io, p, mimetype)
     print(io,")")
@@ -192,26 +192,26 @@ end
 end
 
 ## text/latex
-@compat function Base.show{T}(io::IO, mimetype::MIME"text/latex", p::Poly{T})
+function Base.show(io::IO, mimetype::MIME"text/latex", p::Poly{T}) where {T}
     print(io, "\$")
     printpoly(io, p, mimetype)
     print(io, "\$")
 end
 
-@compat function Base.show{T}(io::IO, mimetype::MIME"text/latex", a::Rational{T})
+function Base.show(io::IO, mimetype::MIME"text/latex", a::Rational{T}) where {T}
     abs(a.den) == one(T) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
 end
 
-@compat function Base.show{T<:Number}(io::IO, mimetype::MIME"text/latex", a::T)
+function Base.show(io::IO, mimetype::MIME"text/latex", a::T) where {T<:Number}
     print(io, a)
 end
 
 
 ## text/html
-@compat function Base.show{T}(io::IO, mimetype::MIME"text/html", p::Poly{T})
+function Base.show(io::IO, mimetype::MIME"text/html", p::Poly{T}) where {T}
     printpoly(io, p, mimetype)
 end
 
-@compat function Base.show{T<:Number}(io::IO, mimetype::MIME"text/html", a::T)
+function Base.show(io::IO, mimetype::MIME"text/html", a::T) where {T<:Number}
     print(io, a)
 end

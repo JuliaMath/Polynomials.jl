@@ -1,6 +1,6 @@
 # assert file to test polynomial implementation
 using Compat
-using Base.Test
+using Compat.Test
 using Polynomials
 
 pNULL = Poly(Float32[])
@@ -116,7 +116,7 @@ pcpy2 = copy(pcpy1)
 #Tests for Pade approximants
 
 println("Test for the exponential function.")
-a = Poly(1.//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
+a = Poly(1 .//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
 PQexp = Pade(a,8,8)
 @test isapprox(convert(Float64, padeval(PQexp,1.0)), exp(1.0))
 @test isapprox(convert(Float64, padeval(PQexp,-1.0)), exp(-1.0))
@@ -133,13 +133,14 @@ PQcos = Pade(c,8,8)
 @test isapprox(convert(Float64, padeval(PQcos,1.0)), cos(1.0))
 @test isapprox(convert(Float64, padeval(PQcos,-1.0)), cos(-1.0))
 
+const _γ = 0.5772156649015
 println("Test for the summation of a factorially divergent series.")
 d = Poly(convert(Vector{BigInt},(-1).^(0:60).* map(gamma,BigFloat(1):BigFloat(61.0))).//1,"x")
 PQexpint = Pade(d,30,30)
 @compat println("The approximate sum of the divergent series is:  ", Float64(padeval(PQexpint,1.0)))
-println("The approximate sum of the convergent series is: ",exp(1)*(-γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
+println("The approximate sum of the convergent series is: ",exp(1)*(-_γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
 @test isapprox(convert(Float64, padeval(PQexpint,1.0)),
-               exp(1)*(-γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
+               exp(1)*(-_γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
 
 
 ## polyfit
@@ -183,9 +184,9 @@ p2  = Poly([3, 1.])
 p   = [p1, p2]
 q   = [3, p1]
 @test isa(q,Vector{Poly{Int64}})
-psum  = p+3
-pprod = p*3
-pmin  = p-3
+psum  = p .+ 3
+pprod = p .* 3
+pmin  = p .- 3
 @test isa(psum, Vector{Poly{Float64}})
 @test isa(pprod,Vector{Poly{Float64}})
 @test isa(pmin, Vector{Poly{Float64}})
@@ -213,7 +214,7 @@ p2[3] = 3
 
 ## Polynomials with non-Real type
 import Base: +, *, -
-immutable Mod2 <: Number
+struct Mod2 <: Number
   v::Bool
 end
 +(x::Mod2,y::Mod2) = Mod2(xor(x.v, y.v))
@@ -321,7 +322,7 @@ p2s = Poly([1], :s)
 @test p2s ≠ 2. ≠ p2s
 @test p1s ≠ 2. ≠ p1s
 
-@test nnz(map(Poly, speye(5,5))) == 5
+@test nnz(map(Poly, sparse(1.0I, 5,5))) == 5
 
 @test Poly([0.5]) + 2 == Poly([2.5])
 @test 2 - Poly([0.5]) == Poly([1.5])
