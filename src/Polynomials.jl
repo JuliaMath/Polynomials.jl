@@ -13,10 +13,11 @@ export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
 import Base: start, next, done, length, size, eltype, collect, eachindex
-import Base: endof, getindex, setindex!, copy, zero, one, convert, norm, gcd
+import Base: endof, getindex, setindex!, copy, zero, one, convert, gcd
 import Base: show, print, *, /, //, -, +, ==, isapprox, divrem, div, rem, eltype
-import Base: promote_rule, truncate, chop,  conj, transpose, dot, hash
+import Base: promote_rule, truncate, chop,  conj, transpose, hash
 import Base: isequal
+import Compat.LinearAlgebra: norm, dot, eigvals, diagm, vecnorm, qrfact
 
 const SymbolLike = Union{AbstractString,Char,Symbol}
 
@@ -79,7 +80,8 @@ struct Poly{T}
       return new{T}(zeros(T,1),Symbol(var))
     else
       # determine the last nonzero element and truncate a accordingly
-      a_last = max(1,findlast(x->x!=zero(T), a))
+      last_nz = findlast(x->x!=zero(T), a)
+      a_last = max(1, last_nz === nothing ? 0 : last_nz)
       new{T}(a[1:a_last], Symbol(var))
     end
   end
