@@ -80,7 +80,7 @@ struct Poly{T}
       return new{T}(zeros(T,1),Symbol(var))
     else
       # determine the last nonzero element and truncate a accordingly
-      last_nz = findlast(x->x!=zero(T), a)
+      last_nz = findlast(!iszero, a)
       a_last = max(1, last_nz === nothing ? 0 : last_nz)
       new{T}(a[1:a_last], Symbol(var))
     end
