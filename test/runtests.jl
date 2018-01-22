@@ -1,7 +1,10 @@
 # assert file to test polynomial implementation
 using Compat
 using Compat.Test
+using Compat.LinearAlgebra
 using Polynomials
+
+import Compat.SparseArrays: sparse, speye, nnz
 
 pNULL = Poly(Float32[])
 p0 = Poly([0])
@@ -26,6 +29,8 @@ p1000 = Poly(randn(1000))
 @test length(p1000) == 1000
 sprint(show, p1000)
 sprint(show, pNULL)
+
+@test Poly([1, -2, 1]) == poly(diagm(0=>[1., 1.]))
 
 @test p3 == Poly([1,2,1])
 @test pN*10 == Poly([2760, 30, 870, 150, 240])
@@ -164,6 +169,8 @@ psum = p1 + p2 - p3
 @test truncate(Poly([2,1]),reltol=1,abstol=0)   == Poly([0])
 @test truncate(Poly([2,1]),reltol=0,abstol=1)   == Poly([2])
 
+@test norm(Poly([1., 2.])) == norm([1., 2.])
+@test norm(Poly([1., 2.]), 1) == norm([1., 2.], 1)
 
 ## setindex!
 println("Test for setindex!()")
@@ -205,6 +212,8 @@ as = [im, 1, 2]
 bs = [1, 1, 2]
 @test conj(Poly(as)) == Poly(conj(as))
 @test conj(Poly(bs)) == Poly(conj(bs))
+## and transpose
+@test transpose(Poly(as)) == Poly(as)
 
 ## unnecessary copy in convert #65
 p1 = Poly([1,2])
