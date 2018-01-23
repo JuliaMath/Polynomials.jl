@@ -48,6 +48,7 @@ sprint(show, pNULL)
 
 @test map(degree, [pNULL,p0,p1,p2,p3,p4,p5,pN,pR,p1000]) == [0,0,0,1,2,3,4,4,2,999]
 
+@test polyval(poly(Int[]), 2.) == 1.
 @test polyval(pN, -.125) == 276.9609375
 @test polyval(pNULL, 10) == 0
 @test polyval(p0, -10) == 0
@@ -69,6 +70,7 @@ sprint(show, pNULL)
 
 @test poly([-1,-1]) == p3
 @test roots(p0)==roots(p1)==roots(pNULL)==[]
+@test roots(Poly([0,1,0])) == [0.]
 @test roots(p2) == [-1]
 a_roots = copy(pN.a)
 @test all(map(abs,sort(roots(poly(a_roots))) - sort(a_roots)) .< 1e6)
@@ -181,6 +183,8 @@ p1[5] = 1
 
 p1[:] = 0
 @test p1 ≈ zero(p1)
+@test zero(Poly{Int}) == Poly(Int[])
+@test one(Poly{Int}) == Poly([1])
 p1[:] = [1,2,1,0,0,1]
 @test p1 == Poly([1,2,1,0,0,1])
 
@@ -305,6 +309,9 @@ pint  = polyint(p)
 
 @test isnan(p(1))                 # p(1) evaluates to NaN
 @test isequal(pder, Poly([NaN]))  # derivative will give Poly([NaN])
+@test isequal(pint, Poly([NaN]))  # integral will give Poly([NaN])
+
+pint  = polyint(p, Complex(0.))
 @test isequal(pint, Poly([NaN]))  # integral will give Poly([NaN])
 
 ## proper conversions in arithmetic with different element-types #94
