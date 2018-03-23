@@ -12,8 +12,10 @@ export degree, coeffs, variable, printpoly
 export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
+import Compat.lastindex
+
 import Base: start, next, done, length, size, eltype, collect, eachindex
-import Base: endof, getindex, setindex!, copy, zero, one, convert, gcd
+import Base:  getindex, setindex!, copy, zero, one, convert, gcd
 import Base: show, print, *, /, //, -, +, ==, isapprox, divrem, div, rem, eltype
 import Base: promote_rule, truncate, chop,  conj, transpose, hash
 import Base: isequal
@@ -141,7 +143,7 @@ eltype(::Poly{T}) where {T} = T
 eltype(::Type{Poly{T}}) where {T} = Poly{T}
 
 length(p::Poly) = length(coeffs(p))
-endof(p::Poly)  = length(p) - 1
+lastindex(p::Poly)  = length(p) - 1
 
 start(p::Poly)        = start(coeffs(p)) - 1
 next(p::Poly, state)  = (temp = fill!(similar(coeffs(p)), 0); temp[state+1] = p[state]; (Poly(temp), state+1))
@@ -448,7 +450,7 @@ function polyval(p::Poly{T}, x::S) where {T,S}
         return zero(R) * x
     else
         y = convert(R, p[end])
-        for i = (endof(p)-1):-1:0
+        for i = (lastindex(p)-1):-1:0
             y = p[i] + x*y
         end
         return y
@@ -475,8 +477,9 @@ julia> polyint(Poly([1, 0, -1]), 2)
 Poly(2.0 + 1.0⋅x - 0.3333333333333333⋅x^3)
 ```
 """
-# if we do not have any initial condition, assume k = zero(Int)
-polyint(p::Poly{T}) where {T} = polyint(p, 0)
+polyint(p::Poly{T}) where {T} = polyint(p, 0) # if we do not have any initial
+                                              # condition, assume k = zero(Int)
+
 
 # if we have coefficients that have `NaN` representation
 function polyint(p::Poly{T}, k::S) where {T<:Union{Real,Complex},S<:Number}
@@ -542,8 +545,8 @@ julia> polyder(Poly([1, 3, -1]), 2)
 Poly(-2)
 ```
 """
-# if we have coefficients that can represent `NaN`s
 function polyder(p::Poly{T}, order::Int=1) where {T<:Union{Real,Complex}}
+# if we have coefficients that can represent `NaN`s
     n = length(p)
     order < 0       && error("Order of derivative must be non-negative")
     order == 0      && return p
@@ -628,7 +631,7 @@ function roots(p::Poly{T}) where {T}
     while p[end - num_trailing_zeros] ≈ zero(T)
         num_trailing_zeros += 1
     end
-    n = endof(p)-(num_leading_zeros + num_trailing_zeros)
+    n = lastindex(p)-(num_leading_zeros + num_trailing_zeros)
     n < 1 && return zeros(R, length(p) - num_trailing_zeros - 1)
 
     companion = @compat diagm(-1 => ones(R, n-1))
