@@ -172,9 +172,9 @@ psum = p1 + p2 - p3
 @test degree(psum) == 1         # will have wrong degree
 @test degree(truncate(psum)) == 0 # the degree should be correct after truncation
 
-@test truncate(Poly([2,1]),reltol=1/2,abstol=0) == Poly([2])
-@test truncate(Poly([2,1]),reltol=1,abstol=0)   == Poly([0])
-@test truncate(Poly([2,1]),reltol=0,abstol=1)   == Poly([2])
+@test truncate(Poly([2,1]),rtol=1/2,atol=0) == Poly([2])
+@test truncate(Poly([2,1]),rtol=1,atol=0)   == Poly([0])
+@test truncate(Poly([2,1]),rtol=0,atol=1)   == Poly([2])
 
 @test norm(Poly([1., 2.])) == norm([1., 2.])
 @test norm(Poly([1., 2.]), 1) == norm([1., 2.], 1)
