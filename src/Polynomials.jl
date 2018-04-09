@@ -200,30 +200,30 @@ variable(p::Poly{T}) where {T} = variable(T, p.var)
 variable(var::SymbolLike=:x) = variable(Float64, var)
 
 """
-    truncate{T}(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)), abstol::Real = 0)
+    truncate{T}(p::Poly{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
 
-Return a polynomial with coefficients `a_i` truncated to zero if `|a_i| <= reltol*maxabs(a)+abstol`.
+Return a polynomial with coefficients `a_i` truncated to zero if `|a_i| <= rtol*maxabs(a)+atol`.
 """
-function truncate(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
-  abstol::Real = 0) where {T}
+function truncate(p::Poly{T}; rtol::Real = Base.rtoldefault(real(T)),
+  atol::Real = 0) where {T}
     a = coeffs(p)
     amax = maximum(abs,a)
-    thresh = amax * reltol + abstol
+    thresh = amax * rtol + atol
     anew = map(ai -> abs(ai) <= thresh ? zero(T) : ai, a)
     return Poly(anew, p.var)
 end
 
 """
-    chop(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)), abstol::Real = 0)
+    chop(p::Poly{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
 
 Chop off leading values from a polynomial which are approximately zero. The tolerances
-`reltol` and `abstol` are passed to `isapprox` to check for zeros.
+`rtol` and `atol` are passed to `isapprox` to check for zeros.
 """
-function chop(p::Poly{T}; reltol::Real = Base.rtoldefault(real(T)),
-  abstol::Real = 0) where {T}
+function chop(p::Poly{T}; rtol::Real = Base.rtoldefault(real(T)),
+  atol::Real = 0) where {T}
     c = copy(p.a)
     for k=length(c):-1:1
-        if !isapprox(c[k], zero(T); rtol=reltol, atol=abstol)
+        if !isapprox(c[k], zero(T); rtol=rtol, atol=atol)
             resize!(c, k)
             return Poly(c, p.var)
         end
@@ -396,29 +396,29 @@ rem(num::Poly, den::Poly) = divrem(num, den)[2]
 ==(n::Number, p1::Poly) = (p1 == n)
 
 """
-    isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; reltol::Real = Base.rtoldefault(T,S, 0), abstol::Real = 0, norm::Function = vecnorm)
+    isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; rtol::Real = Base.rtoldefault(T,S, 0), atol::Real = 0, norm::Function = vecnorm)
 
 Truncate polynomials `p1` and `p2`, and compare the coefficient vectors using the
-given `norm` function. The tolerances `reltol` and `abstol` are passed to both
+given `norm` function. The tolerances `rtol` and `atol` are passed to both
 `truncate` and `isapprox`.
 """
 function isapprox(p1::Poly{T}, p2::Poly{S};
-  reltol::Real = (@compat Base.rtoldefault(T,S, 0)), abstol::Real = 0, norm::Function = vecnorm) where {T,S}
+  rtol::Real = (@compat Base.rtoldefault(T,S, 0)), atol::Real = 0, norm::Function = vecnorm) where {T,S}
   p1.var == p2.var || error("Polynomials must have same variable")
-  p1t = truncate(p1; reltol = reltol, abstol = abstol)
-  p2t = truncate(p2; reltol = reltol, abstol = abstol)
-  length(p1t) == length(p2t) && isapprox(coeffs(p1t), coeffs(p2t); rtol = reltol,
-    atol = abstol, norm = norm)
+  p1t = truncate(p1; rtol = rtol, atol = atol)
+  p2t = truncate(p2; rtol = rtol, atol = atol)
+  length(p1t) == length(p2t) && isapprox(coeffs(p1t), coeffs(p2t); rtol = rtol,
+    atol = atol, norm = norm)
 end
 
-function isapprox(p1::Poly{T}, n::S; reltol::Real = (@compat Base.rtoldefault(T,S, 0)),
-  abstol::Real = 0) where {T,S<:Number}
-  p1t = truncate(p1; reltol = reltol, abstol = abstol)
-  degree(p1t) == 0 && isapprox(coeffs(p1), [n]; rtol = reltol, atol = abstol)
+function isapprox(p1::Poly{T}, n::S; rtol::Real = (@compat Base.rtoldefault(T,S, 0)),
+  atol::Real = 0) where {T,S<:Number}
+  p1t = truncate(p1; rtol = rtol, atol = atol)
+  degree(p1t) == 0 && isapprox(coeffs(p1), [n]; rtol = rtol, atol = atol)
 end
 
-isapprox(n::S, p1::Poly{T}; reltol::Real= (@compat Base.rtoldefault(T,S, 0)),
-  abstol::Real = 0)  where {T,S<:Number}  = isapprox(p1, n; reltol = reltol, abstol = abstol)
+isapprox(n::S, p1::Poly{T}; rtol::Real= (@compat Base.rtoldefault(T,S, 0)),
+  atol::Real = 0)  where {T,S<:Number}  = isapprox(p1, n; rtol = rtol, atol = atol)
 
 hash(f::Poly, h::UInt) = hash(f.var, hash(f.a, h))
 isequal(p1::Poly, p2::Poly) = hash(p1) == hash(p2)
