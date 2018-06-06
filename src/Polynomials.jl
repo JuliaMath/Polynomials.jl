@@ -505,7 +505,7 @@ polyint(p::Poly{T}, k::S) where {T,S<:Number} = _polyint(p, k)
 function _polyint(p::Poly{T}, k::S) where {T,S<:Number}
     n = length(p)
     R = promote_type(typeof(one(T)/1), S)
-    a2 = @compat Vector{R}(uninitialized, n+1)
+    a2 = @compat Vector{R}(undef, n+1)
     a2[1] = k
     for i = 1:n
         a2[i+1] = p[i-1] / i
@@ -566,7 +566,7 @@ end
 
 function _polyder(p::Poly{T}, order::Int=1) where {T}
   n = length(p)
-  a2 = @compat Vector{T}(uninitialized, n-order)
+  a2 = @compat Vector{T}(undef, n-order)
   for i = order:n-1
     a2[i-order+1] = p[i] * prod((i-order+1):i)
   end
