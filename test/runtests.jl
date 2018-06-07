@@ -77,7 +77,8 @@ a_roots = copy(pN.a)
 @test length(roots(p5)) == 4
 @test roots(pNULL) == []
 @test sort(roots(pR)) == [1//2, 3//2]
-x = variable(Float64)
+# default type in variable() is Float64
+x = variable()
 plarge = 8.362779449448982e41 - 2.510840694154672e57x + 4.2817430781178795e44x^2 - 1.6225927682921337e31x^3 + 1.0x^4  # #120
 @test length(roots(plarge)) == 4
 
@@ -100,6 +101,11 @@ p4 = p2 * p3
 @test divrem(pR, pR) == (one(pR), zero(pR))
 @test_throws DivideError p1 ÷ p0
 @test_throws DivideError divrem(p0,p0)
+
+# test chop
+pchop = Poly([1, 2, 3, 0, 0, 0])
+pchopped = chop(pchop)
+@test roots(pchop) == roots(pchopped)
 
 #Tests for multivariable support
 pX = Poly([1, 2, 3, 4, 5])
