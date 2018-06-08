@@ -78,9 +78,9 @@ default, the terms are in order of ascending powers, matching the order in
 
 # Examples
 ```jldoctest
-julia> printpoly(STDOUT, Poly([1,2,3], :y))
+julia> printpoly(stdout, Poly([1,2,3], :y))
 1 + 2*y + 3*y^2
-julia> printpoly(STDOUT, Poly([1,2,3], :y), descending_powers=true)
+julia> printpoly(stdout, Poly([1,2,3], :y), descending_powers=true)
 3*y^2 + 2*y + 1
 ```
 """

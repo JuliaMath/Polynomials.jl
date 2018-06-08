@@ -1,6 +1,7 @@
 # Poly type manipulations
 
-isdefined(Base, :__precompile__) && __precompile__()
+__precompile__()
+
 
 module Polynomials
 #todo: sparse polynomials?
@@ -76,7 +77,7 @@ Poly(0.5 - 0.5⋅x^2)
 struct Poly{T}
   a::Vector{T}
   var::Symbol
-  function (::Type{Poly})(a::AbstractVector{T}, var::SymbolLike = :x) where {T<:Number}
+  function Poly(a::AbstractVector{T}, var::SymbolLike = :x) where {T<:Number}
     # if a == [] we replace it with a = [0]
     if length(a) == 0
       return new{T}(zeros(T,1),Symbol(var))
@@ -90,7 +91,7 @@ struct Poly{T}
 end
 
 Poly(n::Number, var::SymbolLike = :x) = Poly([n], var)
-(::Type{Poly{T}})(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S} =
+Poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S} =
   Poly(convert(Vector{T}, x), var)
 
 # create a Poly object from its roots
@@ -403,7 +404,7 @@ given `norm` function. The tolerances `rtol` and `atol` are passed to both
 `truncate` and `isapprox`.
 """
 function isapprox(p1::Poly{T}, p2::Poly{S};
-  rtol::Real = (@compat Base.rtoldefault(T,S, 0)), atol::Real = 0, norm::Function = vecnorm) where {T,S}
+  rtol::Real = (Base.rtoldefault(T,S, 0)), atol::Real = 0, norm::Function = vecnorm) where {T,S}
   p1.var == p2.var || error("Polynomials must have same variable")
   p1t = truncate(p1; rtol = rtol, atol = atol)
   p2t = truncate(p2; rtol = rtol, atol = atol)
@@ -411,13 +412,13 @@ function isapprox(p1::Poly{T}, p2::Poly{S};
     atol = atol, norm = norm)
 end
 
-function isapprox(p1::Poly{T}, n::S; rtol::Real = (@compat Base.rtoldefault(T,S, 0)),
+function isapprox(p1::Poly{T}, n::S; rtol::Real = (Base.rtoldefault(T,S, 0)),
   atol::Real = 0) where {T,S<:Number}
   p1t = truncate(p1; rtol = rtol, atol = atol)
   degree(p1t) == 0 && isapprox(coeffs(p1), [n]; rtol = rtol, atol = atol)
 end
 
-isapprox(n::S, p1::Poly{T}; rtol::Real= (@compat Base.rtoldefault(T,S, 0)),
+isapprox(n::S, p1::Poly{T}; rtol::Real= (Base.rtoldefault(T,S, 0)),
   atol::Real = 0)  where {T,S<:Number}  = isapprox(p1, n; rtol = rtol, atol = atol)
 
 hash(f::Poly, h::UInt) = hash(f.var, hash(f.a, h))
@@ -505,7 +506,7 @@ polyint(p::Poly{T}, k::S) where {T,S<:Number} = _polyint(p, k)
 function _polyint(p::Poly{T}, k::S) where {T,S<:Number}
     n = length(p)
     R = promote_type(typeof(one(T)/1), S)
-    a2 = @compat Vector{R}(undef, n+1)
+    a2 = Vector{R}(undef, n+1)
     a2[1] = k
     for i = 1:n
         a2[i+1] = p[i-1] / i
@@ -566,7 +567,7 @@ end
 
 function _polyder(p::Poly{T}, order::Int=1) where {T}
   n = length(p)
-  a2 = @compat Vector{T}(undef, n-order)
+  a2 = Vector{T}(undef, n-order)
   for i = order:n-1
     a2[i-order+1] = p[i] * prod((i-order+1):i)
   end
@@ -634,7 +635,7 @@ function roots(p::Poly{T}) where {T}
     n = lastindex(p)-(num_leading_zeros + num_trailing_zeros)
     n < 1 && return zeros(R, length(p) - num_trailing_zeros - 1)
 
-    companion = @compat diagm(-1 => ones(R, n-1))
+    companion = diagm(-1 => ones(R, n-1))
     an = p[end-num_trailing_zeros]
     companion[1,:] = -p[(end-num_trailing_zeros-1):-1:num_leading_zeros] / an
 
