@@ -150,7 +150,7 @@ const _γ = 0.5772156649015
 println("Test for the summation of a factorially divergent series.")
 d = Poly(convert(Vector{BigInt},(-1).^(0:60).* map(gamma,BigFloat(1):BigFloat(61.0))).//1,"x")
 PQexpint = Pade(d,30,30)
-@compat println("The approximate sum of the divergent series is:  ", Float64(padeval(PQexpint,1.0)))
+println("The approximate sum of the divergent series is:  ", Float64(padeval(PQexpint,1.0)))
 println("The approximate sum of the convergent series is: ",exp(1)*(-_γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
 @test isapprox(convert(Float64, padeval(PQexpint,1.0)),
                exp(1)*(-_γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
@@ -290,15 +290,6 @@ end
 @test printpoly_to_string(Poly([1,2,3], "y"), descending_powers=true) == "3*y^2 + 2*y + 1"
 
 ## want to be able to copy and paste
-if VERSION < v"0.6.0-dev"
-    string_eval_poly(p,x) = eval(Expr(:function, Expr(:call, :f, :x), parse(string(p)[6:end-1])))(x)
-    p = Poly([1,2,3]) # copy and paste
-    q = Poly([1//1, 2//1, 3//1])
-    r = Poly([1.0, 2, 3])
-    @test string_eval_poly(p, 5) == p(5)
-    @test string_eval_poly(q, 5) == q(5)
-    @test string_eval_poly(r, 5) == r(5)
-end
 ## check hashing
 p = poly([1,2,3])
 q = poly([1,2,3])
