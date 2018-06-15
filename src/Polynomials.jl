@@ -15,8 +15,8 @@ export Pade, padeval
 
 import Compat.lastindex
 
-import Base: start, next, done, length, size, eltype, collect, eachindex
-import Base:  getindex, setindex!, copy, zero, one, convert, gcd
+import Base: length, size, eltype, collect, eachindex
+import Base: getindex, setindex!, copy, zero, one, convert, gcd
 import Base: show, print, *, /, //, -, +, ==, isapprox, divrem, div, rem, eltype
 import Base: promote_rule, truncate, chop,  conj, transpose, hash
 import Base: isequal
@@ -146,10 +146,16 @@ eltype(::Type{Poly{T}}) where {T} = Poly{T}
 length(p::Poly) = length(coeffs(p))
 lastindex(p::Poly)  = length(p) - 1
 
-start(p::Poly)        = start(coeffs(p)) - 1
-next(p::Poly, state)  = (temp = fill!(similar(coeffs(p)), 0); temp[state+1] = p[state]; (Poly(temp), state+1))
-done(p::Poly, state)  = state > degree(p)
-
+if VERSION < v"0.7.0-DEV.5126"
+    import Base: start, next, done
+    start(p::Poly)        = start(coeffs(p)) - 1
+    next(p::Poly, state)  = (temp = fill!(similar(coeffs(p)), 0); temp[state+1] = p[state]; (Poly(temp), state+1))
+    done(p::Poly, state)  = state > degree(p)
+else
+    import Base: iterate
+    Base.iterate(p::Poly) = (p[0] * one(p), 1)
+    Base.iterate(p::Poly, state) = state <= degree(p) ? (p[state]*variable(p)^(state), state+1) : nothing
+end
 
 # shortcut for collect(eltype, collection)
 collect(p::Poly{T}) where {T} = collect(Poly{T}, p)
@@ -161,9 +167,9 @@ size(p::Poly, i::Integer) = size(p.a, i)
     degree(p::Poly)
 
 Return the degree of the polynomial `p`, i.e. the highest exponent in the polynomial that
-has a nonzero coefficient.
+has a nonzero coefficient. The degree of the zero polynomial is defined to be -1.
 """
-degree(p::Poly) = length(p) - 1
+degree(p::Poly) = iszero(p) ? -1 : length(p) - 1
 
 """
     coeffs(p::Poly)
@@ -270,7 +276,7 @@ function setindex!(p::Poly, value, idx::Int)
     n = length(p.a)
     if n ≤ idx
         resize!(p.a, idx+1)
-        p.a[n+1:idx] = 0
+        p.a[n+1:idx] .= 0
     end
     p.a[idx+1] = value
     return p
@@ -352,6 +358,9 @@ function *(p1::Poly{T}, p2::Poly{S}) where {T,S}
     Poly(a,p1.var)
 end
 
+# quiet this deprecation https://github.com/JuliaLang/julia/pull/23332
+import Base: ^
+^(p::Poly, n::Integer) = Base.power_by_squaring(p,n)
 
 # are any values NaN
 hasnan(p::Poly) = reduce(|, (isnan.(p.a)))
@@ -706,17 +715,17 @@ function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     # here unsure, whether similar(float(x[1]),...), or similar(x,...)
     # however similar may yield unwanted surprise in case of e.g. x::Int
     #
-    A=similar(float.(x[1:1]), length(x), n+1)
+    T = eltype(float(x[1]))
+    A = Array{T}(undef, length(x), n+1)
     #
     # TODO: add support for poly coef bitmap
     # (i.e. polynomial with some terms fixed to zero)
     #
-    A[:,1]=1
+    A[:,1] .= 1
     for i=1:n
-        A[:,i+1]=A[:,i] .* x   # cumulative product more precise than x.^n
+        A[:,i+1] .= A[:,i] .* x   # cumulative product more precise than x.^n
     end
-    Aqr=qrfact(A)   # returns QR object, not a matrix
-    p=Aqr\y         # least squares solution via QR
+    p = A \ float.(y)
     Poly(p, sym)
 end
 polyfit(x,y,sym::Symbol) = polyfit(x,y,length(x)-1, sym)
