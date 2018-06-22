@@ -156,15 +156,18 @@ julia> roots(Poly([0, 0, 1]))
  0.0
 ```
 
-#### Polyfit
+#### polyfit(x, y, n=length(x)-1)
 
-* `polyfit`: fits a polynomial of minimal degree fitting the points
-  specified by `x` and `y` using the least-squares fit.
+* `polyfit`: fits a polynomial (of order `n`) to `x` and `y` using a least-squares approximation.
 
 ```julia
 julia> xs = 1:4; ys = exp(xs); polyfit(xs, ys)
 Poly(-7.717211620141281 + 17.9146616149694x - 9.77757245502143x^2 + 2.298404288652356x^3)
 ```
+
+Visual example:
+
+![newplot 42](https://user-images.githubusercontent.com/3156114/41799777-9ba00582-7627-11e8-94ef-15297ec8790e.png)
 
 #### Other methods
 
