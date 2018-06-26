@@ -87,10 +87,12 @@ julia> printpoly(stdout, Poly([1,2,3], :y), descending_powers=true)
 function printpoly(io::IO, p::Poly{T}, mimetype = MIME"text/plain"(); descending_powers=false) where {T}
     first = true
     printed_anything = false
-    for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
-        printed = showterm(io,p,i,first, mimetype)
-        first &= !printed
-        printed_anything |= printed
+    for j in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
+        printed = showterm(io,p,j,first, mimetype)
+        if printed
+            first = false
+            printed_anything = true
+        end
     end
     printed_anything || print(io, zero(T))
     return nothing
@@ -129,10 +131,14 @@ function printproductsign(io::IO, pj::T, j, mimetype) where {T}
     (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
 end
 
+## show a single term
+function printcoefficient(io::IO, pj::T, j, mimetype) where {T <: Real}
+    (j==0 || showone(T) || pj != one(T)) && show(io, mimetype, pj)
+end
 function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
 
-    hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
-    hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
+    hasreal = real(pj) != 0
+    hasimag = imag(pj) != 0
 
     if hasreal & hasimag
         print(io, '(')
@@ -144,38 +150,42 @@ function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
     elseif hasimag
         b = imag(pj)
         (showone(T) || b != one(T)) && show(io,  mimetype, b)
-        (isnan(imag(pj)) || isinf(imag(pj))) && print(io, showop(mimetype, "*"))
+        (isnan(b) || isinf(b)) && print(io, showop(mimetype, "*"))
         show(io, mimetype, im)
     else
         return
     end
 end
-
-
-## show a single term
 function printcoefficient(io::IO, pj::T, j, mimetype) where {T}
-    pj == one(T) && !(showone(T) || j == 0) && return
-    show(io, mimetype, pj)
-end
-
-## show exponent
-function printexponent(io,var,i, mimetype::MIME"text/latex")
-    if i == 0
-        return
-    elseif i == 1
-        print(io,var)
+    # A simple heuristic to determine when to parenthesize
+    # coefficients of various types, e.g. dual numbers
+    if contains(string(pj), " + ") || contains(string(pj), " - ")
+        print(io, '(')
+        show(io, mimetype, pj)
+        print(io, ')')
     else
-        print(io,var,"^{$i}")
+        show(io, mimetype, pj)
     end
 end
 
-function printexponent(io,var,i, mimetype)
-    if i == 0
+## show exponent
+function printexponent(io,var,j, mimetype::MIME"text/latex")
+    if j == 0
         return
-    elseif i == 1
+    elseif j == 1
         print(io,var)
     else
-        print(io,var,"^",i)
+        print(io,var,"^{$j}")
+    end
+end
+
+function printexponent(io,var,j, mimetype)
+    if j == 0
+        return
+    elseif j == 1
+        print(io,var)
+    else
+        print(io,var,"^",j)
     end
 end
 

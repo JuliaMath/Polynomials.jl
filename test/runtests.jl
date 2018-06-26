@@ -289,6 +289,20 @@ end
 @test printpoly_to_string(Poly([1,2,3], "y")) == "1 + 2*y + 3*y^2"
 @test printpoly_to_string(Poly([1,2,3], "y"), descending_powers=true) == "3*y^2 + 2*y + 1"
 
+@test printpoly_to_string(Poly([1.0,2.0,3.0], "y")) == "1.0 + 2.0*y + 3.0*y^2"
+
+@test printpoly_to_string(Poly([1//2, 2//3], "y")) == "1//2 + 2//3*y"
+
+@test printpoly_to_string(Poly([Inf*im, Inf*im, NaN, NaN*im])) == "Inf*im + Inf*im*x + NaN*x^2 + NaN*im*x^3"
+@test printpoly_to_string(Poly([1 + 1im])) == "(1 + 1im)"
+@test printpoly_to_string(Poly([1im, 1im])) == "im + im*x"
+@test printpoly_to_string(Poly([1 + im, 2 + 4im])) == "(1 + 1im) + (2 + 4im)*x"
+@test printpoly_to_string(Poly([1.0 + im, 2 + 4im])) == "(1.0 + 1.0im) + (2.0 + 4.0im)*x"
+
+using DualNumbers
+@test printpoly_to_string(Poly([Dual(1.0,2), Dual(2,1)], "y")) == "(1.0 + 2.0ɛ) + (2.0 + 1.0ɛ)*y"
+@test printpoly_to_string(Poly([Dual(1.0,-2.0), Dual(-2,-1)], "y")) == "(1.0 - 2.0ɛ) + (-2.0 - 1.0ɛ)*y"
+
 ## want to be able to copy and paste
 ## check hashing
 p = poly([1,2,3])
