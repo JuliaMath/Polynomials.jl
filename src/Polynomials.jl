@@ -250,7 +250,7 @@ the `p`-norm is
 ||q||_p = (|q_0|^p + \\ldots + |q_n|^p)^{1/p}
 ``
 """
-norm(q::Poly, args...) = norm(coeffs(q), args...)
+norm(q::Poly, p::Real) = norm(coeffs(q), p)
 
 
 """

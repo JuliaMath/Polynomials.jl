@@ -3,6 +3,7 @@ using Compat
 using Compat.Test
 using Compat.LinearAlgebra
 using Polynomials
+using SpecialFunctions
 
 import Compat.SparseArrays: sparse, speye, nnz
 
@@ -395,3 +396,9 @@ p1 = poly([1.,2.,3.])
 p2 = poly([1.,2.,6.])
 
 @test (res = roots(gcd(p1, p2)); 1. ∈ res && 2. ∈ res)
+
+## Getting error on passing Real arrays to polyfit #146
+xx = Real[20.0, 30.0, 40.0]
+yy = Real[15.7696, 21.4851, 28.2463]
+polyfit(xx,yy,2)
+
