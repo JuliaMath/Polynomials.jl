@@ -3,6 +3,7 @@ using Compat
 using Compat.Test
 using Compat.LinearAlgebra
 using Polynomials
+using SpecialFunctions
 
 import Compat.SparseArrays: sparse, speye, nnz
 
@@ -46,7 +47,7 @@ sprint(show, pNULL)
 @test pNULL^3 == pNULL
 @test pNULL*pNULL == pNULL
 
-@test map(degree, [pNULL,p0,p1,p2,p3,p4,p5,pN,pR,p1000]) == [0,0,0,1,2,3,4,4,2,999]
+@test map(degree, [pNULL,p0,p1,p2,p3,p4,p5,pN,pR,p1000]) == [-1,-1,0,1,2,3,4,4,2,999]
 
 @test polyval(poly(Int[]), 2.) == 1.
 @test polyval(pN, -.125) == 276.9609375
@@ -168,7 +169,9 @@ p = polyfit(xs, ys)
 p = polyfit(xs, ys, :t)
 p = polyfit(xs, ys, 2)
 @test maximum(map(abs,map(x->polyval(p, x), xs) - ys)) <= 0.03
-
+#https://stackoverflow.com/questions/50832823/error-with-polyfit-function-julia
+# relax type assumptions on x, y
+polyfit(Any[1,2,3], Any[2,3,1])
 
 ## truncation
 p1 = Poly([1,1]/10)
@@ -225,8 +228,8 @@ p1[0:1] = [7,8]
 ## conjugate of poly (issue #59)
 as = [im, 1, 2]
 bs = [1, 1, 2]
-@test conj(Poly(as)) == Poly(conj(as))
-@test conj(Poly(bs)) == Poly(conj(bs))
+@test conj(Poly(as)) == Poly(conj.(as))
+#@test conj(Poly(bs)) == Poly(conj(bs)) # conj gives warning as no defn on T
 ## and transpose
 @test transpose(Poly(as)) == Poly(as)
 
@@ -355,7 +358,7 @@ p2s = Poly([1], :s)
 # test size
 @test size(Poly([0.5, 0.2])) == (2,)
 @test size(Poly([0.5, 0.2]), 1) == 2
-@test size(Poly([0.5, 0.2]), 1, 2) == (2,1)
+# @test size(Poly([0.5, 0.2]), 1, 2) == (2,1) # deprecated in v0.7
 
 # test iteration
 p1 = Poly([1,2,0,3])
@@ -393,3 +396,9 @@ p1 = poly([1.,2.,3.])
 p2 = poly([1.,2.,6.])
 
 @test (res = roots(gcd(p1, p2)); 1. ∈ res && 2. ∈ res)
+
+## Getting error on passing Real arrays to polyfit #146
+xx = Real[20.0, 30.0, 40.0]
+yy = Real[15.7696, 21.4851, 28.2463]
+polyfit(xx,yy,2)
+
