@@ -37,7 +37,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Polynomials.degree",
     "category": "function",
-    "text": "degree(p::Poly)\n\nReturn the degree of the polynomial p, i.e. the highest exponent in the polynomial that has a nonzero coefficient.\n\n\n\n\n\n"
+    "text": "degree(p::Poly)\n\nReturn the degree of the polynomial p, i.e. the highest exponent in the polynomial that has a nonzero coefficient. The degree of the zero polynomial is defined to be -1.\n\n\n\n\n\n"
 },
 
 {
@@ -61,7 +61,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Manual",
     "title": "Polynomials.printpoly",
     "category": "function",
-    "text": "printpoly(io::IO, p::Poly, mimetype = MIME\"text/plain\"(); descending_powers=false)\n\nPrint a human-readable representation of the polynomial p to io. The MIME types \"text/plain\" (default), \"text/latex\", and \"text/html\" are supported. By default, the terms are in order of ascending powers, matching the order in coeffs(p); specifying descending_powers=true reverses the order.\n\nExamples\n\njulia> printpoly(STDOUT, Poly([1,2,3], :y))\n1 + 2*y + 3*y^2\njulia> printpoly(STDOUT, Poly([1,2,3], :y), descending_powers=true)\n3*y^2 + 2*y + 1\n\n\n\n\n\n"
+    "text": "printpoly(io::IO, p::Poly, mimetype = MIME\"text/plain\"(); descending_powers=false)\n\nPrint a human-readable representation of the polynomial p to io. The MIME types \"text/plain\" (default), \"text/latex\", and \"text/html\" are supported. By default, the terms are in order of ascending powers, matching the order in coeffs(p); specifying descending_powers=true reverses the order.\n\nExamples\n\njulia> printpoly(stdout, Poly([1,2,3], :y))\n1 + 2*y + 3*y^2\njulia> printpoly(stdout, Poly([1,2,3], :y), descending_powers=true)\n3*y^2 + 2*y + 1\n\n\n\n\n\n"
 },
 
 {
