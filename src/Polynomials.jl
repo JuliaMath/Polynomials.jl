@@ -1,7 +1,6 @@
 # Poly type manipulations
 
-__precompile__()
-
+VERSION < v"0.7.0-beta2.199" && __precompile__()
 
 module Polynomials
 #todo: sparse polynomials?
