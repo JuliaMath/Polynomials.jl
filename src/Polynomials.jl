@@ -1,25 +1,19 @@
 # Poly type manipulations
 
-VERSION < v"0.7.0-beta2.199" && __precompile__()
-
 module Polynomials
 #todo: sparse polynomials?
-
-using Compat
 
 export Poly, poly
 export degree, coeffs, variable, printpoly
 export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
-import Compat.lastindex
-
-import Base: length, size, eltype, collect, eachindex
+import Base: length, size, eltype, collect, eachindex, lastindex
 import Base: getindex, setindex!, copy, zero, one, convert, gcd
 import Base: show, print, *, /, //, -, +, ==, isapprox, divrem, div, rem, eltype
 import Base: promote_rule, truncate, chop,  conj, transpose, hash
 import Base: isequal
-import Compat.LinearAlgebra: norm, dot, eigvals, diagm, vecnorm, qrfact
+import LinearAlgebra: norm, dot, eigvals, diagm
 
 const SymbolLike = Union{AbstractString,Char,Symbol}
 
@@ -145,16 +139,9 @@ eltype(::Type{Poly{T}}) where {T} = Poly{T}
 length(p::Poly) = length(coeffs(p))
 lastindex(p::Poly)  = length(p) - 1
 
-if VERSION < v"0.7.0-DEV.5126"
-    import Base: start, next, done
-    start(p::Poly)        = start(coeffs(p)) - 1
-    next(p::Poly, state)  = (temp = fill!(similar(coeffs(p)), 0); temp[state+1] = p[state]; (Poly(temp), state+1))
-    done(p::Poly, state)  = state > degree(p)
-else
-    import Base: iterate
-    Base.iterate(p::Poly) = (p[0] * one(p), 1)
-    Base.iterate(p::Poly, state) = state <= degree(p) ? (p[state]*variable(p)^(state), state+1) : nothing
-end
+import Base: iterate
+Base.iterate(p::Poly) = (p[0] * one(p), 1)
+Base.iterate(p::Poly, state) = state <= degree(p) ? (p[state]*variable(p)^(state), state+1) : nothing
 
 # shortcut for collect(eltype, collection)
 collect(p::Poly{T}) where {T} = collect(Poly{T}, p)
@@ -405,14 +392,14 @@ rem(num::Poly, den::Poly) = divrem(num, den)[2]
 ==(n::Number, p1::Poly) = (p1 == n)
 
 """
-    isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; rtol::Real = Base.rtoldefault(T,S, 0), atol::Real = 0, norm::Function = vecnorm)
+    isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; rtol::Real = Base.rtoldefault(T,S, 0), atol::Real = 0, norm::Function = norm)
 
 Truncate polynomials `p1` and `p2`, and compare the coefficient vectors using the
 given `norm` function. The tolerances `rtol` and `atol` are passed to both
 `truncate` and `isapprox`.
 """
 function isapprox(p1::Poly{T}, p2::Poly{S};
-  rtol::Real = (Base.rtoldefault(T,S, 0)), atol::Real = 0, norm::Function = vecnorm) where {T,S}
+  rtol::Real = (Base.rtoldefault(T,S, 0)), atol::Real = 0, norm::Function = norm) where {T,S}
   p1.var == p2.var || error("Polynomials must have same variable")
   p1t = truncate(p1; rtol = rtol, atol = atol)
   p2t = truncate(p2; rtol = rtol, atol = atol)
@@ -697,7 +684,7 @@ argument can be used to specify the symbol for the returned polynomial.
 # Examples
 
 ```julia
-julia> xs = linspace(0, pi, 5);
+julia> xs = range(0, stop=pi, length=5);
 
 julia> ys = map(sin, xs);
 
