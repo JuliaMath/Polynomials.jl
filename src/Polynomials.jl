@@ -1,25 +1,19 @@
 # Poly type manipulations
 
-VERSION < v"0.7.0-beta2.199" && __precompile__()
-
 module Polynomials
 #todo: sparse polynomials?
-
-using Compat
 
 export Poly, poly
 export degree, coeffs, variable, printpoly
 export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
-import Compat.lastindex
-
-import Base: length, size, eltype, collect, eachindex
+import Base: length, size, eltype, collect, eachindex, lastindex
 import Base: getindex, setindex!, copy, zero, one, convert, gcd
 import Base: show, print, *, /, //, -, +, ==, isapprox, divrem, div, rem, eltype
 import Base: promote_rule, truncate, chop,  conj, transpose, hash
 import Base: isequal
-import Compat.LinearAlgebra: norm, dot, eigvals, diagm, vecnorm, qrfact
+import LinearAlgebra: norm, dot, eigvals, diagm
 
 const SymbolLike = Union{AbstractString,Char,Symbol}
 
@@ -405,14 +399,14 @@ rem(num::Poly, den::Poly) = divrem(num, den)[2]
 ==(n::Number, p1::Poly) = (p1 == n)
 
 """
-    isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; rtol::Real = Base.rtoldefault(T,S, 0), atol::Real = 0, norm::Function = vecnorm)
+    isapprox{T,S}(p1::Poly{T}, p2::Poly{S}; rtol::Real = Base.rtoldefault(T,S, 0), atol::Real = 0, norm::Function = norm)
 
 Truncate polynomials `p1` and `p2`, and compare the coefficient vectors using the
 given `norm` function. The tolerances `rtol` and `atol` are passed to both
 `truncate` and `isapprox`.
 """
 function isapprox(p1::Poly{T}, p2::Poly{S};
-  rtol::Real = (Base.rtoldefault(T,S, 0)), atol::Real = 0, norm::Function = vecnorm) where {T,S}
+  rtol::Real = (Base.rtoldefault(T,S, 0)), atol::Real = 0, norm::Function = norm) where {T,S}
   p1.var == p2.var || error("Polynomials must have same variable")
   p1t = truncate(p1; rtol = rtol, atol = atol)
   p2t = truncate(p2; rtol = rtol, atol = atol)

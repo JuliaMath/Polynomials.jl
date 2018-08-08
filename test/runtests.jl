@@ -1,11 +1,10 @@
 # assert file to test polynomial implementation
-using Compat
-using Compat.Test
-using Compat.LinearAlgebra
+using Test
+using LinearAlgebra
 using Polynomials
 using SpecialFunctions
 
-import Compat.SparseArrays: sparse, speye, nnz
+import SparseArrays: sparse, nnz
 
 pNULL = Poly(Float32[])
 p0 = Poly([0])
@@ -287,7 +286,7 @@ end
 function printpoly_to_string(args...; kwargs...)
     buf = IOBuffer()
     printpoly(buf, args...; kwargs...)
-    return Compat.String(take!(buf))
+    return String(take!(buf))
 end
 @test printpoly_to_string(Poly([1,2,3], "y")) == "1 + 2*y + 3*y^2"
 @test printpoly_to_string(Poly([1,2,3], "y"), descending_powers=true) == "3*y^2 + 2*y + 1"
