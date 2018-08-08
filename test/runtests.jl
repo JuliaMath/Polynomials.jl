@@ -157,11 +157,7 @@ println("The approximate sum of the convergent series is: ",exp(1)*(-_γ-sum([(-
 
 
 ## polyfit
-if VERSION < v"0.7-"
-    xs = linspace(0, pi, 10)
-else
-    xs = range(0, stop=pi, length=10)
-end
+xs = range(0, stop=pi, length=10)
 
 ys = map(sin,xs)
 p = polyfit(xs, ys)
@@ -272,15 +268,9 @@ p = Poly([1.0, 0 + NaN*im, NaN, Inf, 0 - Inf*im]) # handle NaN or Inf appropriat
 
 p = Poly([1,2,3])
 
-if VERSION < v"0.7-"
-    @test reprmime("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
-    p = Poly([1//2, 2//3, 1])
-    @test reprmime("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
-else
-    @test repr("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
-    p = Poly([1//2, 2//3, 1])
-    @test repr("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
-end
+@test repr("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
+p = Poly([1//2, 2//3, 1])
+@test repr("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
 
 # customized printing with printpoly
 function printpoly_to_string(args...; kwargs...)

@@ -139,16 +139,9 @@ eltype(::Type{Poly{T}}) where {T} = Poly{T}
 length(p::Poly) = length(coeffs(p))
 lastindex(p::Poly)  = length(p) - 1
 
-if VERSION < v"0.7.0-DEV.5126"
-    import Base: start, next, done
-    start(p::Poly)        = start(coeffs(p)) - 1
-    next(p::Poly, state)  = (temp = fill!(similar(coeffs(p)), 0); temp[state+1] = p[state]; (Poly(temp), state+1))
-    done(p::Poly, state)  = state > degree(p)
-else
-    import Base: iterate
-    Base.iterate(p::Poly) = (p[0] * one(p), 1)
-    Base.iterate(p::Poly, state) = state <= degree(p) ? (p[state]*variable(p)^(state), state+1) : nothing
-end
+import Base: iterate
+Base.iterate(p::Poly) = (p[0] * one(p), 1)
+Base.iterate(p::Poly, state) = state <= degree(p) ? (p[state]*variable(p)^(state), state+1) : nothing
 
 # shortcut for collect(eltype, collection)
 collect(p::Poly{T}) where {T} = collect(Poly{T}, p)
@@ -691,7 +684,7 @@ argument can be used to specify the symbol for the returned polynomial.
 # Examples
 
 ```julia
-julia> xs = linspace(0, pi, 5);
+julia> xs = range(0, stop=pi, length=5);
 
 julia> ys = map(sin, xs);
 
