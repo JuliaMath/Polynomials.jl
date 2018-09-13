@@ -46,6 +46,26 @@ hasneg(::Type{Poly{S}}) where {S} = false
 showone(::Type{Poly{S}}) where {S} = false
 
 
+### show parentheses?
+"""
+    needsparens(pj::T, j::Int)
+
+Add parentheses to coefficient `pj * x^j of type `T` when printing.
+Can be overridden by external types to control printing.
+"""
+function needsparens(pj::Complex{T}, j) where {T}
+    hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
+    hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
+    hasreal && hasimag  && return true
+    false
+end
+
+# catchall
+# PR #147, a good idea?
+# needsparens(pj, j) = occursin(" + ", string(pj)) || contains(" - ", string(pj))
+needsparens(pj, j) = false
+
+
 #####
 
 "Show different operations depending on mimetype. `l-` is leading minus sign."
@@ -129,23 +149,24 @@ function printproductsign(io::IO, pj::T, j, mimetype) where {T}
     (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
 end
 
+# show a single term
 function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
 
     hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
     hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
 
-    if hasreal & hasimag
+    if needsparens(pj, j)
         print(io, '(')
-        show(io, mimetype, pj)
+        _show(io, mimetype, pj)
         print(io, ')')
     elseif hasreal
         a = real(pj)
-        (j==0 || showone(T) || a != one(T)) && show(io, mimetype, a)
+        (j==0 || showone(T) || a != one(T)) && _show(io, mimetype, a)
     elseif hasimag
         b = imag(pj)
-        (showone(T) || b != one(T)) && show(io,  mimetype, b)
+        (showone(T) || b != one(T)) && _show(io,  mimetype, b)
         (isnan(imag(pj)) || isinf(imag(pj))) && print(io, showop(mimetype, "*"))
-        show(io, mimetype, im)
+        _show(io, mimetype, im)
     else
         return
     end
@@ -155,7 +176,11 @@ end
 ## show a single term
 function printcoefficient(io::IO, pj::T, j, mimetype) where {T}
     pj == one(T) && !(showone(T) || j == 0) && return
-    show(io, mimetype, pj)
+    if needsparens(pj, j)
+        print(io, '('); _show(io, mimetype, pj); print(io, ')')
+    else
+        _show(io, mimetype, pj)
+    end
 end
 
 ## show exponent
@@ -184,6 +209,7 @@ end
 
 ## text/plain
 Base.show(io::IO, p::Poly{T}) where {T} = show(io, MIME("text/plain"), p)
+
 function Base.show(io::IO, mimetype::MIME"text/plain", p::Poly{T}) where {T}
     print(io,"Poly(")
     printpoly(io, p, mimetype)
@@ -198,20 +224,17 @@ function Base.show(io::IO, mimetype::MIME"text/latex", p::Poly{T}) where {T}
     print(io, "\$")
 end
 
-function Base.show(io::IO, mimetype::MIME"text/latex", a::Rational{T}) where {T}
-    abs(a.den) == one(T) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
-end
-
-function Base.show(io::IO, mimetype::MIME"text/latex", a::T) where {T<:Number}
-    print(io, a)
-end
-
 
 ## text/html
 function Base.show(io::IO, mimetype::MIME"text/html", p::Poly{T}) where {T}
     printpoly(io, p, mimetype)
 end
 
-function Base.show(io::IO, mimetype::MIME"text/html", a::T) where {T<:Number}
-    print(io, a)
+
+## intercept show to allow prettier printing of rationals
+
+function _show(io::IO, mimetype::MIME"text/latex", a::Rational{T}) where {T}
+    abs(a.den) == one(T) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
 end
+
+_show(io::IO, M, a::Any) = print(io,a)
