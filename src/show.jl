@@ -46,25 +46,6 @@ hasneg(::Type{Poly{S}}) where {S} = false
 showone(::Type{Poly{S}}) where {S} = false
 
 
-### show parentheses?
-"""
-    needsparens(pj::T, j::Int)
-
-Add parentheses to coefficient `pj * x^j of type `T` when printing.
-Can be overridden by external types to control printing.
-"""
-function needsparens(pj::Complex{T}, j) where {T}
-    hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
-    hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
-    hasreal && hasimag  && return true
-    false
-end
-
-# catchall
-# PR #147, a good idea?
-# needsparens(pj, j) = occursin(" + ", string(pj)) || contains(" - ", string(pj))
-needsparens(pj, j) = false
-
 
 #####
 
@@ -122,7 +103,7 @@ function showterm(io::IO,p::Poly{T},j,first, mimetype) where {T}
     pj == zero(T) && return false
 
     pj = printsign(io, pj, j, first, mimetype)
-    printcoefficient(io, pj, j, mimetype)
+    !(pj == one(T) && !(showone(T) || j == 0)) && printcoefficient(io, pj, j, mimetype)
     printproductsign(io, pj, j, mimetype)
     printexponent(io,p.var,j, mimetype)
     true
@@ -150,38 +131,69 @@ function printproductsign(io::IO, pj::T, j, mimetype) where {T}
 end
 
 # show a single term
+# Other types can overload Polynomials.printcofficient with a mimetype
+# or Base.show_unquoted(io, pj, indent, prec)
+# For example
+
+"""
+    printcoefficient(io::IO, pj, j, mimetype)
+
+Print coefficient pj of monomial pj * x^j with the given mimetype.
+
+For pretty printing different number types, or for adding parentheses,
+methods can be added to this function. If no mimetype is desired,
+adding a method to `Base.show_unquoted` is suggested, as this will
+also be useful for the default `show` methods. The following example
+shows how `Dual` objects of `DualNumbers` may be printed with
+parentheses.
+
+```
+using DualNumbers
+julia> Poly([Dual(1,2), Dual(3,4)])
+Poly(1 + 2ɛ + 3 + 4ɛ*x)
+julia> function Base.show_unquoted(io::IO, pj::Dual, indent::Int, prec::Int)
+       if Base.operator_precedence(:+) <= prec
+               print(io, "(")
+               show(io, pj)
+               print(io, ")")
+           else
+               show(io, pj)
+           end
+end
+
+julia> Poly([Dual(1,2), Dual(3,4)])
+Poly((1 + 2ɛ) + (3 + 4ɛ)*x)
+```
+"""
+printcoefficient(io::IO, pj::Any, j, mimetype) = Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
+
+# pretty print rational numbers in latex
+function printcoefficient(io::IO, a::Rational{T}, j, mimetype::MIME"text/latex") where {T}
+    abs(a.den) == one(T) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
+end
+
+# print complex numbers with parentheses as needed
 function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
 
     hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
     hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
 
-    if needsparens(pj, j)
-        print(io, '(')
-        _show(io, mimetype, pj)
-        print(io, ')')
+    if hasreal && hasimag
+        Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
     elseif hasreal
         a = real(pj)
-        (j==0 || showone(T) || a != one(T)) && _show(io, mimetype, a)
+        (j==0 || showone(T) || a != one(T)) && printcoefficient(io, a, j, mimetype)
     elseif hasimag
         b = imag(pj)
-        (showone(T) || b != one(T)) && _show(io,  mimetype, b)
+        (showone(T) || b != one(T)) && printcoefficient(io, b, j,  mimetype)
         (isnan(imag(pj)) || isinf(imag(pj))) && print(io, showop(mimetype, "*"))
-        _show(io, mimetype, im)
+        print(io, im)
     else
         return
     end
 end
 
 
-## show a single term
-function printcoefficient(io::IO, pj::T, j, mimetype) where {T}
-    pj == one(T) && !(showone(T) || j == 0) && return
-    if needsparens(pj, j)
-        print(io, '('); _show(io, mimetype, pj); print(io, ')')
-    else
-        _show(io, mimetype, pj)
-    end
-end
 
 ## show exponent
 function printexponent(io,var,i, mimetype::MIME"text/latex")
@@ -229,12 +241,3 @@ end
 function Base.show(io::IO, mimetype::MIME"text/html", p::Poly{T}) where {T}
     printpoly(io, p, mimetype)
 end
-
-
-## intercept show to allow prettier printing of rationals
-
-function _show(io::IO, mimetype::MIME"text/latex", a::Rational{T}) where {T}
-    abs(a.den) == one(T) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
-end
-
-_show(io::IO, M, a::Any) = print(io,a)
