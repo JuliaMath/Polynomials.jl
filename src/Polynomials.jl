@@ -244,7 +244,7 @@ norm(q::Poly, p::Real=2) = norm(coeffs(q), p)
 
 Conjugate each coefficient of `p`.
 """
-conj(p::Poly{T}) where {T<:Complex} = Poly(conj(coeffs(p)))
+conj(p::Poly) = Poly(conj(coeffs(p)))
 
 # Define the no-op `transpose` explicitly to avoid future warnings in Julia
 transpose(p::Poly) = p
