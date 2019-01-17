@@ -560,11 +560,20 @@ function polyder(p::Poly{T}, order::Int=1) where {T}
   _polyder(p, order)
 end
 
+# _int(T) returns matching Integer type to T
+# to avoid overflow in `prod` usage below
+_int(::Type{T})  where {T <: Union{Integer, Int8, Int16, Int64, Int128, BigInt}} = T
+_int(::Type{Float16}) = Int16
+_int(::Type{Float32}) = Int32
+_int(::Type{Float64}) = Int64
+_int(::Type{BigFloat}) = BigInt
+_int(x) = Int
+
 function _polyder(p::Poly{T}, order::Int=1) where {T}
   n = length(p)
   a2 = Vector{T}(undef, n-order)
   for i = order:n-1
-    a2[i-order+1] = p[i] * prod((i-order+1):i)
+    a2[i-order+1] = p[i] * prod((one(_int(T)) * (i-order+1)):i)
   end
 
   return Poly(a2, p.var)
