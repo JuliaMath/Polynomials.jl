@@ -564,7 +564,7 @@ function _polyder(p::Poly{T}, order::Int=1) where {T}
   n = length(p)
   a2 = Vector{T}(undef, n-order)
   for i = order:n-1
-    a2[i-order+1] = p[i] * prod((i-order+1):i)
+    a2[i-order+1] = reduce(*, (i-order+1):i, init=p[i])
   end
 
   return Poly(a2, p.var)

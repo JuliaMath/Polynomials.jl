@@ -391,3 +391,5 @@ xx = Real[20.0, 30.0, 40.0]
 yy = Real[15.7696, 21.4851, 28.2463]
 polyfit(xx,yy,2)
 
+## Issue with overflow and polyder Issue #159
+@test !iszero(polyder(Poly(BigInt[0, 1])^100, 100))
