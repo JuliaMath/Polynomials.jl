@@ -70,12 +70,14 @@ end
 ###
 
 """
-    printpoly(io::IO, p::Poly, mimetype = MIME"text/plain"(); descending_powers=false)
+    printpoly(io::IO, p::Poly, mimetype = MIME"text/plain"();
+        descending_powers=false, offset::Int=0)
 
 Print a human-readable representation of the polynomial `p` to `io`. The MIME
 types "text/plain" (default), "text/latex", and "text/html" are supported. By
 default, the terms are in order of ascending powers, matching the order in
 `coeffs(p)`; specifying `descending_powers=true` reverses the order.
+`offset` allows for an integer number to be added to the exponent, just for printing.
 
 # Examples
 ```jldoctest
@@ -83,37 +85,50 @@ julia> printpoly(stdout, Poly([1,2,3], :y))
 1 + 2*y + 3*y^2
 julia> printpoly(stdout, Poly([1,2,3], :y), descending_powers=true)
 3*y^2 + 2*y + 1
+julia> printpoly(stdout, Poly([2, 3, 1], :z), descending_powers=true, offset=-2)
+1 + 3*z^-1 + 2*z^-2
+julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true)
+z - z^-1
 ```
 """
-function printpoly(io::IO, p::Poly{T}, mimetype = MIME"text/plain"(); descending_powers=false) where {T}
+function printpoly(io::IO, p::Poly{T}, mimetype=MIME"text/plain"();
+        descending_powers=false, offset::Int=0) where {T}
     first = true
     printed_anything = false
     for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
-        printed = showterm(io,p,i,first, mimetype)
+        printed = showterm(io, p[i], p.var, i+offset, first, mimetype)
         first &= !printed
         printed_anything |= printed
     end
     printed_anything || print(io, zero(T))
+
     return nothing
 end
 
-function showterm(io::IO,p::Poly{T},j,first, mimetype) where {T}
-    pj = p[j]
+"""
+    showterm(io::IO, pj, var, j, j, first, mimetype)
 
+Show the term `pj * var^j`.
+Returns `true` after successfully printing.
+"""
+function showterm(io::IO, pj::T, var, j, first::Bool, mimetype) where {T}
     pj == zero(T) && return false
 
-    pj = printsign(io, pj, j, first, mimetype)
-    !(pj == one(T) && !(showone(T) || j == 0)) && printcoefficient(io, pj, j, mimetype)
+    pj = printsign(io, pj, first, mimetype)
+    !(pj == one(T) && !(showone(T) || j == 0)) &&
+            printcoefficient(io, pj, j, mimetype)
     printproductsign(io, pj, j, mimetype)
-    printexponent(io,p.var,j, mimetype)
-    true
+    printexponent(io, var, j, mimetype)
+
+    return true
 end
 
+#
+# print signs
+#
 
-
-## print the sign
-## returns aspos(pj)
-function printsign(io::IO, pj::T, j, first, mimetype) where {T}
+# print the sign, returns aspos(pj)
+function printsign(io::IO, pj::T, first, mimetype) where {T}
     neg = isneg(pj)
     if first
         neg && print(io, showop(mimetype, "l-"))    #Prepend - if first and negative
@@ -130,6 +145,10 @@ function printproductsign(io::IO, pj::T, j, mimetype) where {T}
     (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
 end
 
+#
+# print coefficient
+#
+
 # show a single term
 # Other types can overload Polynomials.printcofficient with a mimetype
 # or Base.show_unquoted(io, pj, indent, prec)
@@ -138,7 +157,7 @@ end
 """
     printcoefficient(io::IO, pj, j, mimetype)
 
-Print coefficient pj of monomial pj * x^j with the given mimetype.
+Print coefficient `pj` of monomial pj * x^j with the given mimetype.
 
 For pretty printing different number types, or for adding parentheses,
 methods can be added to this function. If no mimetype is desired,
@@ -165,7 +184,8 @@ julia> Poly([Dual(1,2), Dual(3,4)])
 Poly((1 + 2ɛ) + (3 + 4ɛ)*x)
 ```
 """
-printcoefficient(io::IO, pj::Any, j, mimetype) = Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
+printcoefficient(io::IO, pj::Any, j, mimetype) =
+        Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
 
 # pretty print rational numbers in latex
 function printcoefficient(io::IO, a::Rational{T}, j, mimetype::MIME"text/latex") where {T}
@@ -182,7 +202,7 @@ function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
         Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
     elseif hasreal
         a = real(pj)
-        (j==0 || showone(T) || a != one(T)) && printcoefficient(io, a, j, mimetype)
+        (j == 0 || showone(T) || a != one(T)) && printcoefficient(io, a, j, mimetype)
     elseif hasimag
         b = imag(pj)
         (showone(T) || b != one(T)) && printcoefficient(io, b, j,  mimetype)
@@ -193,32 +213,32 @@ function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
     end
 end
 
-
-
-## show exponent
-function printexponent(io,var,i, mimetype::MIME"text/latex")
-    if i == 0
+#
+# print exponent
+#
+function printexponent(io, var, j, mimetype::MIME"text/latex")
+    if j == 0
         return
-    elseif i == 1
-        print(io,var)
+    elseif j == 1
+        print(io, var)
     else
-        print(io,var,"^{$i}")
+        print(io, var, "^{$j}")
     end
 end
 
-function printexponent(io,var,i, mimetype)
-    if i == 0
+function printexponent(io, var, j, mimetype)
+    if j == 0
         return
-    elseif i == 1
-        print(io,var)
+    elseif j == 1
+        print(io, var)
     else
-        print(io,var,"^",i)
+        print(io, var, "^", j)
     end
 end
 
-
-####
-
+#
+# Base.show
+#
 ## text/plain
 Base.show(io::IO, p::Poly{T}) where {T} = show(io, MIME("text/plain"), p)
 

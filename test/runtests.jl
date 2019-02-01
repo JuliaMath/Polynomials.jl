@@ -255,6 +255,7 @@ repr(p)
 
 
 ## changes to show
+println("Test for show & printing")
 p = Poly([1,2,3,1])  # leading coefficient of 1
 @test repr(p) == "Poly(1 + 2*x + 3*x^2 + x^3)"
 p = Poly([1.0, 2.0, 3.0, 1.0])
@@ -280,6 +281,8 @@ function printpoly_to_string(args...; kwargs...)
 end
 @test printpoly_to_string(Poly([1,2,3], "y")) == "1 + 2*y + 3*y^2"
 @test printpoly_to_string(Poly([1,2,3], "y"), descending_powers=true) == "3*y^2 + 2*y + 1"
+@test printpoly_to_string(Poly([2, 3, 1], :z), descending_powers=true, offset=-2) == "1 + 3*z^-1 + 2*z^-2"
+@test printpoly_to_string(Poly([-1, 0, 1], :z), offset=-1, descending_powers=true) == "z - z^-1"
 
 ## want to be able to copy and paste
 ## check hashing
