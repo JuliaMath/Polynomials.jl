@@ -5,7 +5,7 @@ module Polynomials
 
 export Poly, poly
 export degree, coeffs, variable, printpoly
-export polyval, polyint, polyder, roots, polyfit, polyinterval
+export polyval, polyint, polyder, roots, polyfit
 export Pade, padeval
 
 import Base: length, size, eltype, collect, eachindex, lastindex
@@ -715,40 +715,6 @@ function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     Poly(p, sym)
 end
 polyfit(x,y,sym::Symbol) = polyfit(x,y,length(x)-1, sym)
-
-
-"""
-    polyinterval(p)
-
-Choose a sensible interval containing points of interest for the polynomial `p`.
-
-The interval contains some margin either side to allow for plotting.
-
-# Examples
-
-```julia-repl
-julia> polyinterval(Poly([0, 0, 1])) # contains single critical point at x=0
--1.0:0.01:1.0
-
-julia> polyinterval(Poly([1, 0, 3, -1])) # points of interest between 0 and 3.1
--3.103803402735535:0.031038034027355346:6.20760680547107
-```
-"""
-function polyinterval(p :: Poly)
-    # Find points of interest
-    zero_pts = roots(p)
-    crit_pts = roots(polyder(p, 1))
-    infl_pts = roots(polyder(p, 2))
-    pts = sort([ real(pt) for pt in [zero_pts; crit_pts; infl_pts] if isreal(pt) ])
-
-    # Choose a range that shows all interesting points with some margin
-    min_x, max_x = length(pts) > 0 ? (pts[1], pts[end]) : (-1, 1)
-    diff = max(max_x - min_x, 1)
-    a = min_x - diff
-    b = max_x + diff
-
-    return a : diff/100 : b
-end
 
 
 ### Pull in others
