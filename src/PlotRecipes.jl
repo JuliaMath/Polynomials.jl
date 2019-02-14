@@ -1,5 +1,6 @@
 using RecipesBase
 
+
 function poly_interval(p::Poly)
     # Find points of interest
     zero_pts = roots(p)
@@ -10,17 +11,30 @@ function poly_interval(p::Poly)
     # Choose a range that shows all interesting points with some margin
     min_x, max_x = length(pts) > 0 ? (pts[1], pts[end]) : (-1, 1)
     diff = max(max_x - min_x, 1)
-    a = min_x - diff
-    b = max_x + diff
+    a = min_x - diff/2
+    b = max_x + diff/2
 
-    return a : diff/100 : b
+    return a : diff/50 : b
 end
 
-@recipe function poly_recipe(p::Poly, xs = poly_interval(p))
+
+function poly_label(p::Poly)
     buff = IOBuffer()
     printpoly(buff, p)
-    label --> String(take!(buff))
+    String(take!(buff))
+end
 
+
+@recipe function poly_recipe(p::Poly, range = poly_interval(p))
+    label --> poly_label(p)
+    range, map(x -> polyval(p, x), range)
+end
+
+
+@recipe function poly_recipe(p::Poly, a, b)
+    label --> poly_label(p)
+    step = (b-a)/100
+    xs = a:step:b
     ys = map(x -> polyval(p, x), xs)
     xs, ys
 end
