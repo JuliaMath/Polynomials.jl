@@ -70,12 +70,13 @@ end
 ###
 
 """
-    printpoly(io::IO, p::Poly, mimetype = MIME"text/plain"(); descending_powers=false)
+    printpoly(io::IO, p::Poly, mimetype = MIME"text/plain"(); descending_powers=false, offset::Int=0)
 
 Print a human-readable representation of the polynomial `p` to `io`. The MIME
 types "text/plain" (default), "text/latex", and "text/html" are supported. By
 default, the terms are in order of ascending powers, matching the order in
 `coeffs(p)`; specifying `descending_powers=true` reverses the order.
+`offset` allows for an integer number to be added to the exponent, just for printing.
 
 # Examples
 ```jldoctest
@@ -83,13 +84,17 @@ julia> printpoly(stdout, Poly([1,2,3], :y))
 1 + 2*y + 3*y^2
 julia> printpoly(stdout, Poly([1,2,3], :y), descending_powers=true)
 3*y^2 + 2*y + 1
+julia> printpoly(stdout, Poly([2, 3, 1], :z), descending_powers=true, offset=-2)
+1 + 3*z^-1 + 2*z^-2
+julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true)
+z - z^-1
 ```
 """
-function printpoly(io::IO, p::Poly{T}, mimetype = MIME"text/plain"(); descending_powers=false) where {T}
+function printpoly(io::IO, p::Poly{T}, mimetype=MIME"text/plain"(); descending_powers=false, offset::Int=0) where {T}
     first = true
     printed_anything = false
     for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
-        printed = showterm(io,p,i,first, mimetype)
+        printed = showterm(io, p[i], p.var, i+offset, first, mimetype)
         first &= !printed
         printed_anything |= printed
     end
@@ -97,15 +102,19 @@ function printpoly(io::IO, p::Poly{T}, mimetype = MIME"text/plain"(); descending
     return nothing
 end
 
-function showterm(io::IO,p::Poly{T},j,first, mimetype) where {T}
-    pj = p[j]
+"""
+    showterm(io::IO, pj, var, j, first, mimetype)
 
+Show the term `pj * var^j`.
+Returns `true` after successfully printing.
+"""
+function showterm(io::IO, pj::T, var, j, first::Bool, mimetype) where {T}
     pj == zero(T) && return false
 
-    pj = printsign(io, pj, j, first, mimetype)
+    pj = printsign(io, pj, first, mimetype)
     !(pj == one(T) && !(showone(T) || j == 0)) && printcoefficient(io, pj, j, mimetype)
     printproductsign(io, pj, j, mimetype)
-    printexponent(io,p.var,j, mimetype)
+    printexponent(io, var, j, mimetype)
     true
 end
 
@@ -113,7 +122,7 @@ end
 
 ## print the sign
 ## returns aspos(pj)
-function printsign(io::IO, pj::T, j, first, mimetype) where {T}
+function printsign(io::IO, pj::T, first, mimetype) where {T}
     neg = isneg(pj)
     if first
         neg && print(io, showop(mimetype, "l-"))    #Prepend - if first and negative
