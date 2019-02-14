@@ -205,23 +205,18 @@ end
 
 
 ## show exponent
-function printexponent(io,var,i, mimetype::MIME"text/latex")
-    if i == 0
-        return
-    elseif i == 1
-        print(io,var)
-    else
-        print(io,var,"^{$i}")
-    end
-end
 
-function printexponent(io,var,i, mimetype)
+exponent_text(i, ::MIME) = "^$(i)"
+exponent_text(i, ::MIME"text/html") = "<sup>$(i)</sup>"
+exponent_text(i, ::MIME"text/latex") = "^{$(i)}"
+
+function printexponent(io, var, i, mimetype::MIME)
     if i == 0
         return
     elseif i == 1
         print(io,var)
     else
-        print(io,var,"^",i)
+        print(io, var, exponent_text(i, mimetype))
     end
 end
 
