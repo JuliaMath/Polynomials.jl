@@ -267,10 +267,11 @@ p = Poly([1.0, 0 + NaN*im, NaN, Inf, 0 - Inf*im]) # handle NaN or Inf appropriat
 @test repr(p) == "Poly(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
 
 p = Poly([1,2,3])
-
 @test repr("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
+@test repr("text/html", p) == "1 &#43; 2&#8729;x &#43; 3&#8729;x<sup>2</sup>"
 p = Poly([1//2, 2//3, 1])
 @test repr("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
+@test repr("text/html", p) == "1//2 &#43; 2//3&#8729;x &#43; x<sup>2</sup>"
 
 # customized printing with printpoly
 function printpoly_to_string(args...; kwargs...)

@@ -205,13 +205,13 @@ end
 
 
 ## show exponent
-function printexponent(io,var,i, mimetype::MIME"text/latex")
+function printexponent(io, var, i, ::T) where T <: Union{MIME"text/html", MIME"text/latex"}
     if i == 0
         return
     elseif i == 1
-        print(io,var)
+        print(io, var)
     else
-        print(io,var,"^{$i}")
+        print(io, var, T === MIME"text/latex" ? "^{$i}" : "<sup>$i</sup>")
     end
 end
 
