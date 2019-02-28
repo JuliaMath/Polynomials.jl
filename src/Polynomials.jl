@@ -716,7 +716,9 @@ function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
 end
 polyfit(x,y,sym::Symbol) = polyfit(x,y,length(x)-1, sym)
 
+
 ### Pull in others
 include("pade.jl")
+include("PlotRecipes.jl")
 
 end # module Poly
