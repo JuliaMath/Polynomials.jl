@@ -82,13 +82,13 @@ To get the degree of the polynomial use the `degree` method
 
 ```
 julia> degree(p)
-1
-
-julia> degree(p^2)
 2
 
+julia> degree(p^2)
+4
+
 julia> degree(p-p)
-0
+-1
 ```
 
 #### polyval(p::Poly, x::Number)
