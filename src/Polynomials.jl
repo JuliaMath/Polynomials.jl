@@ -702,7 +702,13 @@ function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
     # here unsure, whether similar(float(x[1]),...), or similar(x,...)
     # however similar may yield unwanted surprise in case of e.g. x::Int
     #
-    T = eltype(float(x[1]))
+    T = eltype(float(first(x)))
+    p = polyfit(T, x, y, n)
+    Poly(p, sym)
+end
+polyfit(x,y,sym::Symbol) = polyfit(x,y,length(x)-1, sym)
+
+function polyfit(::Type{T}, x, y, n::Int) where {T}
     A = Array{T}(undef, length(x), n+1)
     #
     # TODO: add support for poly coef bitmap
@@ -713,9 +719,7 @@ function polyfit(x, y, n::Int=length(x)-1, sym::Symbol=:x)
         A[:,i+1] .= A[:,i] .* x   # cumulative product more precise than x.^n
     end
     p = A \ float.(y)
-    Poly(p, sym)
 end
-polyfit(x,y,sym::Symbol) = polyfit(x,y,length(x)-1, sym)
 
 
 ### Pull in others
