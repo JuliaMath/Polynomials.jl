@@ -67,7 +67,7 @@ julia> q / 2
 Poly(0.5 - 0.5⋅x^2)
 ```
 """
-struct Poly{T}
+struct Poly{T} <: Number
   a::Vector{T}
   var::Symbol
   function Poly(a::AbstractVector{T}, var::SymbolLike = :x) where {T<:Number}
@@ -142,6 +142,7 @@ lastindex(p::Poly)  = length(p) - 1
 import Base: iterate
 Base.iterate(p::Poly) = (p[0] * one(p), 1)
 Base.iterate(p::Poly, state) = state <= degree(p) ? (p[state]*variable(p)^(state), state+1) : nothing
+Base.IteratorSize(p::Poly) = Base.HasLength()
 
 # shortcut for collect(eltype, collection)
 collect(p::Poly{T}) where {T} = collect(Poly{T}, p)

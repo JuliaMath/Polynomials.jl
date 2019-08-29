@@ -2,7 +2,6 @@
 
 Basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate polynomials.
 
-[![Polynomials](http://pkg.julialang.org/badges/Polynomials_0.6.svg)](http://pkg.julialang.org/?pkg=Polynomials)
 
 Master branch:
 [![Build Status](https://travis-ci.org/JuliaMath/Polynomials.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Polynomials.jl)
