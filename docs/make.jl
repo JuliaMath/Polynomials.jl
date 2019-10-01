@@ -1,9 +1,8 @@
 using Polynomials, Documenter
 
-makedocs(
-    modules = [Polynomials],
+makedocs(modules = [Polynomials],
     clean = false,
-    format = :html,
+    format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
     sitename = "Polynomials.jl",
     authors = "Jameson Nash, Keno Fischer, and other contributors",
     pages = [
@@ -11,10 +10,4 @@ makedocs(
     ],
 )
 
-deploydocs(
-    julia = "nightly",
-    repo = "github.com/JuliaMath/Polynomials.jl.git",
-    target = "build",
-    deps = nothing,
-    make = nothing,
-)
+deploydocs("github.com/JuliaMath/Polynomials.jl.git")

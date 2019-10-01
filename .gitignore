@@ -3,3 +3,5 @@ docs/site/
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
+
+Manifest.toml
