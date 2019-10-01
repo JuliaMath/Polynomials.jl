@@ -14,6 +14,7 @@ The package can then be loaded into the current session using
 ```julia
 using Polynomials
 ```
+
 ```@meta
 DocTestSetup = :( using Polynomials )
 ```
