@@ -50,7 +50,7 @@ fit(x, y, P::Type{<:AbstractPolynomial}) = fit(collect(x), collect(y), P)
 function fit(x::AbstractVector, y::AbstractVector, P::Type{<:AbstractPolynomial})
     x = scale_to_domain(P, x)
     vand = vander(P, x)
-    coeffs = pinv(vand)
+    coeffs = pinv(vand) * y
     return P(coeffs)
 end
 
