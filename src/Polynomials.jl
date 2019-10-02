@@ -2,9 +2,9 @@
 
 module Polynomials
 #todo: sparse polynomials?
-include("polynomials/old.jl")
 
 include("common.jl")
+include("polynomials/old.jl")
 
 include("polynomials/Polynomial.jl")
 include("polynomials/ChebyshevT.jl")
