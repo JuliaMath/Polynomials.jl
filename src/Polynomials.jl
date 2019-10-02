@@ -32,7 +32,7 @@ polynomials of different variables causes an error.
 
 # Examples
 
-```jldoctest
+```julia
 julia> Poly([1, 0, 3, 4])
 Poly(1 + 3⋅x^2 + 4⋅x^3)
 
@@ -43,7 +43,7 @@ julia> a = Poly([1, 2, 3], :x); b = Poly([1, 2, 3], :s);
 
 julia> a + b
 ERROR: Polynomials must have same variable
-...
+[...]
 
 julia> p = Poly([1, 2])
 Poly(1 + 2⋅x)

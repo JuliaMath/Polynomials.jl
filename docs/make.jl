@@ -8,8 +8,7 @@ makedocs(modules = [Polynomials],
     authors = "Jameson Nash, Keno Fischer, and other contributors",
     pages = [
         "Manual" => "index.md",
-    ],
-    doctest=true
+    ]
 )
 
 deploydocs(repo = "github.com/JuliaMath/Polynomials.jl.git")
