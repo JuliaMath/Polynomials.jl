@@ -32,7 +32,7 @@ polynomials of different variables causes an error.
 
 # Examples
 
-```julia
+```jldoctest
 julia> Poly([1, 0, 3, 4])
 Poly(1 + 3⋅x^2 + 4⋅x^3)
 

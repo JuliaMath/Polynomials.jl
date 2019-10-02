@@ -1,4 +1,6 @@
-using Polynomials, Documenter
+using Documenter, Polynomials
+
+DocMeta.setdocmeta!(Polynomials, :DocTestSetup, :(using Polynomials); recursive=true)
 
 makedocs(modules = [Polynomials],
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
@@ -7,6 +9,7 @@ makedocs(modules = [Polynomials],
     pages = [
         "Manual" => "index.md",
     ],
+    doctest=true
 )
 
 deploydocs(repo = "github.com/JuliaMath/Polynomials.jl.git")
