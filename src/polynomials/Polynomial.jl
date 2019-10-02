@@ -21,6 +21,10 @@ struct Polynomial{T <: Number} <: AbstractPolynomial{T}
 end
 
 Polynomial(n::Number, var::SymbolLike = :x) = Polynomial([n], var)
+function Polynomial{T}(n::S, var::SymbolLike = :x) where {T,S<:Number}
+    U = promote_type(T, S)
+    Polynomial{U}([n], var)
+end
 function Polynomial{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T <: Number,S <: Number}
     y = convert(Vector{T}, x)
     Polynomial(y, var)
@@ -88,6 +92,5 @@ function _companion(p::Polynomial{T}) where T
     return comp
 end
 
-_add(p::Polynomial, c) = Polynomial(p.coeffs .+ c, p.var)
 _mul(p::Polynomial, c) = Polynomial(p.coeffs .* c, p.var)
 _div(p::Polynomial, c) = Polynomial(p.coeffs ./ c, p.var)

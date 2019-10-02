@@ -162,7 +162,7 @@ Poly(1.0f0⋅x)
 """
 variable(::Type{T}, var::SymbolLike = :x) where {T <: Number} = Poly([zero(T), one(T)], var)
 variable(p::Poly{T}) where {T} = variable(T, p.var)
-variable(var::SymbolLike = :x) = variable(Float64, var)
+# variable(var::SymbolLike = :x) = variable(Float64, var)
 
 """
     truncate{T}(p::Poly{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)

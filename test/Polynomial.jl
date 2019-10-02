@@ -60,6 +60,10 @@ pR = Polynomial([3 // 4, -2 // 1, 1 // 1])
     @test p2^4 == p5
     @test pNULL^3 == pNULL
     @test pNULL * pNULL == pNULL
+
+    @test pNULL + 2 == p0 + 2 == 2 + p0 == Polynomial([2])
+    @test p2 - 2 == -2 + p2 == Polynomial([-1,1])
+    @test 2 - p2 == Polynomial([1,-1])
 end
 
 @testset "Identities" begin
@@ -123,6 +127,9 @@ end
     @test p == Polynomial(Float64[1, -2, 1])
     @test roots(p) ≈ sort!(eigvals(A), rev = true)
 
+    x = variable()
+    plarge = 8.362779449448982e41 - 2.510840694154672e57x + 4.2817430781178795e44x^2 - 1.6225927682921337e31x^3 + 1.0x^4  # #120
+    @test length(roots(plarge)) == 4
 end
 
 @testset "Integrals and Derivatives" begin

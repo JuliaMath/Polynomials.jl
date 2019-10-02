@@ -192,6 +192,10 @@ function Base.chop(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(
     chop!(deepcopy(p), rtol = rtol, atol = atol)
 end
 
+variable(::Type{P}, var::SymbolLike = :x) where {T,P <: AbstractPolynomial{T}} = P([zero(T), one(T)], var)
+variable(p::AbstractPolynomial, var::SymbolLike = :x) = variable(typeof(p), var)
+variable(var::SymbolLike = :x) = variable(Polynomial{Float64})
+
 #=
 Linear Algebra
 =#
@@ -280,13 +284,14 @@ arithmetic
 Base.:-(p::P) where {P <: AbstractPolynomial} = P(-p.coeffs, p.var) 
 Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
 Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
+Base.:-(c::Number, p::AbstractPolynomial, ) = +(-p, c)
 Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
-
-Base.:+(p::AbstractPolynomial, c) = _add(p, c)
 Base.:*(p::AbstractPolynomial, c) = _mul(p, c)
 Base.:/(p::AbstractPolynomial, c) = _div(p, c)
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
+
+Base.:+(p::P, n::Number) where {P <: AbstractPolynomial} = +(p, P(n, p.var))
 
 function Base.:+(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
     p1.var != p2.var && error("Polynomials must have same variable")
