@@ -9,7 +9,6 @@ makedocs(modules = [Polynomials],
     pages = [
         "Manual" => "index.md",
     ],
-    strict=true
 )
 
 deploydocs(repo = "github.com/JuliaMath/Polynomials.jl.git")
