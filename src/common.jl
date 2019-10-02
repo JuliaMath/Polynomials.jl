@@ -42,6 +42,13 @@ Polynomial(-1.9999999999999998 - 5.0⋅x + 1.0⋅x^2)
 roots(A::AbstractMatrix{T}, P::Type{<:AbstractPolynomial}, var::SymbolLike = :x) where {T <: Number} = roots(eigvals(A), P, var)
 roots(r, P::Type{<:AbstractPolynomial}, var::SymbolLike = :x) where {T <: Number} = roots(collect(r), P, var)
 
+fit(x, y, P::Type{<:AbstractPolynomial}) = fit(collect(x), collect(y), P)
+function fit(x::AbstractVector, y::AbstractVector, P::Type{<:AbstractPolynomial})
+    x = scale_to_domain(P, x)
+    vand = vander(P, x)
+    coeffs = pinv(vand)
+    return P(coeffs)
+end
 
 #=
 Inspection
