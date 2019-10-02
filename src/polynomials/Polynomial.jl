@@ -1,4 +1,5 @@
 using LinearAlgebra
+
 export Polynomial
 
 const SymbolLike = Union{AbstractString,Char,Symbol}
@@ -86,3 +87,7 @@ function _companion(p::Polynomial{T}) where T
     comp[:, end] .= -monics[1:d]
     return comp
 end
+
+_add(p::Polynomial, c) = Polynomial(p.coeffs .+ c, p.var)
+_mul(p::Polynomial, c) = Polynomial(p.coeffs .* c, p.var)
+_div(p::Polynomial, c) = Polynomial(p.coeffs ./ c, p.var)

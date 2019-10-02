@@ -29,14 +29,14 @@ end
     p = Polynomial(30)
     @test p.coeffs == [30]
 
-    p = zero(Polynomial)
+    p = zero(Polynomial{Int})
     @test p.coeffs == [0]
     
-    p = one(Polynomial)
+    p = one(Polynomial{Int})
     @test p.coeffs == [1]
 end
 
-pNULL = Polynomial(Float32[])
+pNULL = Polynomial(Int[])
 p0 = Polynomial([0])
 p1 = Polynomial([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
 p2 = Polynomial([1,1,0,0])
@@ -49,17 +49,17 @@ pR = Polynomial([3 // 4, -2 // 1, 1 // 1])
 @testset "Arithmetic" begin
     @test p3 == Polynomial([1,2,1])
     @test pN * 10 == Polynomial([2760, 30, 870, 150, 240])
-    @test_broken pN / 10 == Polynomial([27.6, 0.3, 8.7, 1.5, 2.4])
-    @test_broken 10 * pNULL + pN == pN
+    @test pN / 10.0 == Polynomial([27.6, 0.3, 8.7, 1.5, 2.4])
+    @test 10 * pNULL + pN == pN
     @test 10 * p0 + pN == pN
-    @test_broken p5 + 2 * p1 == Polynomial([3,4,6,4,1])
-    @test_broken 10 * pNULL - pN == -pN
+    @test p5 + 2 * p1 == Polynomial([3,4,6,4,1])
+    @test 10 * pNULL - pN == -pN
     @test p0 - pN == -pN
-    @test_broken p5 - 2 * p1 == Polynomial([-1,4,6,4,1])
-    @test_broken p2 * p2 * p2 == p4
-    @test_broken p2^4 == p5
-    @test_broken pNULL^3 == pNULL
-    @test_broken pNULL * pNULL == pNULL
+    @test p5 - 2 * p1 == Polynomial([-1,4,6,4,1])
+    @test p2 * p2 * p2 == p4
+    @test p2^4 == p5
+    @test pNULL^3 == pNULL
+    @test pNULL * pNULL == pNULL
 end
 
 @testset "Identities" begin
@@ -70,9 +70,9 @@ end
     @test pX != pS1
     @test pS1 == pS2
     @test pS1 == pS3
-    # @test_throws ErrorException pS1 + pX
-    # @test_throws ErrorException pS1 - pX
-    # @test_throws ErrorException pS1 * pX
+    @test_throws ErrorException pS1 + pX
+    @test_throws ErrorException pS1 - pX
+    @test_throws ErrorException pS1 * pX
     # @test_throws ErrorException pS1 ÷ pX
     # @test_throws ErrorException pS1 % pX
 
@@ -137,7 +137,7 @@ end
     @test_broken derivative(integral(pN)) == pN
     @test derivative(pR) == Polynomial([-2 // 1,2 // 1])
     @test derivative(p3) == Polynomial([2,2])
-    @test_broken derivative(p1) == derivative(p0) == derivative(pNULL) == pNULL
+    @test derivative(p1) == derivative(p0) == derivative(pNULL) == pNULL
     @test_throws ErrorException derivative(pR, -1)
     @test_broken derivative(pNULL, 1) == p1
     @test_broken derivative(Polynomial(Rational[1,2,3])) == Polynomial(Rational[0, 1, 1, 1])

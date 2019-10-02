@@ -1,17 +1,17 @@
-# Poly type manipulations
-
 module Polynomials
-#todo: sparse polynomials?
 
+# Interface for all AbstractPolynomials
 include("common.jl")
-include("polynomials/old.jl")
 
-include("polynomials/Polynomial.jl")
-include("polynomials/ChebyshevT.jl")
-
-### Pull in others
-include("show.jl") # display polynomials.
+# Original (to deprecate) code
+include("old.jl")
 include("pade.jl")
+include("show.jl")
 include("PlotRecipes.jl")
 
-end # module Poly
+# New implementations
+include("polynomials/Polynomial.jl")
+include("polynomials/ChebyshevT.jl")
+include("polynomials/ChebyshevU.jl")
+
+end # module
