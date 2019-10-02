@@ -43,7 +43,7 @@ julia> a = Poly([1, 2, 3], :x); b = Poly([1, 2, 3], :s);
 
 julia> a + b
 ERROR: Polynomials must have same variable
-...
+[...]
 
 julia> p = Poly([1, 2])
 Poly(1 + 2⋅x)

@@ -6,7 +6,7 @@ differentiation, evaluation, and root finding over dense univariate polynomials.
 To install the package, run
 
 ```julia
-Pkg.add("Polynomials")
+(v1.2) pkg> add Polynomials
 ```
 
 The package can then be loaded into the current session using
@@ -15,15 +15,7 @@ The package can then be loaded into the current session using
 using Polynomials
 ```
 
-```@meta
-DocTestSetup = :( using Polynomials )
-```
-
 ## Functions
-
-```@meta
-CurrentModule = Polynomials
-```
 
 ```@docs
 Poly
