@@ -12,8 +12,10 @@ end
 
 @testset "From Roots" begin
     r = [3, 2]
-    @test roots(r, Polynomial) == Polynomial([6, -5, 1])
+    @test fromroots(r) == Polynomial([6, -5, 1])
+    @test fromroots(Polynomial, r) == Polynomial([6, -5, 1])
     A = [1 0; 0 1]
-    @test roots(A, Polynomial) == Polynomial(Float64[1, -2, 1])
+    @test fromroots(A) == Polynomial(Float64[1, -2, 1])
+    @test fromroots(Polynomial, A) == Polynomial(Float64[1, -2, 1])
 end
 

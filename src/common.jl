@@ -6,41 +6,45 @@ const SymbolLike = Union{AbstractString,Char,Symbol}
 abstract type AbstractPolynomial <: Number end
 
 export AbstractPolynomial,
-       roots
+       fromroots
 
 using LinearAlgebra: eigvals
 import Base: ==, ≈
 
 """
-    roots(::AbstractVector{<:Number}, ::Type{<:AbstractPolynomial}, var=:x)
+    fromroots(::AbstractVector{<:Number}, var=:x)
+    fromroots(::Type{<:AbstractPolynomial}, ::AbstractVector{<:Number}, var=:x)
 
-Construct a polynomial of the given type given the roots.
+Construct a polynomial of the given type given the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
 ```jldoctest
 julia> r = [3, 2]; # (x - 3)(x - 2)
 
-julia> roots(r, Polynomial)
+julia> fromroots(r)
 Polynomial(x^2 - 5x + 6)
 ```
 """
-roots(r::AbstractVector{T}, P::Type{<:AbstractPolynomial}, var::SymbolLike = :x) where {T <: Number} = from_roots(P, r, var)
+fromroots(P::Type{<:AbstractPolynomial}, r::AbstractVector{T}, var::SymbolLike = :x) where {T <: Number} = _fromroots(P, r, var)
+fromroots(r::AbstractVector{<:Number}, var::SymbolLike = :x) = fromroots(Polynomial, r, var)
+fromroots(r, var::SymbolLike = :x) = fromroots(collect(r), var)
 
 """
-    roots(::AbstractMatrix{<:Number}, ::Type{<:AbstractPolynomial}, var=:x)
+    fromroots(::AbstractMatrix{<:Number}, var=:x)
+    fromroots(::Type{<:AbstractPolynomial}, ::AbstractMatrix{<:Number}, var=:x)
 
-Construct a polynomial of the given type using the eigenvalues of the given matrix as the roots.
+Construct a polynomial of the given type using the eigenvalues of the given matrix as the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
 ```jldoctest
 julia> A = [1 2; 3 4]; # (x - 5.37228)(x + 0.37228)
 
-julia> roots(A, Polynomial)
+julia> fromroots(A)
 Polynomial(-1.9999999999999998 - 5.0⋅x + 1.0⋅x^2)
 ```
 """
-roots(A::AbstractMatrix{T}, P::Type{<:AbstractPolynomial}, var::SymbolLike = :x) where {T <: Number} = roots(eigvals(A), P, var)
-roots(r, P::Type{<:AbstractPolynomial}, var::SymbolLike = :x) where {T <: Number} = roots(collect(r), P, var)
+fromroots(P::Type{<:AbstractPolynomial}, A::AbstractMatrix{T}, var::SymbolLike = :x) where {T <: Number} = fromroots(P, eigvals(A), var)
+fromroots(A::AbstractMatrix{T}, var::SymbolLike = :x) where {T <: Number} = fromroots(Polynomial, eigvals(A), var)
 
 fit(x, y, P::Type{<:AbstractPolynomial}) = fit(collect(x), collect(y), P)
 function fit(x::AbstractVector, y::AbstractVector, P::Type{<:AbstractPolynomial})
