@@ -353,7 +353,7 @@ end
     @test degree(gcd(p1, p2)) == 0          # no common roots
     @test degree(gcd(p1, Polynomial(5))) == 0          # ditto
     @test degree(gcd(p1, Polynomial(eps(0.)))) == 0          # ditto
-    @test degree(gcd(p1, Polynomial(0))) == degree(p1) # Poly(0) has the roots of p1
+    @test degree(gcd(p1, Polynomial(0))) == degree(p1) # Polynomial(0) has the roots of p1
     @test degree(gcd(p1 + p2 * 170.10734737144486, p2)) == 0          # see, c.f., #122
 
     p1 = fromroots(Polynomial, [1.,2.,3.])
@@ -361,4 +361,37 @@ end
     res = roots(gcd(p1, p2))
     @test 1. ∈ res
     @test 2. ∈ res
+end
+
+@testset "Pade" begin
+    # exponential
+    coeffs = 1 .// BigInt.(gamma.(1:17))
+    a = Polynomial(coeffs)
+    PQexp = Pade(a, 8, 8)
+    @test PQexp(1.0) ≈ exp(1.0)
+    @test PQexp(-1.0) ≈ exp(-1.0)
+
+    @test_deprecated padeval(PQexp, 1.0)
+
+    # sine
+    coeffs = BigInt.(sinpi.((0:16) ./ 2)) .// BigInt.(gamma.(1:17))
+    p = Polynomial(coeffs)
+    PQsin = Pade(p, 8, 7)
+    @test PQsin(1.0) ≈ sin(1.0)
+    @test PQsin(-1.0) ≈ sin(-1.0)
+
+    # cosine
+    coeffs = BigInt.(sinpi.((1:17) ./ 2)) .// BigInt.(gamma.(1:17))
+    p = Polynomial(coeffs)
+    PQcos = Pade(p, 8, 8)
+    @test PQcos(1.0) ≈ cos(1.0)
+    @test PQcos(-1.0) ≈ cos(-1.0)
+
+    # summation of a factorially divergent series
+    γ = 0.5772156649015
+    s = BigInt.(gamma.(BigInt(1):BigInt(61)))
+    coeffs = (BigInt(-1)).^(0:60) .* s .// 1
+    d = Polynomial(coeffs)
+    PQexpint = Pade(d, 30, 30)
+    @test Float64(PQexpint(1.0)) ≈ exp(1) * (-γ - sum([(-1)^k / k / gamma(k + 1) for k = 1:20]))
 end

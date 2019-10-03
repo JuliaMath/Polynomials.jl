@@ -4,6 +4,9 @@ export Polynomial,
        Pade,
        gcd
 
+# deprecations
+export padeval
+
 struct Polynomial{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
@@ -189,7 +192,7 @@ Pade(p::Polynomial{T}, q::Polynomial{S}) where {T <: Number,S <: Number} = Pade{
 function Pade(c::Polynomial{T}, m::Int, n::Int) where {T}
     m + n < length(c) || error("m + n must be less than the length of the Polynomial")
     rold = Polynomial([zeros(T, m + n + 1);one(T)], c.var)
-    rnew = Polynomial(c.a[1:m + n + 1], c.var)
+    rnew = Polynomial(c[0:m + n], c.var)
     uold = Polynomial([one(T)], c.var)
     vold = Polynomial([zero(T)], c.var)
     unew, vnew = vold, uold
