@@ -21,7 +21,7 @@ struct Polynomial{T <: Number} <: AbstractPolynomial{T}
 end
 
 Polynomial(n::Number, var::SymbolLike = :x) = Polynomial([n], var)
-function Polynomial{T}(n::S, var::SymbolLike = :x) where {T,S<:Number}
+function Polynomial{T}(n::S, var::SymbolLike = :x) where {T,S <: Number}
     U = promote_type(T, S)
     Polynomial{U}([n], var)
 end
@@ -94,3 +94,8 @@ end
 
 _mul(p::Polynomial, c) = Polynomial(p.coeffs .* c, p.var)
 _div(p::Polynomial, c) = Polynomial(p.coeffs ./ c, p.var)
+
+Base.convert(::Type{Polynomial{T}}, p::Polynomial) where {T} = Polynomial(T.(p.coeffs), p.var)
+Base.convert(::Type{Polynomial{T}}, x, var::SymbolLike = :x) where {T} = Polynomial(T.(x), var)
+Base.promote_rule(::Type{Polynomial{T}}, ::Type{Polynomial{S}}) where {T,S} = Polynomial{promote_type(T, S)}
+Base.promote_rule(::Type{Polynomial{T}}, ::Type{S}) where {T,S <: Number} = Polynomial{promote_type(T, S)}

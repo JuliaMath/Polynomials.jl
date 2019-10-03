@@ -1,6 +1,5 @@
 using LinearAlgebra
 import Base: ==
-import InteractiveUtils: subtypes
 
 export AbstractPolynomial,
        fromroots,
@@ -206,13 +205,6 @@ LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = P(conj(coeffs(p)))
 Conversions
 =#
 Base.convert(::Type{P}, p::P) where {T,P <: AbstractPolynomial{T}} = p
-for i in subtypes(AbstractPolynomial)
-    @eval begin
-        Base.convert(::Type{$i{T}}, p::$i) where {T} = $i(T.(p.coeffs), p.var)
-        Base.convert(::Type{$i{T}}, x, var::SymbolLike = :x) where {T} = $i(T.(x), var)
-        Base.promote_rule(::Type{$i{T}}, ::Type{$i{S}}) where {T,S} = $i{promote_type(T, S)}
-end
-end
 Base.promote_rule(::Type{<:AbstractPolynomial{T}}, ::Type{<:AbstractPolynomial{S}}) where {T,S} = Polynomial{promote_type(T, S)}
 
 #=
@@ -239,6 +231,13 @@ Return the degree of the polynomial, i.e. the highest exponent in the polynomial
 has a nonzero coefficient. The degree of the zero polynomial is defined to be -1.
 """
 degree(p::AbstractPolynomial) = iszero(p) ? -1 : length(p) - 1
+
+"""
+    order(::AbstractPolynomial)
+
+The order of the polynomial. This is the same as the length of the coefficients.
+"""
+order(p::AbstractPolynomial) = length(p)
 hasnan(p::AbstractPolynomial) = any(isnan.(p.coeffs))
 
 #=
@@ -246,16 +245,16 @@ indexing
 =#
 Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = degree(p)
-Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T} = (idx ≥ length(p) ? zero(T) : p.coeffs[idx + 1])
-Base.getindex(p::AbstractPolynomial, indices::AbstractVector{Int}) = map(idx->p[idx], indices)
-Base.getindex(p::AbstractPolynomial, ::Colon) = p[0:length(p) - 1]
+Base.getindex(p::AbstractPolynomial, idx::Int) = idx ≥ length(p) ? zero(eltype(p)) : p.coeffs[idx + 1]
+Base.getindex(p::AbstractPolynomial, indices) = getindex.(p, indices)
+Base.getindex(p::AbstractPolynomial, ::Colon) = p.coeffs
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
-# Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
-# Base.iterate(p::AbstractPolynomial) = (p[0] * one(typeof(p)), 1)
-# Base.iterate(p::AbstractPolynomial, state) = state <= degree(p) ? (p[state] * variable(p)^(state), state + 1) : nothing
+Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
+Base.iterate(p::AbstractPolynomial) = (p[0] * one(typeof(p)), 1)
+Base.iterate(p::AbstractPolynomial, state) = state <= degree(p) ? (p[state] * variable(p)^(state), state + 1) : nothing
 
 function Base.setindex!(p::AbstractPolynomial, value, idx::Int)
-    n = length(p)
+    n = length(p.coeffs)
     if n ≤ idx
         resize!(p.coeffs, idx + 1)
         p.coeffs[n + 1:idx] .= 0
@@ -263,11 +262,22 @@ function Base.setindex!(p::AbstractPolynomial, value, idx::Int)
     p.coeffs[idx + 1] = value
     return p
 end
-function Base.setindex!(p::AbstractPolynomial, values, indices::AbstractVector{Int})
-    setindex!.(p, values, indices)
+
+function Base.setindex!(p::AbstractPolynomial, values::AbstractVector, indices::AbstractVector{Int})
+    for (idx, value) in zip(indices, values)
+      setindex!(p, value, idx)
+    end
+    return p
+end
+
+function Base.setindex!(p::AbstractPolynomial, value, indices::AbstractVector{Int})
+    for idx in indices
+        setindex!(p, value, idx)
+    end
     return p
 end
 Base.setindex!(p::AbstractPolynomial, values, ::Colon) = setindex!(p, values, 0:degree(p))
+
 Base.eachindex(p::AbstractPolynomial) = 0:degree(p)
 
 #=
@@ -276,8 +286,9 @@ identity
 Base.copy(p::P) where {P <: AbstractPolynomial} = P(copy(p.coeffs), p.var)
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(p.coeffs, h))
 Base.zero(::Type{P}) where {P <: AbstractPolynomial} = P(zeros(1))
+Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P)
 Base.one(::Type{P}) where {P <: AbstractPolynomial} = P(ones(1))
-
+Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
 #=
 arithmetic
 =#
@@ -314,6 +325,32 @@ function Base.:*(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolyn
 end
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
+
+function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+    num.var != den.var && error("Polynomials must have same variable")
+    n = degree(num)
+    m = degree(den)
+    m == 0 && den[0] ≈ 0 && throw(DivideError())
+    S = typeof(one(eltype(num)) / one(eltype(den)))
+    T = promote_type(P, O)
+    R = promote_type(T, S)
+    deg = n - m + 1
+    deg ≤ 0 && return zero(R), convert(R, num)
+    q_coeff = zeros(S, deg)
+    r_coeff = S.(num[0:n])
+    @inbounds for i in n:-1:m
+        q = r_coeff[i + 1] / den[m]
+        q_coeff[i - m + 1] = q
+        @inbounds for j in 0:m
+            elem = den[j] * q
+            r_coeff[i - m + j + 1] -= elem
+        end
+    end
+    return R(q_coeff, num.var), R(r_coeff, num.var)
+end
+
+Base.div(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[1]
+Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 
 #=
 Comparisons
