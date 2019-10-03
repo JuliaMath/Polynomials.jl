@@ -5,7 +5,7 @@ include("common.jl")
 
 # Original (to deprecate) code
 include("old.jl")
-include("pade.jl")
+# include("pade.jl")
 include("show.jl")
 include("PlotRecipes.jl")
 

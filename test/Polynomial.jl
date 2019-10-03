@@ -10,8 +10,11 @@ using LinearAlgebra
     @test p.coeffs == coeff
     @test coeffs(p) == coeff
     @test degree(p) == length(coeff) - 1
+    @test order(p) == length(p) == length(coeff)
     @test p.var == :x
     @test length(p) == length(coeff)
+    @test size(p) == size(coeff)
+    @test size(p, 1) == size(coeff, 1)
     @test typeof(p).parameters[1] == eltype(coeff)
     @test eltype(p) == eltype(coeff)
 end
@@ -83,7 +86,7 @@ end
     @test_throws DivideError divrem(p0, p0)
 end
 
-@testset "Identities" begin
+@testset "Comparisons" begin
     pX = Polynomial([1, 2, 3, 4, 5])
     pS1 = Polynomial([1, 2, 3, 4, 5], "s")
     pS2 = Polynomial([1, 2, 3, 4, 5], 's')
@@ -101,6 +104,40 @@ end
     pcpy1 = Polynomial([1,2,3,4,5], :y)
     pcpy2 = copy(pcpy1)
     @test pcpy1 == pcpy2
+
+    # Check for isequal
+    p1 = Polynomial([-0., 5., Inf])
+    p2 = Polynomial([0., 5., Inf])
+    p3 = Polynomial([0, NaN])
+
+    @test p1 == p2 && !isequal(p1, p2)
+    @test p3 === p3 && p3 ≠ p3 && isequal(p3, p3)
+
+    p = fromroots(Polynomial, [1,2,3])
+    q = fromroots(Polynomial, [1,2,3])
+    @test hash(p) == hash(q)
+
+    p1s = Polynomial([1,2], :s)
+    p1x = Polynomial([1,2], :x)
+    p2s = Polynomial([1], :s)
+
+    @test p1s == p1s
+    @test p1s ≠ p1x
+    @test p1s ≠ p2s
+
+    @test_throws ErrorException p1s ≈ p1x
+    @test p1s ≉ p2s
+    @test p1s ≈ Polynomial([1,2.], :s)
+
+    @test p2s ≈ 1.0 ≈ p2s
+    @test p2s == 1.0 == p2s
+    @test p2s ≠ 2.0 ≠ p2s
+    @test p1s ≠ 2.0 ≠ p1s
+
+    @test nnz(map(Polynomial, sparse(1.0I, 5, 5))) == 5
+
+    @test Polynomial([0.5]) + 2 == Polynomial([2.5])
+    @test 2 - Polynomial([0.5]) == Polynomial([1.5])
 end
 
 @testset "Fitting" begin
@@ -124,6 +161,14 @@ end
     @test pNULL(10) == 0
     @test p0(-10) == 0
     @test fromroots([1 // 2, 3 // 2])(1 // 2) == 0 // 1
+
+    # Check for Inf/NaN operations
+    p1 = Polynomial([Inf, Inf])
+    p2 = Polynomial([0, Inf])
+    @test p1(Inf) == Inf
+    @test isnan(p1(-Inf))
+    @test isnan(p1(0))
+    @test p2(-Inf) == -Inf
 end
 
 @testset "Conversion" begin
@@ -132,6 +177,11 @@ end
     p2 = convert(Polynomial{Int64}, p1)
     p2[3] = 3
     @test p1[3] == 3
+
+    p = Polynomial([0,one(Float64)])
+    @test Polynomial{Complex{Float64}} == typeof(p + 1im)
+    @test Polynomial{Complex{Float64}} == typeof(1im - p)
+    @test Polynomial{Complex{Float64}} == typeof(p * 1im)
 end
 
 @testset "Roots" begin
@@ -172,6 +222,17 @@ end
     @test integral(Polynomial(rc)) == Polynomial{eltype(rc)}([0, 1, 1, 1])
     @test integrate(Polynomial([1,1,0,0]), 0, 2) == 4.0
 
+    # Handling of `NaN`s
+    p     = Polynomial([NaN, 1, 5])
+    pder  = derivative(p)
+    pint  = integral(p)
+
+    @test isnan(p(1))                 # p(1) evaluates to NaN
+    @test isequal(pder, Polynomial([NaN]))
+    @test isequal(pint, Polynomial([NaN]))
+
+    pint  = integral(p, 0.0im)
+    @test isequal(pint, Polynomial{typeof(0.0im)}([NaN]))
 end
 
 @testset "Chop and Truncate" begin
@@ -234,7 +295,20 @@ end
 
     p[:] = 0
     @test chop(p) ≈ zero(p)
+
+    p1 = Polynomial([1,2,0,3])
+    for term in p1
+        @test isa(term, Polynomial)
+    end
     
+    @test eltype(p1) == Int
+    @test eltype(collect(p1)) == Polynomial{Int}
+    @test eltype(collect(Polynomial{Float64}, p1)) == Polynomial{Float64}
+    @test_throws InexactError collect(Polynomial{Int}, Polynomial([1.2]))
+
+    @test length(collect(p1)) == degree(p1) + 1
+
+    @test [p1[idx] for idx in eachindex(p1)] == [1,2,0,3]
 end
 
 @testset "Copying" begin
