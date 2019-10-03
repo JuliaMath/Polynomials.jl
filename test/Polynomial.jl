@@ -251,17 +251,17 @@ end
 end
 
 @testset "Elementwise Operations" begin
-    # p1  = Poly([1, 2])
-    # p2  = Poly([3, 1.])
-    # p   = [p1, p2]
-    # q   = [3, p1]
-    # @test isa(q,Vector{Poly{Int64}})
-    # psum  = p .+ 3
-    # pprod = p .* 3
-    # pmin  = p .- 3
-    # @test isa(psum, Vector{Poly{Float64}})
-    # @test isa(pprod,Vector{Poly{Float64}})
-    # @test isa(pmin, Vector{Poly{Float64}})
+    p1  = Polynomial([1, 2])
+    p2  = Polynomial([3, 1.])
+    p   = [p1, p2]
+    q   = [3, p1]
+    @test isa(q, Vector{Polynomial{Int64}})
+    psum  = p .+ 3
+    pprod = p .* 3
+    pmin  = p .- 3
+    @test isa(psum, Vector{Polynomial{Float64}})
+    @test isa(pprod, Vector{Polynomial{Float64}})
+    @test isa(pmin, Vector{Polynomial{Float64}})
 end
 
 @testset "Chop and Truncate" begin

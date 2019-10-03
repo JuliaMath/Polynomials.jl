@@ -62,7 +62,7 @@ fromroots(A::AbstractMatrix{T}, var::SymbolLike = :x) where {T <: Number} = from
 
 Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref).
 """
-function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector, y::AbstractVector{T}; weights = nothing, deg::Integer = length(x) - 1) where {T}
+function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector{T}, y::AbstractVector{T}; weights = nothing, deg::Integer = length(x) - 1) where {T <: Number}
     vand = vander(P, x, deg)
     if  !isnothing(weights)
         coeffs = _wlstsq(vand, y, weights)
@@ -71,8 +71,13 @@ function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector, y::AbstractVector
     end
     return P(T.(coeffs))
 end
+
 fit(x, y; weights = nothing, deg = length(x) - 1) = fit(Polynomial{eltype(y)}, collect(x), collect(y); weights = weights, deg = deg)
 fit(P::Type{<:AbstractPolynomial}, x, y; weights = nothing, deg = length(x) - 1) = fit(P, collect(x), collect(y), weights = weights, deg = deg)
+function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector{T}, y::AbstractVector{S}; weights = nothing, deg = length(x) - 1) where {T,S}
+    x, y = promote(x, y)
+    fit(P, x, y, weights = weights, deg = deg)
+end
 
 # Weighted linear least squares
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
@@ -120,7 +125,7 @@ vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 """
     integral(::AbstractPolynomial, k=0)
 
-Returns a polynomial that is the integral of the given polynomial with constant term `k` added. 
+Returns a polynomial that is the integral of the given polynomial with constant term `k` added.
 """
 integral(::AbstractPolynomial, k::Number)
 integral(p::AbstractPolynomial) = integral(p, 0)
@@ -176,7 +181,7 @@ function chop!(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)),
             resize!(p.coeffs, i + 1)
             return p
         end
-    end 
+    end
     resize!(p.coeffs, 1)
     return p
 end
@@ -184,7 +189,7 @@ end
 """
     chop(::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
 
-Removes any leading coefficients that are approximately 0 (using `rtol` and `atol`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's. 
+Removes any leading coefficients that are approximately 0 (using `rtol` and `atol`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's.
 """
 function Base.chop(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0) where {T}
     chop!(deepcopy(p), rtol = rtol, atol = atol)
@@ -304,7 +309,7 @@ Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
 #=
 arithmetic
 =#
-Base.:-(p::P) where {P <: AbstractPolynomial} = P(-p.coeffs, p.var) 
+Base.:-(p::P) where {P <: AbstractPolynomial} = P(-p.coeffs, p.var)
 Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
 Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
 Base.:-(c::Number, p::AbstractPolynomial, ) = +(-p, c)
@@ -353,7 +358,7 @@ Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2
 ==(p::P, n::Number) where {P <: AbstractPolynomial}  = p.coeffs == [n]
 ==(n::Number, p::AbstractPolynomial)  = p == n
 
-function Base.isapprox(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}; rtol::Real = (Base.rtoldefault(T, S, 0)), atol::Real = 0) where {T,S} 
+function Base.isapprox(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}; rtol::Real = (Base.rtoldefault(T, S, 0)), atol::Real = 0) where {T,S}
     p1, p2 = promote(p1, p2)
     if p1.var != p2.var error("p1 and p2 must have same var") end
     p1t = truncate(p1; rtol = rtol, atol = atol)
