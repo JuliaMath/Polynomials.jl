@@ -158,13 +158,14 @@ end
     int = integral(der, 1)
     @test int.coeffs == c
 
-    @test_broken derivative(integral(pN)) == pN
+    @test derivative(integral(pN)) == convert(Polynomial{Float64}, pN)
     @test derivative(pR) == Polynomial([-2 // 1,2 // 1])
     @test derivative(p3) == Polynomial([2,2])
     @test derivative(p1) == derivative(p0) == derivative(pNULL) == pNULL
     @test_throws ErrorException derivative(pR, -1)
-    @test_broken derivative(pNULL, 1) == p1
-    @test_broken derivative(Polynomial(Rational[1,2,3])) == Polynomial(Rational[0, 1, 1, 1])
+    @test integral(pNULL, 1) == convert(Polynomial{Float64}, p1)
+    rc = Rational{Int64}[1,2,3]
+    @test integral(Polynomial(rc)) == Polynomial{eltype(rc)}([0, 1, 1, 1])
     @test integrate(Polynomial([1,1,0,0]), 0, 2) == 4.0
 
 end

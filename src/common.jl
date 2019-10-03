@@ -61,15 +61,14 @@ fromroots(A::AbstractMatrix{T}, var::SymbolLike = :x) where {T <: Number} = from
 
 Fit the given data as a polynomial type with the given degree. The default polynomial type is [`Polynomial`](@ref).
 """
-fit(x, y, deg = length(x) - 1) = fit(Polynomial, collect(x), collect(y), deg)
-fit(P::Type{<:AbstractPolynomial}, x, y, deg = length(x) - 1) = fit(P, collect(x), collect(y), deg)
 function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector, y::AbstractVector, deg::Integer = length(x) - 1)
     x = scale_to_domain(P, x)
     vand = _vander(P, x, deg)
     coeffs = pinv(vand) * y
     return P(coeffs)
 end
-
+fit(x, y, deg = length(x) - 1) = fit(Polynomial, collect(x), collect(y), deg)
+fit(P::Type{<:AbstractPolynomial}, x, y, deg = length(x) - 1) = fit(P, collect(x), collect(y), deg)
 
 """
     roots(::AbstractPolynomial)
@@ -133,15 +132,15 @@ function integrate(p::AbstractPolynomial, a::Number, b::Number)
 end
 
 """
-    derivative(::AbstractPolynomial, k = 1)
+    derivative(::AbstractPolynomial, order::Int = 1)
 
-Returns a polynomail that is the `k`th derivative of the given polynomial. `k` must be non-negative.
+Returns a polynomail that is the `order`th derivative of the given polynomial. `order` must be non-negative.
 """
-function derivative(p::P, k = 1) where {P <: AbstractPolynomial}
-    k < 0 && error("Order of derivative must be non-negative")
-    k == 0 && return p
-    k > length(p) && return zero(P)
-    _derivative(p, k)
+function derivative(p::P, order::Int = 1) where {P <: AbstractPolynomial}
+    order < 0 && error("Order of derivative must be non-negative")
+    order == 0 && return p
+    order > length(p) && return zero(P)
+    _derivative(p, order)
 end
 
 """
@@ -245,40 +244,41 @@ indexing
 =#
 Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = degree(p)
-Base.getindex(p::AbstractPolynomial, idx::Int) = idx ≥ length(p) ? zero(eltype(p)) : p.coeffs[idx + 1]
-Base.getindex(p::AbstractPolynomial, indices) = getindex.(p, indices)
-Base.getindex(p::AbstractPolynomial, ::Colon) = p.coeffs
+Base.eachindex(p::AbstractPolynomial) = 0:degree(p)
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
+
+# iteration
 Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 Base.iterate(p::AbstractPolynomial) = (p[0] * one(typeof(p)), 1)
 Base.iterate(p::AbstractPolynomial, state) = state <= degree(p) ? (p[state] * variable(p)^(state), state + 1) : nothing
 
-function Base.setindex!(p::AbstractPolynomial, value, idx::Int)
+# getindex
+function Base.getindex(p::AbstractPolynomial, idx::Int)
+    idx < 0 && throw(BoundsError(p, idx))
+    idx ≥ length(p) && return zero(eltype(p))
+    return p.coeffs[idx + 1]
+end
+Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
+Base.getindex(p::AbstractPolynomial, indices) = [getindex(p, i) for i in indices]
+Base.getindex(p::AbstractPolynomial, ::Colon) = p.coeffs
+
+# setindex
+function Base.setindex!(p::AbstractPolynomial, value::Number, idx::Int)
     n = length(p.coeffs)
     if n ≤ idx
         resize!(p.coeffs, idx + 1)
-        p.coeffs[n + 1:idx] .= 0
+        fill!(p.coeffs[n + 1:idx], 0)
     end
     p.coeffs[idx + 1] = value
     return p
 end
 
-function Base.setindex!(p::AbstractPolynomial, values::AbstractVector, indices::AbstractVector{Int})
-    for (idx, value) in zip(indices, values)
-      setindex!(p, value, idx)
-    end
-    return p
-end
+Base.setindex!(p::AbstractPolynomial, value::Number, idx::Number) = setindex!(p, value, convert(Int, idx))
 
-function Base.setindex!(p::AbstractPolynomial, value, indices::AbstractVector{Int})
-    for idx in indices
-        setindex!(p, value, idx)
-    end
-    return p
-end
-Base.setindex!(p::AbstractPolynomial, values, ::Colon) = setindex!(p, values, 0:degree(p))
-
-Base.eachindex(p::AbstractPolynomial) = 0:degree(p)
+Base.setindex!(p::AbstractPolynomial, value::Number, indices) = [setindex!(p, value, i) for i in indices]
+Base.setindex!(p::AbstractPolynomial, values, indices) = [setindex!(p, v, i) for (v, i) in zip(values, indices)]
+Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) = setindex!(p, value, eachindex(p))
+Base.setindex!(p::AbstractPolynomial, values, ::Colon) = [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
 
 #=
 identity
