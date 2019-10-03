@@ -66,6 +66,23 @@ pR = Polynomial([3 // 4, -2 // 1, 1 // 1])
     @test 2 - p2 == Polynomial([1,-1])
 end
 
+@testset "Divrem" begin
+    p0 = Polynomial{Float64}([0])
+    p1 = Polynomial{Float64}([1])
+    p2 = Polynomial{Float64}([5, 6, -3, 2 ,4])
+    p3 = Polynomial{Float64}([7, -3, 2, 6])
+    p4 = p2 * p3
+    @test divrem(p4, p2) == (p3, zero(p3))
+    @test p3 % p2 == p3
+    @test all((map(abs, (p2 ÷ p3 - Polynomial([1 / 9,2 / 3])).coeffs)) .< eps())
+    @test divrem(p0, p1) == (p0, p0)
+    @test divrem(p1, p1) == (p1, p0)
+    @test divrem(p2, p2) == (p1, p0)
+    @test divrem(pR, pR) == (one(pR), zero(pR))
+    @test_throws DivideError p1 ÷ p0
+    @test_throws DivideError divrem(p0, p0)
+end
+
 @testset "Identities" begin
     pX = Polynomial([1, 2, 3, 4, 5])
     pS1 = Polynomial([1, 2, 3, 4, 5], "s")
@@ -77,8 +94,8 @@ end
     @test_throws ErrorException pS1 + pX
     @test_throws ErrorException pS1 - pX
     @test_throws ErrorException pS1 * pX
-    # @test_throws ErrorException pS1 ÷ pX
-    # @test_throws ErrorException pS1 % pX
+    @test_throws ErrorException pS1 ÷ pX
+    @test_throws ErrorException pS1 % pX
 
     # Testing copying.
     pcpy1 = Polynomial([1,2,3,4,5], :y)
