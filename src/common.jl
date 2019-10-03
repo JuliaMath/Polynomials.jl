@@ -7,6 +7,7 @@ export AbstractPolynomial,
        chop!,
        coeffs,
        degree,
+       order,
        hasnan,
        roots,
        companion,
@@ -34,7 +35,7 @@ julia> fromroots(r)
 Polynomial(x^2 - 5x + 6)
 ```
 """
-fromroots(P::Type{<:AbstractPolynomial}, r::AbstractVector{T}, var::SymbolLike = :x) where {T <: Number} = _fromroots(P, r, var)
+fromroots(P::Type{<:AbstractPolynomial}, r::AbstractVector, var::SymbolLike = :x)
 fromroots(r::AbstractVector{<:Number}, var::SymbolLike = :x) = fromroots(Polynomial, r, var)
 fromroots(r, var::SymbolLike = :x) = fromroots(collect(r), var)
 
@@ -63,7 +64,7 @@ Fit the given data as a polynomial type with the given degree. The default polyn
 """
 function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector, y::AbstractVector, deg::Integer = length(x) - 1)
     x = scale_to_domain(P, x)
-    vand = _vander(P, x, deg)
+    vand = vander(P, x, deg)
     coeffs = pinv(vand) * y
     return P(coeffs)
 end
@@ -82,7 +83,7 @@ function roots(p::AbstractPolynomial{T}) where {T <: Number}
 
     chopped_trimmed = chop(truncate(p))
     n_trail = length(p) - length(chopped_trimmed)
-    comp = _companion(chopped_trimmed)
+    comp = companion(chopped_trimmed)
     L = eigvals(rot180(comp))
     append!(L, zeros(n_trail))
     return sort!(L, rev = true, by = norm)
@@ -96,12 +97,7 @@ Return the companion matrix for the given polynomial.
 # References
 [Companion Matrix](https://en.wikipedia.org/wiki/Companion_matrix)
 """
-function companion(p::AbstractPolynomial)
-    d = degree(p)
-    d < 1 && error("Series must have degree greater than 1")
-    d == 1 && return diagm([-p[0] / p[1]])
-    _companion(p)
-end
+companion(::AbstractPolynomial)
 
 """
     vander(::AbstractPolynomial, x::AbstractVector, deg::Integer)
@@ -111,7 +107,7 @@ Calculate the psuedo-Vandermonde matrix of the given polynomial type with the gi
 # References
 [Vandermonde Matrix](https://en.wikipedia.org/wiki/Vandermonde_matrix)
 """
-vander(P::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer) = _vander(P, x, deg)
+vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 vander(P::Type{<:AbstractPolynomial}, x, deg::Integer) = vander(P, collect(x), deg)
 
 """
@@ -119,7 +115,8 @@ vander(P::Type{<:AbstractPolynomial}, x, deg::Integer) = vander(P, collect(x), d
 
 Returns a polynomial that is the integral of the given polynomial with constant term `k` added. 
 """
-integral(p::AbstractPolynomial, k::Number = 0) = _integral(p, k)
+integral(::AbstractPolynomial, k::Number)
+integral(p::AbstractPolynomial) = integral(p, 0)
 
 """
     integrate(::AbstractPolynomial, a, b)
@@ -136,12 +133,8 @@ end
 
 Returns a polynomail that is the `order`th derivative of the given polynomial. `order` must be non-negative.
 """
-function derivative(p::P, order::Int = 1) where {P <: AbstractPolynomial}
-    order < 0 && error("Order of derivative must be non-negative")
-    order == 0 && return p
-    order > length(p) && return zero(P)
-    _derivative(p, order)
-end
+derivative(::AbstractPolynomial, ::Int)
+derivative(p::AbstractPolynomial) = derivative(p, 1)
 
 """
     truncate!(::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
@@ -320,51 +313,26 @@ function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
 end
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
-Base.:+(p::P, n::Number) where {P <: AbstractPolynomial} = +(p, P(n, p.var))
+function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
+    p1, p2 = promote(p, n)
+    return p1 + p2
+end
 
 function Base.:+(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    p1.var != p2.var && error("Polynomials must have same variable")
-    T = promote_type(P, O)
-    n = max(length(p1), length(p2))
-    c = [p1[i] + p2[i] for i = 0:n]
-    return T(c, p1.var)
+    p1, p2 = promote(p1, p2)
+    return p1 + p2
 end
 
 function Base.:*(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    p1.var != p2.var && error("Polynomials must have same variable")
-    n = degree(p1)
-    m = degree(p2)
-    T = promote_type(P, O)
-    c = zeros(m + n + 1)
-    for i = 0:n, j = 0:m
-        c[i + j + 1] += p1[i] * p2[j]
-    end
-    return T(c, p1.var)
+    p1, p2 = promote(p1, p2)
+    return p1 * p2
 end
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
 function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    num.var != den.var && error("Polynomials must have same variable")
-    n = degree(num)
-    m = degree(den)
-    m == 0 && den[0] ≈ 0 && throw(DivideError())
-    S = typeof(one(eltype(num)) / one(eltype(den)))
-    T = promote_type(P, O)
-    R = promote_type(T, S)
-    deg = n - m + 1
-    deg ≤ 0 && return zero(R), convert(R, num)
-    q_coeff = zeros(S, deg)
-    r_coeff = S.(num[0:n])
-    @inbounds for i in n:-1:m
-        q = r_coeff[i + 1] / den[m]
-        q_coeff[i - m + 1] = q
-        @inbounds for j in 0:m
-            elem = den[j] * q
-            r_coeff[i - m + j + 1] -= elem
-        end
-    end
-    return R(q_coeff, num.var), R(r_coeff, num.var)
+    n, d = promote(num, den)
+    return divrem(n, d)
 end
 
 Base.div(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[1]
@@ -374,16 +342,22 @@ Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 Comparisons
 =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
-==(p1::P, p2::P) where {P <: AbstractPolynomial} = p1.coeffs == p2.coeffs && p1.var == p2.var
-==(p1::AbstractPolynomial, n::Number)  = p1.coeffs == [n]
-==(n::Number, p1::AbstractPolynomial)  = p1 == n
+==(p1::P, p2::P) where {P <: AbstractPolynomial} = p1.var == p2.var && p1.coeffs == p2.coeffs
+==(p::P, n::Number) where {P <: AbstractPolynomial}  = p.coeffs == [n]
+==(n::Number, p::AbstractPolynomial)  = p == n
 
 function Base.isapprox(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}; rtol::Real = (Base.rtoldefault(T, S, 0)), atol::Real = 0) where {T,S} 
-    isapprox(p1.coeffs, p2.coeffs, rtol = rtol, atol = atol)
+    if p1.var != p2.var error("p1 and p2 must have same var") end
+    p1t = truncate(p1; rtol = rtol, atol = atol)
+    p2t = truncate(p2; rtol = rtol, atol = atol)
+    if length(p1t) ≠ length(p2t) return false end
+    isapprox(p1t.coeffs, p2t.coeffs, rtol = rtol, atol = atol)
 end
 
 function Base.isapprox(p1::AbstractPolynomial{T}, n::S; rtol::Real = (Base.rtoldefault(T, S, 0)), atol::Real = 0) where {T,S}
-    isapprox(p1.coeffs, [n], rtol = rtol, atol = atol)
+    p1t = truncate(p1, rtol = rtol, atol = atol)
+    if degree(p1t) != 0 return false end
+    isapprox(p1t.coeffs, [n], rtol = rtol, atol = atol)
 end
 
 Base.isapprox(n::S, p1::AbstractPolynomial{T}; rtol::Real = (Base.rtoldefault(T, S, 0)), atol::Real = 0) where {T,S} = isapprox(p1, n, rtol = rtol, atol = atol)
