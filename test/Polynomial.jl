@@ -154,6 +154,13 @@ end
     abs_error = abs.(y_fit .- ys)
     @test maximum(abs_error) <= 0.03
 
+    # Test weighted
+    for W in [1, ones(size(xs)), diagm(ones(size(xs)))]
+        p = fit(xs, ys, weights = W, deg = 2)
+        @test p.(xs) ≈ y_fit
+    end
+
+
     # Getting error on passing Real arrays to polyfit #146
     xx = Real[20.0, 30.0, 40.0]
     yy = Real[15.7696, 21.4851, 28.2463]
