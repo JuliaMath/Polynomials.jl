@@ -57,10 +57,10 @@ fromroots(P::Type{<:AbstractPolynomial}, A::AbstractMatrix{T}, var::SymbolLike =
 fromroots(A::AbstractMatrix{T}, var::SymbolLike = :x) where {T <: Number} = fromroots(Polynomial, eigvals(A), var)
 
 """
-    fit(x, y, deg=length(x) - 1)
-    fit(::Type{<:AbstractPolynomial}, x, y, deg=length(x) - 1)
+    fit(x, y; [weights], deg=length(x) - 1)
+    fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x) - 1)
 
-Fit the given data as a polynomial type with the given degree. The default polynomial type is [`Polynomial`](@ref).
+Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref).
 """
 function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector, y::AbstractVector{T}; weights = nothing, deg::Integer = length(x) - 1) where {T}
     vand = vander(P, x, deg)
@@ -71,9 +71,10 @@ function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector, y::AbstractVector
     end
     return P(T.(coeffs))
 end
-fit(x, y; weights=nothing, deg = length(x) - 1) = fit(Polynomial{eltype(y)}, collect(x), collect(y); weights=weights, deg=deg)
-fit(P::Type{<:AbstractPolynomial}, x, y; weights=nothing, deg = length(x) - 1) = fit(P, collect(x), collect(y), weights=weights, deg=deg)
+fit(x, y; weights = nothing, deg = length(x) - 1) = fit(Polynomial{eltype(y)}, collect(x), collect(y); weights = weights, deg = deg)
+fit(P::Type{<:AbstractPolynomial}, x, y; weights = nothing, deg = length(x) - 1) = fit(P, collect(x), collect(y), weights = weights, deg = deg)
 
+# Weighted linear least squares
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
 _wlstsq(vand, y, W::AbstractVector) = _wlstsq(vand, y, diagm(W))
 _wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
