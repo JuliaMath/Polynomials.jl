@@ -141,7 +141,7 @@ end
 end
 
 @testset "Fitting" begin
-    xs = range(0, stop = pi, length = 10)
+    xs = range(0, π, length = 10)
     ys = sin.(xs)
 
     p = fit(xs, ys)
@@ -149,10 +149,15 @@ end
     abs_error = abs.(y_fit .- ys)
     @test maximum(abs_error) <= 0.03
 
-    p = fit(xs, ys, 2)
+    p = fit(xs, ys, deg = 2)
     y_fit = p.(xs)
     abs_error = abs.(y_fit .- ys)
     @test maximum(abs_error) <= 0.03
+
+    # Getting error on passing Real arrays to polyfit #146
+    xx = Real[20.0, 30.0, 40.0]
+    yy = Real[15.7696, 21.4851, 28.2463]
+    fit(xx, yy, deg = 2)
 end
 
 @testset "Values" begin
@@ -233,6 +238,23 @@ end
 
     pint  = integral(p, 0.0im)
     @test isequal(pint, Polynomial{typeof(0.0im)}([NaN]))
+
+    # Issue with overflow and polyder Issue #159
+    @test !iszero(derivative(Polynomial(BigInt[0, 1])^100, 100))
+end
+
+@testset "Elementwise Operations" begin
+    # p1  = Poly([1, 2])
+    # p2  = Poly([3, 1.])
+    # p   = [p1, p2]
+    # q   = [3, p1]
+    # @test isa(q,Vector{Poly{Int64}})
+    # psum  = p .+ 3
+    # pprod = p .* 3
+    # pmin  = p .- 3
+    # @test isa(psum, Vector{Poly{Float64}})
+    # @test isa(pprod,Vector{Poly{Float64}})
+    # @test isa(pmin, Vector{Poly{Float64}})
 end
 
 @testset "Chop and Truncate" begin
@@ -315,4 +337,21 @@ end
     pcpy1 = Polynomial([1,2,3,4,5], :y)
     pcpy2 = copy(pcpy1)
     @test pcpy1 == pcpy2
+end
+
+@testset "GCD" begin
+    p1 = Polynomial([2.,5.,1.])
+    p2 = Polynomial([1.,2.,3.])
+
+    @test degree(gcd(p1, p2)) == 0          # no common roots
+    @test degree(gcd(p1, Polynomial(5))) == 0          # ditto
+    @test degree(gcd(p1, Polynomial(eps(0.)))) == 0          # ditto
+    @test degree(gcd(p1, Polynomial(0))) == degree(p1) # Poly(0) has the roots of p1
+    @test degree(gcd(p1 + p2 * 170.10734737144486, p2)) == 0          # see, c.f., #122
+
+    p1 = fromroots(Polynomial, [1.,2.,3.])
+    p2 = fromroots(Polynomial, [1.,2.,6.])
+    res = roots(gcd(p1, p2))
+    @test 1. ∈ res
+    @test 2. ∈ res
 end

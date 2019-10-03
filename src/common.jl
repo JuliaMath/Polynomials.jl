@@ -62,14 +62,21 @@ fromroots(A::AbstractMatrix{T}, var::SymbolLike = :x) where {T <: Number} = from
 
 Fit the given data as a polynomial type with the given degree. The default polynomial type is [`Polynomial`](@ref).
 """
-function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector, y::AbstractVector, deg::Integer = length(x) - 1)
-    x = scale_to_domain(P, x)
+function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector, y::AbstractVector{T}; weights = nothing, deg::Integer = length(x) - 1) where {T}
     vand = vander(P, x, deg)
-    coeffs = pinv(vand) * y
-    return P(coeffs)
+    if  !isnothing(weights)
+        coeffs = _wlstsq(vand, y, weights)
+    else
+        coeffs = pinv(vand) * y
+    end
+    return P(T.(coeffs))
 end
-fit(x, y, deg = length(x) - 1) = fit(Polynomial, collect(x), collect(y), deg)
-fit(P::Type{<:AbstractPolynomial}, x, y, deg = length(x) - 1) = fit(P, collect(x), collect(y), deg)
+fit(x, y; weights=nothing, deg = length(x) - 1) = fit(Polynomial{eltype(y)}, collect(x), collect(y); weights=weights, deg=deg)
+fit(P::Type{<:AbstractPolynomial}, x, y; weights=nothing, deg = length(x) - 1) = fit(P, collect(x), collect(y), weights=weights, deg=deg)
+
+_wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
+_wlstsq(vand, y, W::AbstractVector) = _wlstsq(vand, y, diagm(W))
+_wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 
 """
     roots(::AbstractPolynomial)
@@ -100,7 +107,7 @@ Return the companion matrix for the given polynomial.
 companion(::AbstractPolynomial)
 
 """
-    vander(::AbstractPolynomial, x::AbstractVector, deg::Integer)
+    vander(::Type{AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 Calculate the psuedo-Vandermonde matrix of the given polynomial type with the given degree.
 
@@ -108,7 +115,6 @@ Calculate the psuedo-Vandermonde matrix of the given polynomial type with the gi
 [Vandermonde Matrix](https://en.wikipedia.org/wiki/Vandermonde_matrix)
 """
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
-vander(P::Type{<:AbstractPolynomial}, x, deg::Integer) = vander(P, collect(x), deg)
 
 """
     integral(::AbstractPolynomial, k=0)
@@ -347,6 +353,7 @@ Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2
 ==(n::Number, p::AbstractPolynomial)  = p == n
 
 function Base.isapprox(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}; rtol::Real = (Base.rtoldefault(T, S, 0)), atol::Real = 0) where {T,S} 
+    p1, p2 = promote(p1, p2)
     if p1.var != p2.var error("p1 and p2 must have same var") end
     p1t = truncate(p1; rtol = rtol, atol = atol)
     p2t = truncate(p2; rtol = rtol, atol = atol)

@@ -23,8 +23,8 @@ Polynomial(x, var = :x) = Polynomial(collect(x), var)
 
 @register Polynomial
 
-domain(::Type{Polynomial}) = (-∞, ∞)
-scale_to_domain(::Type{Polynomial}, x) = x
+domain(::Type{<:Polynomial}) = (-∞, ∞)
+scale_to_domain(::Type{<:Polynomial}, x) = x
 
 function (p::Polynomial{T})(x::S) where {T,S}
     R = promote_type(T, S)
@@ -47,7 +47,7 @@ function fromroots(P::Type{Polynomial}, r::AbstractVector{T}, var::SymbolLike = 
 end
 
 
-function vander(P::Type{Polynomial}, x::AbstractVector{T}, n::Integer) where {T <: Number}
+function vander(P::Type{<:Polynomial}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     A = Matrix{T}(undef, length(x), n + 1)
     A[:, 1] .= one(T)
     @inbounds for i in 1:n
