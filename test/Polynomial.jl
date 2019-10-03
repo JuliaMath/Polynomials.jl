@@ -127,7 +127,11 @@ end
 end
 
 @testset "Conversion" begin
-    
+    # unnecessary copy in convert #65
+    p1 = Polynomial([1,2])
+    p2 = convert(Polynomial{Int64}, p1)
+    p2[3] = 3
+    @test p1[3] == 3
 end
 
 @testset "Roots" begin
@@ -188,6 +192,11 @@ end
     @test truncate(Polynomial([2,1]), rtol = 1 / 2, atol = 0) == Polynomial([2])
     @test truncate(Polynomial([2,1]), rtol = 1, atol = 0)   == Polynomial([0])
     @test truncate(Polynomial([2,1]), rtol = 0, atol = 1)   == Polynomial([2])
+
+    pchop = Polynomial([1, 2, 3, 0, 0, 0])
+    pchopped = chop(pchop)
+    @test roots(pchop) == roots(pchopped)
+
 end
 
 @testset "Linear Algebra" begin
@@ -198,6 +207,11 @@ end
     p = Polynomial([1 - 1im, 2 - 3im])
     p2 = conj(p)
     @test p2.coeffs == [1 + 1im, 2 + 3im]
+    @test transpose(p) == p
+    @test transpose!(p) == p
+
+    @test norm(Polynomial([1., 2.])) == norm([1., 2.])
+    @test norm(Polynomial([1., 2.]), 1) == norm([1., 2.], 1)
 end
 
 @testset "Indexing" begin
@@ -217,6 +231,14 @@ end
     @test p.coeffs[1:2] == [0, 0]
     p[:] = 1
     @test p.coeffs == ones(4)
+
+    p[:] = 0
+    @test chop(p) ≈ zero(p)
     
 end
 
+@testset "Copying" begin
+    pcpy1 = Polynomial([1,2,3,4,5], :y)
+    pcpy2 = copy(pcpy1)
+    @test pcpy1 == pcpy2
+end

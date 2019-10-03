@@ -85,7 +85,7 @@ function roots(p::AbstractPolynomial{T}) where {T <: Number}
     comp = _companion(chopped_trimmed)
     L = eigvals(rot180(comp))
     append!(L, zeros(n_trail))
-    return sort!(L, rev = true)
+    return sort!(L, rev = true, by = norm)
 end
 
 """
@@ -199,11 +199,22 @@ Linear Algebra
 =#
 LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2) = norm(coeffs(q), p)
 LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = P(conj(coeffs(p)))
+LinearAlgebra.transpose(p::AbstractPolynomial) = p
+LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 
 #=
 Conversions
 =#
-Base.convert(::Type{P}, p::P) where {T,P <: AbstractPolynomial{T}} = p
+macro register(poly)
+quote
+Base.convert(::Type{P}, p::P) where {P <: $poly} = p
+Base.convert(::Type{$poly{T}}, p::$poly) where {T} = $poly(T.(p.coeffs), p.var)
+Base.convert(::Type{$poly{T}}, x) where {T} = $poly(T.(x))
+Base.promote_rule(::Type{$poly{T}}, ::Type{$poly{S}}) where {T,S} = $poly{promote_type(T, S)}
+Base.promote_rule(::Type{$poly{T}}, ::Type{S}) where {T,S <: Number} = $poly{promote_type(T, S)}
+end
+end
+
 Base.promote_rule(::Type{<:AbstractPolynomial{T}}, ::Type{<:AbstractPolynomial{S}}) where {T,S} = Polynomial{promote_type(T, S)}
 
 #=
@@ -289,6 +300,7 @@ Base.zero(::Type{P}) where {P <: AbstractPolynomial} = P(zeros(1))
 Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P)
 Base.one(::Type{P}) where {P <: AbstractPolynomial} = P(ones(1))
 Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
+
 #=
 arithmetic
 =#
@@ -298,8 +310,14 @@ Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
 Base.:-(c::Number, p::AbstractPolynomial, ) = +(-p, c)
 Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
-Base.:*(p::AbstractPolynomial, c) = _mul(p, c)
-Base.:/(p::AbstractPolynomial, c) = _div(p, c)
+function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
+    T = promote_type(P, S)
+    return T(p.coeffs .* c, p.var)
+end
+function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
+    T = promote_type(P, S)
+    return T(p.coeffs ./ c, p.var)
+end
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
 Base.:+(p::P, n::Number) where {P <: AbstractPolynomial} = +(p, P(n, p.var))
