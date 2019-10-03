@@ -2,34 +2,26 @@ using LinearAlgebra
 
 export Polynomial
 
-const SymbolLike = Union{AbstractString,Char,Symbol}
-
 struct Polynomial{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
-    function Polynomial(a::AbstractVector{T}, var::SymbolLike = :x) where {T <: Number}
-        # if a == [] we replace it with a = [0]
-        if length(a) == 0
-            return new{T}(zeros(T, 1), Symbol(var))
-        else
-          # determine the last nonzero element and truncate a accordingly
-            last_nz = findlast(!iszero, a)
-            a_last = max(1, last_nz === nothing ? 0 : last_nz)
-            new{T}(a[1:a_last], Symbol(var))
-        end
+    function Polynomial{T}(coeffs::Vector{T}, var::Symbol) where {T <: Number}
+        length(coeffs) == 0 && return new{T}(zeros(T, 1), var)
+        last_nz = findlast(!iszero, coeffs)
+        last = max(1, last_nz === nothing ? 0 : last_nz)
+        return new{T}(coeffs[1:last], var)
     end
 end
 
-Polynomial(n::Number, var::SymbolLike = :x) = Polynomial([n], var)
-function Polynomial{T}(n::S, var::SymbolLike = :x) where {T,S <: Number}
-    U = promote_type(T, S)
-    Polynomial{U}([n], var)
-end
-function Polynomial{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T <: Number,S <: Number}
-    y = convert(Vector{T}, x)
-    Polynomial(y, var)
-end
-Polynomial(x, var::SymbolLike = :x) = Polynomial(collect(x), var)
+Polynomial(a::AbstractVector{T}, var::SymbolLike = :x) where {T} = Polynomial{T}(a, Symbol(var))
+
+Polynomial(n::Number, var = :x) = Polynomial([n], var)
+Polynomial{T}(n::S, var = :x) where {T,S <: Number} = Polynomial(T(n), var)
+Polynomial{T}(x::AbstractVector{S}, var = :x) where {T,S <: Number} = Polynomial(T.(x), var)
+Polynomial(x, var = :x) = Polynomial(collect(x), var)
+
+@register Polynomial
+
 
 _domain(p::Polynomial) = (-∞, ∞)
 scale_to_domain(P::Type{Polynomial}, x) = x
@@ -86,16 +78,9 @@ end
 
 function _companion(p::Polynomial{T}) where T
     d = degree(p)
-    comp = diagm(-1 => ones(T, d - 1))
+    R = eltype(one(T) / p.coeffs[end])
+    comp = diagm(-1 => ones(R, d - 1))
     monics = p.coeffs ./ p.coeffs[end]
     comp[:, end] .= -monics[1:d]
     return comp
 end
-
-_mul(p::Polynomial, c) = Polynomial(p.coeffs .* c, p.var)
-_div(p::Polynomial, c) = Polynomial(p.coeffs ./ c, p.var)
-
-Base.convert(::Type{Polynomial{T}}, p::Polynomial) where {T} = Polynomial(T.(p.coeffs), p.var)
-Base.convert(::Type{Polynomial{T}}, x, var::SymbolLike = :x) where {T} = Polynomial(T.(x), var)
-Base.promote_rule(::Type{Polynomial{T}}, ::Type{Polynomial{S}}) where {T,S} = Polynomial{promote_type(T, S)}
-Base.promote_rule(::Type{Polynomial{T}}, ::Type{S}) where {T,S <: Number} = Polynomial{promote_type(T, S)}
