@@ -64,9 +64,9 @@ function _vander(P::Type{Polynomial}, x::AbstractVector{T}, n::Integer) where {T
     return A
 end
 
-function _integral(p::Polynomial{T}, k::S) where {T,S}
+function _integral(p::Polynomial{T}, k::S) where {T,S <: Number}
     n = length(p)
-    R = promote_type(typeof(one(T) / 1), S)
+    R = promote_type(eltype(one(T) / 1), S)
     a2 = Vector{R}(undef, n + 1)
     a2[1] = k
     @inbounds for i in 1:n
@@ -75,11 +75,11 @@ function _integral(p::Polynomial{T}, k::S) where {T,S}
     return Polynomial(a2, p.var)
 end
 
-function _derivative(p::Polynomial{T}, k::Integer) where {T}
+function _derivative(p::Polynomial{T}, order::Integer) where {T}
     n = length(p)
-    a2 = Vector{T}(undef, n - k)
-    @inbounds for i in k:n - 1
-        a2[i - k + 1] = reduce(*, (i - k + 1):i, init = p[i])
+    a2 = Vector{T}(undef, n - order)
+    @inbounds for i in order:n - 1
+        a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
     end
     return Polynomial(a2, p.var)
 end
