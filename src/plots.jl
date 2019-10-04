@@ -15,11 +15,7 @@ function poly_interval(p::AbstractPolynomial)
     return a : diff/50 : b
 end
 
-function poly_label(p::AbstractPolynomial)
-    buff = IOBuffer()
-    printpoly(buff, p)
-    String(take!(buff))
-end
+poly_label(p::AbstractPolynomial) = sprint(printpoly, p)
 
 @recipe function f(p::AbstractPolynomial, range = poly_interval(p))
     label --> poly_label(p)
