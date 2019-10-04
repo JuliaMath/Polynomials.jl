@@ -1,8 +1,7 @@
 using LinearAlgebra
 import Base: ==
 
-export AbstractPolynomial,
-       fromroots,
+export fromroots,
        truncate!,
        chop!,
        coeffs,
@@ -15,15 +14,12 @@ export AbstractPolynomial,
        fit,
        integrate,
        integral,
-       derivative
-
-
-const SymbolLike = Union{AbstractString,Char,Symbol}
-abstract type AbstractPolynomial{T <: Number} end
+       derivative,
+       variable
 
 """
-    fromroots(::AbstractVector{<:Number}, var=:x)
-    fromroots(::Type{<:AbstractPolynomial}, ::AbstractVector{<:Number}, var=:x)
+    fromroots(::AbstractVector{<:Number}; var=:x)
+    fromroots(::Type{<:AbstractPolynomial}, ::AbstractVector{<:Number}; var=:x)
 
 Construct a polynomial of the given type given the roots. If no type is given, defaults to `Polynomial`.
 
@@ -35,9 +31,9 @@ julia> fromroots(r)
 Polynomial(x^2 - 5x + 6)
 ```
 """
-fromroots(P::Type{<:AbstractPolynomial}, r::AbstractVector, var::SymbolLike = :x)
-fromroots(r::AbstractVector{<:Number}, var::SymbolLike = :x) = fromroots(Polynomial, r, var)
-fromroots(r, var::SymbolLike = :x) = fromroots(collect(r), var)
+fromroots(P::Type{<:AbstractPolynomial}, r::AbstractVector; var::SymbolLike = :x)
+fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) = fromroots(Polynomial, r, var = var)
+fromroots(r; var::SymbolLike = :x) = fromroots(collect(r), var = var)
 
 """
     fromroots(::AbstractMatrix{<:Number}, var=:x)
@@ -53,8 +49,8 @@ julia> fromroots(A)
 Polynomial(-1.9999999999999998 - 5.0⋅x + 1.0⋅x^2)
 ```
 """
-fromroots(P::Type{<:AbstractPolynomial}, A::AbstractMatrix{T}, var::SymbolLike = :x) where {T <: Number} = fromroots(P, eigvals(A), var)
-fromroots(A::AbstractMatrix{T}, var::SymbolLike = :x) where {T <: Number} = fromroots(Polynomial, eigvals(A), var)
+fromroots(P::Type{<:AbstractPolynomial}, A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} = fromroots(P, eigvals(A), var = var)
+fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} = fromroots(Polynomial, eigvals(A), var = var)
 
 """
     fit(x, y; [weights], deg=length(x) - 1)
@@ -62,21 +58,29 @@ fromroots(A::AbstractMatrix{T}, var::SymbolLike = :x) where {T <: Number} = from
 
 Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref).
 """
-function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector{T}, y::AbstractVector{T}; weights = nothing, deg::Integer = length(x) - 1) where {T <: Number}
+function fit(P::Type{<:AbstractPolynomial}, 
+            x::AbstractVector{T}, 
+            y::AbstractVector{T}; 
+            weights = nothing, deg::Integer = length(x) - 1, var = :x) where {T <: Number}
     vand = vander(P, x, deg)
     if  !isnothing(weights)
         coeffs = _wlstsq(vand, y, weights)
     else
         coeffs = pinv(vand) * y
     end
-    return P(T.(coeffs))
+    return P(T.(coeffs), var)
 end
 
-fit(x, y; weights = nothing, deg = length(x) - 1) = fit(Polynomial{eltype(y)}, collect(x), collect(y); weights = weights, deg = deg)
-fit(P::Type{<:AbstractPolynomial}, x, y; weights = nothing, deg = length(x) - 1) = fit(P, collect(x), collect(y), weights = weights, deg = deg)
-function fit(P::Type{<:AbstractPolynomial}, x::AbstractVector{T}, y::AbstractVector{S}; weights = nothing, deg = length(x) - 1) where {T,S}
+fit(x, y; weights = nothing, deg = length(x) - 1, var = :x) = fit(Polynomial{eltype(y)}, collect(x), collect(y); weights = weights, deg = deg, var = var)
+
+fit(P::Type{<:AbstractPolynomial}, x, y; weights = nothing, deg = length(x) - 1, var = :x) = fit(P, collect(x), collect(y); weights = weights, deg = deg, var = var)
+
+function fit(P::Type{<:AbstractPolynomial}, 
+    x::AbstractVector{T}, 
+    y::AbstractVector{S}; 
+    weights = nothing, deg = length(x) - 1, var = :x) where {T,S}
     x, y = promote(x, y)
-    fit(P, x, y, weights = weights, deg = deg)
+    fit(P, x, y; weights = weights, deg = deg, var = var)
 end
 
 # Weighted linear least squares
@@ -195,6 +199,9 @@ function Base.chop(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(
     chop!(deepcopy(p), rtol = rtol, atol = atol)
 end
 
+"""
+    variable
+"""
 variable(::Type{P}, var::SymbolLike = :x) where {T,P <: AbstractPolynomial{T}} = P([zero(T), one(T)], var)
 variable(p::AbstractPolynomial, var::SymbolLike = :x) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Float64})
@@ -345,6 +352,11 @@ Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
     n, d = promote(num, den)
     return divrem(n, d)
+end
+
+function Base.gcd(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+    p1, p2 = promote(p1, p1)
+    return gcd(p1, p2)
 end
 
 Base.div(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[1]

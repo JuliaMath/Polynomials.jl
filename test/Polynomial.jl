@@ -144,19 +144,19 @@ end
     xs = range(0, π, length = 10)
     ys = sin.(xs)
 
-    p = fit(xs, ys)
+    p = fit(Polynomial, xs, ys)
     y_fit = p.(xs)
     abs_error = abs.(y_fit .- ys)
     @test maximum(abs_error) <= 0.03
 
-    p = fit(xs, ys, deg = 2)
+    p = fit(Polynomial, xs, ys, deg = 2)
     y_fit = p.(xs)
     abs_error = abs.(y_fit .- ys)
     @test maximum(abs_error) <= 0.03
 
     # Test weighted
     for W in [1, ones(size(xs)), diagm(ones(size(xs)))]
-        p = fit(xs, ys, weights = W, deg = 2)
+        p = fit(Polynomial, xs, ys, weights = W, deg = 2)
         @test p.(xs) ≈ y_fit
     end
 
@@ -168,11 +168,11 @@ end
 end
 
 @testset "Values" begin
-    @test fromroots(Int[])(2.) == 1.
+    @test fromroots(Polynomial, Int[])(2.) == 1.
     @test pN(-.125) == 276.9609375
     @test pNULL(10) == 0
     @test p0(-10) == 0
-    @test fromroots([1 // 2, 3 // 2])(1 // 2) == 0 // 1
+    @test fromroots(Polynomial, [1 // 2, 3 // 2])(1 // 2) == 0 // 1
 
     # Check for Inf/NaN operations
     p1 = Polynomial([Inf, Inf])
@@ -370,8 +370,6 @@ end
     PQexp = Pade(a, 8, 8)
     @test PQexp(1.0) ≈ exp(1.0)
     @test PQexp(-1.0) ≈ exp(-1.0)
-
-    @test_deprecated padeval(PQexp, 1.0)
 
     # sine
     coeffs = BigInt.(sinpi.((0:16) ./ 2)) .// BigInt.(gamma.(1:17))

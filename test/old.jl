@@ -120,30 +120,26 @@ pcpy2 = copy(pcpy1)
 
 #Tests for Pade approximants
 
-println("Test for the exponential function.")
 a = Poly(1 .//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
 PQexp = Pade(a,8,8)
 @test isapprox(convert(Float64, padeval(PQexp,1.0)), exp(1.0))
 @test isapprox(convert(Float64, padeval(PQexp,-1.0)), exp(-1.0))
 
-println("Test for the sine function.")
 b = Poly(convert(Vector{BigInt},map(sinpi,(0:16)/2)).//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
 PQsin = Pade(b,8,7)
 @test isapprox(convert(Float64, padeval(PQsin,1.0)), sin(1.0))
 @test isapprox(convert(Float64, padeval(PQsin,-1.0)),sin(-1.0))
 
-println("Test for the cosine function.")
 c = Poly(convert(Vector{BigInt},map(sinpi,(1:17)/2)).//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
 PQcos = Pade(c,8,8)
 @test isapprox(convert(Float64, padeval(PQcos,1.0)), cos(1.0))
 @test isapprox(convert(Float64, padeval(PQcos,-1.0)), cos(-1.0))
 
 const _γ = 0.5772156649015
-println("Test for the summation of a factorially divergent series.")
+
 d = Poly(convert(Vector{BigInt},(-1).^(0:60).* map(gamma,BigFloat(1):BigFloat(61.0))).//1,"x")
 PQexpint = Pade(d,30,30)
-println("The approximate sum of the divergent series is:  ", Float64(padeval(PQexpint,1.0)))
-println("The approximate sum of the convergent series is: ",exp(1)*(-_γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
+
 @test isapprox(convert(Float64, padeval(PQexpint,1.0)),
                exp(1)*(-_γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
 
@@ -176,7 +172,6 @@ psum = p1 + p2 - p3
 @test norm(Poly([1., 2.]), 1) == norm([1., 2.], 1)
 
 ## setindex!
-println("Test for setindex!()")
 p1    = Poly([1,2,1])
 p1[5] = 1
 @test p1[5] == 1
@@ -190,7 +185,6 @@ p1[:] = [1,2,1,0,0,1]
 @test p1 == Poly([1,2,1,0,0,1])
 
 ## elementwise operations #52
-println("Test for element-wise operations")
 p1  = Poly([1, 2])
 p2  = Poly([3, 1.])
 p   = [p1, p2]
