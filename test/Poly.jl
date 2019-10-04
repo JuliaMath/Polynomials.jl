@@ -9,8 +9,8 @@ pN = Poly([276,3,87,15,24,0])
 pR = Poly([3//4, -2//1, 1//1])
 X = Poly([0.0, 1.0])
 T = Int64
-Poly{T}([zero(T), one(T)])
-Poly{T}([zero(T), one(T)], :y)
+# Poly{T}([zero(T), one(T)])
+# Poly{T}([zero(T), one(T)], :y)
 
 p1000 = Poly(randn(1000))
 
@@ -62,7 +62,8 @@ sprint(show, pNULL)
 
 @test poly([-1,-1]) == p3
 @test roots(p0)==roots(p1)==roots(pNULL)==[]
-@test roots(Poly([0,1,0])) == [0.]
+@test roots(Poly([0,1,0])) == [0.0]
+r = roots(Poly([0,1,0]))
 @test roots(p2) == [-1]
 a_roots = copy(pN.a)
 @test all(map(abs,sort(roots(poly(a_roots))) - sort(a_roots)) .< 1e6)
@@ -154,7 +155,7 @@ p = polyfit(xs, ys, 2)
 @test maximum(map(abs,map(x->polyval(p, x), xs) - ys)) <= 0.03
 #https://stackoverflow.com/questions/50832823/error-with-polyfit-function-julia
 # relax type assumptions on x, y
-polyfit(Any[1,2,3], Any[2,3,1])
+polyfit(Number[1,2,3], Number[2,3,1])
 
 ## truncation
 p1 = Poly([1,1]/10)

@@ -6,6 +6,8 @@
     @test_deprecated Poly(collect(1:10), "x")
     # @test_deprecated Poly{Float64}(collect(1:10))
     # @test_deprecated Poly{Float64}(collect(1:10), "x")
+    p = Polynomial([1, 2, 3])
+    @test_deprecated p.a
 end
 
 @testset "From roots" begin
@@ -22,6 +24,7 @@ end
 
     @test_deprecated polyval(p1, 1)
     @test_deprecated polyval(p1, randn(10))
+    @test_deprecated p1(randn(10))
 end
 
 @testset "Integrals and Derivatives" begin
