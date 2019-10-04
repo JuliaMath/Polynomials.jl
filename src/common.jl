@@ -62,7 +62,7 @@ function fit(P::Type{<:AbstractPolynomial},
             y::AbstractVector{T}; 
             weights = nothing, deg::Integer = length(x) - 1, var = :x) where {T <: Number}
     vand = vander(P, x, deg)
-    if  !isnothing(weights)
+    if weights !== nothing
         coeffs = _wlstsq(vand, y, weights)
     else
         coeffs = pinv(vand) * y
