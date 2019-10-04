@@ -14,11 +14,10 @@ include("polynomials/ChebyshevU.jl")
 # Deprecated -> Will be removed
 include("polynomials/Poly.jl")
 
-
 include("pade.jl")
 include("deprecated.jl")
 
 include("show.jl")
-# include("PlotRecipes.jl")
+include("plots.jl")
 
 end # module

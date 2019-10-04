@@ -93,12 +93,9 @@ _wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 Returns the roots of the given polynomial. This is calculated via the eigenvalues of the companion matrix.
 """
 function roots(p::AbstractPolynomial{T}) where {T <: Number}
-    d = degree(p)
-    if d < 1
-        @warn "Polynomial must have degree greater than 1. In the future this will throw in error"
-        return []
-    end
-    d == 1 && return diagm([-p[0] / p[1]])
+    d = length(p) - 1
+    if d < 1 return [] end
+    d == 1 && return [-p[0] / p[1]]
 
     chopped_trimmed = chop(truncate(p))
     n_trail = length(p) - length(chopped_trimmed)
@@ -338,7 +335,7 @@ function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
 function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
     R = promote_type(P, eltype(one(T) / one(S)))
     return R(p.coeffs ./ c, p.var)
-    end
+end
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
 function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}

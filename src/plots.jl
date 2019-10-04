@@ -1,13 +1,11 @@
 using RecipesBase
 
-
-function poly_interval(p::Poly)
+function poly_interval(p::AbstractPolynomial)
     # Find points of interest
     zero_pts = roots(p)
-    crit_pts = roots(polyder(p, 1))
-    infl_pts = roots(polyder(p, 2))
+    crit_pts = roots(derivative(p, 1))
+    infl_pts = roots(derivative(p, 2))
     pts = sort([ real(pt) for pt in [zero_pts; crit_pts; infl_pts] if isreal(pt) ])
-
     # Choose a range that shows all interesting points with some margin
     min_x, max_x = length(pts) > 0 ? (pts[1], pts[end]) : (-1, 1)
     diff = max(max_x - min_x, 1)
@@ -17,24 +15,21 @@ function poly_interval(p::Poly)
     return a : diff/50 : b
 end
 
-
-function poly_label(p::Poly)
+function poly_label(p::AbstractPolynomial)
     buff = IOBuffer()
     printpoly(buff, p)
     String(take!(buff))
 end
 
-
-@recipe function poly_recipe(p::Poly, range = poly_interval(p))
+@recipe function f(p::AbstractPolynomial, range = poly_interval(p))
     label --> poly_label(p)
-    range, map(x -> polyval(p, x), range)
+    range, p.(range)
 end
 
-
-@recipe function poly_recipe(p::Poly, a, b)
+@recipe function f(p::AbstractPolynomial, a, b)
     label --> poly_label(p)
     step = (b-a)/100
     xs = a:step:b
-    ys = map(x -> polyval(p, x), xs)
+    ys = p.(xs)
     xs, ys
 end
