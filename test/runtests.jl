@@ -8,4 +8,4 @@ import SparseArrays: sparse, nnz
 
 @testset "Polynomial" begin include("Polynomial.jl") end
 @testset "Deprecations" begin include("deprecated.jl") end
-# @testset "Old" begin include("old.jl") end
+@testset "Poly (deprecaterd)" begin include("Poly.jl") end

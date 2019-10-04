@@ -70,10 +70,10 @@ pR = Polynomial([3 // 4, -2 // 1, 1 // 1])
 end
 
 @testset "Divrem" begin
-    p0 = Polynomial{Float64}([0])
-    p1 = Polynomial{Float64}([1])
-    p2 = Polynomial{Float64}([5, 6, -3, 2 ,4])
-    p3 = Polynomial{Float64}([7, -3, 2, 6])
+    p0 = Polynomial([0])
+    p1 = Polynomial([1])
+    p2 = Polynomial([5, 6, -3, 2 ,4])
+    p3 = Polynomial([7, -3, 2, 6])
     p4 = p2 * p3
     @test divrem(p4, p2) == (p3, zero(p3))
     @test p3 % p2 == p3

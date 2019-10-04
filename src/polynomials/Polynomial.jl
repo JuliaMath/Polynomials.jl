@@ -46,7 +46,6 @@ function fromroots(P::Type{Polynomial}, r::AbstractVector{T}; var::SymbolLike = 
     return Polynomial(reverse(c), var)
 end
 
-
 function vander(P::Type{<:Polynomial}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     A = Matrix{T}(undef, length(x), n + 1)
     A[:, 1] .= one(T)
@@ -85,7 +84,7 @@ function derivative(p::Polynomial{T}, order::Integer) where {T}
 end
 
 function companion(p::Polynomial{T}) where T
-    d = degree(p)
+    d = length(p) - 1
     d < 1 && error("Series must have degree greater than 1")
     d == 1 && return diagm([-p[0] / p[1]])
 
@@ -105,8 +104,8 @@ end
 
 function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     p1.var != p2.var && error("Polynomials must have same variable")
-    n = degree(p1)
-    m = degree(p2)
+    n = length(p1) - 1
+    m = length(p2) - 1
     R = promote_type(T, S)
     c = zeros(R, m + n + 1)
     for i = 0:n, j = 0:m
@@ -117,9 +116,9 @@ end
 
 function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
     num.var != den.var && error("Polynomials must have same variable")
-    n = degree(num)
-    m = degree(den)
-    m == 0 && den[0] ≈ 0 && throw(DivideError())
+    n = length(num) - 1
+    m = length(den) - 1
+    if m == 0 && den[0] ≈ 0 throw(DivideError()) end
     R = typeof(one(T) / one(S))
     P = Polynomial{R}
     deg = n - m + 1
@@ -157,7 +156,7 @@ function Base.gcd(a::Polynomial{T}, b::Polynomial{S}) where {T,S}
   r₀ = convert(Polynomial{U}, a)
   r₁ = truncate!(convert(Polynomial{U}, b))
   iter    = 1
-  itermax = degree(b) + 1
+  itermax = length(b)
 
   while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
     _, rtemp  = divrem(r₀, r₁)
@@ -173,13 +172,13 @@ Pade approximation
 =#
 
 struct Pade{T <: Number,S <: Number}
-    p::Polynomial{T}
-    q::Polynomial{S}
+    p::Union{Poly{T}, Polynomial{T}}
+    q::Union{Poly{S}, Polynomial{S}}
     var::Symbol
-    function Pade{T,S}(p::Polynomial{T}, q::Polynomial{S}) where {T,S}
+    function Pade{T,S}(p::Union{Poly{T}, Polynomial{T}}, q::Union{Poly{S}, Polynomial{S}}) where {T,S}
         if p.var != q.var error("Polynomials must have same variable") end
         new{T,S}(p, q, p.var)
-end
+    end
 end
 
 Pade(p::Polynomial{T}, q::Polynomial{S}) where {T <: Number,S <: Number} = Pade{T,S}(p, q)
@@ -206,4 +205,30 @@ function Pade(c::Polynomial{T}, m::Int, n::Int) where {T}
     Pade(rnew / vnew[0], vnew / vnew[0])
 end
 
-(PQ::Pade)(x) = PQ.p(x) ./ PQ.q(x)
+
+Pade(p::Poly{T}, q::Poly{S}) where {T <: Number,S <: Number} = Pade{T,S}(p, q)
+
+function Pade(c::Poly{T}, m::Int, n::Int) where {T}
+    m + n < length(c) || error("m + n must be less than the length of the polynomial")
+    rold = Poly([zeros(T, m + n + 1);one(T)], c.var)
+    rnew = Poly(c[0:m + n], c.var)
+    uold = Poly([one(T)], c.var)
+    vold = Poly([zero(T)], c.var)
+    unew, vnew = vold, uold
+    @inbounds for i = 1:n
+        temp0, temp1, temp2 = rnew, unew, vnew
+        q, rnew = divrem(rold, rnew)
+        unew, vnew = uold - q * unew, vold - q * vnew
+        rold, uold, vold = temp0, temp1, temp2
+
+    end
+    if vnew[0] == 0
+        d = gcd(rnew, vnew)
+        rnew = rnew ÷ d
+        vnew = vnew ÷ d
+    end
+    Pade(rnew / vnew[0], vnew / vnew[0])
+end
+
+
+(PQ::Pade)(x) = PQ.p(x) / PQ.q(x)
