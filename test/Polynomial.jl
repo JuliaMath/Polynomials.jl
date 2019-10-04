@@ -401,3 +401,7 @@ end
     PQexpint = Pade(d, 30, 30)
     @test Float64(PQexpint(1.0)) ≈ exp(1) * (-γ - sum([(-1)^k / k / gamma(k + 1) for k = 1:20]))
 end
+
+@testset "Showing" begin
+
+end
