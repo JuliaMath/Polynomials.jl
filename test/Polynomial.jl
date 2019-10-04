@@ -37,6 +37,14 @@ end
     
     p = one(Polynomial{Int})
     @test p.coeffs == [1]
+
+    pNULL = Polynomial(Int[])
+    @test iszero(pNULL)
+    @test degree(pNULL) == -1
+
+    p0 = Polynomial([0])
+    @test iszero(p0)
+    @test degree(p0) == -1
 end
 
 pNULL = Polynomial(Int[])

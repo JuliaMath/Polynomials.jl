@@ -22,6 +22,9 @@ Poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S} = Poly(convert(V
 
 @register Poly
 
+Base.convert(P::Type{Polynomial}, p::Poly) = P(p.coeffs, p.var)
+Base.convert(P::Type{Polynomial{T}}, p::Poly{S}) where {T,S} = P(T.(p.coeffs), p.var)
+
 domain(::Type{<:Poly}) = (-∞, ∞)
 scale_to_domain(::Type{<:Poly}, x) = x
 
