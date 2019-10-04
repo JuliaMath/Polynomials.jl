@@ -4,8 +4,8 @@
     @test_deprecated Poly(2, "x")
     @test_deprecated Poly(collect(1:10))
     @test_deprecated Poly(collect(1:10), "x")
-    # @test_deprecated Poly{Float64}(collect(1:10))
-    # @test_deprecated Poly{Float64}(collect(1:10), "x")
+    @test_deprecated Poly{Float64}(collect(1:10))
+    @test_deprecated Poly{Float64}(collect(1:10), "x")
     p = Polynomial([1, 2, 3])
     @test_deprecated p.a
 end
@@ -38,7 +38,7 @@ end
 end
 
 @testset "Fits and Pade" begin
-    xs = range(0, π, length = 10)
+    xs = range(0, stop = π, length = 10)
     ys = sin.(xs)
 
     @test_deprecated polyfit(xs, ys)
