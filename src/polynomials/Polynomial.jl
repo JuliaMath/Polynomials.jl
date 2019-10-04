@@ -4,9 +4,6 @@ export Polynomial,
        Pade,
        gcd
 
-# deprecations
-export padeval
-
 struct Polynomial{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
@@ -39,7 +36,7 @@ function (p::Polynomial{T})(x::S) where {T,S}
     return y    
 end
 
-function fromroots(P::Type{Polynomial}, r::AbstractVector{T}, var::SymbolLike = :x) where {T <: Number}
+function fromroots(P::Type{Polynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)
     c[1] = one(T)
@@ -155,7 +152,7 @@ julia> gcd(poly([1,1,2]), poly([1,2,3])) # returns (x-1)*(x-2)
 Polynomial(4.0 - 6.0⋅x + 2.0⋅x^2)
 ```
 """
-function gcd(a::Polynomial{T}, b::Polynomial{S}) where {T,S}
+function Base.gcd(a::Polynomial{T}, b::Polynomial{S}) where {T,S}
   U       = typeof(one(T) / one(S))
   r₀ = convert(Polynomial{U}, a)
   r₁ = truncate!(convert(Polynomial{U}, b))
@@ -180,9 +177,7 @@ struct Pade{T <: Number,S <: Number}
     q::Polynomial{S}
     var::Symbol
     function Pade{T,S}(p::Polynomial{T}, q::Polynomial{S}) where {T,S}
-        if p.var != q.var
-            error("Polynomials must have same variable")
-        end
+        if p.var != q.var error("Polynomials must have same variable") end
         new{T,S}(p, q, p.var)
 end
 end
@@ -212,4 +207,3 @@ function Pade(c::Polynomial{T}, m::Int, n::Int) where {T}
 end
 
 (PQ::Pade)(x) = PQ.p(x) ./ PQ.q(x)
-@deprecate padeval(PQ::Pade, x) PQ(x)
