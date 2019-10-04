@@ -62,7 +62,7 @@ end
 function integral(p::Poly{T}, k::S) where {T,S <: Number}
     R = promote_type(eltype(one(T) / 1), S)
     if hasnan(p) || isnan(k)
-        return Poly{R}([NaN])
+        return Poly([NaN])
     end
     n = length(p)
     a2 = Vector{R}(undef, n + 1)

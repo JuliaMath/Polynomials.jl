@@ -64,8 +64,6 @@ sprint(show, pNULL)
 @test roots(p0)==roots(p1)==roots(pNULL)==[]
 @test roots(Poly([0,1,0])) == [0.0]
 r = roots(Poly([0,1,0]))
-@info typeof(roots(p2))
-@info typeof([-1])
 @test roots(p2) == [-1]
 a_roots = copy(pN.a)
 @test all(map(abs,sort(roots(poly(a_roots))) - sort(a_roots)) .< 1e6)
@@ -304,7 +302,7 @@ pint  = polyint(p)
 @test isequal(pint, Poly([NaN]))  # integral will give Poly([NaN])
 
 pint  = polyint(p, Complex(0.))
-@test pint == Poly([NaN])  # integral will give Poly([NaN])
+@test isequal(pint, Poly([NaN]))  # integral will give Poly([NaN])
 
 ## proper conversions in arithmetic with different element-types #94
 p = Poly([0,one(Float64)])

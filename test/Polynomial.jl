@@ -258,12 +258,12 @@ end
     pder  = derivative(p)
     pint  = integral(p)
 
-    @test isnan(p(1))                 # p(1) evaluates to NaN
+    @test isnan(p(1)) # p(1) evaluates to NaN
     @test isequal(pder, Polynomial([NaN]))
     @test isequal(pint, Polynomial([NaN]))
 
     pint  = integral(p, 0.0im)
-    @test isequal(pint, Polynomial{typeof(0.0im)}([NaN]))
+    @test isequal(pint, Polynomial([NaN]))
 
     # Issue with overflow and polyder Issue #159
     @test !iszero(derivative(Polynomial(BigInt[0, 1])^100, 100))
@@ -330,6 +330,11 @@ end
     @test p[[1, 2]] == [3, 5]
     @test p[1:2] == [3, 5]
     @test p[:] == [-1, 3, 5, -2]
+
+    p1    = Poly([1,2,1])
+    p1[5] = 1
+    @test p1[5] == 1
+    @test p1 == Polynomial([1,2,1,0,0,1])
 
     @test p[end] == p.coeffs[end]
     p[1] = 2
