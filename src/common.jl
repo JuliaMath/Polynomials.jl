@@ -27,7 +27,7 @@ Construct a polynomial of the given type given the roots. If no type is given, d
 julia> r = [3, 2]; # (x - 3)(x - 2)
 
 julia> fromroots(r)
-Polynomial(x^2 - 5x + 6)
+Polynomial(6 - 5*x + x^2)
 ```
 """
 fromroots(P::Type{<:AbstractPolynomial}, r::AbstractVector; var::SymbolLike = :x)
@@ -35,8 +35,8 @@ fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) = fromroots(Polynom
 fromroots(r; var::SymbolLike = :x) = fromroots(collect(r), var = var)
 
 """
-    fromroots(::AbstractMatrix{<:Number}, var=:x)
-    fromroots(::Type{<:AbstractPolynomial}, ::AbstractMatrix{<:Number}, var=:x)
+    fromroots(::AbstractMatrix{<:Number}; var=:x)
+    fromroots(::Type{<:AbstractPolynomial}, ::AbstractMatrix{<:Number}; var=:x)
 
 Construct a polynomial of the given type using the eigenvalues of the given matrix as the roots. If no type is given, defaults to `Polynomial`.
 
@@ -52,8 +52,8 @@ fromroots(P::Type{<:AbstractPolynomial}, A::AbstractMatrix{T}; var::SymbolLike =
 fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} = fromroots(Polynomial, eigvals(A), var = var)
 
 """
-    fit(x, y; [weights], deg=length(x) - 1)
-    fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x) - 1)
+    fit(x, y; [weights], deg=length(x) - 1, var=:x)
+    fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x) - 1, var=:x)
 
 Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref).
 """
@@ -237,6 +237,11 @@ Base.promote_rule(::Type{<:AbstractPolynomial{T}}, ::Type{<:AbstractPolynomial{S
 #=
 Inspection
 =#
+"""
+    length(::AbstractPolynomial)
+
+The length of the polynomial.
+"""
 Base.length(p::AbstractPolynomial) = length(p.coeffs)
 Base.size(p::AbstractPolynomial) = size(p.coeffs)
 Base.size(p::AbstractPolynomial, i::Integer) = size(p.coeffs, i)
@@ -265,7 +270,7 @@ degree(p::AbstractPolynomial) = iszero(p) ? -1 : length(p) - 1
 """
     order(::AbstractPolynomial)
 
-The order of the polynomial. This is the same as the length of the coefficients.
+The order of the polynomial. This is the same as [`length`](@ref).
 """
 order(p::AbstractPolynomial) = length(p)
 hasnan(p::AbstractPolynomial) = any(isnan.(p.coeffs))
@@ -363,12 +368,33 @@ function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: Abstrac
     return divrem(n, d)
 end
 
+"""
+    gcd(a::Polynomial, b::Polynomial)
+
+Find the greatest common denominator of two polynomials recursively using
+[Euclid's algorithm](http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm).
+
+# Examples
+
+```jldoctest
+julia> gcd(fromroots([1, 1, 2]), fromroots([1, 2, 3]))
+Polynomial(4.0 - 6.0*x + 2.0*x^2)
+
+```
+"""
 function Base.gcd(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
     p1, p2 = promote(p1, p1)
     return gcd(p1, p2)
 end
 
+"""
+    div(::AbstractPolynomial, ::AbstractPolynomial)
+"""
 Base.div(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[1]
+
+"""
+    rem(::AbstractPolynomial, ::AbstractPolynomial)
+"""
 Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 
 #=

@@ -1,9 +1,13 @@
 using LinearAlgebra
 
 export Polynomial,
-       Pade,
-       gcd
+       Pade
 
+"""
+    Polynomial(coeffs, var=:x)
+
+The most basic of polynomials.
+"""
 struct Polynomial{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
@@ -138,19 +142,6 @@ function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
     return P(q_coeff, num.var), P(r_coeff, num.var)
 end
 
-"""
-    gcd(a::Polynomial, b::Polynomial)
-
-Find the greatest common denominator of two polynomials recursively using
-[Euclid's algorithm](http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm).
-
-# Examples
-
-```julia
-julia> gcd(poly([1,1,2]), poly([1,2,3])) # returns (x-1)*(x-2)
-Polynomial(4.0 - 6.0⋅x + 2.0⋅x^2)
-```
-"""
 function Base.gcd(a::Polynomial{T}, b::Polynomial{S}) where {T,S}
   U       = typeof(one(T) / one(S))
   r₀ = convert(Polynomial{U}, a)

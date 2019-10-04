@@ -7,7 +7,13 @@ makedocs(modules = [Polynomials],
     sitename = "Polynomials.jl",
     authors = "Jameson Nash, Keno Fischer, and other contributors",
     pages = [
-        "Manual" => "index.md",
+        "Home" => "index.md",
+        "Usage" => "common.md",
+        "Polynomial Types" => [
+            "Polynomial" => "polynomials/polynomial.md",
+            "Chebyshev" => "polynomials/chebyshev.md",
+        ],
+        "Extending Polynomials" => "extending.md",
     ],
 )
 

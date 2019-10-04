@@ -5,6 +5,12 @@ Pade approximatio
 Note: This can be moved to polynomials/Polynomial.jl after Poly type is removed
 =#
 
+"""
+    Pade(::Polynomial, m::Int, n::Int)
+    Pade(::Polynomial, ::Polynomial)
+
+Return Pade approximation
+"""
 struct Pade{T <: Number,S <: Number}
     p::Union{Poly{T}, Polynomial{T}}
     q::Union{Poly{S}, Polynomial{S}}
@@ -64,5 +70,9 @@ function Pade(c::Poly{T}, m::Int, n::Int) where {T}
     Pade(rnew / vnew[0], vnew / vnew[0])
 end
 
+"""
+    (::Pade)(x)
 
+Evaluate at given points.
+"""
 (PQ::Pade)(x) = PQ.p(x) / PQ.q(x)
