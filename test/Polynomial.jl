@@ -461,5 +461,14 @@ end
 end
 
 @testset "Plotting" begin
-    
+    p = fromroots([-1, 1]) # x^2 - 1
+    range = -2:0.04:2
+    rec = apply_recipe(Dict{Symbol, Any}(), p)
+    @test getfield(rec[1], 1) == Dict{Symbol, Any}(:label => "-1 + x^2")
+    @test rec[1].args == (range, p.(range))
+
+    range = -1:0.02:1
+    rec = apply_recipe(Dict{Symbol, Any}(), p, -1, 1)
+    @test getfield(rec[1], 1) == Dict{Symbol, Any}(:label => "-1 + x^2")
+    @test rec[1].args == (range, p.(range))
 end
