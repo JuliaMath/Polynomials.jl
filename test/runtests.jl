@@ -3,6 +3,7 @@ using Test
 using LinearAlgebra
 using Polynomials
 using SpecialFunctions
+using RecipesBase
 
 import SparseArrays: sparse, nnz
 
