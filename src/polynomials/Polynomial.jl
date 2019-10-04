@@ -58,7 +58,7 @@ end
 function integral(p::Polynomial{T}, k::S) where {T,S <: Number}
     R = promote_type(eltype(one(T) / 1), S)
     if hasnan(p) || isnan(k)
-        return Polynomial{R}([NaN])
+        return Polynomial([NaN])
     end
     n = length(p)
     a2 = Vector{R}(undef, n + 1)
