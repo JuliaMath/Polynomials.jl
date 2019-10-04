@@ -90,7 +90,7 @@ end
 function companion(p::Polynomial{T}) where T
     d = length(p) - 1
     d < 1 && error("Series must have degree greater than 1")
-    d == 1 && return diagm([-p[0] / p[1]])
+    d == 1 && return diagm(0 => [-p[0] / p[1]])
 
     R = eltype(one(T) / p.coeffs[end])
     comp = diagm(-1 => ones(R, d - 1))

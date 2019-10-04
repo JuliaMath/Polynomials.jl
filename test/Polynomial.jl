@@ -149,7 +149,7 @@ end
 end
 
 @testset "Fitting" begin
-    xs = range(0, π, length = 10)
+    xs = range(0, stop = π, length = 10)
     ys = sin.(xs)
 
     p = fit(Polynomial, xs, ys)
@@ -163,7 +163,7 @@ end
     @test maximum(abs_error) <= 0.03
 
     # Test weighted
-    for W in [1, ones(size(xs)), diagm(ones(size(xs)))]
+    for W in [1, ones(size(xs)), diagm(0=>ones(size(xs)))]
         p = fit(Polynomial, xs, ys, weights = W, deg = 2)
         @test p.(xs) ≈ y_fit
     end
@@ -462,13 +462,13 @@ end
 
 @testset "Plotting" begin
     p = fromroots([-1, 1]) # x^2 - 1
-    range = -2:0.04:2
+    r = -2:0.04:2
     rec = apply_recipe(Dict{Symbol, Any}(), p)
     @test getfield(rec[1], 1) == Dict{Symbol, Any}(:label => "-1 + x^2")
-    @test rec[1].args == (range, p.(range))
+    @test rec[1].args == (r, p.(r))
 
-    range = -1:0.02:1
+    r = -1:0.02:1
     rec = apply_recipe(Dict{Symbol, Any}(), p, -1, 1)
     @test getfield(rec[1], 1) == Dict{Symbol, Any}(:label => "-1 + x^2")
-    @test rec[1].args == (range, p.(range))
+    @test rec[1].args == (r, p.(r))
 end
