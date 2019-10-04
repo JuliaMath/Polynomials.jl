@@ -18,9 +18,7 @@ include("polynomials/Poly.jl")
 include("pade.jl")
 include("deprecated.jl")
 
-
-# Original (to deprecate) code
-# include("show.jl")
+include("show.jl")
 # include("PlotRecipes.jl")
 
 end # module
