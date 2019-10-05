@@ -2,6 +2,10 @@
 
 The [`AbstractPolynomial`](@ref) type was made to be extended via a rich interface. To implement a new polynomial type, the following methods should be implemented. 
 
+```@docs
+AbstractPolynomial
+```
+
 | Function | Required | Description |
 |----------|:--------:|:------------|
 | Constructor | x | |

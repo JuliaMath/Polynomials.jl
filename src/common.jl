@@ -5,6 +5,7 @@ export fromroots,
        chop!,
        coeffs,
        degree,
+       domain,
        order,
        hasnan,
        roots,
@@ -45,7 +46,7 @@ Construct a polynomial of the given type using the eigenvalues of the given matr
 julia> A = [1 2; 3 4]; # (x - 5.37228)(x + 0.37228)
 
 julia> fromroots(A)
-Polynomial(-1.9999999999999998 - 5.0⋅x + 1.0⋅x^2)
+Polynomial(-1.9999999999999998 - 5.0*x + 1.0*x^2)
 ```
 """
 fromroots(P::Type{<:AbstractPolynomial}, A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} = fromroots(P, eigvals(A), var = var)
@@ -53,7 +54,7 @@ fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} = from
 
 """
     fit(x, y; [weights], deg=length(x) - 1, var=:x)
-    fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x) - 1, var=:x)
+    fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x)-1, var=:x)
 
 Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref).
 """
@@ -152,7 +153,8 @@ derivative(::AbstractPolynomial, ::Int)
 derivative(p::AbstractPolynomial) = derivative(p, 1)
 
 """
-    truncate!(::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
+    truncate!(::AbstractPolynomial{T}; 
+        rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
 
 In-place version of [`truncate`](@ref)
 """
@@ -164,7 +166,8 @@ function truncate!(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(
 end
 
 """
-    truncate(::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
+    truncate(::AbstractPolynomial{T}; 
+        rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
 
 Rounds off coefficients close to zero, as determined by `rtol` and `atol`, and then chops any leading zeros. Returns a new polynomial.
 """
@@ -173,7 +176,8 @@ function Base.truncate(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(r
 end
 
 """
-    chop!(::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
+    chop!(::AbstractPolynomial{T}; 
+        rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
 
 In-place version of [`chop`](@ref)
 """
@@ -190,7 +194,8 @@ function chop!(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)),
 end
 
 """
-    chop(::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
+    chop(::AbstractPolynomial{T}; 
+        rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
 
 Removes any leading coefficients that are approximately 0 (using `rtol` and `atol`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's.
 """
@@ -199,16 +204,44 @@ function Base.chop(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(
 end
 
 """
-    variable
+    variable(var=:x)
+    variable(::Type{<:AbstractPolynomial}, var=:x)
+
+Return the indeterminate of a given polynomial. If no type is give, will default to [`Polynomial`](@ref)
+
+# Examples
+```jldoctest
+julia> x = variable()
+Polynomial(x)
+
+julia> p = 100 + 24x - 3x^2
+Polynomial(100 + 24*x - 3*x^2)
+
+julia> roots((x - 3) * (x + 2))
+2-element Array{Float64,1}:
+  3.0
+ -2.0
+
+```
 """
 variable(::Type{P}, var::SymbolLike = :x) where {T,P <: AbstractPolynomial{T}} = P([zero(T), one(T)], var)
 variable(p::AbstractPolynomial, var::SymbolLike = :x) = variable(typeof(p), var)
-variable(var::SymbolLike = :x) = variable(Polynomial{Float64})
+variable(var::SymbolLike = :x) = variable(Polynomial{Int})
 
 #=
 Linear Algebra
 =#
+"""
+    norm(::AbstractPolynomial, p=2)
+
+Calculates the p-norm of the polynomial's coefficients
+"""
 LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2) = norm(coeffs(q), p)
+"""
+    conj(::AbstractPolynomial)
+
+Returns the complex conjugate of the polynomial
+"""
 LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = P(conj(coeffs(p)))
 LinearAlgebra.transpose(p::AbstractPolynomial) = p
 LinearAlgebra.transpose!(p::AbstractPolynomial) = p
@@ -243,6 +276,11 @@ Inspection
 The length of the polynomial.
 """
 Base.length(p::AbstractPolynomial) = length(p.coeffs)
+"""
+    size(::AbstractPolynomial, [i])
+
+Returns the size of the polynomials coefficients, along axis `i` if provided.
+"""
 Base.size(p::AbstractPolynomial) = size(p.coeffs)
 Base.size(p::AbstractPolynomial, i::Integer) = size(p.coeffs, i)
 Base.eltype(p::AbstractPolynomial{T}) where {T} = T
@@ -274,6 +312,13 @@ The order of the polynomial. This is the same as [`length`](@ref).
 """
 order(p::AbstractPolynomial) = length(p)
 hasnan(p::AbstractPolynomial) = any(isnan.(p.coeffs))
+
+"""
+    domain(::AbstractPolynomial)
+
+Returns the domain of the polynomial.
+"""
+domain(::AbstractPolynomial)
 
 #=
 indexing

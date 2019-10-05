@@ -1,4 +1,5 @@
-using Documenter, Polynomials
+using Documenter
+using Polynomials
 
 DocMeta.setdocmeta!(Polynomials, :DocTestSetup, :(using Polynomials); recursive=true)
 
@@ -8,13 +9,14 @@ makedocs(modules = [Polynomials],
     authors = "Jameson Nash, Keno Fischer, and other contributors",
     pages = [
         "Home" => "index.md",
-        "Usage" => "common.md",
+        "Reference/API" => "reference.md",
         "Polynomial Types" => [
             "Polynomial" => "polynomials/polynomial.md",
             "Chebyshev" => "polynomials/chebyshev.md",
         ],
-        "Extending Polynomials" => "extending.md",
+        "Extending" => "extending.md",
     ],
+    # doctest=:fix
 )
 
 deploydocs(repo = "github.com/JuliaMath/Polynomials.jl.git")

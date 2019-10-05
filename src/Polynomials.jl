@@ -1,6 +1,20 @@
 module Polynomials
 
+using LinearAlgebra
+
+export AbstractPolynomial
+
 const SymbolLike = Union{AbstractString,Char,Symbol}
+
+"""
+    AbstractPolynomial{<:Number}
+
+An abstract container for various polynomials. 
+
+# Properties
+- `coeffs` - The coefficients of the polynomial
+- `var` - The indeterminate of the polynomial
+"""
 abstract type AbstractPolynomial{T <: Number} end
 
 # Interface for all AbstractPolynomials

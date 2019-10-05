@@ -1,3 +1,8 @@
+#=
+This type is only here to provide stability while deprecating. This will eventually be removed in favor
+of `Polynomial`
+=#
+
 export Poly
 
 struct Poly{T} <: AbstractPolynomial{T}

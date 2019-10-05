@@ -1,12 +1,30 @@
-using LinearAlgebra
-
-export Polynomial,
-       Pade
+export Polynomial
 
 """
-    Polynomial(coeffs, var=:x)
+    Polynomial{T<:Number}(coeffs::AbstractVector{T}, var=:x)
 
-The most basic of polynomials.
+Construct a polynomial from its coefficients `a`, lowest order first, optionally in
+terms of the given variable `x`. `x` can be a character, symbol, or string.
+
+If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct this through
+`Polynomial([a_0, a_1, ..., a_n])`.
+
+The usual arithmetic operators are overloaded to work with polynomials as well as
+with combinations of polynomials and scalars. However, operations involving two
+polynomials of different variables causes an error.
+
+# Examples
+
+```jldoctest
+julia> Polynomial([1, 0, 3, 4])
+Polynomial(1 + 3*x^2 + 4*x^3)
+
+julia> Polynomial([1, 2, 3], :s)
+Polynomial(1 + 2*s + 3*s^2)
+
+julia> one(Polynomial)
+Polynomial(1.0)
+```
 """
 struct Polynomial{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
