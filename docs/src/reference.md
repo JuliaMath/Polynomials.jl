@@ -73,7 +73,7 @@ vander
 
 ## Plotting
 
-Polynomials can be plotted directly using [Plot.jl](https://github.com/juliaplots/plots.jl). 
+Polynomials can be plotted directly using [Plots.jl](https://github.com/juliaplots/plots.jl).
 
 ```julia
 plot(::AbstractPolynomial; kwds...)
@@ -85,4 +85,4 @@ will automatically determine a range based on the critical points (roots, extrem
 plot(::AbstractPolynomial, a, b; kwds...)
 ```
 
-will plot the polynomial within the range `[a, b]`. 
+will plot the polynomial within the range `[a, b]`.

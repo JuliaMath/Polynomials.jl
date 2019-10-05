@@ -5,7 +5,7 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMath.github.io/Polynomials.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaMath.github.io/Polynomials.jl/dev)
 [![Build Status](https://travis-ci.org/JuliaMath/Polynomials.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Polynomials.jl)
-[![Coverage Status](https://coveralls.io/repos/github/JuliaMath/Polynomials.jl/badge.svg)](https://coveralls.io/github/JuliaMath/Polynomials.jl)
+[![codecov](https://codecov.io/gh/JuliaMath/Polynomials.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMath/Polynomials.jl)
 
 
 ## Installation
