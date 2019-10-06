@@ -131,21 +131,6 @@ For example. for a `Polynomial` this would show the term `pj * var^j`.
 """
 function showterm(io::IO, ::Type{AbstractPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} end
 
-# For Polynomials
-
-function showterm(io::IO, ::Type{Polynomial{T}}, pj::T, var, j, first::Bool, mimetype) where {T}
-    if pj == zero(T) return false end
-    pj = printsign(io, pj, first, mimetype)
-    if !(pj == one(T) && !(showone(T) || j == 0))   
-        printcoefficient(io, pj, j, mimetype)
-    end
-    printproductsign(io, pj, j, mimetype)
-    printexponent(io, var, j, mimetype)
-    return true
-end
-
-showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimetype) where{T} = showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
-
 @deprecate showterm(io::IO, pj::T, var, j, first::Bool, mimetype) where {T} showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
 
 

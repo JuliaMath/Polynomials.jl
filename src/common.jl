@@ -6,6 +6,7 @@ export fromroots,
        coeffs,
        degree,
        domain,
+       scale_to_domain,
        order,
        hasnan,
        roots,
@@ -249,22 +250,6 @@ LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 #=
 Conversions
 =#
-macro register(poly)
-    quote
-    Base.convert(::Type{P}, p::P) where {P <: $poly} = p
-    Base.convert(::Type{$poly{T}}, p::$poly) where {T} = $poly(T.(p.coeffs), p.var)
-    Base.convert(::Type{$poly{T}}, x) where {T} = $poly(T.(x))
-    Base.promote_rule(::Type{$poly{T}}, ::Type{$poly{S}}) where {T,S} = $poly{promote_type(T, S)}
-    Base.promote_rule(::Type{$poly{T}}, ::Type{S}) where {T,S <: Number} = $poly{promote_type(T, S)}
-
-    function (p::$poly)(x::AbstractVector)
-        Base.depwarn("Calling p(x::AbstractVector is deprecated. Use p.(x) instead.", Symbol("(p::AbstractPolynomial)"))
-        return p.(x)
-    end
-
-    end
-end
-
 Base.promote_rule(::Type{<:AbstractPolynomial{T}}, ::Type{<:AbstractPolynomial{S}}) where {T,S} = Polynomial{promote_type(T, S)}
 
 #=
@@ -314,11 +299,33 @@ order(p::AbstractPolynomial) = length(p)
 hasnan(p::AbstractPolynomial) = any(isnan.(p.coeffs))
 
 """
-    domain(::AbstractPolynomial)
+    domain(::Type{<:AbstractPolynomial})
 
 Returns the domain of the polynomial.
 """
-domain(::AbstractPolynomial)
+domain(::Type{<:AbstractPolynomial})
+domain(::P) where {P<:AbstractPolynomial} = domain(P)
+
+"""
+    scale_to_domain(::Type{<:AbstractPolynomial}, x)
+
+Given values of x that are assumed to be unbounded (-∞, ∞), return values rescaled to the domain of the given polynomial.
+
+# Examples
+```jldoctest
+julia> x = -10:10
+-10:10
+
+julia> scale_to_domain(ChebyshevT, x)
+-1.0:0.1:1.0
+
+```
+"""
+function scale_to_domain(P::Type{<:AbstractPolynomial}, x)
+    d = domain(P)
+    x_scaled = x .* (last(d) - first(d)) / (last(x) - first(x))
+end
+scale_to_domain(::P, x) where {P<:AbstractPolynomial} = scale_to_domain(P, x)
 
 #=
 indexing

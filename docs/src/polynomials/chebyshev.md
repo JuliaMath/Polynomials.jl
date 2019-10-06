@@ -8,4 +8,9 @@ end
 
 ## First Kind
 
+```@docs
+ChebyshevT
+ChebyshevT
+```
+
 ## Second Kind

@@ -37,15 +37,9 @@ struct Polynomial{T <: Number} <: AbstractPolynomial{T}
     end
 end
 
-Polynomial(a::AbstractVector{T}, var::SymbolLike = :x) where {T} = Polynomial{T}(a, Symbol(var))
-Polynomial(n::Number, var = :x) = Polynomial([n], var)
-Polynomial{T}(n::S, var = :x) where {T,S <: Number} = Polynomial(T(n), var)
-Polynomial{T}(x::AbstractVector{S}, var = :x) where {T,S <: Number} = Polynomial(T.(x), var)
-Polynomial(x, var = :x) = Polynomial(collect(x), var)
-
 @register Polynomial
 
-domain(::Type{<:Polynomial}) = (-∞, ∞)
+domain(::Type{<:Polynomial}) = Interval(-Inf, Inf)
 scale_to_domain(::Type{<:Polynomial}, x) = x
 
 function (p::Polynomial{T})(x::S) where {T,S}
@@ -58,7 +52,7 @@ function (p::Polynomial{T})(x::S) where {T,S}
     return y    
 end
 
-function fromroots(P::Type{Polynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
+function fromroots(P::Type{<:Polynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)
     c[1] = one(T)
@@ -174,4 +168,15 @@ function Base.gcd(a::Polynomial{T}, b::Polynomial{S}) where {T,S}
     iter      += 1
   end
   return r₀
+end
+
+function showterm(io::IO, ::Type{Polynomial{T}}, pj::T, var, j, first::Bool, mimetype) where {T}
+    if pj == zero(T) return false end
+    pj = printsign(io, pj, first, mimetype)
+    if !(pj == one(T) && !(showone(T) || j == 0))   
+        printcoefficient(io, pj, j, mimetype)
+    end
+    printproductsign(io, pj, j, mimetype)
+    printexponent(io, var, j, mimetype)
+    return true
 end

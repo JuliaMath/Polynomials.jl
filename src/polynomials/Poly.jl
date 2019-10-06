@@ -20,17 +20,14 @@ struct Poly{T} <: AbstractPolynomial{T}
         new{T}(a[1:a_last], Symbol(var))
       end
     end
-  end
-
-Poly(n::Number, var::SymbolLike = :x) = Poly([n], var)
-Poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S} = Poly(convert(Vector{T}, x), var)
+end
 
 @register Poly
 
-Base.convert(P::Type{Polynomial}, p::Poly) = P(p.coeffs, p.var)
-Base.convert(P::Type{Polynomial{T}}, p::Poly{S}) where {T,S} = P(T.(p.coeffs), p.var)
+Base.convert(::Type{<:Polynomial}, p::Poly{T}) where {T} = Polynomial(p.coeffs, p.var)
+Base.convert(::Type{Polynomial{T}}, p::Poly{S}) where {T,S} = Polynomial(T.(p.coeffs), p.var)
 
-domain(::Type{<:Poly}) = (-∞, ∞)
+domain(::Type{<:Poly}) = Interval(-Inf, Inf)
 scale_to_domain(::Type{<:Poly}, x) = x
 
 function (p::Poly{T})(x::S) where {T,S}
@@ -43,7 +40,7 @@ function (p::Poly{T})(x::S) where {T,S}
     return y    
 end
 
-function fromroots(P::Type{Poly}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
+function fromroots(P::Type{<:Poly}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)
     c[1] = one(T)
@@ -165,3 +162,5 @@ function Base.gcd(a::Poly{T}, b::Poly{S}) where {T,S}
   end
   return r₀
 end
+
+showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimetype) where{T} = showterm(io, Polynomial{T}, pj, var, j, first, mimetype)

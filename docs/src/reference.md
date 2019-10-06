@@ -21,6 +21,7 @@ degree
 length
 size
 domain
+scale_to_domain
 chop
 chop!
 truncate
