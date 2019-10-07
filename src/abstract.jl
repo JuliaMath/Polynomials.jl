@@ -13,12 +13,12 @@ An abstract container for various polynomials.
 """
 abstract type AbstractPolynomial{T <: Number} end
 
+
 macro register(name)
     poly = esc(name)
     quote
     Base.convert(::Type{P}, p::P) where {P <: $poly} = p
-    Base.convert(::Type{$poly{T}}, p::$poly) where {T} = $poly(T.(p.coeffs), p.var)
-    Base.convert(::Type{$poly{T}}, x) where {T} = $poly(T.(x))
+    Base.convert(P::Type{<:$poly}, p::$poly) where {T} = P(p.coeffs, p.var)
     Base.promote_rule(::Type{$poly{T}}, ::Type{$poly{S}}) where {T,S} = $poly{promote_type(T, S)}
     Base.promote_rule(::Type{$poly{T}}, ::Type{S}) where {T,S <: Number} = $poly{promote_type(T, S)}
 

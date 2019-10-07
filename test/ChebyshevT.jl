@@ -51,6 +51,11 @@ end
     x = -1:0.5:1
     expected = [2.0, 0.75, 1.0, 2.75, 6.0]
     @test c1.(x) == expected
+end
 
-    @test c1 == Polynomial([1, 2, 3])
+@testset "Conversions" begin
+    c1 = ChebyshevT([2.5, 2.0, 1.5])
+    @test c1 ≈ Polynomial([1, 2, 3])
+    @test convert(Polynomial{Float64}, c1) == Polynomial{Float64}([1, 2, 3])
+
 end

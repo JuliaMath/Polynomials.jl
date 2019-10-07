@@ -45,11 +45,11 @@ scale_to_domain(::Type{<:Polynomial}, x) = x
 function (p::Polynomial{T})(x::S) where {T,S}
     R = promote_type(T, S)
     length(p) == 0 && return zero(R)
-    y = convert(R, p[end])
+    b = convert(R, p[end])
     @inbounds for i in (lastindex(p) - 1):-1:0
-        y = p[i] + x * y
+        b = p[i] + x * b
     end
-    return y    
+    return b
 end
 
 function fromroots(P::Type{<:Polynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}

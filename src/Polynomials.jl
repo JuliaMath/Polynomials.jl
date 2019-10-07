@@ -4,6 +4,8 @@ using LinearAlgebra
 using Intervals
 
 include("abstract.jl")
+include("show.jl")
+include("plots.jl")
 
 # Polynomials
 include("polynomials/Polynomial.jl")
@@ -17,7 +19,5 @@ include("deprecated.jl")
 
 # Interface for all AbstractPolynomials
 include("common.jl")
-include("show.jl")
-include("plots.jl")
 
 end # module

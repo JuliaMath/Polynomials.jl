@@ -6,6 +6,9 @@ DocTestSetup = quote
 end
 ```
 
+!!! warning
+  The Chebyshev polynomials are not fully implemented, yet.
+
 ## First Kind
 
 ```@docs

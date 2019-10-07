@@ -207,6 +207,7 @@ end
 """
     variable(var=:x)
     variable(::Type{<:AbstractPolynomial}, var=:x)
+    variable(p::AbstractPolynomial, var=p.var)
 
 Return the indeterminate of a given polynomial. If no type is give, will default to [`Polynomial`](@ref)
 
@@ -225,8 +226,8 @@ julia> roots((x - 3) * (x + 2))
 
 ```
 """
-variable(::Type{P}, var::SymbolLike = :x) where {T,P <: AbstractPolynomial{T}} = P([zero(T), one(T)], var)
-variable(p::AbstractPolynomial, var::SymbolLike = :x) = variable(typeof(p), var)
+variable(::Type{P}, var::SymbolLike = :x) where P <: AbstractPolynomial = P([0, 1], var)
+variable(p::AbstractPolynomial, var::SymbolLike = p.var) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int})
 
 #=
@@ -250,6 +251,8 @@ LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 #=
 Conversions
 =#
+Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
+Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
 Base.promote_rule(::Type{<:AbstractPolynomial{T}}, ::Type{<:AbstractPolynomial{S}}) where {T,S} = Polynomial{promote_type(T, S)}
 
 #=
@@ -269,7 +272,7 @@ Returns the size of the polynomials coefficients, along axis `i` if provided.
 Base.size(p::AbstractPolynomial) = size(p.coeffs)
 Base.size(p::AbstractPolynomial, i::Integer) = size(p.coeffs, i)
 Base.eltype(p::AbstractPolynomial{T}) where {T} = T
-Base.eltype(::Type{P}) where {P<:AbstractPolynomial} = P
+Base.eltype(::Type{P}) where {P <: AbstractPolynomial} = P
 function Base.iszero(p::AbstractPolynomial)
     if length(p) == 0 return true end
     return length(p) == 1 && p[0] == 0
@@ -304,7 +307,7 @@ hasnan(p::AbstractPolynomial) = any(isnan.(p.coeffs))
 Returns the domain of the polynomial.
 """
 domain(::Type{<:AbstractPolynomial})
-domain(::P) where {P<:AbstractPolynomial} = domain(P)
+domain(::P) where {P <: AbstractPolynomial} = domain(P)
 
 """
     scale_to_domain(::Type{<:AbstractPolynomial}, x)
@@ -325,7 +328,7 @@ function scale_to_domain(P::Type{<:AbstractPolynomial}, x)
     d = domain(P)
     x_scaled = x .* (last(d) - first(d)) / (last(x) - first(x))
 end
-scale_to_domain(::P, x) where {P<:AbstractPolynomial} = scale_to_domain(P, x)
+scale_to_domain(::P, x) where {P <: AbstractPolynomial} = scale_to_domain(P, x)
 
 #=
 indexing
@@ -343,7 +346,7 @@ function Base.iterate(p::AbstractPolynomial, state)
 end
 
 # getindex
-function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T<:Number}
+function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
     idx < 0 && throw(BoundsError(p, idx))
     idx ≥ length(p) && return zero(T)
     return p.coeffs[idx + 1]
@@ -391,7 +394,7 @@ Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     T = promote_type(P, S)
     return T(p.coeffs .* c, p.var)
-    end
+end
 function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
     R = promote_type(P, eltype(one(T) / one(S)))
     return R(p.coeffs ./ c, p.var)
