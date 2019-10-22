@@ -191,3 +191,22 @@ function printpoly(io::IO, p::ChebyshevT{T}, mimetype = MIME"text/plain"(); desc
     print(io, coeffs(chopped))
     return nothing
 end
+
+#=
+zseries
+=#
+
+function _c_to_z(cs::AbstractVector{T}) where {T}
+    n = length(cs)
+    U = promote_type(T, typeof(one(T) / 2))
+    zs = Vector{U}(undef, 2n - 1)
+    zs[n:end] = cs ./ 2
+    return zs .+ reverse(zs)
+end
+
+function _z_to_c(z::AbstractVector{T}) where {T}
+    n = (length(z) + 1) ÷ 2
+    cs = z[n:end]
+    cs[2:n] *= 2
+    return cs
+end

@@ -59,3 +59,13 @@ end
     @test convert(Polynomial{Float64}, c1) == Polynomial{Float64}([1, 2, 3])
 
 end
+
+@testset "z-series" for i in 1:5
+    # c to z
+    input = append!([2], ones(i))
+    target = append!(append!(0.5.*ones(i), 2), 0.5.*ones(i))
+    zs = Polynomials._c_to_z(input)
+    @test zs == target
+    c = Polynomials._z_to_c(zs)
+    @test c == input
+end
