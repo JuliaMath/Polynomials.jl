@@ -59,16 +59,21 @@ function (ch::ChebyshevT{T})(x::S) where {T,S}
     return R(c0 + c1 * x)
 end
 
-##
-# function fromroots(P::Type{<:ChebyshevT}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
-#     n = length(r)
-#     c = zeros(T, n + 1)
-#     c[1] = one(T)
-#     @inbounds for j = 2:n, i = j:-1:1
-#         c[i + 1] = c[i + 1] - r[j] * c[i]
-#     end
-#     return ChebyshevT(reverse(c), var)
-# end
+function fromroots(P::Type{<:ChebyshevT}, roots::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
+    p = [P([-r, 1]) for r in roots]
+    n = length(p)
+    while n > 1
+        m, r = divrem(n, 2)
+        tmp = [p[i] * p[i + m] for i in 1:m]
+        if r > 0
+            tmp[1] *= p[end]
+        end
+        p = tmp
+        n = m
+    end
+    # return truncate!(reduce(*, p))
+    return truncate!(p[1])
+end
 
 function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     A = Matrix{T}(undef, length(x), n + 1)

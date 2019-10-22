@@ -45,6 +45,17 @@ end
     @test degree(p0) == -1
 end
 
+@testset "Roots" begin
+    # from roots
+    for i in 1:5
+        roots = cos.(range(-π, 0, length = 2i + 1)[2:2:end])
+        target = ChebyshevT(append!(zeros(i), [1]))
+        res = fromroots(ChebyshevT, roots) .* 2^(i-1)
+        @test res == target
+    end
+    @test fromroots(ChebyshevT, [-1, 0, 1]) == ChebyshevT([0, -0.25, 0, 0.25])
+    @test fromroots(ChebyshevT, [-1im, 1im]) ≈ ChebyshevT([1.5 + 0im, 0 + 0im, 0.5 + 0im])
+end
 
 @testset "Values" begin
     c1 = ChebyshevT([2.5, 2.0, 1.5]) #1 + 2x + 3x^2
