@@ -6,6 +6,7 @@ using Intervals
 include("abstract.jl")
 include("show.jl")
 include("plots.jl")
+include("contrib.jl")
 
 # Polynomials
 include("polynomials/Polynomial.jl")

@@ -134,17 +134,15 @@ function Base.:+(p1::ChebyshevT, p2::ChebyshevT)
 end
 
 
-# function Base.:*(p1::ChebyshevT{T}, p2::ChebyshevT{S}) where {T,S}
-#     p1.var != p2.var && error("Polynomials must have same variable")
-#     n = length(p1) - 1
-#     m = length(p2) - 1
-#     R = promote_type(T, S)
-#     c = zeros(R, m + n + 1)
-#     for i = 0:n, j = 0:m
-#         c[i + j + 1] += p1[i] * p2[j]
-#     end
-#     return ChebyshevT(c, p1.var)
-# end
+function Base.:*(p1::ChebyshevT{T}, p2::ChebyshevT{S}) where {T,S}
+    p1.var != p2.var && error("Polynomials must have same variable")
+    z1 = _c_to_z(p1.coeffs)
+    z2 = _c_to_z(p2.coeffs)
+    prod = fastconv(z1, z2)
+    ret = ChebyshevT(_z_to_c(prod), p1.var)
+    return truncate!(ret)
+end
+
 ##
 # function Base.divrem(num::ChebyshevT{T}, den::ChebyshevT{S}) where {T,S}
 #     num.var != den.var && error("Polynomials must have same variable")
@@ -154,7 +152,7 @@ end
 #     R = typeof(one(T) / one(S))
 #     P = ChebyshevT{R}
 #     deg = n - m + 1
-#     if deg ≤ 0 
+#     if deg ≤ 0
 #         return zero(P), convert(P, num)
 #     end
 #     q_coeff = zeros(R, deg)
