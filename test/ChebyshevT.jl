@@ -71,6 +71,20 @@ end
 
 end
 
+@testset "Companion" begin
+    c_null = ChebyshevT(Int[])
+    c_1 = ChebyshevT([1])
+    @test_throws ErrorException companion(c_null)
+    @test_throws ErrorException companion(c_1)
+    for i in 1:5
+        coef = push!(zeros(i), 1)
+        c = ChebyshevT(coef)
+        @test size(companion(c)) == (i, i)
+    end
+    c = ChebyshevT([1, 2])
+    @test companion(c)[1, 1] == -0.5
+end
+
 @testset "Arithmetic $i, $j" for i in 1:5, j in 1:5
     # multiplication
     target = zeros(i + j + 1)

@@ -116,19 +116,21 @@ end
 # end
 
 ##
-# function companion(p::ChebyshevT{T}) where T
-#     d = length(p) - 1
-#     d < 1 && error("Series must have degree greater than 1")
-#     d == 1 && return diagm(0 => [-p[0] / p[1]])
-#     R = eltype(one(T) / p.coeffs[end])
+function companion(p::ChebyshevT{T}) where T
+    d = length(p) - 1
+    d < 1 && error("Series must have degree greater than 1")
+    d == 1 && return diagm(0 => [-p[0] / p[1]])
+    R = eltype(one(T) / one(T))
 
-#     comp = diagm(-1 => ones(d - 1),
-#                   1 => ones(d - 1))
-#     comp[2, 1] = 2
-#     monics = p.coeffs ./ p.coeffs[end]
-#     comp[:, end] .= -monics[1:d]
-#     return R.(comp ./ 2)
-# end
+    scl = append!([1.0], √5 .* ones(d - 1))
+
+    diag = append!([√5], 0.5 .* ones(d - 2))
+    comp = diagm(-1 => diag,
+                  1 => diag)
+    monics = p.coeffs ./ p.coeffs[end]
+    comp[:, end] .-= monics[1:d] .* scl ./ scl[end]
+    return R.(comp ./ 2)
+end
 
 function Base.:+(p1::ChebyshevT, p2::ChebyshevT)
     p1.var != p2.var && error("Polynomials must have same variable")
