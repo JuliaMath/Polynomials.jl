@@ -45,14 +45,14 @@ end
     @test degree(p0) == -1
 end
 
+@testset "Roots $i" for i in 1:5
+    roots = cos.(range(-π, 0, length = 2i + 1)[2:2:end])
+    target = ChebyshevT(push!(zeros(i), 1))
+    res = fromroots(ChebyshevT, roots) .* 2^(i - 1)
+    @test res == target
+end
+
 @testset "Roots" begin
-    # from roots
-    for i in 1:5
-        roots = cos.(range(-π, 0, length = 2i + 1)[2:2:end])
-        target = ChebyshevT(append!(zeros(i), [1]))
-        res = fromroots(ChebyshevT, roots) .* 2^(i - 1)
-        @test res == target
-    end
     @test fromroots(ChebyshevT, [-1, 0, 1]) == ChebyshevT([0, -0.25, 0, 0.25])
     @test fromroots(ChebyshevT, [-1im, 1im]) ≈ ChebyshevT([1.5 + 0im, 0 + 0im, 0.5 + 0im])
 end
@@ -71,30 +71,27 @@ end
 
 end
 
+@testset "Arithmetic $i, $j" for i in 1:5, j in 1:5
+    # multiplication
+    target = zeros(i + j + 1)
+    target[end] += 0.5
+    target[abs(i - j) + 1] += 0.5
+    c1 = ChebyshevT(push!(zeros(i), 1))
+    c2 = ChebyshevT(push!(zeros(j), 1))
+    @test c1 * c2 ≈ ChebyshevT(target)
+
+    # divrem
+    target = c1 + c2
+    quo, rem = divrem(target, c1)
+    res = quo * c1 + rem
+    @test res ≈ target
+end
+
 @testset "Arithmetic" begin
     # multiplication
-    for i in 1:5, j in 1:5
-        target = zeros(i + j + 1)
-        target[end] += 0.5
-        target[abs(i - j) + 1] += 0.5
-        c1 = ChebyshevT(append!(zeros(i), [1]))
-        c2 = ChebyshevT(append!(zeros(j), [1]))
-        @test c1 * c2 ≈ ChebyshevT(target)
-    end
-
     c1 = ChebyshevT([1, 2, 3])
     c2 = ChebyshevT([3, 2, 1])
     @test c1 * c2 == ChebyshevT([6.5, 12, 12, 4, 1.5])
-
-    # division remainder
-    for i in 1:5, j in 1:5
-        c1 = ChebyshevT(append!(zeros(i), [1]))
-        c2 = ChebyshevT(append!(zeros(j), [1]))
-        target = c1 + c2
-        quo, rem = divrem(target, c1)
-        res = quo * c1 + rem
-        @test res ≈ target
-    end
 
     c1 = ChebyshevT([1, 2, 3])
     c2 = ChebyshevT([3, 2, 1])
@@ -117,7 +114,7 @@ end
 @testset "z-series" for i in 1:5
     # c to z
     input = append!([2], ones(i))
-    target = append!(append!(0.5 .* ones(i), 2), 0.5 .* ones(i))
+    target = append!(push!(0.5 .* ones(i), 2), 0.5 .* ones(i))
     zs = Polynomials._c_to_z(input)
     @test zs == target
     c = Polynomials._z_to_c(zs)
