@@ -71,7 +71,6 @@ function fromroots(P::Type{<:ChebyshevT}, roots::AbstractVector{T}; var::SymbolL
         p = tmp
         n = m
     end
-    # return truncate!(reduce(*, p))
     return truncate!(p[1])
 end
 
@@ -149,29 +148,28 @@ function Base.:*(p1::ChebyshevT{T}, p2::ChebyshevT{S}) where {T,S}
 end
 
 ##
-# function Base.divrem(num::ChebyshevT{T}, den::ChebyshevT{S}) where {T,S}
-#     num.var != den.var && error("Polynomials must have same variable")
-#     n = length(num) - 1
-#     m = length(den) - 1
-#     if m == 0 && den[0] ≈ 0 throw(DivideError()) end
-#     R = typeof(one(T) / one(S))
-#     P = ChebyshevT{R}
-#     deg = n - m + 1
-#     if deg ≤ 0
-#         return zero(P), convert(P, num)
-#     end
-#     q_coeff = zeros(R, deg)
-#     r_coeff = R.(num[0:n])
-#     @inbounds for i in n:-1:m
-#         q = r_coeff[i + 1] / den[m]
-#         q_coeff[i - m + 1] = q
-#         @inbounds for j in 0:m
-#             elem = den[j] * q
-#             r_coeff[i - m + j + 1] -= elem
-#         end
-#     end
-#     return P(q_coeff, num.var), P(r_coeff, num.var)
-# end
+function Base.divrem(num::ChebyshevT{T}, den::ChebyshevT{S}) where {T,S}
+    num.var != den.var && error("Polynomials must have same variable")
+    n = length(num) - 1
+    m = length(den) - 1
+
+    R = typeof(one(T) / one(S))
+    P = ChebyshevT{R}
+
+    if n < m
+        return zero(P), convert(P, num)
+    elseif m == 0
+        den[0] ≈ 0 && throw(DivideError())
+        return num ./ den[end], zero(P)
+    end
+    
+    znum = _c_to_z(num.coeffs)
+    zden = _c_to_z(den.coeffs)
+    quo, rem = _z_division(znum, zden)
+    q_coeff = _z_to_c(quo)
+    r_coeff = _z_to_c(rem)
+    return P(q_coeff, num.var), P(r_coeff, num.var)
+end
 # ##
 # function Base.gcd(a::ChebyshevT{T}, b::ChebyshevT{S}) where {T,S}
 #     U       = typeof(one(T) / one(S))
@@ -212,4 +210,40 @@ function _z_to_c(z::AbstractVector{T}) where {T}
     cs = z[n:end]
     cs[2:n] *= 2
     return cs
+end
+
+function _z_division(z1::AbstractVector{T}, z2::AbstractVector{S}) where {T,S}
+    R = eltype(one(T) / one(S))
+    length(z1)
+    length(z2)
+    if length(z2) == 1
+        z1 ./= z2
+        return z1, zero(R)
+    elseif length(z1) < length(z2)
+        return zero(R), R.(z1)
+    end
+    dlen = length(z1) - length(z2)
+    scl = z2[1]
+    z2 ./= scl
+    quo = Vector{R}(undef, dlen + 1)
+    i = 1
+    j = dlen + 1
+    while i < j
+        r = z1[i]
+        quo[i] = z1[i]
+        quo[end - i + 1] = r
+        tmp = r .* z2
+        z1[i:i + length(z2) - 1] .-= tmp
+        z1[j:j + length(z2) - 1] .-= tmp
+        i += 1
+        j -= 1
+    end
+        
+    r = z1[i]
+    quo[i] = r
+    tmp = r * z2
+    z1[i:i + length(z2) - 1] .-= tmp
+    quo ./= scl
+    rem = z1[i + 1:i - 2 + length(z2)]
+    return quo, rem
 end

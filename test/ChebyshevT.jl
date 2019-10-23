@@ -50,7 +50,7 @@ end
     for i in 1:5
         roots = cos.(range(-π, 0, length = 2i + 1)[2:2:end])
         target = ChebyshevT(append!(zeros(i), [1]))
-        res = fromroots(ChebyshevT, roots) .* 2^(i-1)
+        res = fromroots(ChebyshevT, roots) .* 2^(i - 1)
         @test res == target
     end
     @test fromroots(ChebyshevT, [-1, 0, 1]) == ChebyshevT([0, -0.25, 0, 0.25])
@@ -86,6 +86,27 @@ end
     c2 = ChebyshevT([3, 2, 1])
     @test c1 * c2 == ChebyshevT([6.5, 12, 12, 4, 1.5])
 
+    # division remainder
+    for i in 1:5, j in 1:5
+        c1 = ChebyshevT(append!(zeros(i), [1]))
+        c2 = ChebyshevT(append!(zeros(j), [1]))
+        target = c1 + c2
+        quo, rem = divrem(target, c1)
+        res = quo * c1 + rem
+        @test res ≈ target
+    end
+
+    c1 = ChebyshevT([1, 2, 3])
+    c2 = ChebyshevT([3, 2, 1])
+    d, r = divrem(c1, c2)
+    @test coeffs(d) ≈ [3]
+    @test coeffs(r) ≈ [-8, -4]
+
+    c2 = ChebyshevT([0, 1, 2, 3])
+    d, r = divrem(c2, c1)
+    @test coeffs(d) ≈ [0, 2]
+    @test coeffs(r) ≈ [-2, -4]
+
 end
 
 @testset "z-series" for i in 1:5
@@ -96,4 +117,11 @@ end
     @test zs == target
     c = Polynomials._z_to_c(zs)
     @test c == input
+
+    # div
+    z1 = [0.5, 0.0, 0.5]
+    z2 = [0.5, 0.0, 0.5]
+    q, r = Polynomials._z_division(z1, z2)
+    @test q == [1]
+    @test r == [0]
 end
