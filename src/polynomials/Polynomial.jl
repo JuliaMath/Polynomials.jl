@@ -154,22 +154,6 @@ function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
     return P(q_coeff, num.var), P(r_coeff, num.var)
 end
 
-function Base.gcd(a::Polynomial{T}, b::Polynomial{S}) where {T,S}
-  U       = typeof(one(T) / one(S))
-  r₀ = convert(Polynomial{U}, a)
-  r₁ = truncate!(convert(Polynomial{U}, b))
-  iter    = 1
-  itermax = length(b)
-
-  while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
-    _, rtemp  = divrem(r₀, r₁)
-    r₀        = r₁
-    r₁        = truncate(rtemp)
-    iter      += 1
-  end
-  return r₀
-end
-
 function showterm(io::IO, ::Type{Polynomial{T}}, pj::T, var, j, first::Bool, mimetype) where {T}
     if pj == zero(T) return false end
     pj = printsign(io, pj, first, mimetype)

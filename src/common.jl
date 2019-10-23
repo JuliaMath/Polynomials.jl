@@ -437,9 +437,18 @@ Polynomial(4.0 - 6.0*x + 2.0*x^2)
 
 ```
 """
-function Base.gcd(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    p1, p2 = promote(p1, p1)
-    return gcd(p1, p2)
+function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T, S}
+    r₀, r₁ = promote(p1, p2)
+    iter    = 1
+    itermax = length(r₁)
+  
+    while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
+      _, rtemp  = divrem(r₀, r₁)
+      r₀        = r₁
+      r₁        = truncate(rtemp)
+      iter      += 1
+    end
+    return r₀
 end
 
 """

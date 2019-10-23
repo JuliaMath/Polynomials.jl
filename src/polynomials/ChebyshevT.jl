@@ -147,7 +147,6 @@ function Base.:*(p1::ChebyshevT{T}, p2::ChebyshevT{S}) where {T,S}
     return truncate!(ret)
 end
 
-##
 function Base.divrem(num::ChebyshevT{T}, den::ChebyshevT{S}) where {T,S}
     num.var != den.var && error("Polynomials must have same variable")
     n = length(num) - 1
@@ -162,7 +161,7 @@ function Base.divrem(num::ChebyshevT{T}, den::ChebyshevT{S}) where {T,S}
         den[0] ≈ 0 && throw(DivideError())
         return num ./ den[end], zero(P)
     end
-    
+
     znum = _c_to_z(num.coeffs)
     zden = _c_to_z(den.coeffs)
     quo, rem = _z_division(znum, zden)
@@ -170,22 +169,6 @@ function Base.divrem(num::ChebyshevT{T}, den::ChebyshevT{S}) where {T,S}
     r_coeff = _z_to_c(rem)
     return P(q_coeff, num.var), P(r_coeff, num.var)
 end
-# ##
-# function Base.gcd(a::ChebyshevT{T}, b::ChebyshevT{S}) where {T,S}
-#     U       = typeof(one(T) / one(S))
-#     r₀ = convert(ChebyshevT{U}, a)
-#     r₁ = truncate!(convert(ChebyshevT{U}, b))
-#     iter    = 1
-#     itermax = length(b)
-
-#     while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
-#         _, rtemp  = divrem(r₀, r₁)
-#         r₀        = r₁
-#         r₁        = truncate(rtemp)
-#         iter      += 1
-#     end
-#     return r₀
-# end
 
 function printpoly(io::IO, p::ChebyshevT{T}, mimetype = MIME"text/plain"(); descending_powers = false, offset::Int = 0) where {T}
     chopped = chop(p)

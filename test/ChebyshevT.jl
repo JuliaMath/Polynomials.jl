@@ -107,6 +107,11 @@ end
     @test coeffs(d) ≈ [0, 2]
     @test coeffs(r) ≈ [-2, -4]
 
+
+    # GCD
+    c1 = ChebyshevT([1, 2, 3])
+    c2 = ChebyshevT([3, 2, 1])
+    @test gcd(c1, c2) ≈ ChebyshevT(6)
 end
 
 @testset "z-series" for i in 1:5
