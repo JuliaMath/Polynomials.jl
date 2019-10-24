@@ -151,6 +151,7 @@ end
         cint = integral(cheb, i)
         res = convert(Polynomial, cint)
         @test res ≈ target
+        @test derivative(cint) == cheb
     end
 end
 

@@ -107,19 +107,28 @@ function integral(p::ChebyshevT{T}, k::S) where {T,S <: Number}
     return ChebyshevT(a2, p.var)
 end
 
-# function derivative(p::ChebyshevT{T}, order::Integer) where {T}
-#     order < 0 && error("Order of derivative must be non-negative")
-#     order == 0 && return p
-#     hasnan(p) && return ChebyshevT(T[NaN], p.var)
-#     order > length(p) && return zero(ChebyshevT{T})
+function derivative(p::ChebyshevT{T}, order::Integer) where {T}
+    order < 0 && error("Order of derivative must be non-negative")
+    order == 0 && return p
+    hasnan(p) && return ChebyshevT(T[NaN], p.var)
+    order > length(p) && return zero(ChebyshevT{T})
 
-#     n = length(p)
-#     a2 = Vector{T}(undef, n - order)
-#     @inbounds for i in order:n - 1
-#         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
-#     end
-#     return ChebyshevT(a2, p.var)
-# end
+    n = length(p)
+    der = Vector{T}(undef, n)
+    for i in 1:order
+        n -= 1
+        resize!(der, n)
+        for j in n:-1:2
+            der[j] = 2j * p[j]
+            p[j - 2] += j * p[j] / (j - 2)
+        end
+        if n > 1
+            der[2] = 4p[2]
+        end
+        der[1] = p[1]
+    end
+    return ChebyshevT(der, p.var)
+end
 
 ##
 function companion(p::ChebyshevT{T}) where T
