@@ -86,20 +86,26 @@ function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {
     return A
 end
 
-##
-# function integral(p::ChebyshevT{T}, k::S) where {T,S <: Number}
-#     R = promote_type(eltype(one(T) / 1), S)
-#     if hasnan(p) || isnan(k)
-#         return ChebyshevT([NaN])
-#     end
-#     n = length(p)
-#     a2 = Vector{R}(undef, n + 1)
-#     a2[1] = k
-#     @inbounds for i in 1:n
-#         a2[i + 1] = p[i - 1] / i
-#     end
-#     return ChebyshevT(a2, p.var)
-# end
+function integral(p::ChebyshevT{T}, k::S) where {T,S <: Number}
+    R = promote_type(eltype(one(T) / 1), S)
+    if hasnan(p) || isnan(k)
+        return ChebyshevT([NaN])
+    end
+    n = length(p)
+    if n == 1
+        return ChebyshevT{R}([k, p[0]])
+    end
+    a2 = Vector{R}(undef, n + 1)
+    a2[1] = zero(R)
+    a2[2] = p[0]
+    a2[3] = p[1] / 4
+    @inbounds for i in 2:n - 1
+        a2[i + 2] = p[i] / (2 * (i + 1))
+        a2[i] -= p[i] / (2 * (i - 1))
+    end
+    a2[1] += R(k) - ChebyshevT(a2)(0)
+    return ChebyshevT(a2, p.var)
+end
 
 # function derivative(p::ChebyshevT{T}, order::Integer) where {T}
 #     order < 0 && error("Order of derivative must be non-negative")

@@ -136,6 +136,24 @@ end
     @test gcd(c1, c2) ≈ ChebyshevT(6)
 end
 
+@testset "integrals derivatives" begin
+    c1 = one(ChebyshevT{Int})
+    @test integral(c1) == ChebyshevT([0, 1])
+    for k in [-3, 0, 2]
+        @test integral(c1, k) == ChebyshevT([k, 1])
+    end
+    
+    for i in 0:4
+        scl = i + 1
+        p = Polynomial(push!(zeros(i), 1))
+        target = Polynomial(push!(append!(Float64[i], zeros(i)), 1 / scl))
+        cheb = convert(ChebyshevT, p)
+        cint = integral(cheb, i)
+        res = convert(Polynomial, cint)
+        @test res ≈ target
+    end
+end
+
 @testset "z-series" for i in 0:5
     # c to z
     input = append!([2], ones(i))
