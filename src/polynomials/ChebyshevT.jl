@@ -12,13 +12,13 @@ terms of the given variable `x`. `x` can be a character, symbol, or string.
 
 ```jldoctest
 julia> c = ChebyshevT([1, 0, 3, 4])
-ChebyshevT([1, 0, 2, 4])
+ChebyshevT([1, 0, 3, 4])
 
-julia> ChebyshevT([1, 2, 3], :s)
+julia> ChebyshevT([1, 2, 3, 0], :s)
 ChebyshevT([1, 2, 3])
 
 julia> one(ChebyshevT)
-ChebyshevT(1.0)
+ChebyshevT([1.0])
 
 julia> convert(Polynomial, c)
 Polynomial(-2 - 12*x + 6*x^2 + 16*x^3)

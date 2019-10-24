@@ -58,10 +58,10 @@ end
     @test c == ChebyshevT([0, -0.25, 0, 0.25])
     @test roots(c) ≈ sort(r, rev = true)
 
-    r = [-1im, 1im]
+    r = [1im, -1im]
     c = fromroots(ChebyshevT, r)
     @test c ≈ ChebyshevT([1.5 + 0im, 0 + 0im, 0.5 + 0im])
-    @test roots(c) ≈ sort(r, by = real, rev = true)
+    @test roots(c) ≈ r
 end
 
 @testset "Values" begin

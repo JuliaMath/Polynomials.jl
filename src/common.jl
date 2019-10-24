@@ -109,7 +109,8 @@ function roots(p::AbstractPolynomial{T}) where {T <: Number}
     comp = companion(chopped_trimmed)
     L = eigvals(rot180(comp))
     append!(L, zeros(eltype(L), n_trail))
-    return sort!(L, rev = true, by = real)
+    by = eltype(L) <: Complex ? norm : identity
+    return sort!(L, rev = true, by = by)
 end
 
 """
