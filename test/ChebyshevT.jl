@@ -112,6 +112,16 @@ end
     @test res ≈ target
 end
 
+@testset "Mapdomain" begin
+    x = -30:20
+    mx = mapdomain(ChebyshevT, x)
+    @test extrema(mx) == (-1, 1)
+
+    x = 0.5:0.01:0.6
+    mx = mapdomain(ChebyshevT, x)
+    @test extrema(mx) == (-1, 1)
+end
+
 @testset "Arithmetic" begin
     # multiplication
     c1 = ChebyshevT([1, 2, 3])

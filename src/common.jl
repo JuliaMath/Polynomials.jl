@@ -6,7 +6,7 @@ export fromroots,
        coeffs,
        degree,
        domain,
-       scale_to_domain,
+       mapdomain,
        order,
        hasnan,
        roots,
@@ -57,12 +57,13 @@ fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} = from
     fit(x, y; [weights], deg=length(x) - 1, var=:x)
     fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x)-1, var=:x)
 
-Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref).
+Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref)
 """
 function fit(P::Type{<:AbstractPolynomial}, 
             x::AbstractVector{T}, 
             y::AbstractVector{T}; 
             weights = nothing, deg::Integer = length(x) - 1, var = :x) where {T <: Number}
+    x = mapdomain(P, x)
     vand = vander(P, x, deg)
     if weights !== nothing
         coeffs = _wlstsq(vand, y, weights)
@@ -310,7 +311,8 @@ domain(::Type{<:AbstractPolynomial})
 domain(::P) where {P <: AbstractPolynomial} = domain(P)
 
 """
-    scale_to_domain(::Type{<:AbstractPolynomial}, x)
+    mapdomain(::Type{<:AbstractPolynomial}, x::AbstractArray)
+    mapdomain(::AbstractPolynomial, x::AbstractArray)
 
 Given values of x that are assumed to be unbounded (-∞, ∞), return values rescaled to the domain of the given polynomial.
 
@@ -319,16 +321,20 @@ Given values of x that are assumed to be unbounded (-∞, ∞), return values re
 julia> x = -10:10
 -10:10
 
-julia> scale_to_domain(ChebyshevT, x)
+julia> mapdomain(ChebyshevT, x)
 -1.0:0.1:1.0
 
 ```
 """
-function scale_to_domain(P::Type{<:AbstractPolynomial}, x)
+function mapdomain(P::Type{<:AbstractPolynomial}, x::AbstractArray)
     d = domain(P)
-    x_scaled = x .* (last(d) - first(d)) / (last(x) - first(x))
+    x = collect(x)
+    x_zerod = x .- minimum(x)
+    x_scaled = x_zerod .* (last(d) - first(d)) ./ maximum(x_zerod)
+    x_scaled .+= first(d)
+    return x_scaled
 end
-scale_to_domain(::P, x) where {P <: AbstractPolynomial} = scale_to_domain(P, x)
+mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
 
 #=
 indexing
@@ -437,7 +443,7 @@ Polynomial(4.0 - 6.0*x + 2.0*x^2)
 
 ```
 """
-function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T, S}
+function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T,S}
     r₀, r₁ = promote(p1, p2)
     iter    = 1
     itermax = length(r₁)

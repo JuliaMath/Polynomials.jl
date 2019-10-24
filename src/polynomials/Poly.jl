@@ -28,7 +28,7 @@ Base.convert(::Type{<:Polynomial}, p::Poly{T}) where {T} = Polynomial(p.coeffs, 
 Base.convert(::Type{Polynomial{T}}, p::Poly{S}) where {T,S} = Polynomial(T.(p.coeffs), p.var)
 
 domain(::Type{<:Poly}) = Interval(-Inf, Inf)
-scale_to_domain(::Type{<:Poly}, x) = x
+mapdomain(::Type{<:Poly}, x::AbstractArray) = x
 
 function (p::Poly{T})(x::S) where {T,S}
     R = promote_type(T, S)

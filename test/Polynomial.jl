@@ -20,6 +20,16 @@ using LinearAlgebra
     @test all([-200, -0.3, 1, 48.2] .∈ domain(p))
 end
 
+@testset "Mapdomain" begin
+    x = -30:20
+    mx = mapdomain(Polynomial, x)
+    @test mx == x
+
+    x = 0.5:0.01:0.6
+    mx = mapdomain(Polynomial, x)
+    @test mx == x
+end
+
 @testset "Other Construction" begin
     # Leading 0s
     p = Polynomial([1, 2, 0, 0])
@@ -164,7 +174,7 @@ end
     @test maximum(abs_error) <= 0.03
 
     # Test weighted
-    for W in [1, ones(size(xs)), diagm(0=>ones(size(xs)))]
+    for W in [1, ones(size(xs)), diagm(0 => ones(size(xs)))]
         p = fit(Polynomial, xs, ys, weights = W, deg = 2)
         @test p.(xs) ≈ y_fit
     end
@@ -213,16 +223,16 @@ end
     @test p == Polynomial([6, -5, 1])
     @test roots(p) ≈ r
 
-    @test roots(p0)==roots(p1)==roots(pNULL)==[]
+    @test roots(p0) == roots(p1) == roots(pNULL) == []
     @test roots(Polynomial([0,1,0])) == [0.0]
     r = roots(Polynomial([0,1,0]))
 
     @test roots(p2) == [-1]
     a_roots = copy(pN.coeffs)
-    @test all(map(abs,sort(roots(fromroots(a_roots))) - sort(a_roots)) .< 1e6)
+    @test all(map(abs, sort(roots(fromroots(a_roots))) - sort(a_roots)) .< 1e6)
     @test length(roots(p5)) == 4
     @test roots(pNULL) == []
-    @test sort(roots(pR)) == [1//2, 3//2]
+    @test sort(roots(pR)) == [1 // 2, 3 // 2]
 
     A = [1 0; 0 1]
     p = fromroots(Polynomial, A)
@@ -426,7 +436,7 @@ end
     p = Polynomial([1.0, 2.0, 3.0])
     @test sprint(show, p) == "Polynomial(1.0 + 2.0*x + 3.0*x^2)"
 
-    p = Polynomial([1+1im, -2im])
+    p = Polynomial([1 + 1im, -2im])
     @test sprint(show, p) == "Polynomial((1 + 1im) - 2im*x)"
 
     p = Polynomial{Rational}([1, 4])
@@ -438,15 +448,15 @@ end
     @test repr(p) == "Polynomial(1.0 + 2.0*x + 3.0*x^2 + 1.0*x^3)"
     p = Polynomial([1, im])
     @test repr(p) == "Polynomial(1 + im*x)"
-    p = Polynomial([1+im, 1-im, -1+im, -1 - im])# minus signs
+    p = Polynomial([1 + im, 1 - im, -1 + im, -1 - im])# minus signs
     @test repr(p) == "Polynomial((1 + 1im) + (1 - 1im)*x - (1 - 1im)*x^2 - (1 + 1im)*x^3)"
-    p = Polynomial([1.0, 0 + NaN*im, NaN, Inf, 0 - Inf*im]) # handle NaN or Inf appropriately
+    p = Polynomial([1.0, 0 + NaN * im, NaN, Inf, 0 - Inf * im]) # handle NaN or Inf appropriately
     @test repr(p) == "Polynomial(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
 
     p = Polynomial([1,2,3])
 
     @test repr("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
-    p = Polynomial([1//2, 2//3, 1])
+    p = Polynomial([1 // 2, 2 // 3, 1])
     @test repr("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
 
     # customized printing with printpoly
@@ -456,20 +466,20 @@ end
         return String(take!(buf))
     end
     @test printpoly_to_string(Polynomial([1,2,3], "y")) == "1 + 2*y + 3*y^2"
-    @test printpoly_to_string(Polynomial([1,2,3], "y"), descending_powers=true) == "3*y^2 + 2*y + 1"
-    @test printpoly_to_string(Polynomial([2, 3, 1], :z), descending_powers=true, offset=-2) == "1 + 3*z^-1 + 2*z^-2"
-    @test printpoly_to_string(Polynomial([-1, 0, 1], :z), offset=-1, descending_powers=true) == "z - z^-1"
+    @test printpoly_to_string(Polynomial([1,2,3], "y"), descending_powers = true) == "3*y^2 + 2*y + 1"
+    @test printpoly_to_string(Polynomial([2, 3, 1], :z), descending_powers = true, offset = -2) == "1 + 3*z^-1 + 2*z^-2"
+    @test printpoly_to_string(Polynomial([-1, 0, 1], :z), offset = -1, descending_powers = true) == "z - z^-1"
 end
 
 @testset "Plotting" begin
     p = fromroots([-1, 1]) # x^2 - 1
     r = -2:0.04:2
-    rec = apply_recipe(Dict{Symbol, Any}(), p)
-    @test getfield(rec[1], 1) == Dict{Symbol, Any}(:label => "-1 + x^2")
+    rec = apply_recipe(Dict{Symbol,Any}(), p)
+    @test getfield(rec[1], 1) == Dict{Symbol,Any}(:label => "-1 + x^2")
     @test rec[1].args == (r, p.(r))
 
     r = -1:0.02:1
-    rec = apply_recipe(Dict{Symbol, Any}(), p, -1, 1)
-    @test getfield(rec[1], 1) == Dict{Symbol, Any}(:label => "-1 + x^2")
+    rec = apply_recipe(Dict{Symbol,Any}(), p, -1, 1)
+    @test getfield(rec[1], 1) == Dict{Symbol,Any}(:label => "-1 + x^2")
     @test rec[1].args == (r, p.(r))
 end

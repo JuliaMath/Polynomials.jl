@@ -40,7 +40,7 @@ end
 @register Polynomial
 
 domain(::Type{<:Polynomial}) = Interval(-Inf, Inf)
-scale_to_domain(::Type{<:Polynomial}, x) = x
+mapdomain(::Type{<:Polynomial}, x::AbstractArray) = x
 
 function (p::Polynomial{T})(x::S) where {T,S}
     R = promote_type(T, S)
