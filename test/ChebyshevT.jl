@@ -85,7 +85,18 @@ end
     @test companion(c)[1, 1] == -0.5
 end
 
-@testset "Arithmetic $i, $j" for i in 1:5, j in 1:5
+@testset "Vander" begin
+    x = 0:3
+    v = vander(ChebyshevT, x, 5)
+    @test size(v) == (length(x), 6)
+    @inbounds for i in eachindex(x)
+        coef = push!(zeros(i - 1), 1)
+        c = ChebyshevT(coef)
+        @test v[:, i] ≈ c.(x)
+    end
+end
+
+@testset "Arithmetic $i, $j" for i in 0:5, j in 0:5
     # multiplication
     target = zeros(i + j + 1)
     target[end] += 0.5
@@ -125,7 +136,7 @@ end
     @test gcd(c1, c2) ≈ ChebyshevT(6)
 end
 
-@testset "z-series" for i in 1:5
+@testset "z-series" for i in 0:5
     # c to z
     input = append!([2], ones(i))
     target = append!(push!(0.5 .* ones(i), 2), 0.5 .* ones(i))
