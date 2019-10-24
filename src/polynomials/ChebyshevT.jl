@@ -130,7 +130,6 @@ function derivative(p::ChebyshevT{T}, order::Integer) where {T}
     return ChebyshevT(der, p.var)
 end
 
-##
 function companion(p::ChebyshevT{T}) where T
     d = length(p) - 1
     d < 1 && error("Series must have degree greater than 1")

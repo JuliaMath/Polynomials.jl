@@ -47,7 +47,7 @@ end
 
 @testset "Roots $i" for i in 1:5
     roots = cos.(range(-π, 0, length = 2i + 1)[2:2:end])
-    target = ChebyshevT(push!(zeros(i), 1))
+    target = ChebyshevT(vcat(zeros(i), 1))
     res = fromroots(ChebyshevT, roots) .* 2^(i - 1)
     @test res == target
 end
@@ -77,7 +77,7 @@ end
     @test_throws ErrorException companion(c_null)
     @test_throws ErrorException companion(c_1)
     for i in 1:5
-        coef = push!(zeros(i), 1)
+        coef = vcat(zeros(i), 1)
         c = ChebyshevT(coef)
         @test size(companion(c)) == (i, i)
     end
@@ -90,7 +90,7 @@ end
     v = vander(ChebyshevT, x, 5)
     @test size(v) == (length(x), 6)
     @inbounds for i in eachindex(x)
-        coef = push!(zeros(i - 1), 1)
+        coef = vcat(zeros(i - 1), 1)
         c = ChebyshevT(coef)
         @test v[:, i] ≈ c.(x)
     end
@@ -101,8 +101,8 @@ end
     target = zeros(i + j + 1)
     target[end] += 0.5
     target[abs(i - j) + 1] += 0.5
-    c1 = ChebyshevT(push!(zeros(i), 1))
-    c2 = ChebyshevT(push!(zeros(j), 1))
+    c1 = ChebyshevT(vcat(zeros(i), 1))
+    c2 = ChebyshevT(vcat(zeros(j), 1))
     @test c1 * c2 ≈ ChebyshevT(target)
 
     # divrem
@@ -121,13 +121,14 @@ end
     c1 = ChebyshevT([1, 2, 3])
     c2 = ChebyshevT([3, 2, 1])
     d, r = divrem(c1, c2)
-    @test coeffs(d) ≈ [3]
-    @test coeffs(r) ≈ [-8, -4]
+    @test d.coeffs ≈ [3]
+    @test r.coeffs ≈ [-8, -4]
 
     c2 = ChebyshevT([0, 1, 2, 3])
     d, r = divrem(c2, c1)
-    @test coeffs(d) ≈ [0, 2]
-    @test coeffs(r) ≈ [-2, -4]
+
+    @test d.coeffs ≈ [0, 2]
+    @test r.coeffs ≈ [-2, -4]
 
 
     # GCD
@@ -145,8 +146,8 @@ end
     
     for i in 0:4
         scl = i + 1
-        p = Polynomial(push!(zeros(i), 1))
-        target = Polynomial(push!(append!(Float64[i], zeros(i)), 1 / scl))
+        p = Polynomial(vcat(zeros(i), 1))
+        target = Polynomial(vcat(i, zeros(i), 1 / scl))
         cheb = convert(ChebyshevT, p)
         cint = integral(cheb, i)
         res = convert(Polynomial, cint)
@@ -154,11 +155,11 @@ end
         @test derivative(cint) == cheb
     end
 end
-
+@info ""
 @testset "z-series" for i in 0:5
     # c to z
-    input = append!([2], ones(i))
-    target = append!(push!(0.5 .* ones(i), 2), 0.5 .* ones(i))
+    input = vcat(2, ones(i))
+    target = vcat(0.5 .* ones(i), 2, 0.5 .* ones(i))
     zs = Polynomials._c_to_z(input)
     @test zs == target
     c = Polynomials._z_to_c(zs)
