@@ -32,7 +32,11 @@ julia> fromroots(r)
 Polynomial(6 - 5*x + x^2)
 ```
 """
-fromroots(P::Type{<:AbstractPolynomial}, r::AbstractVector; var::SymbolLike = :x)
+function fromroots(P::Type{<:AbstractPolynomial}, roots::AbstractVector; var::SymbolLike = :x)
+    x = variable(P, var)
+    p = [x - r for r in roots]
+    return truncate!(reduce(*, p))
+end
 fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) = fromroots(Polynomial, r, var = var)
 fromroots(r; var::SymbolLike = :x) = fromroots(collect(r), var = var)
 
@@ -100,12 +104,12 @@ function roots(p::AbstractPolynomial{T}) where {T <: Number}
     if d < 1 return [] end
     d == 1 && return [-p[0] / p[1]]
 
-    chopped_trimmed = chop(truncate(p))
+    chopped_trimmed = truncate(p)
     n_trail = length(p) - length(chopped_trimmed)
     comp = companion(chopped_trimmed)
     L = eigvals(rot180(comp))
-    append!(L, zeros(n_trail))
-    return sort!(L, rev = true, by = norm)
+    append!(L, zeros(eltype(L), n_trail))
+    return sort!(L, rev = true, by = real)
 end
 
 """
@@ -321,8 +325,8 @@ Given values of x that are assumed to be unbounded (-∞, ∞), return values re
 julia> x = -10:10
 -10:10
 
-julia> mapdomain(ChebyshevT, x)
--1.0:0.1:1.0
+julia> extrema(mapdomain(ChebyshevT, x))
+(-1.0, 1.0)
 
 ```
 """
@@ -383,8 +387,20 @@ identity
 =#
 Base.copy(p::P) where {P <: AbstractPolynomial} = P(copy(p.coeffs), p.var)
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(p.coeffs, h))
+"""
+    zero(::Type{<:AbstractPolynomial})
+    zero(::AbstractPolynomial)
+
+Returns a representation of 0 as the given polynomial.
+"""
 Base.zero(::Type{P}) where {P <: AbstractPolynomial} = P(zeros(1))
 Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P)
+"""
+    one(::Type{<:AbstractPolynomial})
+    one(::AbstractPolynomial)
+
+Returns a representation of 1 as the given polynomial.
+"""
 Base.one(::Type{P}) where {P <: AbstractPolynomial} = P(ones(1))
 Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
 
@@ -430,7 +446,7 @@ function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: Abstrac
 end
 
 """
-    gcd(a::Polynomial, b::Polynomial)
+    gcd(a::AbstractPolynomial, b::AbstractPolynomial)
 
 Find the greatest common denominator of two polynomials recursively using
 [Euclid's algorithm](http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm).

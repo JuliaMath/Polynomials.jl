@@ -53,8 +53,15 @@ end
 end
 
 @testset "Roots" begin
-    @test fromroots(ChebyshevT, [-1, 0, 1]) == ChebyshevT([0, -0.25, 0, 0.25])
-    @test fromroots(ChebyshevT, [-1im, 1im]) ≈ ChebyshevT([1.5 + 0im, 0 + 0im, 0.5 + 0im])
+    r = [-1, 0, 1]
+    c = fromroots(ChebyshevT, r)
+    @test c == ChebyshevT([0, -0.25, 0, 0.25])
+    @test roots(c) ≈ sort(r, rev = true)
+
+    r = [-1im, 1im]
+    c = fromroots(ChebyshevT, r)
+    @test c ≈ ChebyshevT([1.5 + 0im, 0 + 0im, 0.5 + 0im])
+    @test roots(c) ≈ sort(r, by = real, rev = true)
 end
 
 @testset "Values" begin
@@ -67,7 +74,9 @@ end
 @testset "Conversions" begin
     c1 = ChebyshevT([2.5, 2.0, 1.5])
     @test c1 ≈ Polynomial([1, 2, 3])
-    @test convert(Polynomial{Float64}, c1) == Polynomial{Float64}([1, 2, 3])
+    p = convert(Polynomial{Float64}, c1)
+    @test p == Polynomial{Float64}([1, 2, 3])
+    @test convert(ChebyshevT, p) == c1
 
 end
 
@@ -165,7 +174,7 @@ end
         @test derivative(cint) == cheb
     end
 end
-@info ""
+
 @testset "z-series" for i in 0:5
     # c to z
     input = vcat(2, ones(i))

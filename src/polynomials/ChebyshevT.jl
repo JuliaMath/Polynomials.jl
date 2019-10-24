@@ -3,7 +3,26 @@ export ChebyshevT
 """
     ChebyshevT{<:Number}(coeffs::AbstractVector, var=:x)
 
-Chebyshev polynomial of the first kind
+Chebyshev polynomial of the first kind.
+
+Construct a polynomial from its coefficients `a`, lowest order first, optionally in
+terms of the given variable `x`. `x` can be a character, symbol, or string.
+
+# Examples
+
+```jldoctest
+julia> c = ChebyshevT([1, 0, 3, 4])
+ChebyshevT([1, 0, 2, 4])
+
+julia> ChebyshevT([1, 2, 3], :s)
+ChebyshevT([1, 2, 3])
+
+julia> one(ChebyshevT)
+ChebyshevT(1.0)
+
+julia> convert(Polynomial, c)
+Polynomial(-2 - 12*x + 6*x^2 + 16*x^3)
+```
 """
 struct ChebyshevT{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
@@ -57,21 +76,6 @@ function (ch::ChebyshevT{T})(x::S) where {T,S}
         c0, c1 = ch[i] - c1, c0 + c1 * 2x
     end
     return R(c0 + c1 * x)
-end
-
-function fromroots(P::Type{<:ChebyshevT}, roots::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
-    p = [P([-r, 1]) for r in roots]
-    n = length(p)
-    while n > 1
-        m, r = divrem(n, 2)
-        tmp = [p[i] * p[i + m] for i in 1:m]
-        if r > 0
-            tmp[1] *= p[end]
-        end
-        p = tmp
-        n = m
-    end
-    return truncate!(p[1])
 end
 
 function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {T <: Number}
@@ -136,14 +140,14 @@ function companion(p::ChebyshevT{T}) where T
     d == 1 && return diagm(0 => [-p[0] / p[1]])
     R = eltype(one(T) / one(T))
 
-    scl = append!([1.0], √5 .* ones(d - 1))
+    scl = vcat(1.0, √0.5 .* ones(R, d - 1))
 
-    diag = append!([√5], 0.5 .* ones(d - 2))
-    comp = diagm(-1 => diag,
-                  1 => diag)
+    diag = vcat(√0.5, ones(R, d - 2) ./ 2)
+    comp = diagm(1 => diag,
+                 -1 => diag)
     monics = p.coeffs ./ p.coeffs[end]
-    comp[:, end] .-= monics[1:d] .* scl ./ scl[end]
-    return R.(comp ./ 2)
+    comp[:, end] .-= monics[1:d] .* scl ./ scl[end] ./ 2
+    return R.(comp)
 end
 
 function Base.:+(p1::ChebyshevT, p2::ChebyshevT)
