@@ -132,8 +132,8 @@ the returned roots may be real or complex.
 ```jldoctest
 julia> roots(Polynomial([1, 0, -1]))
 2-element Array{Float64,1}:
- -1.0
   1.0
+ -1.0
 
 julia> roots(Polynomial([1, 0, 1]))
 2-element Array{Complex{Float64},1}:
@@ -142,8 +142,8 @@ julia> roots(Polynomial([1, 0, 1]))
 
 julia> roots(Polynomial([0, 0, 1]))
 2-element Array{Float64,1}:
- -0.0
   0.0
+ -0.0
 ```
 
 ### Fitting arbitrary data

@@ -21,7 +21,7 @@ degree
 length
 size
 domain
-scale_to_domain
+mapdomain
 chop
 chop!
 truncate
@@ -62,6 +62,9 @@ gcd
 ## Mathematical Function
 
 ```@docs
+zero
+one
+variable
 fromroots
 roots
 derivative
@@ -87,3 +90,23 @@ plot(::AbstractPolynomial, a, b; kwds...)
 ```
 
 will plot the polynomial within the range `[a, b]`.
+
+### Example: The Polynomials.jl logo
+```@example
+using Plots, Polynomials
+xs = range(-1, 1, length=100)
+chebs = [
+  ChebyshevT([0, 1]),
+  ChebyshevT([0, 0, 1]),
+  ChebyshevT([0, 0, 0, 1]),
+  ChebyshevT([0, 0, 0, 0, 1]),
+]
+colors = ["#4063D8", "#389826", "#CB3C33", "#9558B2"]
+plot() # hide
+for (cheb, col) in zip(chebs, colors)
+  plot!(xs, cheb.(xs), c=col, lw=5, label="")
+end
+savefig("chebs.svg"); nothing # hide
+```
+
+![](chebs.svg)

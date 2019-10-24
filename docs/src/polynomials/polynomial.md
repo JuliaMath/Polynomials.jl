@@ -8,7 +8,7 @@ end
 
 ```@docs
 Polynomial
-variable
+Polynomial()
 ```
 
 ```@docs

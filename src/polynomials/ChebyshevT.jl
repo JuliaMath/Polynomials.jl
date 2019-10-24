@@ -11,7 +11,7 @@ terms of the given variable `x`. `x` can be a character, symbol, or string.
 # Examples
 
 ```jldoctest
-julia> c = ChebyshevT([1, 0, 3, 4])
+julia> ChebyshevT([1, 0, 3, 4])
 ChebyshevT([1, 0, 3, 4])
 
 julia> ChebyshevT([1, 2, 3, 0], :s)
@@ -19,9 +19,6 @@ ChebyshevT([1, 2, 3])
 
 julia> one(ChebyshevT)
 ChebyshevT([1.0])
-
-julia> convert(Polynomial, c)
-Polynomial(-2 - 12*x + 6*x^2 + 16*x^3)
 ```
 """
 struct ChebyshevT{T <: Number} <: AbstractPolynomial{T}
@@ -65,8 +62,26 @@ domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
     (::ChebyshevT)(x)
 
 Evaluate the Chebyshev polynomial at `x`. If `x` is outside of the domain of [-1, 1], an error will be thrown. The evaluation uses Clenshaw Recursion.
+
+# Examples
+```jldoctest
+julia> c = ChebyshevT([2.5, 1.5, 1.0])
+ChebyshevT([2.5, 1.5, 1.0])
+
+julia> c(0)
+1.5
+
+julia> c.(-1:0.5:1)
+5-element Array{Float64,1}:
+ 2.0
+ 1.25
+ 1.5
+ 2.75
+ 5.0
+```
 """
 function (ch::ChebyshevT{T})(x::S) where {T,S}
+    any(x .∉ domain(ch)) && error("$x outside of domain")
     R = promote_type(T, S)
     length(ch) == 0 && return zero(R)
     length(ch) == 1 && return R(ch[0])

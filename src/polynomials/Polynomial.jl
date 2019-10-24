@@ -42,6 +42,27 @@ end
 domain(::Type{<:Polynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:Polynomial}, x::AbstractArray) = x
 
+"""
+    (p::Polynomial)(x)
+
+Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division.
+
+# Examples
+```jldoctest
+julia> p = Polynomial([1, 0, 3])
+Polynomial(1 + 3*x^2)
+
+julia> p(0)
+1
+
+julia> p.(0:3)
+4-element Array{Int64,1}:
+  1
+  4
+ 13
+ 28
+```
+"""
 function (p::Polynomial{T})(x::S) where {T,S}
     R = promote_type(T, S)
     length(p) == 0 && return zero(R)
