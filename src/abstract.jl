@@ -31,7 +31,6 @@ macro register(name)
     $poly(n::Number, var = :x) = $poly([n], var)
     $poly{T}(n::S, var = :x) where {T,S <: Number} = $poly(T(n), var)
     $poly{T}(x::AbstractVector{S}, var = :x) where {T,S <: Number} = $poly(T.(x), var)
-    $poly(x, var = :x) = $poly(collect(x), var)
 
     end
 end

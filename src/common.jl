@@ -38,7 +38,6 @@ function fromroots(P::Type{<:AbstractPolynomial}, roots::AbstractVector; var::Sy
     return truncate!(reduce(*, p))
 end
 fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) = fromroots(Polynomial, r, var = var)
-fromroots(r; var::SymbolLike = :x) = fromroots(collect(r), var = var)
 
 """
     fromroots(::AbstractMatrix{<:Number}; var=:x)
@@ -66,7 +65,7 @@ Fit the given data as a polynomial type with the given degree. Uses linear least
 function fit(P::Type{<:AbstractPolynomial}, 
             x::AbstractVector{T}, 
             y::AbstractVector{T}; 
-            weights = nothing, deg::Integer = length(x) - 1, var = :x) where {T <: Number}
+            weights = nothing, deg::Integer = length(x) - 1, var = :x) where {T}
     x = mapdomain(P, x)
     vand = vander(P, x, deg)
     if weights !== nothing
@@ -77,17 +76,12 @@ function fit(P::Type{<:AbstractPolynomial},
     return P(T.(coeffs), var)
 end
 
-fit(x, y; weights = nothing, deg = length(x) - 1, var = :x) = fit(Polynomial{eltype(y)}, collect(x), collect(y); weights = weights, deg = deg, var = var)
+fit(P::Type{<:AbstractPolynomial}, x, y; 
+    weights = nothing, deg::Integer = length(x) - 1, var = :x) = fit(P, promote(collect(x), collect(y))...; weights=weights, deg=deg, var=var)
 
-fit(P::Type{<:AbstractPolynomial}, x, y; weights = nothing, deg = length(x) - 1, var = :x) = fit(P, collect(x), collect(y); weights = weights, deg = deg, var = var)
-
-function fit(P::Type{<:AbstractPolynomial}, 
-    x::AbstractVector{T}, 
-    y::AbstractVector{S}; 
-    weights = nothing, deg = length(x) - 1, var = :x) where {T,S}
-    x, y = promote(x, y)
-    fit(P, x, y; weights = weights, deg = deg, var = var)
-end
+fit(x::AbstractVector, 
+   y::AbstractVector; 
+   weights = nothing, deg::Integer = length(x) - 1, var = :x) = fit(Polynomial, x, y; weights=weights, deg=deg, var=var)
 
 # Weighted linear least squares
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
