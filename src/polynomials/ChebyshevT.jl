@@ -81,7 +81,7 @@ julia> c.(-1:0.5:1)
 ```
 """
 function (ch::ChebyshevT{T})(x::S) where {T,S}
-    any(x .∉ domain(ch)) && error("$x outside of domain")
+    x ∉ domain(ch) && error("$x outside of domain")
     R = promote_type(T, S)
     length(ch) == 0 && return zero(R)
     length(ch) == 1 && return R(ch[0])
@@ -217,8 +217,8 @@ zseries
 
 function _c_to_z(cs::AbstractVector{T}) where {T}
     n = length(cs)
-    U = promote_type(T, typeof(one(T) / 2))
-    zs = Vector{U}(undef, 2n - 1)
+    U = typeof(one(T) / 2)
+    zs = zeros(U, 2n - 1)
     zs[n:end] = cs ./ 2
     return zs .+ reverse(zs)
 end

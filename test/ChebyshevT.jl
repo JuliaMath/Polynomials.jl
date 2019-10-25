@@ -95,10 +95,10 @@ end
 end
 
 @testset "Vander" begin
-    x = 0:3
+    x = 0:0.1:1
     v = vander(ChebyshevT, x, 5)
     @test size(v) == (length(x), 6)
-    @inbounds for i in eachindex(x)
+    @inbounds for i in 1:6
         coef = vcat(zeros(i - 1), 1)
         c = ChebyshevT(coef)
         @test v[:, i] ≈ c.(x)
