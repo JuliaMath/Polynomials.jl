@@ -24,8 +24,7 @@ end
 
 @register Poly
 
-Base.convert(::Type{<:Polynomial}, p::Poly{T}) where {T} = Polynomial(p.coeffs, p.var)
-Base.convert(::Type{Polynomial{T}}, p::Poly{S}) where {T,S} = Polynomial(T.(p.coeffs), p.var)
+Base.convert(P::Type{<:Polynomial}, p::Poly{T}) where {T} = P(p.coeffs, p.var)
 
 domain(::Type{<:Poly}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:Poly}, x::AbstractArray) = x
