@@ -161,7 +161,7 @@ julia> roots(Poly([0, 0, 1]))
 * `polyfit`: fits a polynomial (of order `n`) to `x` and `y` using a least-squares approximation.
 
 ```julia
-julia> xs = 1:4; ys = exp(xs); polyfit(xs, ys)
+julia> xs = 1:4; ys = exp.(xs); polyfit(xs, ys)
 Poly(-7.717211620141281 + 17.9146616149694x - 9.77757245502143x^2 + 2.298404288652356x^3)
 ```
 
