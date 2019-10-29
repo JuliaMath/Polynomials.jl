@@ -155,9 +155,9 @@ function companion(p::ChebyshevT{T}) where T
     d == 1 && return diagm(0 => [-p[0] / p[1]])
     R = eltype(one(T) / one(T))
 
-    scl = vcat(1.0, √0.5 .* ones(R, d - 1))
+    scl = vcat(1.0, fill(R(√0.5), d - 1))
 
-    diag = vcat(√0.5, ones(R, d - 2) ./ 2)
+    diag = vcat(√0.5, fill(R(0.5), d - 2))
     comp = diagm(1 => diag,
                  -1 => diag)
     monics = p.coeffs ./ p.coeffs[end]
