@@ -70,13 +70,14 @@ end
 ###
 
 """
-    printpoly(io::IO, p::Poly, mimetype = MIME"text/plain"(); descending_powers=false, offset::Int=0)
+    printpoly(io::IO, p::Poly, mimetype = MIME"text/plain"(); descending_powers=false, offset::Int=0, var=p.var)
 
 Print a human-readable representation of the polynomial `p` to `io`. The MIME
 types "text/plain" (default), "text/latex", and "text/html" are supported. By
 default, the terms are in order of ascending powers, matching the order in
 `coeffs(p)`; specifying `descending_powers=true` reverses the order.
 `offset` allows for an integer number to be added to the exponent, just for printing.
+`var` allows for overriding the variable used for printing.
 
 # Examples
 ```jldoctest
@@ -88,6 +89,8 @@ julia> printpoly(stdout, Poly([2, 3, 1], :z), descending_powers=true, offset=-2)
 1 + 3*z^-1 + 2*z^-2
 julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true)
 z - z^-1
+julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true, var=:x)
+x - x^-1
 ```
 """
 function printpoly(io::IO, p::Poly{T}, mimetype=MIME"text/plain"(); descending_powers=false, offset::Int=0, var=p.var) where {T}
