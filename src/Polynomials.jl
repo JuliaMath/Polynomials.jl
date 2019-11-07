@@ -612,7 +612,7 @@ julia> roots(poly([1,2,3,4]))
  1.0
 ```
 """
-function roots(p::Poly{T}) where {T}
+function roots(p::Poly{T}; kwargs...) where {T}
     R = promote_type(T, Float64)
     length(p) == 0 && return zeros(R, 0)
 
@@ -634,7 +634,7 @@ function roots(p::Poly{T}) where {T}
     an = p[end-num_trailing_zeros]
     companion[1,:] = -p[(end-num_trailing_zeros-1):-1:num_leading_zeros] / an
 
-    D = eigvals(companion)
+    D = eigvals(companion; kwargs...)
     r = zeros(eltype(D),length(p)-num_trailing_zeros-1)
     r[1:n] = D
     return r

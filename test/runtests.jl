@@ -283,6 +283,12 @@ end
 @test printpoly_to_string(Poly([2, 3, 1], :z), descending_powers=true, offset=-2) == "1 + 3*z^-1 + 2*z^-2"
 @test printpoly_to_string(Poly([-1, 0, 1], :z), offset=-1, descending_powers=true) == "z - z^-1"
 
+# Override symbol in print Issue: #184
+@test printpoly_to_string(Poly([1,2,3], "y"), var=:z) == "1 + 2*z + 3*z^2"
+@test printpoly_to_string(Poly([1,2,3], "y"), descending_powers=true, var="z") == "3*z^2 + 2*z + 1"
+@test printpoly_to_string(Poly([2, 3, 1], :z), descending_powers=true, offset=-2, var=:y) == "1 + 3*y^-1 + 2*y^-2"
+@test printpoly_to_string(Poly([-1, 0, 1], :z), offset=-1, descending_powers=true, var='y') == "y - y^-1"
+
 ## want to be able to copy and paste
 ## check hashing
 p = poly([1,2,3])

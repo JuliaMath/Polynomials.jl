@@ -90,11 +90,11 @@ julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true
 z - z^-1
 ```
 """
-function printpoly(io::IO, p::Poly{T}, mimetype=MIME"text/plain"(); descending_powers=false, offset::Int=0) where {T}
+function printpoly(io::IO, p::Poly{T}, mimetype=MIME"text/plain"(); descending_powers=false, offset::Int=0, var=p.var) where {T}
     first = true
     printed_anything = false
     for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
-        printed = showterm(io, p[i], p.var, i+offset, first, mimetype)
+        printed = showterm(io, p[i], var, i+offset, first, mimetype)
         first &= !printed
         printed_anything |= printed
     end
