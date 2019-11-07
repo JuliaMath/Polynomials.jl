@@ -580,11 +580,11 @@ polyder(a::AbstractArray{Poly{T}}, order::Int = 1) where {T} = map(p->polyder(p,
 
 # compute the roots of a polynomial
 """
-    roots(p::Poly)
+    roots(p::Poly; kwargs...)
 
 Return the roots (zeros) of `p`, with multiplicity. The number of roots
 returned is equal to the order of `p`. The returned roots may be real or
-complex.
+complex. Keyword arguments `kwargs` are sent to the `eigvals` call.
 
 # Examples
 
@@ -610,9 +610,20 @@ julia> roots(poly([1,2,3,4]))
  3.0
  2.0
  1.0
+
+julia> roots(Poly([1, 0, -1]), scale=false, permute=false)
+2-element Array{Float64,1}:
+ -1.0
+  1.0
+
+# In Julia > 1.2
+julia> roots(Poly([1, 0, -1]), sortby = t -> -real(t))
+2-element Array{Float64,1}:
+  1.0
+ -1.0
 ```
 """
-function roots(p::Poly{T}) where {T}
+function roots(p::Poly{T}; kwargs...) where {T}
     R = promote_type(T, Float64)
     length(p) == 0 && return zeros(R, 0)
 
@@ -634,12 +645,12 @@ function roots(p::Poly{T}) where {T}
     an = p[end-num_trailing_zeros]
     companion[1,:] = -p[(end-num_trailing_zeros-1):-1:num_leading_zeros] / an
 
-    D = eigvals(companion)
+    D = eigvals(companion; kwargs...)
     r = zeros(eltype(D),length(p)-num_trailing_zeros-1)
     r[1:n] = D
     return r
 end
-roots(p::Poly{Rational{T}}) where {T} = roots(convert(Poly{promote_type(T, Float64)}, p))
+roots(p::Poly{Rational{T}}; kwargs...) where {T} = roots(convert(Poly{promote_type(T, Float64)}, p); kwargs...)
 
 ## compute gcd of two polynomials
 """
