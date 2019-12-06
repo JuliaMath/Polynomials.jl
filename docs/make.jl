@@ -17,7 +17,6 @@ makedocs(
         ],
         "Extending" => "extending.md",
     ],
-    # doctest=:fix
 )
 
 deploydocs(repo = "github.com/JuliaMath/Polynomials.jl.git")

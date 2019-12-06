@@ -59,7 +59,7 @@ Polynomial(0.5 - 0.5*x^2)
 gcd
 ```
 
-## Mathematical Function
+## Mathematical Functions
 
 ```@docs
 zero
