@@ -32,12 +32,17 @@ julia> fromroots(r)
 Polynomial(6 - 5*x + x^2)
 ```
 """
-function fromroots(P::Type{<:AbstractPolynomial}, roots::AbstractVector; var::SymbolLike = :x)
+function fromroots(
+    P::Type{<:AbstractPolynomial},
+    roots::AbstractVector;
+    var::SymbolLike = :x,
+)
     x = variable(P, var)
     p = [x - r for r in roots]
     return truncate!(reduce(*, p))
 end
-fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) = fromroots(Polynomial, r, var = var)
+fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
+    fromroots(Polynomial, r, var = var)
 
 """
     fromroots(::AbstractMatrix{<:Number}; var=:x)
@@ -53,8 +58,13 @@ julia> fromroots(A)
 Polynomial(-1.9999999999999998 - 5.0*x + 1.0*x^2)
 ```
 """
-fromroots(P::Type{<:AbstractPolynomial}, A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} = fromroots(P, eigvals(A), var = var)
-fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} = fromroots(Polynomial, eigvals(A), var = var)
+fromroots(
+    P::Type{<:AbstractPolynomial},
+    A::AbstractMatrix{T};
+    var::SymbolLike = :x,
+) where {T<:Number} = fromroots(P, eigvals(A), var = var)
+fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T<:Number} =
+    fromroots(Polynomial, eigvals(A), var = var)
 
 """
     fit(x, y; [weights], deg=length(x) - 1, var=:x)
@@ -62,10 +72,14 @@ fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} = from
 
 Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref)
 """
-function fit(P::Type{<:AbstractPolynomial}, 
-            x::AbstractVector{T}, 
-            y::AbstractVector{T}; 
-            weights = nothing, deg::Integer = length(x) - 1, var = :x) where {T}
+function fit(
+    P::Type{<:AbstractPolynomial},
+    x::AbstractVector{T},
+    y::AbstractVector{T};
+    weights = nothing,
+    deg::Integer = length(x) - 1,
+    var = :x,
+) where {T}
     x = mapdomain(P, x)
     vand = vander(P, x, deg)
     if weights !== nothing
@@ -76,12 +90,22 @@ function fit(P::Type{<:AbstractPolynomial},
     return P(T.(coeffs), var)
 end
 
-fit(P::Type{<:AbstractPolynomial}, x, y; 
-    weights = nothing, deg::Integer = length(x) - 1, var = :x) = fit(P, promote(collect(x), collect(y))...; weights=weights, deg=deg, var=var)
+fit(
+    P::Type{<:AbstractPolynomial},
+    x,
+    y;
+    weights = nothing,
+    deg::Integer = length(x) - 1,
+    var = :x,
+) = fit(P, promote(collect(x), collect(y))...; weights = weights, deg = deg, var = var)
 
-fit(x::AbstractVector, 
-   y::AbstractVector; 
-   weights = nothing, deg::Integer = length(x) - 1, var = :x) = fit(Polynomial, x, y; weights=weights, deg=deg, var=var)
+fit(
+    x::AbstractVector,
+    y::AbstractVector;
+    weights = nothing,
+    deg::Integer = length(x) - 1,
+    var = :x,
+) = fit(Polynomial, x, y; weights = weights, deg = deg, var = var)
 
 # Weighted linear least squares
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
@@ -93,9 +117,11 @@ _wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 
 Returns the roots of the given polynomial. This is calculated via the eigenvalues of the companion matrix.
 """
-function roots(p::AbstractPolynomial{T}) where {T <: Number}
+function roots(p::AbstractPolynomial{T}) where {T<:Number}
     d = length(p) - 1
-    if d < 1 return [] end
+    if d < 1
+        return []
+    end
     d == 1 && return [-p[0] / p[1]]
 
     chopped_trimmed = truncate(p)
@@ -159,10 +185,14 @@ derivative(p::AbstractPolynomial) = derivative(p, 1)
 
 In-place version of [`truncate`](@ref)
 """
-function truncate!(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0) where {T}
+function truncate!(
+    p::AbstractPolynomial{T};
+    rtol::Real = Base.rtoldefault(real(T)),
+    atol::Real = 0,
+) where {T}
     max_coeff = maximum(abs, p.coeffs)
     thresh = max_coeff * rtol + atol
-    map!(c->abs(c) <= thresh ? zero(T) : c, p.coeffs, p.coeffs)
+    map!(c -> abs(c) <= thresh ? zero(T) : c, p.coeffs, p.coeffs)
     return chop!(p, rtol = rtol, atol = atol)
 end
 
@@ -172,7 +202,11 @@ end
 
 Rounds off coefficients close to zero, as determined by `rtol` and `atol`, and then chops any leading zeros. Returns a new polynomial.
 """
-function Base.truncate(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0) where {T}
+function Base.truncate(
+    p::AbstractPolynomial{T};
+    rtol::Real = Base.rtoldefault(real(T)),
+    atol::Real = 0,
+) where {T}
     truncate!(deepcopy(p), rtol = rtol, atol = atol)
 end
 
@@ -182,8 +216,12 @@ end
 
 In-place version of [`chop`](@ref)
 """
-function chop!(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0) where {T}
-    for i in lastindex(p):-1:0
+function chop!(
+    p::AbstractPolynomial{T};
+    rtol::Real = Base.rtoldefault(real(T)),
+    atol::Real = 0,
+) where {T}
+    for i = lastindex(p):-1:0
         val = p[i]
         if !isapprox(val, zero(T); rtol = rtol, atol = atol)
             resize!(p.coeffs, i + 1)
@@ -200,7 +238,11 @@ end
 
 Removes any leading coefficients that are approximately 0 (using `rtol` and `atol`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's.
 """
-function Base.chop(p::AbstractPolynomial{T}; rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0) where {T}
+function Base.chop(
+    p::AbstractPolynomial{T};
+    rtol::Real = Base.rtoldefault(real(T)),
+    atol::Real = 0,
+) where {T}
     chop!(deepcopy(p), rtol = rtol, atol = atol)
 end
 
@@ -226,7 +268,7 @@ julia> roots((x - 3) * (x + 2))
 
 ```
 """
-variable(::Type{P}, var::SymbolLike = :x) where P <: AbstractPolynomial = P([0, 1], var)
+variable(::Type{P}, var::SymbolLike = :x) where {P<:AbstractPolynomial} = P([0, 1], var)
 variable(p::AbstractPolynomial, var::SymbolLike = p.var) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int})
 
@@ -244,16 +286,19 @@ LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2) = norm(coeffs(q), p)
 
 Returns the complex conjugate of the polynomial
 """
-LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = P(conj(coeffs(p)))
+LinearAlgebra.conj(p::P) where {P<:AbstractPolynomial} = P(conj(coeffs(p)))
 LinearAlgebra.transpose(p::AbstractPolynomial) = p
 LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 
 #=
 Conversions
 =#
-Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
+Base.convert(::Type{P}, p::P) where {P<:AbstractPolynomial} = p
 Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
-Base.promote_rule(::Type{<:AbstractPolynomial{T}}, ::Type{<:AbstractPolynomial{S}}) where {T,S} = Polynomial{promote_type(T, S)}
+Base.promote_rule(
+    ::Type{<:AbstractPolynomial{T}},
+    ::Type{<:AbstractPolynomial{S}},
+) where {T,S} = Polynomial{promote_type(T, S)}
 
 #=
 Inspection
@@ -272,9 +317,11 @@ Returns the size of the polynomials coefficients, along axis `i` if provided.
 Base.size(p::AbstractPolynomial) = size(p.coeffs)
 Base.size(p::AbstractPolynomial, i::Integer) = size(p.coeffs, i)
 Base.eltype(p::AbstractPolynomial{T}) where {T} = T
-Base.eltype(::Type{P}) where {P <: AbstractPolynomial} = P
+Base.eltype(::Type{P}) where {P<:AbstractPolynomial} = P
 function Base.iszero(p::AbstractPolynomial)
-    if length(p) == 0 return true end
+    if length(p) == 0
+        return true
+    end
     return length(p) == 1 && p[0] == 0
 end
 
@@ -307,7 +354,7 @@ hasnan(p::AbstractPolynomial) = any(isnan.(p.coeffs))
 Returns the domain of the polynomial.
 """
 domain(::Type{<:AbstractPolynomial})
-domain(::P) where {P <: AbstractPolynomial} = domain(P)
+domain(::P) where {P<:AbstractPolynomial} = domain(P)
 
 """
     mapdomain(::Type{<:AbstractPolynomial}, x::AbstractArray)
@@ -333,28 +380,28 @@ function mapdomain(P::Type{<:AbstractPolynomial}, x::AbstractArray)
     x_scaled .+= first(d)
     return x_scaled
 end
-mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
+mapdomain(::P, x::AbstractArray) where {P<:AbstractPolynomial} = mapdomain(P, x)
 
 #=
 indexing
 =#
 Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1
-Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
+Base.eachindex(p::AbstractPolynomial) = 0:length(p)-1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # iteration
-Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
+Base.collect(p::P) where {P<:AbstractPolynomial} = collect(P, p)
 Base.iterate(p::AbstractPolynomial) = (p[0] * one(typeof(p)), 1)
 function Base.iterate(p::AbstractPolynomial, state)
     state <= length(p) - 1 ? (p[state] * variable(p)^(state), state + 1) : nothing
 end
 
 # getindex
-function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
+function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T<:Number}
     idx < 0 && throw(BoundsError(p, idx))
     idx ≥ length(p) && return zero(T)
-    return p.coeffs[idx + 1]
+    return p.coeffs[idx+1]
 end
 Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
 Base.getindex(p::AbstractPolynomial, indices) = [getindex(p, i) for i in indices]
@@ -365,22 +412,27 @@ function Base.setindex!(p::AbstractPolynomial, value::Number, idx::Int)
     n = length(p.coeffs)
     if n ≤ idx
         resize!(p.coeffs, idx + 1)
-        p.coeffs[n + 1:idx] .= 0
+        p.coeffs[n+1:idx] .= 0
     end
-    p.coeffs[idx + 1] = value
+    p.coeffs[idx+1] = value
     return p
 end
 
-Base.setindex!(p::AbstractPolynomial, value::Number, idx::Number) = setindex!(p, value, convert(Int, idx))
-Base.setindex!(p::AbstractPolynomial, value::Number, indices) = [setindex!(p, value, i) for i in indices]
-Base.setindex!(p::AbstractPolynomial, values, indices) = [setindex!(p, v, i) for (v, i) in zip(values, indices)]
-Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) = setindex!(p, value, eachindex(p))
-Base.setindex!(p::AbstractPolynomial, values, ::Colon) = [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
+Base.setindex!(p::AbstractPolynomial, value::Number, idx::Number) =
+    setindex!(p, value, convert(Int, idx))
+Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
+    [setindex!(p, value, i) for i in indices]
+Base.setindex!(p::AbstractPolynomial, values, indices) =
+    [setindex!(p, v, i) for (v, i) in zip(values, indices)]
+Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) =
+    setindex!(p, value, eachindex(p))
+Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
+    [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
 
 #=
 identity
 =#
-Base.copy(p::P) where {P <: AbstractPolynomial} = P(copy(p.coeffs), p.var)
+Base.copy(p::P) where {P<:AbstractPolynomial} = P(copy(p.coeffs), p.var)
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(p.coeffs, h))
 """
     zero(::Type{<:AbstractPolynomial})
@@ -388,54 +440,54 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(p.coeffs, h))
 
 Returns a representation of 0 as the given polynomial.
 """
-Base.zero(::Type{P}) where {P <: AbstractPolynomial} = P(zeros(1))
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P)
+Base.zero(::Type{P}) where {P<:AbstractPolynomial} = P(zeros(1))
+Base.zero(p::P) where {P<:AbstractPolynomial} = zero(P)
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}) where {P <: AbstractPolynomial} = P(ones(1))
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
+Base.one(::Type{P}) where {P<:AbstractPolynomial} = P(ones(1))
+Base.one(p::P) where {P<:AbstractPolynomial} = one(P)
 
 #=
 arithmetic
 =#
-Base.:-(p::P) where {P <: AbstractPolynomial} = P(-p.coeffs, p.var)
+Base.:-(p::P) where {P<:AbstractPolynomial} = P(-p.coeffs, p.var)
 Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
 Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
-Base.:-(c::Number, p::AbstractPolynomial, ) = +(-p, c)
+Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
 Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
-function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
+function Base.:*(p::P, c::S) where {P<:AbstractPolynomial,S}
     T = promote_type(P, S)
     return T(p.coeffs .* c, p.var)
 end
-function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
+function Base.:/(p::P, c::S) where {T,P<:AbstractPolynomial{T},S}
     R = promote_type(P, eltype(one(T) / one(S)))
     return R(p.coeffs ./ c, p.var)
 end
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
-function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
+function Base.:+(p::P, n::Number) where {P<:AbstractPolynomial}
     p1, p2 = promote(p, n)
     return p1 + p2
 end
 
-function Base.:+(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+function Base.:+(p1::P, p2::O) where {P<:AbstractPolynomial,O<:AbstractPolynomial}
     p1, p2 = promote(p1, p2)
     return p1 + p2
 end
 
-function Base.:*(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+function Base.:*(p1::P, p2::O) where {P<:AbstractPolynomial,O<:AbstractPolynomial}
     p1, p2 = promote(p1, p2)
     return p1 * p2
 end
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
-function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+function Base.divrem(num::P, den::O) where {P<:AbstractPolynomial,O<:AbstractPolynomial}
     n, d = promote(num, den)
     return divrem(n, d)
 end
@@ -456,14 +508,14 @@ Polynomial(4.0 - 6.0*x + 2.0*x^2)
 """
 function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T,S}
     r₀, r₁ = promote(p1, p2)
-    iter    = 1
+    iter = 1
     itermax = length(r₁)
-  
+
     while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
-      _, rtemp  = divrem(r₀, r₁)
-      r₀        = r₁
-      r₁        = truncate(rtemp)
-      iter      += 1
+        _, rtemp = divrem(r₀, r₁)
+        r₀ = r₁
+        r₁ = truncate(rtemp)
+        iter += 1
     end
     return r₀
 end
@@ -481,24 +533,46 @@ Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 #=
 Comparisons
 =#
-Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
-Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) = (p1.var == p2.var) && (p1.coeffs == p2.coeffs)
+Base.isequal(p1::P, p2::P) where {P<:AbstractPolynomial} = hash(p1) == hash(p2)
+Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
+    (p1.var == p2.var) && (p1.coeffs == p2.coeffs)
 Base.:(==)(p::AbstractPolynomial, n::Number) = p.coeffs == [n]
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
-function Base.isapprox(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}; rtol::Real = (Base.rtoldefault(T, S, 0)), atol::Real = 0) where {T,S}
+function Base.isapprox(
+    p1::AbstractPolynomial{T},
+    p2::AbstractPolynomial{S};
+    rtol::Real = (Base.rtoldefault(T, S, 0)),
+    atol::Real = 0,
+) where {T,S}
     p1, p2 = promote(p1, p2)
-    if p1.var != p2.var error("p1 and p2 must have same var") end
+    if p1.var != p2.var
+        error("p1 and p2 must have same var")
+    end
     p1t = truncate(p1; rtol = rtol, atol = atol)
     p2t = truncate(p2; rtol = rtol, atol = atol)
-    if length(p1t) ≠ length(p2t) return false end
+    if length(p1t) ≠ length(p2t)
+        return false
+    end
     isapprox(p1t.coeffs, p2t.coeffs, rtol = rtol, atol = atol)
 end
 
-function Base.isapprox(p1::AbstractPolynomial{T}, n::S; rtol::Real = (Base.rtoldefault(T, S, 0)), atol::Real = 0) where {T,S}
+function Base.isapprox(
+    p1::AbstractPolynomial{T},
+    n::S;
+    rtol::Real = (Base.rtoldefault(T, S, 0)),
+    atol::Real = 0,
+) where {T,S}
     p1t = truncate(p1, rtol = rtol, atol = atol)
-    if length(p1t) != 1 return false end
+    if length(p1t) != 1
+        return false
+    end
     isapprox(p1t.coeffs, [n], rtol = rtol, atol = atol)
 end
 
-Base.isapprox(n::S, p1::AbstractPolynomial{T}; rtol::Real = (Base.rtoldefault(T, S, 0)), atol::Real = 0) where {T,S} = isapprox(p1, n, rtol = rtol, atol = atol)
+Base.isapprox(
+    n::S,
+    p1::AbstractPolynomial{T};
+    rtol::Real = (Base.rtoldefault(T, S, 0)),
+    atol::Real = 0,
+) where {T,S} = isapprox(p1, n, rtol = rtol, atol = atol)

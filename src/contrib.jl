@@ -19,7 +19,7 @@ end
         @inbounds begin
             @nloops $N x E begin
                 @nloops $N i k begin
-                    (@nref $N out d->(x_d + i_d - 1)) += (@nref $N E x) * (@nref $N k i)
+                    (@nref $N out d -> (x_d + i_d - 1)) += (@nref $N E x) * (@nref $N k i)
                 end
             end
         end
