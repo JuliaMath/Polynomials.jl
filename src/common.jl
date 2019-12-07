@@ -281,6 +281,7 @@ Linear Algebra
 Calculates the p-norm of the polynomial's coefficients
 """
 LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2) = norm(coeffs(q), p)
+
 """
     conj(::AbstractPolynomial)
 

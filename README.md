@@ -18,6 +18,10 @@ julia> using Polynomials
 
 ## Usage
 
+#### Available Polynomials
+
+* `Polynomial` - Standard polynomials
+* `ChebyshevT` - Chebyshev polynomials of the first kind
 
 #### Construction and Evaluation
 
