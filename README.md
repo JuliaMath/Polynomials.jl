@@ -10,7 +10,7 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 
 ## Installation
 
-```julia
+```julia-repl
 (v1.2) pkg> add Polynomials
 
 julia> using Polynomials
@@ -27,28 +27,28 @@ julia> using Polynomials
 
 Construct a polynomial from its coefficients, lowest order first.
 
-```julia
+```julia-repl
 julia> Polynomial([1,0,3,4])
 Polynomial(1 + 3x^2 + 4x^3)
 ```
 
 An optional variable parameter can be added.
 
-```julia
+```julia-repl
 julia> Polynomial([1,2,3], :s)
 Polynomial(1 + 2s + 3s^2)
 ```
 
 Construct a polynomial from its roots.
 
-```julia
+```julia-repl
 julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
 Polynomial(-6 + 11x - 6x^2 + x^3)
 ```
 
 Evaluate the polynomial `p` at `x`.
 
-```julia
+```julia-repl
 julia> p = Polynomial([1, 0, -1])
 julia> p(0.1)
 0.99
@@ -57,7 +57,8 @@ julia> p(0.1)
 #### Arithmetic
 
 The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.
-```julia
+
+```julia-repl
 julia> p = Polynomial([1,2])
 Polynomial(1 + 2x)
 
@@ -85,7 +86,7 @@ Polynomial(0.25 - 0.5x)
 
 Note that operations involving polynomials with different variables will error.
 
-```julia
+```julia-repl
 julia> p = Polynomial([1, 2, 3], :x)
 julia> q = Polynomial([1, 2, 3], :s)
 julia> p + q
@@ -98,7 +99,7 @@ Integrate the polynomial `p` term by term, optionally adding constant
 term `k`. The order of the resulting polynomial is one higher than the
 order of `p`.
 
-```julia
+```julia-repl
 julia> integral(Polynomial([1, 0, -1]))
 Polynomial(x - 0.3333333333333333x^3)
 
@@ -109,7 +110,7 @@ Polynomial(2.0 + x - 0.3333333333333333x^3)
 Differentiate the polynomial `p` term by term. The order of the
 resulting polynomial is one lower than the order of `p`.
 
-```julia
+```julia-repl
 julia> derivative(Polynomial([1, 3, -1]))
 Polynomial(3 - 2x)
 ```
@@ -121,7 +122,7 @@ Return the roots (zeros) of `p`, with multiplicity. The number of
 roots returned is equal to the order of `p`. By design, this is not type-stable,
 the returned roots may be real or complex.
 
-```julia
+```julia-repl
 julia> roots(Polynomial([1, 0, -1]))
 2-element Array{Float64,1}:
  -1.0
@@ -142,7 +143,7 @@ julia> roots(Polynomial([0, 0, 1]))
 
 Fit a polynomial (of order `deg`) to `x` and `y` using a least-squares approximation.
 
-```julia
+```julia-repl
 julia> xs = 1:4; ys = exp(xs);
 
 julia> fit(xs, ys)
