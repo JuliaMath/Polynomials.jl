@@ -17,7 +17,6 @@ include("polynomials/Poly.jl") # Deprecated -> Will be removed
 include("pade.jl")
 include("deprecated.jl")
 
-
 # Interface for all AbstractPolynomials
 include("common.jl")
 

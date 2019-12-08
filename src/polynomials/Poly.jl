@@ -5,7 +5,7 @@ of `Polynomial`
 
 export Poly
 
-struct Poly{T} <: AbstractPolynomial{T}
+struct Poly{T<:Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
     function Poly(a::AbstractVector{T}, var::SymbolLike = :x) where {T <: Number}
