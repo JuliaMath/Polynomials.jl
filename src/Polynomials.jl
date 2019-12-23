@@ -15,7 +15,7 @@ include("polynomials/ChebyshevU.jl")
 
 include("polynomials/Poly.jl") # Deprecated -> Will be removed
 include("pade.jl")
-include("deprecated.jl")
+include("compat.jl") # Where we keep deprecations
 
 # Interface for all AbstractPolynomials
 include("common.jl")
