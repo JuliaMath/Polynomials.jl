@@ -10,7 +10,7 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 
 ## Installation
 
-```julia-repl
+```julia
 (v1.2) pkg> add Polynomials
 
 julia> using Polynomials
@@ -27,28 +27,28 @@ julia> using Polynomials
 
 Construct a polynomial from its coefficients, lowest order first.
 
-```julia-repl
+```julia
 julia> Polynomial([1,0,3,4])
 Polynomial(1 + 3x^2 + 4x^3)
 ```
 
 An optional variable parameter can be added.
 
-```julia-repl
+```julia
 julia> Polynomial([1,2,3], :s)
 Polynomial(1 + 2s + 3s^2)
 ```
 
 Construct a polynomial from its roots.
 
-```julia-repl
+```julia
 julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
 Polynomial(-6 + 11x - 6x^2 + x^3)
 ```
 
 Evaluate the polynomial `p` at `x`.
 
-```julia-repl
+```julia
 julia> p = Polynomial([1, 0, -1])
 julia> p(0.1)
 0.99
@@ -58,7 +58,7 @@ julia> p(0.1)
 
 The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.
 
-```julia-repl
+```julia
 julia> p = Polynomial([1,2])
 Polynomial(1 + 2x)
 
@@ -86,7 +86,7 @@ Polynomial(0.25 - 0.5x)
 
 Note that operations involving polynomials with different variables will error.
 
-```julia-repl
+```julia
 julia> p = Polynomial([1, 2, 3], :x)
 julia> q = Polynomial([1, 2, 3], :s)
 julia> p + q
@@ -99,7 +99,7 @@ Integrate the polynomial `p` term by term, optionally adding constant
 term `k`. The order of the resulting polynomial is one higher than the
 order of `p`.
 
-```julia-repl
+```julia
 julia> integrate(Polynomial([1, 0, -1]))
 Polynomial(x - 0.3333333333333333x^3)
 
@@ -110,7 +110,7 @@ Polynomial(2.0 + x - 0.3333333333333333x^3)
 Differentiate the polynomial `p` term by term. The order of the
 resulting polynomial is one lower than the order of `p`.
 
-```julia-repl
+```julia
 julia> derivative(Polynomial([1, 3, -1]))
 Polynomial(3 - 2x)
 ```
@@ -122,7 +122,7 @@ Return the roots (zeros) of `p`, with multiplicity. The number of
 roots returned is equal to the order of `p`. By design, this is not type-stable,
 the returned roots may be real or complex.
 
-```julia-repl
+```julia
 julia> roots(Polynomial([1, 0, -1]))
 2-element Array{Float64,1}:
  -1.0
@@ -161,8 +161,7 @@ Visual example:
 
 Polynomial objects also have other methods:
 
-* 0-based indexing is used to extract the coefficients of $a_0 + a_1
-  x + a_2 x^2 + ...$, coefficients may be changed using indexing
+* 0-based indexing is used to extract the coefficients of `[a0, a1, a2, ...]`, coefficients may be changed using indexing
   notation.
 
 * `coeffs`: returns the entire coefficient vector
