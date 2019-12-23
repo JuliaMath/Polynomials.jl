@@ -104,14 +104,14 @@ ERROR: Polynomials must have same variable
 ### Integrals and Derivatives
 
 Integrate the polynomial `p` term by term, optionally adding constant
-term `k`. The order of the resulting polynomial is one higher than the
+term `C`. The order of the resulting polynomial is one higher than the
 order of `p`.
 
 ```jldoctest
-julia> integral(Polynomial([1, 0, -1]))
+julia> integrate(Polynomial([1, 0, -1]))
 Polynomial(1.0*x - 0.3333333333333333*x^3)
 
-julia> integral(Polynomial([1, 0, -1]), 2)
+julia> integrate(Polynomial([1, 0, -1]), 2)
 Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)
 ```
 

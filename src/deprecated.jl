@@ -4,8 +4,7 @@
 
 function Base.getproperty(p::AbstractPolynomial, nm::Symbol)
     if nm == :a
-        Base.depwarn(
-            "AbstracPolynomial.a is deprecated, use AbstracPolynomial.coeffs instead.",
+        Base.depwarn("AbstracPolynomial.a is deprecated, use AbstracPolynomial.coeffs instead.",
             Symbol("Base.getproperty"),
         )
         return getfield(p, :coeffs)
@@ -13,7 +12,7 @@ function Base.getproperty(p::AbstractPolynomial, nm::Symbol)
     return getfield(p, nm)
 end
 
-@deprecate polyint(p::AbstractPolynomial, k = 0) integral(p, k)
+@deprecate polyint(p::AbstractPolynomial, C = 0) integrate(p, C)
 @deprecate polyint(p::AbstractPolynomial, a, b) integrate(p, a, b)
 @deprecate polyder(p::AbstractPolynomial, ord = 1) derivative(p, ord)
 @deprecate polyfit(x, y, n = length(x) - 1) fit(Polynomial, x, y; deg = n)

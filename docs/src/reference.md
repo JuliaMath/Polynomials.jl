@@ -68,7 +68,6 @@ variable
 fromroots
 roots
 derivative
-integral
 integrate
 fit
 companion

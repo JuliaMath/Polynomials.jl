@@ -1,24 +1,23 @@
-#=
+#= 
 This type is only here to provide stability while deprecating. This will eventually be removed in favor
-of `Polynomial`
-=#
+of `Polynomial` =#
 
 export Poly
 
-struct Poly{T<:Number} <: AbstractPolynomial{T}
+struct Poly{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
     function Poly(a::AbstractVector{T}, var::SymbolLike = :x) where {T <: Number}
       # if a == [] we replace it with a = [0]
-      Base.depwarn("Poly is deprecated and will be removed in a future release. Please use Polynomial instead", :Poly)
-      if length(a) == 0
-        return new{T}(zeros(T, 1), Symbol(var))
-      else
+        Base.depwarn("Poly is deprecated and will be removed in a future release. Please use Polynomial instead", :Poly)
+        if length(a) == 0
+            return new{T}(zeros(T, 1), Symbol(var))
+        else
         # determine the last nonzero element and truncate a accordingly
-        last_nz = findlast(!iszero, a)
-        a_last = max(1, last_nz === nothing ? 0 : last_nz)
-        new{T}(a[1:a_last], Symbol(var))
-      end
+            last_nz = findlast(!iszero, a)
+            a_last = max(1, last_nz === nothing ? 0 : last_nz)
+            new{T}(a[1:a_last], Symbol(var))
+        end
     end
 end
 
@@ -43,7 +42,7 @@ function fromroots(P::Type{<:Poly}, r::AbstractVector{T}; var::SymbolLike = :x) 
     n = length(r)
     c = zeros(T, n + 1)
     c[1] = one(T)
-    for j = 1:n, i = j:-1:1
+    for j in 1:n, i in j:-1:1
         c[i + 1] = c[i + 1] - r[j] * c[i]
     end
     return Poly(reverse(c), var)
@@ -60,7 +59,7 @@ function vander(P::Type{<:Poly}, x::AbstractVector{T}, n::Integer) where {T <: N
 end
 
 
-function integral(p::Poly{T}, k::S) where {T,S <: Number}
+function integrate(p::Poly{T}, k::S) where {T,S <: Number}
     R = promote_type(eltype(one(T) / 1), S)
     if hasnan(p) || isnan(k)
         return Poly([NaN])
@@ -75,7 +74,7 @@ function integral(p::Poly{T}, k::S) where {T,S <: Number}
 end
 
 
-function derivative(p::Poly{T}, order::Integer) where {T}
+function derivative(p::Poly{T}, order::Integer = 1) where {T}
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
     hasnan(p) && return Poly(T[NaN], p.var)
@@ -116,7 +115,7 @@ function Base.:*(p1::Poly{T}, p2::Poly{S}) where {T,S}
     m = length(p2) - 1
     R = promote_type(T, S)
     c = zeros(R, m + n + 1)
-    for i = 0:n, j = 0:m
+    for i in 0:n, j in 0:m
         c[i + j + 1] += p1[i] * p2[j]
     end
     return Poly(c, p1.var)
@@ -146,4 +145,4 @@ function Base.divrem(num::Poly{T}, den::Poly{S}) where {T,S}
     return P(q_coeff, num.var), P(r_coeff, num.var)
 end
 
-showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimetype) where{T} = showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
+showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimetype) where {T} = showterm(io, Polynomial{T}, pj, var, j, first, mimetype)

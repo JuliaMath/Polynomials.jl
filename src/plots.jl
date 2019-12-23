@@ -8,11 +8,11 @@ function poly_interval(p::AbstractPolynomial)
     pts = sort([ real(pt) for pt in [zero_pts; crit_pts; infl_pts] if isreal(pt) ])
     # Choose a range that shows all interesting points with some margin
     min_x, max_x = length(pts) > 0 ? (pts[1], pts[end]) : (-1, 1)
-    diff = max(max_x - min_x, 1)
-    a = min_x - diff/2
-    b = max_x + diff/2
+    d = max(max_x - min_x, 1)
+    a = min_x - d / 2
+    b = max_x + d / 2
 
-    return a : diff/50 : b
+    return a:d / 50:b
 end
 
 poly_label(p::AbstractPolynomial) = sprint(printpoly, p)
@@ -24,7 +24,7 @@ end
 
 @recipe function f(p::AbstractPolynomial, a, b)
     label --> poly_label(p)
-    step = (b-a)/100
+    step = (b - a) / 100
     xs = a:step:b
     ys = p.(xs)
     xs, ys

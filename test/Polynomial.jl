@@ -251,29 +251,29 @@ end
     p = Polynomial(c)
     der = derivative(p)
     @test der.coeffs == [2, 6, 12]
-    int = integral(der, 1)
+    int = integrate(der, 1)
     @test int.coeffs == c
 
-    @test derivative(integral(pN)) == convert(Polynomial{Float64}, pN)
+    @test derivative(integrate(pN)) == convert(Polynomial{Float64}, pN)
     @test derivative(pR) == Polynomial([-2 // 1,2 // 1])
     @test derivative(p3) == Polynomial([2,2])
     @test derivative(p1) == derivative(p0) == derivative(pNULL) == pNULL
     @test_throws ErrorException derivative(pR, -1)
-    @test integral(pNULL, 1) == convert(Polynomial{Float64}, p1)
+    @test integrate(pNULL, 1) == convert(Polynomial{Float64}, p1)
     rc = Rational{Int64}[1,2,3]
-    @test integral(Polynomial(rc)) == Polynomial{eltype(rc)}([0, 1, 1, 1])
+    @test integrate(Polynomial(rc)) == Polynomial{eltype(rc)}([0, 1, 1, 1])
     @test integrate(Polynomial([1,1,0,0]), 0, 2) == 4.0
 
     # Handling of `NaN`s
     p     = Polynomial([NaN, 1, 5])
     pder  = derivative(p)
-    pint  = integral(p)
+    pint  = integrate(p)
 
     @test isnan(p(1)) # p(1) evaluates to NaN
     @test isequal(pder, Polynomial([NaN]))
     @test isequal(pint, Polynomial([NaN]))
 
-    pint  = integral(p, 0.0im)
+    pint  = integrate(p, 0.0im)
     @test isequal(pint, Polynomial([NaN]))
 
     # Issue with overflow and polyder Issue #159
@@ -285,13 +285,13 @@ end
     p2  = Polynomial([3, 1.])
     p   = [p1, p2]
     q   = [3, p1]
-    @test isa(q, Vector{Polynomial{Int64}})
+    @test q isa Vector{Polynomial{Int64}}
     psum  = p .+ 3
     pprod = p .* 3
     pmin  = p .- 3
-    @test isa(psum, Vector{Polynomial{Float64}})
-    @test isa(pprod, Vector{Polynomial{Float64}})
-    @test isa(pmin, Vector{Polynomial{Float64}})
+    @test psum  isa Vector{Polynomial{Float64}}
+    @test pprod isa Vector{Polynomial{Float64}}
+    @test pmin  isa Vector{Polynomial{Float64}}
 end
 
 @testset "Chop and Truncate" begin

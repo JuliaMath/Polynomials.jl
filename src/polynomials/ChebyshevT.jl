@@ -105,14 +105,14 @@ function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {
     return A
 end
 
-function integral(p::ChebyshevT{T}, k::S) where {T,S <: Number}
+function integrate(p::ChebyshevT{T}, C::S) where {T,S <: Number}
     R = promote_type(eltype(one(T) / 1), S)
-    if hasnan(p) || isnan(k)
+    if hasnan(p) || isnan(C)
         return ChebyshevT([NaN])
     end
     n = length(p)
     if n == 1
-        return ChebyshevT{R}([k, p[0]])
+        return ChebyshevT{R}([C, p[0]])
     end
     a2 = Vector{R}(undef, n + 1)
     a2[1] = zero(R)
@@ -122,11 +122,11 @@ function integral(p::ChebyshevT{T}, k::S) where {T,S <: Number}
         a2[i + 2] = p[i] / (2 * (i + 1))
         a2[i] -= p[i] / (2 * (i - 1))
     end
-    a2[1] += R(k) - ChebyshevT(a2)(0)
+    a2[1] += R(C) - ChebyshevT(a2)(0)
     return ChebyshevT(a2, p.var)
 end
 
-function derivative(p::ChebyshevT{T}, order::Integer) where {T}
+function derivative(p::ChebyshevT{T}, order::Integer = 1) where {T}
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
     hasnan(p) && return ChebyshevT(T[NaN], p.var)
@@ -211,9 +211,8 @@ function printpoly(io::IO, p::ChebyshevT{T}, mimetype = MIME"text/plain"(); desc
     return nothing
 end
 
-#=
-zseries
-=#
+#= 
+zseries =#
 
 function _c_to_z(cs::AbstractVector{T}) where {T}
     n = length(cs)

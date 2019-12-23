@@ -77,7 +77,7 @@ function fromroots(P::Type{<:Polynomial}, r::AbstractVector{T}; var::SymbolLike 
     n = length(r)
     c = zeros(T, n + 1)
     c[1] = one(T)
-    for j = 1:n, i = j:-1:1
+    for j in 1:n, i in j:-1:1
         c[i + 1] = c[i + 1] - r[j] * c[i]
     end
     return Polynomial(reverse(c), var)
@@ -92,7 +92,7 @@ function vander(P::Type{<:Polynomial}, x::AbstractVector{T}, n::Integer) where {
     return A
 end
 
-function integral(p::Polynomial{T}, k::S) where {T,S <: Number}
+function integrate(p::Polynomial{T}, k::S) where {T,S <: Number}
     R = promote_type(eltype(one(T) / 1), S)
     if hasnan(p) || isnan(k)
         return Polynomial([NaN])
@@ -106,7 +106,7 @@ function integral(p::Polynomial{T}, k::S) where {T,S <: Number}
     return Polynomial(a2, p.var)
 end
 
-function derivative(p::Polynomial{T}, order::Integer) where {T}
+function derivative(p::Polynomial{T}, order::Integer = 1) where {T}
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
     hasnan(p) && return Polynomial(T[NaN], p.var)
@@ -145,7 +145,7 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     m = length(p2) - 1
     R = promote_type(T, S)
     c = zeros(R, m + n + 1)
-    for i = 0:n, j = 0:m
+    for i in 0:n, j in 0:m
         c[i + j + 1] += p1[i] * p2[j]
     end
     return Polynomial(c, p1.var)

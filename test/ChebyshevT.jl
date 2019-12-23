@@ -65,7 +65,7 @@ end
 end
 
 @testset "Values" begin
-    c1 = ChebyshevT([2.5, 2.0, 1.5]) #1 + 2x + 3x^2
+    c1 = ChebyshevT([2.5, 2.0, 1.5]) # 1 + 2x + 3x^2
     x = -1:0.5:1
     expected = [2.0, 0.75, 1.0, 2.75, 6.0]
     @test c1.(x) == expected
@@ -158,9 +158,9 @@ end
 
 @testset "integrals derivatives" begin
     c1 = one(ChebyshevT{Int})
-    @test integral(c1) == ChebyshevT([0, 1])
+    @test integrate(c1) == ChebyshevT([0, 1])
     for k in [-3, 0, 2]
-        @test integral(c1, k) == ChebyshevT([k, 1])
+        @test integrate(c1, k) == ChebyshevT([k, 1])
     end
     
     for i in 0:4
@@ -168,7 +168,7 @@ end
         p = Polynomial(vcat(zeros(i), 1))
         target = Polynomial(vcat(i, zeros(i), 1 / scl))
         cheb = convert(ChebyshevT, p)
-        cint = integral(cheb, i)
+        cint = integrate(cheb, i)
         res = convert(Polynomial, cint)
         @test res ≈ target
         @test derivative(cint) == cheb

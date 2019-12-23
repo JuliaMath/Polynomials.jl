@@ -100,10 +100,10 @@ term `k`. The order of the resulting polynomial is one higher than the
 order of `p`.
 
 ```julia-repl
-julia> integral(Polynomial([1, 0, -1]))
+julia> integrate(Polynomial([1, 0, -1]))
 Polynomial(x - 0.3333333333333333x^3)
 
-julia> integral(Polynomial([1, 0, -1]), 2)
+julia> integrate(Polynomial([1, 0, -1]), 2)
 Polynomial(2.0 + x - 0.3333333333333333x^3)
 ```
 
