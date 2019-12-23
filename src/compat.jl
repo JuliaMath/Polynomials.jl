@@ -4,7 +4,7 @@
 
 function Base.getproperty(p::AbstractPolynomial, nm::Symbol)
     if nm == :a
-        Base.depwarn("AbstracPolynomial.a is deprecated, use AbstracPolynomial.coeffs instead.",
+        Base.depwarn("AbstracPolynomial.a is deprecated, use AbstracPolynomial.coeffs or coeffs(AbstractPolynomial) instead.",
             Symbol("Base.getproperty"),
         )
         return getfield(p, :coeffs)
