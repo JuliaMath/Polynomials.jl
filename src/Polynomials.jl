@@ -317,13 +317,13 @@ function +(p1::Poly{T}, p2::Poly{S}) where {T,S}
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
-    Poly([p1[i] + p2[i] for i = 0:max(length(p1),length(p2))], p1.var)
+    Poly([p1[i] + p2[i] for i = 0:max(length(p1),length(p2))-1], p1.var)
 end
 function -(p1::Poly{T}, p2::Poly{S}) where {T,S}
     if p1.var != p2.var
         error("Polynomials must have same variable")
     end
-    Poly([p1[i] - p2[i] for i = 0:max(length(p1),length(p2))], p1.var)
+    Poly([p1[i] - p2[i] for i = 0:max(length(p1),length(p2))-1], p1.var)
 end
 
 
