@@ -10,7 +10,7 @@ RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 
 [compat]
 julia = "1.0"
-RecipesBase = "0.7"
+RecipesBase = "0.7, 0.8"
 
 [extras]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
