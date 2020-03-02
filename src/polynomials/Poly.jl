@@ -1,4 +1,4 @@
-#= 
+#=
 This type is only here to provide stability while deprecating. This will eventually be removed in favor
 of `Polynomial` =#
 
@@ -9,7 +9,7 @@ struct Poly{T <: Number} <: AbstractPolynomial{T}
     var::Symbol
     function Poly(a::AbstractVector{T}, var::SymbolLike = :x) where {T <: Number}
       # if a == [] we replace it with a = [0]
-        Base.depwarn("Poly is deprecated and will be removed in a future release. Please use Polynomial instead", :Poly)
+##        Base.depwarn("Poly is deprecated and will be removed in a future release. Please use Polynomial instead", :Poly)
         if length(a) == 0
             return new{T}(zeros(T, 1), Symbol(var))
         else
@@ -35,7 +35,7 @@ function (p::Poly{T})(x::S) where {T,S}
     @inbounds for i in (lastindex(p) - 1):-1:0
         y = p[i] + x * y
     end
-    return y    
+    return y
 end
 
 function fromroots(P::Type{<:Poly}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
@@ -129,7 +129,7 @@ function Base.divrem(num::Poly{T}, den::Poly{S}) where {T,S}
     R = typeof(one(T) / one(S))
     P = Poly{R}
     deg = n - m + 1
-    if deg ≤ 0 
+    if deg ≤ 0
         return zero(P), convert(P, num)
     end
     q_coeff = zeros(R, deg)

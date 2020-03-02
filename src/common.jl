@@ -31,12 +31,10 @@ julia> fromroots(r)
 Polynomial(6 - 5*x + x^2)
 ```
 """
-function fromroots(P::Type{<:AbstractPolynomial},
-    roots::AbstractVector;
-    var::SymbolLike = :x,)
+function fromroots(P::Type{<:AbstractPolynomial}, roots::AbstractVector; var::SymbolLike = :x)
     x = variable(P, var)
-    p = [x - r for r in roots]
-    return truncate!(reduce(*, p))
+    p =  prod(x .- roots)
+    return truncate!(p)
 end
 fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
     fromroots(Polynomial, r, var = var)
@@ -102,24 +100,20 @@ _wlstsq(vand, y, W::AbstractVector) = _wlstsq(vand, y, diagm(0 => W))
 _wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 
 """
-    roots(::AbstractPolynomial)
+    roots(::AbstractPolynomial; kwargs...)
 
-Returns the roots of the given polynomial. This is calculated via the eigenvalues of the companion matrix.
+Returns the roots of the given polynomial. This is calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgeebra.eigvals` call.
+
+!!! note
+
+    The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and  abit more accurate; the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package provides an alternative for high-degree polynomials.
+
 """
-function roots(p::AbstractPolynomial{T}) where {T <: Number}
-    d = length(p) - 1
-    if d < 1
-        return []
-    end
-    d == 1 && return [-p[0] / p[1]]
+function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: Number}
 
-    chopped_trimmed = truncate(p)
-    n_trail = length(p) - length(chopped_trimmed)
-    comp = companion(chopped_trimmed)
-    L = eigvals(rot180(comp))
-    append!(L, zeros(eltype(L), n_trail))
-    by = eltype(L) <: Complex ? norm : identity
-    return sort!(L, rev = true, by = by)
+    p = convert(Polynomial{T},  q)
+    roots(p; kwargs...)
+
 end
 
 """
@@ -167,7 +161,7 @@ Returns a polynomial that is the `order`th derivative of the given polynomial. `
 derivative(::AbstractPolynomial, ::Int)
 
 """
-    truncate!(::AbstractPolynomial{T}; 
+    truncate!(::AbstractPolynomial{T};
         rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
 
 In-place version of [`truncate`](@ref)
@@ -182,7 +176,7 @@ function truncate!(p::AbstractPolynomial{T};
 end
 
 """
-    truncate(::AbstractPolynomial{T}; 
+    truncate(::AbstractPolynomial{T};
         rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
 
 Rounds off coefficients close to zero, as determined by `rtol` and `atol`, and then chops any leading zeros. Returns a new polynomial.
@@ -194,7 +188,7 @@ function Base.truncate(p::AbstractPolynomial{T};
 end
 
 """
-    chop!(::AbstractPolynomial{T}; 
+    chop!(::AbstractPolynomial{T};
         rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
 
 In-place version of [`chop`](@ref)
@@ -214,7 +208,7 @@ function chop!(p::AbstractPolynomial{T};
 end
 
 """
-    chop(::AbstractPolynomial{T}; 
+    chop(::AbstractPolynomial{T};
         rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
 
 Removes any leading coefficients that are approximately 0 (using `rtol` and `atol`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's.
@@ -226,11 +220,18 @@ function Base.chop(p::AbstractPolynomial{T};
 end
 
 """
+    round(p::AbstractPolynomial, args...; kwargs)
+
+Applies `round` to  the cofficients  of `p` with the given arguments. Returns a new polynomial.
+"""
+Base.round(p::P, args...;kwargs...) where {P <: AbstractPolynomial} = P(round.(coeffs(p), args...; kwargs...), p.var)
+
+"""
     variable(var=:x)
     variable(::Type{<:AbstractPolynomial}, var=:x)
     variable(p::AbstractPolynomial, var=p.var)
 
-Return the indeterminate of a given polynomial. If no type is give, will default to [`Polynomial`](@ref)
+Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref).
 
 # Examples
 ```jldoctest
@@ -251,7 +252,7 @@ variable(::Type{P}, var::SymbolLike = :x) where {P <: AbstractPolynomial} = P([0
 variable(p::AbstractPolynomial, var::SymbolLike = p.var) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int})
 
-#= 
+#=
 Linear Algebra =#
 """
     norm(::AbstractPolynomial, p=2)
@@ -269,7 +270,7 @@ LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = P(conj(coeffs(p)))
 LinearAlgebra.transpose(p::AbstractPolynomial) = p
 LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 
-#= 
+#=
 Conversions =#
 Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
 Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
@@ -277,7 +278,7 @@ Base.promote_rule(::Type{<:AbstractPolynomial{T}},
     ::Type{<:AbstractPolynomial{S}},
 ) where {T,S} = Polynomial{promote_type(T, S)}
 
-#= 
+#=
 Inspection =#
 """
     length(::AbstractPolynomial)
@@ -316,12 +317,6 @@ has a nonzero coefficient. The degree of the zero polynomial is defined to be -1
 """
 degree(p::AbstractPolynomial) = iszero(p) ? -1 : length(p) - 1
 
-"""
-    order(::AbstractPolynomial)
-
-The order of the polynomial. This is the same as [`length`](@ref).
-"""
-order(p::AbstractPolynomial) = length(p)
 hasnan(p::AbstractPolynomial) = any(isnan.(p.coeffs))
 
 """
@@ -358,19 +353,30 @@ function mapdomain(P::Type{<:AbstractPolynomial}, x::AbstractArray)
 end
 mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
 
-#= 
+#=
 indexing =#
 Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1
 Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
+# basis
+# return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
+function basis(p::P, k::Int) where {P <: AbstractPolynomial}
+    zs = zeros(eltype(p), k+1)
+    zs[k+1] = 1
+    P(zs, p.var)
+end
+
 # iteration
-Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
+# iteration occurs over the basis polynomials
 Base.iterate(p::AbstractPolynomial) = (p[0] * one(typeof(p)), 1)
 function Base.iterate(p::AbstractPolynomial, state)
-    state <= length(p) - 1 ? (p[state] * variable(p)^(state), state + 1) : nothing
+    state <= length(p) - 1 ? (p[state] * basis(p, state), state + 1) : nothing
 end
+
+
+Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
@@ -404,7 +410,7 @@ Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) =
 Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
     [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
 
-#= 
+#=
 identity =#
 Base.copy(p::P) where {P <: AbstractPolynomial} = P(copy(p.coeffs), p.var)
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(p.coeffs, h))
@@ -425,7 +431,7 @@ Returns a representation of 1 as the given polynomial.
 Base.one(::Type{P}) where {P <: AbstractPolynomial} = P(ones(1))
 Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
 
-#= 
+#=
 arithmetic =#
 Base.:-(p::P) where {P <: AbstractPolynomial} = P(-p.coeffs, p.var)
 Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
@@ -503,7 +509,7 @@ Base.div(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[1]
 """
 Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 
-#= 
+#=
 Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
 Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =

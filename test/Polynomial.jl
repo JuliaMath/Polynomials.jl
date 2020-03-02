@@ -5,12 +5,11 @@ using LinearAlgebra
     Float32[1, -4, 2],
     ComplexF64[1 - 1im, 2 + 3im],
     [3 // 4, -2 // 1, 1 // 1]
-]  
+]
     p = Polynomial(coeff)
     @test p.coeffs == coeff
     @test coeffs(p) == coeff
     @test degree(p) == length(coeff) - 1
-    @test order(p) == length(p) == length(coeff)
     @test p.var == :x
     @test length(p) == length(coeff)
     @test size(p) == size(coeff)
@@ -45,7 +44,7 @@ end
 
     p = zero(Polynomial{Int})
     @test p.coeffs == [0]
-    
+
     p = one(Polynomial{Int})
     @test p.coeffs == [1]
 
@@ -364,7 +363,7 @@ end
     for term in p1
         @test isa(term, Polynomial)
     end
-    
+
     @test eltype(p1) == Int
     @test eltype(collect(p1)) == Polynomial{Int}
     @test eltype(collect(Polynomial{Float64}, p1)) == Polynomial{Float64}
@@ -473,7 +472,7 @@ end
 
 @testset "Plotting" begin
     p = fromroots([-1, 1]) # x^2 - 1
-    r = -2:0.04:2
+    r = -1.4:0.055999999999999994:1.4
     rec = apply_recipe(Dict{Symbol,Any}(), p)
     @test getfield(rec[1], 1) == Dict{Symbol,Any}(:label => "-1 + x^2")
     @test rec[1].args == (r, p.(r))

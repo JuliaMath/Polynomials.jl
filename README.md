@@ -96,8 +96,8 @@ ERROR: Polynomials must have same variable.
 #### Integrals and Derivatives
 
 Integrate the polynomial `p` term by term, optionally adding constant
-term `k`. The order of the resulting polynomial is one higher than the
-order of `p`.
+term `k`. The degree of the resulting polynomial is one higher than the
+degree of `p`.
 
 ```julia
 julia> integrate(Polynomial([1, 0, -1]))
@@ -107,8 +107,8 @@ julia> integrate(Polynomial([1, 0, -1]), 2)
 Polynomial(2.0 + x - 0.3333333333333333x^3)
 ```
 
-Differentiate the polynomial `p` term by term. The order of the
-resulting polynomial is one lower than the order of `p`.
+Differentiate the polynomial `p` term by term. The degree of the
+resulting polynomial is one lower than the degree of `p`.
 
 ```julia
 julia> derivative(Polynomial([1, 3, -1]))
@@ -119,7 +119,7 @@ Polynomial(3 - 2x)
 
 
 Return the roots (zeros) of `p`, with multiplicity. The number of
-roots returned is equal to the order of `p`. By design, this is not type-stable,
+roots returned is equal to the degree of `p`. By design, this is not type-stable,
 the returned roots may be real or complex.
 
 ```julia
@@ -141,7 +141,7 @@ julia> roots(Polynomial([0, 0, 1]))
 
 #### Fitting arbitrary data
 
-Fit a polynomial (of order `deg`) to `x` and `y` using a least-squares approximation.
+Fit a polynomial (of degree `deg`) to `x` and `y` using a least-squares approximation.
 
 ```julia
 julia> xs = 0:4; ys = @. exp(-xs) + sin(xs);
@@ -174,7 +174,7 @@ Polynomial objects also have other methods:
 
 * `conj`: finds the conjugate of a polynomial over a complex fiel
 
-* `truncate`: set to 0 all small terms in a polynomial; 
+* `truncate`: set to 0 all small terms in a polynomial;
 * `chop` chops off any small leading values that may arise due to floating point operations.
 
 * `gcd`: greatest common divisor of two polynomials.

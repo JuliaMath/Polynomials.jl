@@ -127,9 +127,39 @@ function companion(p::Polynomial{T}) where T
 
     R = eltype(one(T) / p.coeffs[end])
     comp = diagm(-1 => ones(R, d - 1))
-    monics = p.coeffs ./ p.coeffs[end]
-    comp[:, end] .= -monics[1:d]
+    ani = 1 / p[end]
+    for j in  0:(degree(p)-1)
+        comp[1,(d-j)] = -p[j] * ani # along top row has smaller residual than down column
+    end
+    #    monics = p.coeffs ./ p.coeffs[end]
+    #    comp[:, end] .= -monics[1:d]
     return comp
+end
+
+function  roots(p::Polynomial{T}; kwargs...)  where  {T}
+    d = length(p) - 1
+    if d < 1
+        return []
+    end
+    d == 1 && return [-p[0] / p[1]]
+
+    as = coeffs(p)
+    K  = findlast(!iszero, as)
+    if K == nothing
+        return eltype(p[0]/p[0])[]
+    end
+    k =  findfirst(!iszero, as)
+
+    k  == K && return zeros(eltype(p[0]/p[0]), k-1)
+
+    comp  = companion(typeof(p)(as[k:K], p.var))
+    #L = eigvals(rot180(comp); kwargs...)
+    L = eigvals(comp; kwargs...)
+    append!(L, zeros(eltype(L), k-1))
+    # let keyword be used for sorting???
+    by = eltype(L) <: Complex ? norm : identity
+    return sort!(L, rev = true, by = by)
+    L
 end
 
 function Base.:+(p1::Polynomial, p2::Polynomial)
@@ -159,7 +189,7 @@ function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
     R = typeof(one(T) / one(S))
     P = Polynomial{R}
     deg = n - m + 1
-    if deg ≤ 0 
+    if deg ≤ 0
         return zero(P), convert(P, num)
     end
     q_coeff = zeros(R, deg)
@@ -176,9 +206,9 @@ function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
 end
 
 function showterm(io::IO, ::Type{Polynomial{T}}, pj::T, var, j, first::Bool, mimetype) where {T}
-    if pj == zero(T) return false end
+    if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
-    if !(pj == one(T) && !(showone(T) || j == 0))   
+    if !(pj == one(T) && !(showone(T) || j == 0))
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)

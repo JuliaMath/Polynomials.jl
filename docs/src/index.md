@@ -163,6 +163,9 @@ savefig("polyfit.svg"); nothing # hide
 
 ![](polyfit.svg)
 
+### Iteration
+
+A polynomial, e.g. `a_0 + a_1 x + a_2 x^2 + ... + a_n x^n` can be seen as a collection of coefficients, `[a_0, a_1, ..., a_n]`, reelative to some polynomial basis. The most  familiar basis being  `1`, `x`, `x^2`, ... If the basis is implicit, then a polynomial is just a vector. Vectors or 1-based, but polynomial types are 0-based, for purposes of indexing (e.g. `getindex`, `setindex!`, `eachindex`). Iteration over a polynomial steps through the basis vectors, e.g. `a_0`, `a_1 x`, ...
 
 ## Related Packages
 
@@ -170,7 +173,7 @@ savefig("polyfit.svg"); nothing # hide
 
 * [MultivariatePolynomials.jl](https://github.com/blegat/MultivariatePolynomials.jl) for multivariate polynomials and moments of commutative or non-commutative variables
 
-* [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series
+* [AbstractAlgeebra.jl](https://github.com/wbhart/AbstractAlgebra.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series.
 
 * [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder
 

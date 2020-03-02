@@ -1,6 +1,19 @@
 using RecipesBase
 
 function poly_interval(p::AbstractPolynomial)
+
+    # use  restricted domain, if finite
+    A,B =  domain(p).first, domain(p).last
+    if !isinf(A) && !isinf(B)
+        if isopen(domain(p))
+            Delta = (B-A)/100
+            A += Delta
+            B -= Delta
+        end
+        return A:(B-A)/100:B
+    end
+
+
     # Find points of interest
     zero_pts = roots(p)
     crit_pts = roots(derivative(p, 1))
@@ -9,10 +22,12 @@ function poly_interval(p::AbstractPolynomial)
     # Choose a range that shows all interesting points with some margin
     min_x, max_x = length(pts) > 0 ? (pts[1], pts[end]) : (-1, 1)
     d = max(max_x - min_x, 1)
-    a = min_x - d / 2
-    b = max_x + d / 2
+    a = min_x - d / 5
+    b = max_x + d / 5
 
-    return a:d / 50:b
+    Delta  = b -  a
+
+    return a:Delta/50:b
 end
 
 poly_label(p::AbstractPolynomial) = sprint(printpoly, p)

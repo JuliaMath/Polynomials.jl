@@ -126,7 +126,11 @@ function integrate(p::ChebyshevT{T}, C::S) where {T,S <: Number}
     return ChebyshevT(a2, p.var)
 end
 
-function derivative(p::ChebyshevT{T}, order::Integer = 1) where {T}
+function derivative(q::ChebyshevT{T}, order::Integer = 1) where {T}
+    if order > degree(q)
+        return zero(ChebyshevT{T})
+    end
+    p = convert(ChebyshevT{Float64}, q)
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
     hasnan(p) && return ChebyshevT(T[NaN], p.var)
@@ -205,13 +209,16 @@ function Base.divrem(num::ChebyshevT{T}, den::ChebyshevT{S}) where {T,S}
     return P(q_coeff, num.var), P(r_coeff, num.var)
 end
 
-function printpoly(io::IO, p::ChebyshevT{T}, mimetype = MIME"text/plain"(); descending_powers = false, offset::Int = 0) where {T}
-    chopped = chop(p)
-    print(io, coeffs(chopped))
-    return nothing
+function showterm(io::IO, ::Type{ChebyshevT{T}}, pj::T, var, j, first::Bool, mimetype) where {N, T}
+    iszero(pj) && return false
+    !first &&  print(io, " ")
+    print(io, hasneg(T) && pj < 0 ? "- " :  (!first ? "+ " : ""))
+    print(io, "$(abs(pj))⋅T_$j($var)")
+    return true
 end
 
-#= 
+
+#=
 zseries =#
 
 function _c_to_z(cs::AbstractVector{T}) where {T}
@@ -255,7 +262,7 @@ function _z_division(z1::AbstractVector{T}, z2::AbstractVector{S}) where {T,S}
         i += 1
         j -= 1
     end
-        
+
     r = z1[i]
     quo[i] = r
     tmp = r * z2
