@@ -169,14 +169,28 @@ function Base.:+(p1::Polynomial, p2::Polynomial)
     return Polynomial(c, p1.var)
 end
 
+
+function Base.:+(p::Polynomial{T}, c::S) where {T,S<:Number}
+    U = promote_type(T, S)
+    p2 = U == S ? copy(p) : convert(Polynomial{U}, p)
+    p2[0] += c
+    return p2
+end
+
+
 function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     p1.var != p2.var && error("Polynomials must have same variable")
     n = length(p1) - 1
     m = length(p2) - 1
     R = promote_type(T, S)
     c = zeros(R, m + n + 1)
-    for i in 0:n, j in 0:m
-        c[i + j + 1] += p1[i] * p2[j]
+    i = j = 0
+    while i <= n
+        while j <= m
+            c[i + j + 1] += p1[i] * p2[j]
+            j +=1
+        end
+        i += 1
     end
     return Polynomial(c, p1.var)
 end
@@ -194,10 +208,14 @@ function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
     end
     q_coeff = zeros(R, deg)
     r_coeff = R.(num[0:n])
-    @inbounds for i in n:-1:m
+    i = n
+    @inbounds while i >= m
+        i -= 1
         q = r_coeff[i + 1] / den[m]
         q_coeff[i - m + 1] = q
-        @inbounds for j in 0:m
+        j = 0
+        @inbounds while j <= m
+            j += 1
             elem = den[j] * q
             r_coeff[i - m + j + 1] -= elem
         end
