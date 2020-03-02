@@ -187,7 +187,7 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     i = j = 0
     while i <= n
         while j <= m
-            c[i + j + 1] += p1[i] * p2[j]
+            @inbounds c[i + j + 1] += p1[i] * p2[j]
             j +=1
         end
         i += 1
@@ -195,7 +195,39 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     return Polynomial(c, p1.var)
 end
 
-function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
+
+function divrem(num::Polynomial{T}, den::Polynomial{S}) where {T, S}
+    if num.var != den.var
+        error("Polynomials must have same variable")
+    end
+    m = length(den)-1
+    if m == 0 && den[0] == 0
+        throw(DivideError())
+    end
+    R = typeof(one(T)/one(S))
+    n = length(num)-1
+    deg = n-m+1
+    if deg <= 0
+        return convert(Poly{R}, zero(num)), convert(Polynomial{R}, num)
+    end
+
+    aQ = zeros(R, deg)
+    aR = R[ num.a[i] for i = 1:n+1 ]
+    for i = n:-1:m
+        quot = aR[i+1] / den[m]
+        aQ[i-m+1] = quot
+        for j = 0:m
+            elem = den[j]*quot
+            aR[i-(m-j)+1] -= elem
+        end
+    end
+    pQ = Poly(aQ, num.var)
+    pR = Poly(aR, num.var)
+
+    return pQ, pR
+end
+
+function Cdivrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
     num.var != den.var && error("Polynomials must have same variable")
     n = length(num) - 1
     m = length(den) - 1
