@@ -22,6 +22,7 @@ julia> using Polynomials
 
 * `Polynomial` - Standard polynomials
 * `ChebyshevT` - Chebyshev polynomials of the first kind
+* `Bersntein` - Bernstein polynomials of degree n
 
 #### Construction and Evaluation
 
@@ -130,8 +131,8 @@ julia> roots(Polynomial([1, 0, -1]))
 
 julia> roots(Polynomial([1, 0, 1]))
 2-element Array{Complex{Float64},1}:
- 0.0+1.0im
- 0.0-1.0im
+ 0.0 - 1.0im
+ 0.0 + 1.0im
 
 julia> roots(Polynomial([0, 0, 1]))
 2-element Array{Float64,1}:
@@ -146,11 +147,11 @@ Fit a polynomial (of degree `deg`) to `x` and `y` using a least-squares approxim
 ```julia
 julia> xs = 0:4; ys = @. exp(-xs) + sin(xs);
 
-julia> fit(xs, ys)
-Polynomial(1.0000000000000016 + 0.059334723072240664*x + 0.39589720602859824*x^2 - 0.2845598112184312*x^3 + 0.03867830809692903*x^4)
+julia> fit(xs, ys) |> x -> round(x, digits=4)
+Polynomial(1.0 + 0.0593*x + 0.3959*x^2 - 0.2846*x^3 + 0.0387*x^4)
 
-julia> fit(ChebyshevT, xs, ys, deg=2)
-ChebyshevT([0.541280671210034, -0.8990834124779993, -0.4237852336242923])
+julia> fit(ChebyshevT, xs, ys, deg=2) |> x -> round(x, digits=4)
+ChebyshevT(0.5413⋅T_0(x) - 0.8991⋅T_1(x) - 0.4238⋅T_2(x))
 ```
 
 Visual example:
@@ -166,15 +167,16 @@ Polynomial objects also have other methods:
 
 * `coeffs`: returns the entire coefficient vector
 
-* `degree`: returns the polynomial degree, `length` is 1 plus the degree
+* `degree`: returns the polynomial degree, `length` is number of stored coefficients
 
-* `variable`: returns the polynomial symbol as a degree 1 polynomial
+* `variable`: returns the polynomial symbol as polynomial in the underlying type
 
 * `norm`: find the `p`-norm of a polynomial
 
-* `conj`: finds the conjugate of a polynomial over a complex fiel
+* `conj`: finds the conjugate of a polynomial over a complex field
 
 * `truncate`: set to 0 all small terms in a polynomial;
+
 * `chop` chops off any small leading values that may arise due to floating point operations.
 
 * `gcd`: greatest common divisor of two polynomials.

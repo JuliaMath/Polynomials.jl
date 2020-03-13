@@ -19,8 +19,8 @@ end
 polyint(p::AbstractPolynomial, C = 0) = integrate(p, C)
 polyint(p::AbstractPolynomial, a, b) = integrate(p, a, b)
 polyder(p::AbstractPolynomial, ord = 1) = derivative(p, ord)
-polyfit(x, y, n = length(x) - 1) = fit(Polynomial, x, y; deg = n)
-polyfit(x, y, sym::Symbol) = fit(Polynomial, x, y; var = sym)
+polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Polynomial, x, y, n; var = sym)
+polyfit(x, y, sym::Symbol) = fit(Polynomial, x, y, var = sym)
 
 padeval(PQ::Pade, x::Number) = PQ(x)
 padeval(PQ::Pade, x) = PQ.(x)

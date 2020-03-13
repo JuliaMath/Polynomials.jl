@@ -91,6 +91,7 @@ plot(::AbstractPolynomial, a, b; kwds...)
 will plot the polynomial within the range `[a, b]`.
 
 ### Example: The Polynomials.jl logo
+
 ```@example
 using Plots, Polynomials
 # T1, T2, T3, and T4:

@@ -52,12 +52,12 @@ end
 end
 
 @testset "Roots" begin
-    r = [-1, 0, 1]
+    r = [-1, 1, 0]
     c = fromroots(ChebyshevT, r)
     @test c == ChebyshevT([0, -0.25, 0, 0.25])
-    @test roots(c) ≈ sort(r, rev = true)
+    @test roots(c) ≈ r
 
-    r = [-1im, 1im]
+    r = [1im, -1im]
     c = fromroots(ChebyshevT, r)
     @test c ≈ ChebyshevT([1.5 + 0im, 0 + 0im, 0.5 + 0im])
     @test roots(c) ≈ r
@@ -171,6 +171,12 @@ end
         res = convert(Polynomial, cint)
         @test res ≈ target
         @test derivative(cint) == cheb
+    end
+
+    for i in 1:10
+        p = ChebyshevT{Float64}(rand(1:5, 6))
+        @test degree(round(p - integrate(derivative(p)), digits=13)) <= 0
+        @test degree(round(p - derivative(integrate(p)), digits=13)) <= 0
     end
 end
 

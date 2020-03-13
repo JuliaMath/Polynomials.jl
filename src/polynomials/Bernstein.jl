@@ -40,7 +40,7 @@ export Bernstein
 function showterm(io::IO, ::Type{Bernstein{N, T}}, pj::T, var, j, first::Bool, mimetype) where {N, T}
     iszero(pj) && return false
     !first &&  print(io, " ")
-    print(io, hasneg(T) && pj < 0 ? "- " :  (!first ? "+ " : ""))
+    print(io, hasneg(T) && isneg(pj) ? "- " :  (!first ? "+ " : ""))
     print(io, "$(abs(pj))⋅β($N, $j)($var)")
     return true
 end
@@ -60,10 +60,9 @@ function Base.promote_rule(::Type{Bernstein{N,T}}, ::Type{S}) where {N, T, S <: 
 end
 
 
-function Base.convert(P::Type{<:Polynomial{T}}, ch::Bernstein{N,S}) where {N, T, S}
-    R = promote_type(T, S)
-    out = P(zeros(R,1), ch.var)
-    x = P([zero(R),one(R)], ch.var)
+function Base.convert(P::Type{<:Polynomial}, ch::Bernstein{N,T}) where {N, T}
+    out = P(zeros(T,1), ch.var)
+    x = P([zero(T),one(T)], ch.var)
     @inbounds for (i,ai) in enumerate(coeffs(ch))
         nu = i - 1
         out += ai *  binomial(N, nu) * x^nu * (1-x)^(N-nu)
@@ -76,7 +75,8 @@ function Base.convert(C::Type{<:Bernstein{N, T}}, p::Polynomial) where {N, T}
 
     @assert degree(p) <= N
 
-    cs = zeros(T, N+1)
+    R = eltype(one(T)/one(Int))
+    cs = zeros(R, N+1)
 
     for (i, a_nu) in enumerate(coeffs(p))
         k = i - 1
@@ -85,10 +85,10 @@ function Base.convert(C::Type{<:Bernstein{N, T}}, p::Polynomial) where {N, T}
             cs[j+1] += a_nu/nk*binomial(j,k)
         end
     end
-    Bernstein{N, T}(cs, p.var)
+    Bernstein{N, R}(cs, p.var)
 end
 
-function Base.convert(::Type{<:AbstractBernstein{T}}, p::Polynomial) where {T}
+function Base.convert(::Type{<:AbstractBernstein}, p::Polynomial{T}) where {T}
     N = degree(p)
     convert(Bernstein{N, T}, p)
 end
@@ -128,7 +128,8 @@ function integrate(p::Bernstein{N, T}, C::S) where {N, T,S <: Number}
             cs[j+1] += a_nu/(NN)
         end
     end
-    Bernstein{NN, R}(cs, p.var)
+
+    Bernstein{NN, R}(cs, p.var) + C
 end
 
 
@@ -168,13 +169,26 @@ function Base.:+(p1::Bernstein{N,T}, p2::Bernstein{M,S}) where {N, T, M, S}
     end
 end
 
-function Base.:*(p1::AbstractBernstein{T}, p2::AbstractBernstein{S}) where {T, S}
-    q1 = convert(Polynomial{T}, p1)
-    q2 = convert(Polynomial{S}, p2)
-    q = truncate(q1 * q2)
-    N = degree(q)
-    R =  eltype(q)
-    convert(AbstractBernstein{R}, q)
+
+function Base.:*(p1::Bernstein{N,T}, p2::Bernstein{M,S}) where {N,T, M,S}
+    ## use b(n,k) * b(m,j) = choose(n,k)choose(m,j)/choose(n+m,k+j) b(n+m, k+j)
+
+    p1.var == p2.var || throw(ArgumentError("p1 and p2 must have the same symbol"))
+
+    R1 = promote_type(T,S)
+    R = typeof(one(R1)/one(R1))
+
+    c = zeros(R, N + M + 1)
+    bnmi = 1 // (binomial(N+M,M))
+    for i in 0:N
+        for j in 0:M
+            aij = binomial(N+M-(i+j),N-i) * binomial(i+j,i) * bnmi
+            @inbounds c[i + j + 1] += aij * p1[i] * p2[j]
+        end
+    end
+
+    Bernstein{N+M,R}(c, p1.var)
+
 end
 
 function (ch::AbstractBernstein{T})(x::S) where {T,S}
@@ -193,4 +207,19 @@ function Base.divrem(num::Bernstein{N,T}, den::Bernstein{M,S}) where {N, T, M, S
     R = eltype(q)
 
     convert.(AbstractBernstein{R}, (q,r))
+end
+
+
+function vander(P::Type{<:AbstractBernstein}, xs::AbstractVector{T}, n::Integer) where {T <: Number}
+    N = length(xs) - 1 # xs = [x0, x1, ...]
+    R = typeof(one(T)/one(T))
+    V = zeros(R, N+1, n+1)
+    for j in 0:n
+        bnj = binomial(n,j)
+        for i in 0:N
+            x = xs[i+1]
+            V[i+1, j+1] = bnj * x^j * (1-x)^(n-j)     #beta(n,j)(xj)
+        end
+    end
+    V
 end

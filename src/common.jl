@@ -60,39 +60,40 @@ fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} =
     fromroots(Polynomial, eigvals(A), var = var)
 
 """
-    fit(x, y; [weights], deg=length(x) - 1, var=:x)
-    fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x)-1, var=:x)
+    fit(x, y, deg=length(x) - 1; [weights], var=:x)
+    fit(::Type{<:AbstractPolynomial}, x, y, deg=length(x)-1; [weights], var=:x)
 
-Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref)
+Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref). To specify a different range to scale to, specify `domain=(a,b)` where `a <= minimum(xs) && maximum(xs) <= b`.
 """
 function fit(P::Type{<:AbstractPolynomial},
-    x::AbstractVector{T},
-    y::AbstractVector{T};
-    weights = nothing,
-    deg::Integer = length(x) - 1,
-    var = :x,) where {T}
-    x = mapdomain(P, x)
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             deg::Integer=length(x) - 1;
+             domain=(minimum(x), maximum(x)),
+             weights = nothing,
+             var = :x,) where {T}
+    x = mapdomain(P, first(domain),last(domain)).(x)
     vand = vander(P, x, deg)
     if weights !== nothing
         coeffs = _wlstsq(vand, y, weights)
     else
-        coeffs = pinv(vand) * y
+        coeffs = vand \ y #pinv(vand) * y
     end
     return P(T.(coeffs), var)
 end
 
 fit(P::Type{<:AbstractPolynomial},
     x,
-    y;
+    y,
+    deg::Integer = length(x) - 1;
     weights = nothing,
-    deg::Integer = length(x) - 1,
-    var = :x,) = fit(P, promote(collect(x), collect(y))...; weights = weights, deg = deg, var = var)
+    var = :x,) = fit(P, promote(collect(x), collect(y))..., deg; weights = weights, var = var)
 
 fit(x::AbstractVector,
-    y::AbstractVector;
+    y::AbstractVector,
+    deg::Integer = length(x) - 1;
     weights = nothing,
-    deg::Integer = length(x) - 1,
-    var = :x,) = fit(Polynomial, x, y; weights = weights, deg = deg, var = var)
+    var = :x,) = fit(Polynomial, x, y, deg; weights = weights, var = var)
 
 # Weighted linear least squares
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
@@ -353,6 +354,11 @@ function mapdomain(P::Type{<:AbstractPolynomial}, x::AbstractArray)
 end
 mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
 
+function mapdomain(P::Type{<:AbstractPolynomial}, a::Number, b::Number)
+    a, b = a < b ? (a,b) : (b,a)
+    x -> mapdomain(P, [a,x,b])[2]
+end
+
 #=
 indexing =#
 Base.firstindex(p::AbstractPolynomial) = 0
@@ -362,10 +368,14 @@ Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # basis
 # return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
-function basis(p::P, k::Int) where {P <: AbstractPolynomial}
-    zs = zeros(eltype(p), k+1)
-    zs[k+1] = 1
-    P(zs, p.var)
+function basis(p::P, k::Int) where {P<:AbstractPolynomial}
+    basis(P, k)
+end
+
+function basis(::Type{P}, k::Int; var=:x) where {P <: AbstractPolynomial}
+    zs = zeros(Int, k+1)
+    zs[end] = 1
+    P(zs, var)
 end
 
 # iteration

@@ -29,14 +29,15 @@ domain(::Type{<:Poly}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:Poly}, x::AbstractArray) = x
 
 function (p::Poly{T})(x::S) where {T,S}
-    R = promote_type(T, S)
-    length(p) == 0 && return zero(R)
-    y = convert(R, p[end])
+    oS = one(x)
+    length(p) == 0 && return zero(T) *  oS
+    b = p[end]  *  oS
     @inbounds for i in (lastindex(p) - 1):-1:0
-        y = p[i] + x * y
+        b = p[i]*oS .+ x * b
     end
-    return y
+    return b
 end
+
 
 function fromroots(P::Type{<:Poly}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)

@@ -167,14 +167,14 @@ end
     abs_error = abs.(y_fit .- ys)
     @test maximum(abs_error) <= 0.03
 
-    p = fit(Polynomial, xs, ys, deg = 2)
+    p = fit(Polynomial, xs, ys, 2)
     y_fit = p.(xs)
     abs_error = abs.(y_fit .- ys)
     @test maximum(abs_error) <= 0.03
 
     # Test weighted
     for W in [1, ones(size(xs)), diagm(0 => ones(size(xs)))]
-        p = fit(Polynomial, xs, ys, weights = W, deg = 2)
+        p = fit(Polynomial, xs, ys, 2, weights = W)
         @test p.(xs) ≈ y_fit
     end
 
@@ -182,7 +182,7 @@ end
     # Getting error on passing Real arrays to polyfit #146
     xx = Real[20.0, 30.0, 40.0]
     yy = Real[15.7696, 21.4851, 28.2463]
-    fit(xx, yy, deg = 2)
+    fit(xx, yy, 2)
 end
 
 @testset "Values" begin
@@ -199,6 +199,12 @@ end
     @test isnan(p1(-Inf))
     @test isnan(p1(0))
     @test p2(-Inf) == -Inf
+
+    # issue #189
+    p = Polynomial([0,1,2,3])
+    A = [0 1; 0  0];
+    @test  p(A) == A  + 2A^2 + 3A^3
+
 end
 
 @testset "Conversion" begin
@@ -216,7 +222,7 @@ end
 
 @testset "Roots" begin
     # From roots
-    r = [3, 2]
+    r = [2, 3]
     p = fromroots(Polynomial, r)
     @test fromroots(r) == Polynomial([6, -5, 1])
     @test p == Polynomial([6, -5, 1])
@@ -262,6 +268,13 @@ end
     rc = Rational{Int64}[1,2,3]
     @test integrate(Polynomial(rc)) == Polynomial{eltype(rc)}([0, 1, 1, 1])
     @test integrate(Polynomial([1,1,0,0]), 0, 2) == 4.0
+
+    for i in 1:10
+        p = Polynomial{Float64}(rand(1:5, 6))
+        @test degree(round(p - integrate(derivative(p)), digits=13)) <= 0
+        @test degree(round(p - derivative(integrate(p)), digits=13)) <= 0
+    end
+
 
     # Handling of `NaN`s
     p     = Polynomial([NaN, 1, 5])
@@ -315,6 +328,10 @@ end
     pchop = Polynomial([1, 2, 3, 0, 0, 0])
     pchopped = chop(pchop)
     @test roots(pchop) == roots(pchopped)
+
+    # round
+    psmall = Polynomial(eps()*rand(1:10,  9))
+    @test degree(round(psmall, digits=14)) == -1
 
 end
 
@@ -481,4 +498,10 @@ end
     rec = apply_recipe(Dict{Symbol,Any}(), p, -1, 1)
     @test getfield(rec[1], 1) == Dict{Symbol,Any}(:label => "-1 + x^2")
     @test rec[1].args == (r, p.(r))
+
+    p = ChebyshevT([1,1,1])
+    rec = apply_recipe(Dict{Symbol,Any}(), p)
+    r = -1.0:0.02:1.0  # uses domain(p)
+    @test rec[1].args == (r, p.(r))
+
 end

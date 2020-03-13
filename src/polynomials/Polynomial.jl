@@ -64,11 +64,11 @@ julia> p.(0:3)
 ```
 """
 function (p::Polynomial{T})(x::S) where {T,S}
-    R = promote_type(T, S)
-    length(p) == 0 && return zero(R)
-    b = convert(R, p[end])
+    oS = one(x)
+    length(p) == 0 && return zero(T) *  oS
+    b = p[end]  *  oS
     @inbounds for i in (lastindex(p) - 1):-1:0
-        b = p[i] + x * b
+        b = p[i]*oS .+ x * b
     end
     return b
 end
@@ -108,12 +108,13 @@ end
 
 function derivative(p::Polynomial{T}, order::Integer = 1) where {T}
     order < 0 && error("Order of derivative must be non-negative")
-    order == 0 && return p
-    hasnan(p) && return Polynomial(T[NaN], p.var)
-    order > length(p) && return zero(Polynomial{T})
+    R = eltype(one(T)/1)
+    order == 0 && return convert(Polynomial{R}, p)
+    hasnan(p) && return Polynomial(R[NaN], p.var)
+    order > length(p) && return zero(Polynomial{R})
 
     n = length(p)
-    a2 = Vector{T}(undef, n - order)
+    a2 = Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
     end
@@ -156,16 +157,16 @@ function  roots(p::Polynomial{T}; kwargs...)  where  {T}
     #L = eigvals(rot180(comp); kwargs...)
     L = eigvals(comp; kwargs...)
     append!(L, zeros(eltype(L), k-1))
-    # let keyword be used for sorting???
-    by = eltype(L) <: Complex ? norm : identity
-    return sort!(L, rev = true, by = by)
+
     L
 end
 
-function Base.:+(p1::Polynomial, p2::Polynomial)
+function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
+    R = promote_type(T,S)
     p1.var != p2.var && error("Polynomials must have same variable")
-    n = max(length(p1), length(p2))
-    c = [p1[i] + p2[i] for i = 0:n]
+
+    n1, n2 = length(p1), length(p2)
+    c = [p1[i] + p2[i] for i = 0:max(n1, n2)]
     return Polynomial(c, p1.var)
 end
 
@@ -177,57 +178,19 @@ function Base.:+(p::Polynomial{T}, c::S) where {T,S<:Number}
     return p2
 end
 
-
 function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     p1.var != p2.var && error("Polynomials must have same variable")
-    n = length(p1) - 1
-    m = length(p2) - 1
+    n,m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
     R = promote_type(T, S)
+    N = m + n
     c = zeros(R, m + n + 1)
-    i = j = 0
-    while i <= n
-        while j <= m
-            @inbounds c[i + j + 1] += p1[i] * p2[j]
-            j +=1
-        end
-        i += 1
+    for i in 0:n, j in 0:m
+        @inbounds c[i + j + 1] += p1[i] * p2[j]
     end
     return Polynomial(c, p1.var)
 end
 
-
-function divrem(num::Polynomial{T}, den::Polynomial{S}) where {T, S}
-    if num.var != den.var
-        error("Polynomials must have same variable")
-    end
-    m = length(den)-1
-    if m == 0 && den[0] == 0
-        throw(DivideError())
-    end
-    R = typeof(one(T)/one(S))
-    n = length(num)-1
-    deg = n-m+1
-    if deg <= 0
-        return convert(Poly{R}, zero(num)), convert(Polynomial{R}, num)
-    end
-
-    aQ = zeros(R, deg)
-    aR = R[ num.a[i] for i = 1:n+1 ]
-    for i = n:-1:m
-        quot = aR[i+1] / den[m]
-        aQ[i-m+1] = quot
-        for j = 0:m
-            elem = den[j]*quot
-            aR[i-(m-j)+1] -= elem
-        end
-    end
-    pQ = Poly(aQ, num.var)
-    pR = Poly(aR, num.var)
-
-    return pQ, pR
-end
-
-function Cdivrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
+function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
     num.var != den.var && error("Polynomials must have same variable")
     n = length(num) - 1
     m = length(den) - 1
@@ -239,15 +202,11 @@ function Cdivrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
         return zero(P), convert(P, num)
     end
     q_coeff = zeros(R, deg)
-    r_coeff = R.(num[0:n])
-    i = n
-    @inbounds while i >= m
-        i -= 1
+    r_coeff = R[ num.a[i] for i in 1:n+1 ]
+    @inbounds for i in n:-1:m
         q = r_coeff[i + 1] / den[m]
         q_coeff[i - m + 1] = q
-        j = 0
-        @inbounds while j <= m
-            j += 1
+        @inbounds for j in 0:m
             elem = den[j] * q
             r_coeff[i - m + j + 1] -= elem
         end

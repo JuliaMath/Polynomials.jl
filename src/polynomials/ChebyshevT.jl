@@ -126,31 +126,31 @@ function integrate(p::ChebyshevT{T}, C::S) where {T,S <: Number}
     return ChebyshevT(a2, p.var)
 end
 
-function derivative(q::ChebyshevT{T}, order::Integer = 1) where {T}
-    if order > degree(q)
-        return zero(ChebyshevT{T})
-    end
-    p = convert(ChebyshevT{Float64}, q)
-    order < 0 && error("Order of derivative must be non-negative")
-    order == 0 && return p
-    hasnan(p) && return ChebyshevT(T[NaN], p.var)
-    order > length(p) && return zero(ChebyshevT{T})
 
+function derivative(p::ChebyshevT{T}, order::Integer = 1) where {T}
+    order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
+    R  = eltype(one(T)/1)
+    order == 0 && return convert(ChebyshevT{R}, p)
+    hasnan(p) && return ChebyshevT(R[NaN], p.var)
+    order > length(p) && return zero(ChebyshevT{R})
+
+
+    q =  convert(ChebyshevT{R}, copy(p))
     n = length(p)
-    der = Vector{T}(undef, n)
-    for i in 1:order
-        n -= 1
-        resize!(der, n)
-        for j in n:-1:2
-            der[j] = 2j * p[j]
-            p[j - 2] += j * p[j] / (j - 2)
-        end
-        if n > 1
-            der[2] = 4p[2]
-        end
-        der[1] = p[1]
+    der = Vector{R}(undef, n)
+
+    for j in n:-1:2
+        der[j] = 2j * q[j]
+        q[j - 2] += j * q[j] / (j - 2)
     end
-    return ChebyshevT(der, p.var)
+    if n > 1
+        der[2] = 4q[2]
+    end
+    der[1] = q[1]
+
+    pp = ChebyshevT(der, p.var)
+    return order > 1 ?  derivative(pp, order - 1) : pp
+
 end
 
 function companion(p::ChebyshevT{T}) where T
@@ -212,7 +212,7 @@ end
 function showterm(io::IO, ::Type{ChebyshevT{T}}, pj::T, var, j, first::Bool, mimetype) where {N, T}
     iszero(pj) && return false
     !first &&  print(io, " ")
-    print(io, hasneg(T) && pj < 0 ? "- " :  (!first ? "+ " : ""))
+    print(io, hasneg(T)  && isneg(pj) ? "- " :  (!first ? "+ " : ""))
     print(io, "$(abs(pj))⋅T_$j($var)")
     return true
 end

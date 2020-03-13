@@ -7,7 +7,7 @@ end
 ```
 
 
-The [Bernstein polynomials](https://en.wikipedia.org/wiki/Bernstein_polynomial) are a family of polynomials defined on the interval `[0,1]`. For each `n` there are `n+1` polynomials, given by: `b(n,nu) = choose(n,nu) x^nu * (1-x)^(n-nu)` for `nu` in `0:n`. Together, these form a basis that can represent any polynomial of degree `n` or less through a linear combination.
+The [Bernstein polynomials](https://en.wikipedia.org/wiki/Bernstein_polynomial) are a family of polynomials defined on the interval `[0,1]`. For each `n` there are `n+1` polynomials, given by: `b(n,nu) = choose(n,nu) x^nu * (1-x)^(n-nu)` for `nu` in `0:n`. Together, these form a basis that can represent any polynomial of degree `n` or less through a unique linear combination.
 
 
 ## Bernstein(N,T)

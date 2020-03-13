@@ -11,10 +11,10 @@ include("contrib.jl")
 # Polynomials
 include("polynomials/Polynomial.jl")
 include("polynomials/ChebyshevT.jl")
-include("polynomials/ChebyshevU.jl")
+#include("polynomials/ChebyshevU.jl")
 include("polynomials/Bernstein.jl")
 
-include("polynomials/Poly.jl") # Deprecated -> Will be removed
+include("polynomials/Poly.jl") # to be deprecated, then removed
 include("pade.jl")
 include("compat.jl") # Where we keep deprecations
 
