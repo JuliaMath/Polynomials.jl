@@ -33,7 +33,7 @@ Polynomial(6 - 5*x + x^2)
 """
 function fromroots(P::Type{<:AbstractPolynomial}, roots::AbstractVector; var::SymbolLike = :x)
     x = variable(P, var)
-    p =  prod(x .- roots)
+    p =  prod(x - r for r in roots)
     return truncate!(p)
 end
 fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =

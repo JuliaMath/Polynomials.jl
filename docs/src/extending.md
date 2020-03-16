@@ -31,4 +31,4 @@ As always, if the default implementation does not work or there are more efficie
 | `divrem` | | Required for [`gcd`](@ref)|
 | `variable`| | Convenience to find monomial `x` in new  basis|
 
-Check out both the [`Polynomial`](@ref) and [`ChebyshevT`](@ref) for examples of this interface being extended. [`Bernstein`](@ref) is an example where the basis depends on the  degree of  the polynomials being represented.
+Check out both the [`Polynomial`](@ref) and [`ChebyshevT`](@ref) for examples of this interface being extended.

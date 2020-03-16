@@ -12,7 +12,7 @@ include("contrib.jl")
 include("polynomials/Polynomial.jl")
 include("polynomials/ChebyshevT.jl")
 #include("polynomials/ChebyshevU.jl")
-include("polynomials/Bernstein.jl")
+
 
 include("polynomials/Poly.jl") # to be deprecated, then removed
 include("pade.jl")

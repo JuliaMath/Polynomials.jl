@@ -22,7 +22,6 @@ julia> using Polynomials
 
 * `Polynomial` - Standard polynomials
 * `ChebyshevT` - Chebyshev polynomials of the first kind
-* `Bersntein` - Bernstein polynomials of degree n
 
 #### Construction and Evaluation
 
