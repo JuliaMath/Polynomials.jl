@@ -68,10 +68,33 @@ function (p::Polynomial{T})(x::S) where {T,S}
     length(p) == 0 && return zero(T) *  oS
     b = p[end]  *  oS
     @inbounds for i in (lastindex(p) - 1):-1:0
-        b = p[i]*oS .+ x * b
+        b = p[i]*oS .+ x * b # not muladd(x,b,p[i]), unless we want to add methods for matrices, ...
     end
     return b
 end
+
+## From base/math.jl from Julia 1.4
+function (p::Polynomial{T})(z::S) where {T,S <: Complex}
+    d = degree(p)
+    d == -1 && zero(z)
+    d == 0 && return p[0]
+    N = d + 1
+    a = p[end]
+    b = p[end-1]
+
+    x = real(z)
+    y = imag(z)
+    r = 2x
+    s = muladd(x, x, y*y)
+    for i in d-2:-1:0
+        ai = a
+        a = muladd(r, ai, b)
+        b = p[i] - s * ai
+    end
+    ai = a
+    muladd(ai, z, b)
+end
+
 
 function fromroots(P::Type{<:Polynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
@@ -173,7 +196,8 @@ end
 
 function Base.:+(p::Polynomial{T}, c::S) where {T,S<:Number}
     U = promote_type(T, S)
-    p2 = U == S ? copy(p) : convert(Polynomial{U}, p)
+    q = copy(p)
+    p2 = U == S ? q : convert(Polynomial{U}, q)
     p2[0] += c
     return p2
 end
