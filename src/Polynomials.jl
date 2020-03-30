@@ -10,8 +10,8 @@ include("contrib.jl")
 
 # Polynomials
 include("polynomials/Polynomial.jl")
+include("polynomials/ImmutablePolynomial.jl")
 include("polynomials/ChebyshevT.jl")
-#include("polynomials/ChebyshevU.jl")
 
 
 include("polynomials/Poly.jl") # to be deprecated, then removed
