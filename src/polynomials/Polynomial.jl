@@ -226,7 +226,7 @@ function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
         return zero(P), convert(P, num)
     end
     q_coeff = zeros(R, deg)
-    r_coeff = R[ num.a[i] for i in 1:n+1 ]
+    r_coeff = R[ num[i-1] for i in 1:n+1 ]
     @inbounds for i in n:-1:m
         q = r_coeff[i + 1] / den[m]
         q_coeff[i - m + 1] = q
