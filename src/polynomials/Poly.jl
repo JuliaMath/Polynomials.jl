@@ -176,4 +176,7 @@ Polynomials.polyint(p::Poly, C = 0) = integrate(p, C)
 Polynomials.polyint(p::Poly, a, b) = integrate(p, a, b)
 Polynomials.polyder(p::Poly, ord = 1) = derivative(p, ord)
 
+polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
+polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
+
 end
