@@ -1,6 +1,8 @@
 module PolyCompat
 
 using ..Polynomials
+export poly, polyval, polyint, polyder, polyfit
+
 #=
 This type is only here to provide stability while deprecating. This will eventually be removed in favor
 of `Polynomial` =#
@@ -32,7 +34,7 @@ Polynomials.@register Poly
 
 Base.convert(P::Type{<:Polynomial}, p::Poly{T}) where {T} = P(p.coeffs, p.var)
 
-Polynomials.domain(::Type{<:Poly}) = Interval(-Inf, Inf)
+Polynomials.domain(::Type{<:Poly}) = Polynomials.Interval(-Inf, Inf)
 Polynomials.mapdomain(::Type{<:Poly}, x::AbstractArray) = x
 
 function (p::Poly{T})(x::S) where {T,S}
@@ -159,8 +161,9 @@ Polynomials.showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimety
 
 ## Compat
 poly(r, var = :x) = fromroots(Poly, r; var = var)
-polyval(p::Poly, x::Number) = p(x)
-polyval(p::Poly, x) = p.(x)
+
+Polynomials.polyval(p::Poly, x::Number) = p(x)
+Polynomials.polyval(p::Poly, x) = p.(x)
 
 function Base.getproperty(p::Poly, nm::Symbol)
     if nm == :a
@@ -169,17 +172,8 @@ function Base.getproperty(p::Poly, nm::Symbol)
     return getfield(p, nm)
 end
 
-polyint(p::Poly, C = 0) = integrate(p, C)
-polyint(p::Poly, a, b) = integrate(p, a, b)
-polyder(p::Poly, ord = 1) = derivative(p, ord)
-polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
-polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
-
-export poly, polyval, polyint, polyder, polyfit
+Polynomials.polyint(p::Poly, C = 0) = integrate(p, C)
+Polynomials.polyint(p::Poly, a, b) = integrate(p, a, b)
+Polynomials.polyder(p::Poly, ord = 1) = derivative(p, ord)
 
 end
-
-## Ensure compatability for now
-using .PolyCompat
-export Poly
-export poly, polyval, polyint, polyder, polyfit, padeval

@@ -354,9 +354,22 @@ function mapdomain(P::Type{<:AbstractPolynomial}, x::AbstractArray)
 end
 mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
 
+"""
+    mapdomain(P::Type{<:AbstractPolynomial}, a , b)
+
+Returns a *linear* function ϕ: [a,b] -> domain(P)
+
+If either endpoint if infinite, returns `identity`.
+"""
 function mapdomain(P::Type{<:AbstractPolynomial}, a::Number, b::Number)
     a, b = a < b ? (a,b) : (b,a)
-    x -> mapdomain(P, [a,x,b])[2]
+    dom = domain(P)
+    m, M = first(dom), last(dom)
+    (isinf(a) || isinf(b) || isinf(m) || isinf(M)) && return  x -> x
+    x -> begin
+        lambda = (x-a)/(b-a)
+        m + lambda * (last(dom) - first(dom))
+    end
 end
 
 #=

@@ -1,3 +1,8 @@
+module PadeApproximation
+
+using ..Polynomials
+export Pade, padeval
+
 #=
 Pade approximation
 
@@ -100,4 +105,6 @@ true
 padeval(PQ::Pade, x::Number) = PQ(x)
 padeval(PQ::Pade, x) = PQ.(x)
 
-export padeval
+
+
+end
