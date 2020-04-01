@@ -226,7 +226,7 @@ end
     p = fromroots(Polynomial, r)
     @test fromroots(r) == Polynomial([6, -5, 1])
     @test p == Polynomial([6, -5, 1])
-    @test roots(p) ≈ r
+    @test sort(roots(p)) ≈ r
 
     @test roots(p0) == roots(p1) == roots(pNULL) == []
     @test roots(Polynomial([0,1,0])) == [0.0]
