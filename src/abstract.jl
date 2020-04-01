@@ -35,7 +35,7 @@ macro register(name)
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.convert(P::Type{<:$poly}, p::$poly) where {T} = P(p.coeffs, p.var)
+        Base.convert(P::Type{<:$poly}, p::$poly) where {T} = P(coeffs(p), p.var)
         Base.promote_rule(::Type{$poly{T}}, ::Type{$poly{S}}) where {T,S} =
             $poly{promote_type(T, S)}
         Base.promote_rule(::Type{$poly{T}}, ::Type{S}) where {T,S<:Number} =
