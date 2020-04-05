@@ -16,7 +16,6 @@ end
 
 ```@docs
 coeffs
-order
 degree
 length
 size
@@ -24,6 +23,7 @@ domain
 mapdomain
 chop
 chop!
+round
 truncate
 truncate!
 ```

@@ -60,24 +60,22 @@ fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} =
     fromroots(Polynomial, eigvals(A), var = var)
 
 """
-    fit(x, y, deg=length(x) - 1; [weights], var=:x)
-    fit(::Type{<:AbstractPolynomial}, x, y, deg=length(x)-1; [weights], var=:x)
-
-Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref). To specify a different range to scale to, specify `domain=(a,b)` where `a <= minimum(xs) && maximum(xs) <= b`.
+    fit(x, y; [weights], deg=length(x) - 1, var=:x)
+    fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x)-1, var=:x)
+Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref)
 """
 function fit(P::Type{<:AbstractPolynomial},
              x::AbstractVector{T},
              y::AbstractVector{T},
-             deg::Integer=length(x) - 1;
-             domain=(minimum(x), maximum(x)),
-             weights = nothing,
-             var = :x,) where {T}
-    x = mapdomain(P, first(domain),last(domain)).(x)
+             deg::Integer = length(x) - 1;
+    weights = nothing,
+    var = :x,) where {T}
+    x = mapdomain(P, x)
     vand = vander(P, x, deg)
     if weights !== nothing
         coeffs = _wlstsq(vand, y, weights)
     else
-        coeffs = vand \ y #pinv(vand) * y
+        coeffs = pinv(vand) * y
     end
     return P(T.(coeffs), var)
 end
@@ -196,7 +194,8 @@ In-place version of [`chop`](@ref)
 """
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
-    atol::Real = 0,) where {T}
+               atol::Real = 0,) where {T}
+    degree(p) == -1 && return p
     for i = lastindex(p):-1:0
         val = p[i]
         if !isapprox(val, zero(T); rtol = rtol, atol = atol)
@@ -353,25 +352,6 @@ function mapdomain(P::Type{<:AbstractPolynomial}, x::AbstractArray)
     return x_scaled
 end
 mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
-
-"""
-    mapdomain(P::Type{<:AbstractPolynomial}, a , b)
-
-Returns a *linear* function ϕ: [a,b] -> domain(P)
-
-If either endpoint if infinite, returns `identity`.
-"""
-function mapdomain(P::Type{<:AbstractPolynomial}, a::Number, b::Number)
-    a, b = a < b ? (a,b) : (b,a)
-    dom = domain(P)
-    m, M = first(dom), last(dom)
-    (isinf(a) || isinf(b) || isinf(m) || isinf(M)) && return  x -> x
-    x -> begin
-        lambda = (x-a)/(b-a)
-        m + lambda * (last(dom) - first(dom))
-    end
-end
-
 #=
 indexing =#
 Base.firstindex(p::AbstractPolynomial) = 0
@@ -527,7 +507,7 @@ function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T
     while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
         _, rtemp = divrem(r₀, r₁)
         r₀ = r₁
-        r₁ = truncate(rtemp)
+        r₁ = truncate(rtemp)  
         iter += 1
     end
     return r₀
