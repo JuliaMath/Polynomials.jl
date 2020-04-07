@@ -1,3 +1,5 @@
+export printpoly
+
 ## Poly{T} is basically T[x], with T a Ring.
 ## T[x] may not have an order so abs, comparing to 0 may not be defined.
 
@@ -26,9 +28,6 @@ hasneg(::Type{T}) where {T<:Real} = true
 showone(::Type{T}) where {T<:Integer} = false
 showone(::Type{Rational{T}}) where {T<:Integer} = false
 
-
-
-
 ### Complex coefficients
 hasneg(::Type{Complex{T}}) where {T} = true      ## we say neg if real(z) < 0 || real(z) == 0 and imag(g) < 0
 
@@ -40,12 +39,33 @@ end
 
 showone(pj::Type{Complex{T}}) where {T} = showone(T)
 
-
 ### Polynomials as coefficients
-hasneg(::Type{Poly{S}}) where {S} = false
-showone(::Type{Poly{S}}) where {S} = false
+hasneg(::Type{<:AbstractPolynomial{S}}) where {S} = false
+showone(::Type{<:AbstractPolynomial{S}}) where {S} = false
 
 
+
+#=
+Common Printing
+=#
+
+Base.show(io::IO, p::AbstractPolynomial) = show(io, MIME("text/plain"), p)
+
+function Base.show(io::IO, mimetype::MIME"text/plain", p::P) where {P<:AbstractPolynomial}
+    print(io,"$(P.name)(")
+    printpoly(io, p, mimetype)
+    print(io,")")
+end
+
+function Base.show(io::IO, mimetype::MIME"text/latex", p::AbstractPolynomial)
+    print(io, "\$")
+    printpoly(io, p, mimetype)
+    print(io, "\$")
+end
+
+function Base.show(io::IO, mimetype::MIME"text/html", p::AbstractPolynomial)
+    printpoly(io, p, mimetype)
+end
 
 #####
 
@@ -70,7 +90,7 @@ end
 ###
 
 """
-    printpoly(io::IO, p::Poly, mimetype = MIME"text/plain"(); descending_powers=false, offset::Int=0, var=p.var)
+    printpoly(io::IO, p::AbstractPolynomial, mimetype = MIME"text/plain"(); descending_powers=false, offset::Int=0)
 
 Print a human-readable representation of the polynomial `p` to `io`. The MIME
 types "text/plain" (default), "text/latex", and "text/html" are supported. By
@@ -81,23 +101,23 @@ default, the terms are in order of ascending powers, matching the order in
 
 # Examples
 ```jldoctest
-julia> printpoly(stdout, Poly([1,2,3], :y))
+julia> printpoly(stdout, Polynomial([1,2,3], :y))
 1 + 2*y + 3*y^2
-julia> printpoly(stdout, Poly([1,2,3], :y), descending_powers=true)
+julia> printpoly(stdout, Polynomial([1,2,3], :y), descending_powers=true)
 3*y^2 + 2*y + 1
-julia> printpoly(stdout, Poly([2, 3, 1], :z), descending_powers=true, offset=-2)
+julia> printpoly(stdout, Polynomial([2, 3, 1], :z), descending_powers=true, offset=-2)
 1 + 3*z^-1 + 2*z^-2
-julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true)
+julia> printpoly(stdout, Polynomial([-1, 0, 1], :z), offset=-1, descending_powers=true)
 z - z^-1
 julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true, var=:x)
 x - x^-1
 ```
 """
-function printpoly(io::IO, p::Poly{T}, mimetype=MIME"text/plain"(); descending_powers=false, offset::Int=0, var=p.var) where {T}
+function printpoly(io::IO, p::P, mimetype=MIME"text/plain"(); descending_powers=false, offset::Int=0) where {T,P<:AbstractPolynomial{T}}
     first = true
     printed_anything = false
     for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
-        printed = showterm(io, p[i], var, i+offset, first, mimetype)
+        printed = showterm(io, P, p[i], p.var, i+offset, first, mimetype)
         first &= !printed
         printed_anything |= printed
     end
@@ -106,21 +126,15 @@ function printpoly(io::IO, p::Poly{T}, mimetype=MIME"text/plain"(); descending_p
 end
 
 """
-    showterm(io::IO, pj, var, j, first, mimetype)
+    showterm(io::IO, ::Type{<:AbstractPolynomial} pj, var, j, first, mimetype)
 
-Show the term `pj * var^j`.
-Returns `true` after successfully printing.
+Shows the j'th term of the given polynomial. Returns `true` after successfully printing.
+
+For example. for a `Polynomial` this would show the term `pj * var^j`.
 """
-function showterm(io::IO, pj::T, var, j, first::Bool, mimetype) where {T}
-    pj == zero(T) && return false
+function showterm(io::IO, ::Type{AbstractPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} end
 
-    pj = printsign(io, pj, first, mimetype)
-    !(pj == one(T) && !(showone(T) || j == 0)) && printcoefficient(io, pj, j, mimetype)
-    printproductsign(io, pj, j, mimetype)
-    printexponent(io, var, j, mimetype)
-    true
-end
-
+@deprecate showterm(io::IO, pj::T, var, j, first::Bool, mimetype) where {T} showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
 
 
 ## print the sign
@@ -132,7 +146,6 @@ function printsign(io::IO, pj::T, first, mimetype) where {T}
     else
         neg ? print(io, showop(mimetype, "-")) : print(io,showop(mimetype, "+"))
     end
-
     aspos(pj)
 end
 
@@ -161,20 +174,21 @@ parentheses.
 
 ```
 using DualNumbers
-julia> Poly([Dual(1,2), Dual(3,4)])
-Poly(1 + 2ɛ + 3 + 4ɛ*x)
+julia> Polynomial([Dual(1,2), Dual(3,4)])
+Polynomial(1 + 2ɛ + 3 + 4ɛ*x)
+
 julia> function Base.show_unquoted(io::IO, pj::Dual, indent::Int, prec::Int)
        if Base.operator_precedence(:+) <= prec
-               print(io, "(")
-               show(io, pj)
-               print(io, ")")
-           else
-               show(io, pj)
-           end
-end
+            print(io, "(")
+            show(io, pj)
+            print(io, ")")
+        else
+            show(io, pj)
+        end
+    end
 
-julia> Poly([Dual(1,2), Dual(3,4)])
-Poly((1 + 2ɛ) + (3 + 4ɛ)*x)
+julia> Polynomial([Dual(1,2), Dual(3,4)])
+Polynomial((1 + 2ɛ) + (3 + 4ɛ)*x)
 ```
 """
 printcoefficient(io::IO, pj::Any, j, mimetype) = Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
@@ -201,11 +215,9 @@ function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
         (isnan(imag(pj)) || isinf(imag(pj))) && print(io, showop(mimetype, "*"))
         print(io, im)
     else
-        return
+        return nothing
     end
 end
-
-
 
 ## show exponent
 
@@ -221,30 +233,4 @@ function printexponent(io, var, i, mimetype::MIME)
     else
         print(io, var, exponent_text(i, mimetype))
     end
-end
-
-
-####
-
-## text/plain
-Base.show(io::IO, p::Poly{T}) where {T} = show(io, MIME("text/plain"), p)
-
-function Base.show(io::IO, mimetype::MIME"text/plain", p::Poly{T}) where {T}
-    print(io,"Poly(")
-    printpoly(io, p, mimetype)
-    print(io,")")
-
-end
-
-## text/latex
-function Base.show(io::IO, mimetype::MIME"text/latex", p::Poly{T}) where {T}
-    print(io, "\$")
-    printpoly(io, p, mimetype)
-    print(io, "\$")
-end
-
-
-## text/html
-function Base.show(io::IO, mimetype::MIME"text/html", p::Poly{T}) where {T}
-    printpoly(io, p, mimetype)
 end
