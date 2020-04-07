@@ -16,7 +16,6 @@ end
 
 ```@docs
 coeffs
-order
 degree
 length
 size
@@ -24,6 +23,7 @@ domain
 mapdomain
 chop
 chop!
+round
 truncate
 truncate!
 ```
@@ -91,9 +91,10 @@ plot(::AbstractPolynomial, a, b; kwds...)
 will plot the polynomial within the range `[a, b]`.
 
 ### Example: The Polynomials.jl logo
+
 ```@example
 using Plots, Polynomials
-xs = range(-1, 1, length=100)
+# T1, T2, T3, and T4:
 chebs = [
   ChebyshevT([0, 1]),
   ChebyshevT([0, 0, 1]),
@@ -101,9 +102,11 @@ chebs = [
   ChebyshevT([0, 0, 0, 0, 1]),
 ]
 colors = ["#4063D8", "#389826", "#CB3C33", "#9558B2"]
-plot() # hide
-for (cheb, col) in zip(chebs, colors)
-  plot!(xs, cheb.(xs), c=col, lw=5, label="")
+itr = zip(chebs, colors)
+(cheb,col), state = iterate(itr)
+p = plot(cheb, c=col,  lw=5, legend=false, label="")
+for (cheb, col) in Base.Iterators.rest(itr, state)
+  plot!(cheb, c=col, lw=5)
 end
 savefig("chebs.svg"); nothing # hide
 ```

@@ -64,14 +64,37 @@ julia> p.(0:3)
 ```
 """
 function (p::Polynomial{T})(x::S) where {T,S}
-    R = promote_type(T, S)
-    length(p) == 0 && return zero(R)
-    b = convert(R, p[end])
+    oS = one(x)
+    length(p) == 0 && return zero(T) *  oS
+    b = p[end]  *  oS
     @inbounds for i in (lastindex(p) - 1):-1:0
-        b = p[i] + x * b
+        b = p[i]*oS .+ x * b # not muladd(x,b,p[i]), unless we want to add methods for matrices, ...
     end
     return b
 end
+
+## From base/math.jl from Julia 1.4
+function (p::Polynomial{T})(z::S) where {T,S <: Complex}
+    d = degree(p)
+    d == -1 && zero(z)
+    d == 0 && return p[0]
+    N = d + 1
+    a = p[end]
+    b = p[end-1]
+
+    x = real(z)
+    y = imag(z)
+    r = 2x
+    s = muladd(x, x, y*y)
+    for i in d-2:-1:0
+        ai = a
+        a = muladd(r, ai, b)
+        b = p[i] - s * ai
+    end
+    ai = a
+    muladd(ai, z, b)
+end
+
 
 function fromroots(P::Type{<:Polynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
@@ -108,12 +131,13 @@ end
 
 function derivative(p::Polynomial{T}, order::Integer = 1) where {T}
     order < 0 && error("Order of derivative must be non-negative")
-    order == 0 && return p
-    hasnan(p) && return Polynomial(T[NaN], p.var)
-    order > length(p) && return zero(Polynomial{T})
+    R = eltype(one(T)/1)
+    order == 0 && return convert(Polynomial{R}, p)
+    hasnan(p) && return Polynomial(R[NaN], p.var)
+    order > length(p) && return zero(Polynomial{R})
 
     n = length(p)
-    a2 = Vector{T}(undef, n - order)
+    a2 = Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
     end
@@ -127,26 +151,64 @@ function companion(p::Polynomial{T}) where T
 
     R = eltype(one(T) / p.coeffs[end])
     comp = diagm(-1 => ones(R, d - 1))
-    monics = p.coeffs ./ p.coeffs[end]
-    comp[:, end] .= -monics[1:d]
+    ani = 1 / p[end]
+    for j in  0:(degree(p)-1)
+        comp[1,(d-j)] = -p[j] * ani # along top row has smaller residual than down column
+    end
+    #    monics = p.coeffs ./ p.coeffs[end]
+    #    comp[:, end] .= -monics[1:d]
     return comp
 end
 
-function Base.:+(p1::Polynomial, p2::Polynomial)
+function  roots(p::Polynomial{T}; kwargs...)  where  {T}
+    d = length(p) - 1
+    if d < 1
+        return []
+    end
+    d == 1 && return [-p[0] / p[1]]
+
+    as = coeffs(p)
+    K  = findlast(!iszero, as)
+    if K == nothing
+        return eltype(p[0]/p[0])[]
+    end
+    k =  findfirst(!iszero, as)
+
+    k  == K && return zeros(eltype(p[0]/p[0]), k-1)
+
+    comp  = companion(typeof(p)(as[k:K], p.var))
+    #L = eigvals(rot180(comp); kwargs...)
+    L = eigvals(comp; kwargs...)
+    append!(L, zeros(eltype(L), k-1))
+
+    L
+end
+
+function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
+    R = promote_type(T,S)
     p1.var != p2.var && error("Polynomials must have same variable")
-    n = max(length(p1), length(p2))
-    c = [p1[i] + p2[i] for i = 0:n]
+
+    n1, n2 = length(p1), length(p2)
+    c = [p1[i] + p2[i] for i = 0:max(n1, n2)]
     return Polynomial(c, p1.var)
+end
+
+
+function Base.:+(p::Polynomial{T}, c::S) where {T,S<:Number}
+    U = promote_type(T, S)
+    q = copy(p)
+    p2 = U == S ? q : convert(Polynomial{U}, q)
+    p2[0] += c
+    return p2
 end
 
 function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     p1.var != p2.var && error("Polynomials must have same variable")
-    n = length(p1) - 1
-    m = length(p2) - 1
+    n,m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
     R = promote_type(T, S)
     c = zeros(R, m + n + 1)
     for i in 0:n, j in 0:m
-        c[i + j + 1] += p1[i] * p2[j]
+        @inbounds c[i + j + 1] += p1[i] * p2[j]
     end
     return Polynomial(c, p1.var)
 end
@@ -159,11 +221,11 @@ function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
     R = typeof(one(T) / one(S))
     P = Polynomial{R}
     deg = n - m + 1
-    if deg ≤ 0 
+    if deg ≤ 0
         return zero(P), convert(P, num)
     end
     q_coeff = zeros(R, deg)
-    r_coeff = R.(num[0:n])
+    r_coeff = R[ num[i-1] for i in 1:n+1 ]
     @inbounds for i in n:-1:m
         q = r_coeff[i + 1] / den[m]
         q_coeff[i - m + 1] = q
@@ -176,9 +238,9 @@ function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
 end
 
 function showterm(io::IO, ::Type{Polynomial{T}}, pj::T, var, j, first::Bool, mimetype) where {T}
-    if pj == zero(T) return false end
+    if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
-    if !(pj == one(T) && !(showone(T) || j == 0))   
+    if !(pj == one(T) && !(showone(T) || j == 0))
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)

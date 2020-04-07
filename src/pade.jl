@@ -1,3 +1,8 @@
+module PadeApproximation
+
+using ..Polynomials
+export Pade, padeval
+
 #=
 Pade approximation
 
@@ -94,3 +99,12 @@ true
 ```
 """
 (PQ::Pade)(x) = PQ.p(x) / PQ.q(x)
+
+
+## Compat
+padeval(PQ::Pade, x::Number) = PQ(x)
+padeval(PQ::Pade, x) = PQ.(x)
+
+
+
+end

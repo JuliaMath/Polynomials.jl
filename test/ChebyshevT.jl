@@ -3,12 +3,11 @@
     Float32[1, -4, 2],
     ComplexF64[1 - 1im, 2 + 3im],
     [3 // 4, -2 // 1, 1 // 1]
-]  
+]
     p = ChebyshevT(coeff)
     @test p.coeffs == coeff
     @test coeffs(p) == coeff
     @test degree(p) == length(coeff) - 1
-    @test order(p) == length(p) == length(coeff)
     @test p.var == :x
     @test length(p) == length(coeff)
     @test size(p) == size(coeff)
@@ -32,7 +31,7 @@ end
 
     p = zero(ChebyshevT{Int})
     @test p.coeffs == [0]
-    
+
     p = one(ChebyshevT{Int})
     @test p.coeffs == [1]
 
@@ -46,17 +45,17 @@ end
 end
 
 @testset "Roots $i" for i in 1:5
-    roots = cos.(range(-π, 0, length = 2i + 1)[2:2:end])
+    roots = cos.(range(-π, stop=0, length = 2i + 1)[2:2:end])
     target = ChebyshevT(vcat(zeros(i), 1))
     res = fromroots(ChebyshevT, roots) .* 2^(i - 1)
     @test res == target
 end
 
 @testset "Roots" begin
-    r = [-1, 0, 1]
+    r = [-1, 1, 0]
     c = fromroots(ChebyshevT, r)
     @test c == ChebyshevT([0, -0.25, 0, 0.25])
-    @test roots(c) ≈ sort(r, rev = true)
+    @test roots(c) ≈ r
 
     r = [1im, -1im]
     c = fromroots(ChebyshevT, r)
@@ -162,7 +161,7 @@ end
     for k in [-3, 0, 2]
         @test integrate(c1, k) == ChebyshevT([k, 1])
     end
-    
+
     for i in 0:4
         scl = i + 1
         p = Polynomial(vcat(zeros(i), 1))
@@ -172,6 +171,12 @@ end
         res = convert(Polynomial, cint)
         @test res ≈ target
         @test derivative(cint) == cheb
+    end
+
+    for i in 1:10
+        p = ChebyshevT{Float64}(rand(1:5, 6))
+        @test degree(round(p - integrate(derivative(p)), digits=13)) <= 0
+        @test degree(round(p - derivative(integrate(p)), digits=13)) <= 0
     end
 end
 
