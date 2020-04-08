@@ -42,11 +42,7 @@ macro register(name)
             $poly{promote_type(T, S)}
 
         function (p::$poly)(x::AbstractVector)
-            Base.depwarn(
-                "Calling p(x::AbstractVector is deprecated. Use p.(x) instead.",
-                Symbol("(p::AbstractPolynomial)"),
-            )
-            return p.(x)
+            throw(ArgumentError("Calling p(x::AbstractVector is not supported. Use p.(x) instead."))
         end
 
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =

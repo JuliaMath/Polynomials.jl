@@ -383,10 +383,7 @@ Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 
 function Base.getproperty(p::AbstractPolynomial, nm::Symbol)
     if nm == :a
-        Base.depwarn("AbstractPolynomial.a is deprecated, use AbstractPolynomial.coeffs or coeffs(AbstractPolynomial) instead.",
-            Symbol("Base.getproperty"),
-        )
-        return getfield(p, :coeffs)
+        throw(ArgumentError("AbstractPolynomial.a is not supported, use coeffs(AbstractPolynomial) instead."))
     end
     return getfield(p, nm)
 end
