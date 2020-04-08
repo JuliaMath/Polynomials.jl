@@ -60,24 +60,22 @@ fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} =
     fromroots(Polynomial, eigvals(A), var = var)
 
 """
-    fit(x, y, deg=length(x) - 1; [weights], var=:x)
-    fit(::Type{<:AbstractPolynomial}, x, y, deg=length(x)-1; [weights], var=:x)
-
-Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref). To specify a different range to scale to, specify `domain=(a,b)` where `a <= minimum(xs) && maximum(xs) <= b`.
+    fit(x, y; [weights], deg=length(x) - 1, var=:x)
+    fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x)-1, var=:x)
+Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref)
 """
 function fit(P::Type{<:AbstractPolynomial},
              x::AbstractVector{T},
              y::AbstractVector{T},
-             deg::Integer=length(x) - 1;
-             domain=(minimum(x), maximum(x)),
-             weights = nothing,
-             var = :x,) where {T}
-    x = mapdomain(P, first(domain),last(domain)).(x)
+             deg::Integer = length(x) - 1;
+    weights = nothing,
+    var = :x,) where {T}
+    x = mapdomain(P, x)
     vand = vander(P, x, deg)
     if weights !== nothing
         coeffs = _wlstsq(vand, y, weights)
     else
-        coeffs = vand \ y #pinv(vand) * y
+        coeffs = pinv(vand) * y
     end
     return P(T.(coeffs), var)
 end
@@ -170,9 +168,9 @@ In-place version of [`truncate`](@ref)
 function truncate!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
     atol::Real = 0,) where {T}
-    max_coeff = maximum(abs, p.coeffs)
+    max_coeff = maximum(abs, coeffs(p))
     thresh = max_coeff * rtol + atol
-    map!(c->abs(c) <= thresh ? zero(T) : c, p.coeffs, p.coeffs)
+    map!(c->abs(c) <= thresh ? zero(T) : c, coeffs(p), coeffs(p))
     return chop!(p, rtol = rtol, atol = atol)
 end
 
@@ -196,7 +194,8 @@ In-place version of [`chop`](@ref)
 """
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
-    atol::Real = 0,) where {T}
+               atol::Real = 0,) where {T}
+    degree(p) == -1 && return p
     for i = lastindex(p):-1:0
         val = p[i]
         if !isapprox(val, zero(T); rtol = rtol, atol = atol)
@@ -286,14 +285,14 @@ Inspection =#
 
 The length of the polynomial.
 """
-Base.length(p::AbstractPolynomial) = length(p.coeffs)
+Base.length(p::AbstractPolynomial) = length(coeffs(p))
 """
     size(::AbstractPolynomial, [i])
 
 Returns the size of the polynomials coefficients, along axis `i` if provided.
 """
-Base.size(p::AbstractPolynomial) = size(p.coeffs)
-Base.size(p::AbstractPolynomial, i::Integer) = size(p.coeffs, i)
+Base.size(p::AbstractPolynomial) = size(coeffs(p))
+Base.size(p::AbstractPolynomial, i::Integer) = size(coeffs(p), i)
 Base.eltype(p::AbstractPolynomial{T}) where {T} = T
 Base.eltype(::Type{P}) where {P <: AbstractPolynomial} = P
 function Base.iszero(p::AbstractPolynomial)
@@ -318,7 +317,7 @@ has a nonzero coefficient. The degree of the zero polynomial is defined to be -1
 """
 degree(p::AbstractPolynomial) = iszero(p) ? -1 : length(p) - 1
 
-hasnan(p::AbstractPolynomial) = any(isnan.(p.coeffs))
+hasnan(p::AbstractPolynomial) = any(isnan.(coeffs(p)))
 
 """
     domain(::Type{<:AbstractPolynomial})
@@ -353,12 +352,6 @@ function mapdomain(P::Type{<:AbstractPolynomial}, x::AbstractArray)
     return x_scaled
 end
 mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
-
-function mapdomain(P::Type{<:AbstractPolynomial}, a::Number, b::Number)
-    a, b = a < b ? (a,b) : (b,a)
-    x -> mapdomain(P, [a,x,b])[2]
-end
-
 #=
 indexing =#
 Base.firstindex(p::AbstractPolynomial) = 0
@@ -388,19 +381,27 @@ end
 
 Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 
+function Base.getproperty(p::AbstractPolynomial, nm::Symbol)
+    if nm == :a
+        throw(ArgumentError("AbstractPolynomial.a is not supported, use coeffs(AbstractPolynomial) instead."))
+    end
+    return getfield(p, nm)
+end
+
+
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
     idx < 0 && throw(BoundsError(p, idx))
     idx ≥ length(p) && return zero(T)
-    return p.coeffs[idx + 1]
+    return coeffs(p)[idx + 1]
 end
 Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
 Base.getindex(p::AbstractPolynomial, indices) = [getindex(p, i) for i in indices]
-Base.getindex(p::AbstractPolynomial, ::Colon) = p.coeffs
+Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 
 # setindex
 function Base.setindex!(p::AbstractPolynomial, value::Number, idx::Int)
-    n = length(p.coeffs)
+    n = length(coeffs(p))
     if n ≤ idx
         resize!(p.coeffs, idx + 1)
         p.coeffs[n + 1:idx] .= 0
@@ -422,8 +423,8 @@ Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
 
 #=
 identity =#
-Base.copy(p::P) where {P <: AbstractPolynomial} = P(copy(p.coeffs), p.var)
-Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(p.coeffs, h))
+Base.copy(p::P) where {P <: AbstractPolynomial} = P(copy(coeffs(p)), p.var)
+Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 """
     zero(::Type{<:AbstractPolynomial})
     zero(::AbstractPolynomial)
@@ -443,7 +444,7 @@ Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
 
 #=
 arithmetic =#
-Base.:-(p::P) where {P <: AbstractPolynomial} = P(-p.coeffs, p.var)
+Base.:-(p::P) where {P <: AbstractPolynomial} = P(-coeffs(p), p.var)
 Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
 Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
 Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
@@ -451,11 +452,11 @@ Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
 function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     T = promote_type(P, S)
-    return T(p.coeffs .* c, p.var)
+    return T(coeffs(p) .* c, p.var)
 end
 function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
     R = promote_type(P, eltype(one(T) / one(S)))
-    return R(p.coeffs ./ c, p.var)
+    return R(coeffs(p) ./ c, p.var)
 end
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
@@ -503,7 +504,7 @@ function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T
     while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
         _, rtemp = divrem(r₀, r₁)
         r₀ = r₁
-        r₁ = truncate(rtemp)
+        r₁ = truncate(rtemp)  
         iter += 1
     end
     return r₀
@@ -523,8 +524,8 @@ Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
 Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
-    (p1.var == p2.var) && (p1.coeffs == p2.coeffs)
-Base.:(==)(p::AbstractPolynomial, n::Number) = p.coeffs == [n]
+    (p1.var == p2.var) && (coeffs(p1) == coeffs(p2))
+Base.:(==)(p::AbstractPolynomial, n::Number) = coeffs(p) == [n]
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial{T},
@@ -540,7 +541,7 @@ function Base.isapprox(p1::AbstractPolynomial{T},
     if length(p1t) ≠ length(p2t)
         return false
     end
-    isapprox(p1t.coeffs, p2t.coeffs, rtol = rtol, atol = atol)
+    isapprox(coeffs(p1t), coeffs(p2t), rtol = rtol, atol = atol)
 end
 
 function Base.isapprox(p1::AbstractPolynomial{T},
@@ -551,7 +552,7 @@ function Base.isapprox(p1::AbstractPolynomial{T},
     if length(p1t) != 1
         return false
     end
-    isapprox(p1t.coeffs, [n], rtol = rtol, atol = atol)
+    isapprox(coeffs(p1t), [n], rtol = rtol, atol = atol)
 end
 
 Base.isapprox(n::S,

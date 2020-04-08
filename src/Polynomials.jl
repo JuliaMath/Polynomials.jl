@@ -8,17 +8,16 @@ include("show.jl")
 include("plots.jl")
 include("contrib.jl")
 
+# Interface for all AbstractPolynomials
+include("common.jl")
+
+
 # Polynomials
 include("polynomials/Polynomial.jl")
 include("polynomials/ImmutablePolynomial.jl")
 include("polynomials/ChebyshevT.jl")
 
-
-include("polynomials/Poly.jl") # to be deprecated, then removed
-include("pade.jl")
-include("compat.jl") # Where we keep deprecations
-
-# Interface for all AbstractPolynomials
-include("common.jl")
+# to be deprecated, then removed
+include("compat.jl")
 
 end # module

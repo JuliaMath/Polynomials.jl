@@ -206,7 +206,6 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     p1.var != p2.var && error("Polynomials must have same variable")
     n,m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
     R = promote_type(T, S)
-    N = m + n
     c = zeros(R, m + n + 1)
     for i in 0:n, j in 0:m
         @inbounds c[i + j + 1] += p1[i] * p2[j]
@@ -226,7 +225,7 @@ function Base.divrem(num::Polynomial{T}, den::Polynomial{S}) where {T,S}
         return zero(P), convert(P, num)
     end
     q_coeff = zeros(R, deg)
-    r_coeff = R[ num.a[i] for i in 1:n+1 ]
+    r_coeff = R[ num[i-1] for i in 1:n+1 ]
     @inbounds for i in n:-1:m
         q = r_coeff[i + 1] / den[m]
         q_coeff[i - m + 1] = q

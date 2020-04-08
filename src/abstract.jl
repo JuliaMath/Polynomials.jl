@@ -35,18 +35,14 @@ macro register(name)
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.convert(P::Type{<:$poly}, p::$poly) where {T} = P(p.coeffs, p.var)
+        Base.convert(P::Type{<:$poly}, p::$poly) where {T} = P(coeffs(p), p.var)
         Base.promote_rule(::Type{$poly{T}}, ::Type{$poly{S}}) where {T,S} =
             $poly{promote_type(T, S)}
         Base.promote_rule(::Type{$poly{T}}, ::Type{S}) where {T,S<:Number} =
             $poly{promote_type(T, S)}
 
         function (p::$poly)(x::AbstractVector)
-            Base.depwarn(
-                "Calling p(x::AbstractVector is deprecated. Use p.(x) instead.",
-                Symbol("(p::AbstractPolynomial)"),
-            )
-            return p.(x)
+            throw(ArgumentError("Calling p(x::AbstractVector is not supported. Use p.(x) instead."))
         end
 
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =

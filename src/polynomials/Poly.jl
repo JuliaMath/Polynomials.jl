@@ -1,15 +1,25 @@
+module PolyCompat
+
+using ..Polynomials
+
 #=
 This type is only here to provide stability while deprecating. This will eventually be removed in favor
 of `Polynomial` =#
 
 export Poly
 
+"""
+    Poly{T}
+
+Type of polynomial to support legacy code. Use of this type  is  not  encouraged.
+
+This type provides  support for `poly`, `polyval`,  `polyder`, and `polyint` to support older code.
+"""
 struct Poly{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
-    function Poly(a::AbstractVector{T}, var::SymbolLike = :x) where {T <: Number}
+    function Poly(a::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {T <: Number}
       # if a == [] we replace it with a = [0]
-##        Base.depwarn("Poly is deprecated and will be removed in a future release. Please use Polynomial instead", :Poly)
         if length(a) == 0
             return new{T}(zeros(T, 1), Symbol(var))
         else
@@ -21,12 +31,13 @@ struct Poly{T <: Number} <: AbstractPolynomial{T}
     end
 end
 
-@register Poly
+Polynomials.@register Poly
+
 
 Base.convert(P::Type{<:Polynomial}, p::Poly{T}) where {T} = P(p.coeffs, p.var)
 
-domain(::Type{<:Poly}) = Interval(-Inf, Inf)
-mapdomain(::Type{<:Poly}, x::AbstractArray) = x
+Polynomials.domain(::Type{<:Poly}) = Polynomials.Interval(-Inf, Inf)
+Polynomials.mapdomain(::Type{<:Poly}, x::AbstractArray) = x
 
 function (p::Poly{T})(x::S) where {T,S}
     oS = one(x)
@@ -39,7 +50,7 @@ function (p::Poly{T})(x::S) where {T,S}
 end
 
 
-function fromroots(P::Type{<:Poly}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
+function Polynomials.fromroots(P::Type{<:Poly}, r::AbstractVector{T}; var::Polynomials.SymbolLike = :x) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)
     c[1] = one(T)
@@ -50,7 +61,7 @@ function fromroots(P::Type{<:Poly}, r::AbstractVector{T}; var::SymbolLike = :x) 
 end
 
 
-function vander(P::Type{<:Poly}, x::AbstractVector{T}, n::Integer) where {T <: Number}
+function Polynomials.vander(P::Type{<:Poly}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     A = Matrix{T}(undef, length(x), n + 1)
     A[:, 1] .= one(T)
     @inbounds for i in 1:n
@@ -60,7 +71,7 @@ function vander(P::Type{<:Poly}, x::AbstractVector{T}, n::Integer) where {T <: N
 end
 
 
-function integrate(p::Poly{T}, k::S) where {T,S <: Number}
+function Polynomials.integrate(p::Poly{T}, k::S) where {T,S <: Number}
     R = promote_type(eltype(one(T) / 1), S)
     if hasnan(p) || isnan(k)
         return Poly([NaN])
@@ -75,7 +86,7 @@ function integrate(p::Poly{T}, k::S) where {T,S <: Number}
 end
 
 
-function derivative(p::Poly{T}, order::Integer = 1) where {T}
+function Polynomials.derivative(p::Poly{T}, order::Integer = 1) where {T}
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
     hasnan(p) && return Poly(T[NaN], p.var)
@@ -90,7 +101,7 @@ function derivative(p::Poly{T}, order::Integer = 1) where {T}
 end
 
 
-function companion(p::Poly{T}) where T
+function Polynomials.companion(p::Poly{T}) where T
     d = length(p) - 1
     d < 1 && error("Series must have degree greater than 1")
     d == 1 && return diagm(0 => [-p[0] / p[1]])
@@ -146,4 +157,38 @@ function Base.divrem(num::Poly{T}, den::Poly{S}) where {T,S}
     return P(q_coeff, num.var), P(r_coeff, num.var)
 end
 
-showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimetype) where {T} = showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
+Polynomials.showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimetype) where {T} = showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
+
+
+
+## Compat
+## As this is an older package with many examples out in the wild
+## rather than remove these, we limit them to this `Poly` type only
+
+poly(r, var = :x) = fromroots(Poly, r; var = var)
+
+polyval(p::Poly, x::Number) = p(x)
+polyval(p::Poly, x) = p.(x)
+polyval(p::AbstractPolynomial, x) = error("`polyval` is a legacy name for use with `Poly` objects only. Use `p(x)`.")
+
+function Base.getproperty(p::Poly, nm::Symbol)
+    if nm == :a
+        return getfield(p, :coeffs)
+    end
+    return getfield(p, nm)
+end
+
+polyint(p::Poly, C = 0) = integrate(p, C)
+polyint(p::Poly, a, b) = integrate(p, a, b)
+polyint(p::AbstractPolynomial, args...)  = error("`polyint` is a legacy name for use with `Poly` objects only. Use `integrate(p,...)`.")
+
+polyder(p::Poly, ord = 1) = derivative(p, ord)
+polyder(p::AbstractPolynomial, args...) =  error("`polyder` is a legacy name for use with `Poly` objects only. Use `derivative(p,[order=1])`.")
+
+# polyfit was deprecated
+#polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
+#polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
+
+export poly, polyval, polyint, polyder
+
+end

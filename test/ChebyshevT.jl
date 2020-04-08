@@ -45,7 +45,7 @@ end
 end
 
 @testset "Roots $i" for i in 1:5
-    roots = cos.(range(-π, 0, length = 2i + 1)[2:2:end])
+    roots = cos.(range(-π, stop=0, length = 2i + 1)[2:2:end])
     target = ChebyshevT(vcat(zeros(i), 1))
     res = fromroots(ChebyshevT, roots) .* 2^(i - 1)
     @test res == target
