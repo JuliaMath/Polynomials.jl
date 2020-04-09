@@ -17,7 +17,7 @@ include("polynomials/Polynomial.jl")
 include("polynomials/ImmutablePolynomial.jl")
 include("polynomials/ChebyshevT.jl")
 
-# to be deprecated, then removed
+# keep for compatability with older versions
 include("compat.jl")
 
 end # module

@@ -195,11 +195,11 @@ In-place version of [`chop`](@ref)
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-    degree(p) == -1 && return p
+    isempty(coeffs(p)) && p
     for i = lastindex(p):-1:0
         val = p[i]
         if !isapprox(val, zero(T); rtol = rtol, atol = atol)
-            resize!(p.coeffs, i + 1)
+            resize!(p.coeffs, i + 1); 
             return p
         end
     end
@@ -299,7 +299,7 @@ function Base.iszero(p::AbstractPolynomial)
     if length(p) == 0
         return true
     end
-    return length(p) == 1 && p[0] == 0
+    return all(iszero(coeffs(p))) && p[0] == 0
 end
 
 """
@@ -501,7 +501,7 @@ function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T
     iter = 1
     itermax = length(r₁)
 
-    while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
+    while !iszero(r₁) && iter ≤ itermax
         _, rtemp = divrem(r₀, r₁)
         r₀ = r₁
         r₁ = truncate(rtemp)  

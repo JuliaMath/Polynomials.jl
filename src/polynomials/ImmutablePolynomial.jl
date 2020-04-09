@@ -14,7 +14,7 @@ with combinations of polynomials and scalars. However, operations involving two
 polynomials of different variables causes an error.
 
 This has the advantage over `Polynomial` as it can take advantage of faster polynomial evaluation
-provided by `evalpoly`.
+provided by `evalpoly` (borrowed from Julia 1.4).
 
 # Examples
 
@@ -50,12 +50,25 @@ struct ImmutablePolynomial{N, T <: Number} <: AbstractPolynomial{T}
         else
             new{N,T}(coeffs, var)
         end
-    end
+   end
+    ImmutablePolynomial(x::Number, var::Symbol=:x) = ImmutablePolynomial((x,), var)
 end
 
+## Can't do this, as we keep the parameter N
 ## @register Polynomial
 Base.convert(::Type{<:Polynomial}, p::ImmutablePolynomial{N,T}) where {N, T} = Polynomial{T}([coeffs(p)...], p.var)
 Base.convert(::Type{ImmutablePolynomial{N,R}}, p::ImmutablePolynomial{N,S}) where {N, R, S} = ImmutablePolynomial(R.(coeffs(p)), p.var)
+function Base.promote_rule(::Type{ImmutablePolynomial{N,T}},::Type{ImmutablePolynomial{M,S}}) where {N,T,M,S}
+    NN = max(N,M)
+    R = promote_type(T,S)
+    ImmutablePolynomial{NN, R}
+end
+Base.promote_rule(::Type{ImmutablePolynomial{N,T}}, ::Type{S}) where {N,T,S} = ImmutablePolynomial{N, promote_type{T,S}}
+ImmutablePolynomial{N, T}(x::S, var=:x) where  {N, T, S <: Number} = ImmutablePolynomial{T}(x, var)
+ImmutablePolynomial{T}(x::S, var=:x) where  {T, S <: Number} = ImmutablePolynomial(T.(x), var)
+
+
+                       
 function showterm(io::IO, ::Type{ImmutablePolynomial{N,T}}, pj::T, var, j, first::Bool, mimetype) where {N,T}
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
@@ -71,41 +84,7 @@ domain(::Type{<:ImmutablePolynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:ImmutablePolynomial}, x::AbstractArray) = x
 degree(p::ImmutablePolynomial{N,T}) where {N, T} = N==1 && iszero(coeffs(p)[1]) ? -1 : N - 1
 
-## """
-##     (p::Polynomial)(x)
-
-## Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division.
-
-## # Examples
-## ```jldoctest
-## julia> p = Polynomial([1, 0, 3])
-## Polynomial(1 + 3*x^2)
-
-## julia> p(0)
-## 1
-
-## julia> p.(0:3)
-## 4-element Array{Int64,1}:
-##   1
-##   4
-##  13
-##  28
-## ```
-## """
-function (p::ImmutablePolynomial{N, T})(x::S) where {N, T,S}
-    oS = one(x)
-    length(p) == 0 && return zero(T) *  oS
-    b = p[end]  *  oS
-    @inbounds for i in (lastindex(p) - 1):-1:0
-        b = p[i]*oS .+ x * b # not muladd(x,b,p[i]), unless we want to add methods for matrices, ...
-    end
-    return b
-end
-
-
-## Faster evaluation from julia 1.4 eval poly
-(p::ImmutablePolynomial{N, T})(x::S) where {N,T,S <: Real} = evalpoly(x, coeffs(p))
-(p::ImmutablePolynomial{N, T})(x::S) where {N,T,S <: Complex} = evalpoly(x, coeffs(p))
+(p::ImmutablePolynomial{N, T})(x::S) where {N, T,S} = evalpoly(x, coeffs(p))
 
 function fromroots(P::Type{<:ImmutablePolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)

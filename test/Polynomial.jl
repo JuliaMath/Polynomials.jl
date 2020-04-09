@@ -55,6 +55,13 @@ end
     p0 = Polynomial([0])
     @test iszero(p0)
     @test degree(p0) == -1
+
+    # variable(), P() to generate `x` in given basis
+    @test degree(variable(Polynomial)) == 1
+    @test variable(Polynomial)(1) == 1
+    @test degree(Polynomial()) == 1
+    @test Polynomial()(1) == 1
+    @test variable(Polynomial, :y) == Polynomial(:y)
 end
 
 pNULL = Polynomial(Int[])
