@@ -40,15 +40,12 @@ macro register(name)
             $poly{promote_type(T, S)}
         Base.promote_rule(::Type{$poly{T}}, ::Type{S}) where {T,S<:Number} =
             $poly{promote_type(T, S)}
-
-        function (p::$poly)(x::AbstractVector)
-            throw(ArgumentError("Calling p(x::AbstractVector is not supported. Use p.(x) instead."))
-        end
-
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =
             $poly{T}(coeffs, Symbol(var))
-        $poly(n::Number, var = :x) = $poly([n], var)
-        $poly{T}(n::S, var = :x) where {T,S<:Number} = $poly(T(n), var)
         $poly{T}(x::AbstractVector{S}, var = :x) where {T,S<:Number} = $poly(T.(x), var)
+        $poly{T}(n::Number, var = :x) where {T} = $poly(T(n), var)
+        $poly(n::Number, var = :x) = $poly([n], var)
+        $poly{T}(var=:x) where {T} = variable($poly{T}, var)
+        $poly(var=:x) = variable($poly, var)
     end
 end
