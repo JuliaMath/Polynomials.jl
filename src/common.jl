@@ -299,7 +299,7 @@ function Base.iszero(p::AbstractPolynomial)
     if length(p) == 0
         return true
     end
-    return all(iszero(coeffs(p))) && p[0] == 0
+    return all(iszero.(coeffs(p))) && p[0] == 0
 end
 
 """

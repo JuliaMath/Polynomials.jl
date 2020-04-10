@@ -17,6 +17,7 @@ using LinearAlgebra
     @test typeof(p).parameters[1] == eltype(coeff)
     @test eltype(p) == eltype(coeff)
     @test all([-200, -0.3, 1, 48.2] .∈ domain(p))
+
 end
 
 @testset "Mapdomain" begin
