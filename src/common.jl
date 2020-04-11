@@ -24,7 +24,9 @@ export fromroots,
 Construct a polynomial of the given type given the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest
+```jldoctest common
+julia> using Polynomials
+
 julia> r = [3, 2]; # (x - 3)(x - 2)
 
 julia> fromroots(r)
@@ -46,7 +48,9 @@ fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
 Construct a polynomial of the given type using the eigenvalues of the given matrix as the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest
+```jldoctest common
+julia> using Polynomials
+
 julia> A = [1 2; 3 4]; # (x - 5.37228)(x + 0.37228)
 
 julia> fromroots(A)
@@ -195,7 +199,7 @@ In-place version of [`chop`](@ref)
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-    isempty(coeffs(p)) && p
+    isempty(coeffs(p)) && return p
     for i = lastindex(p):-1:0
         val = p[i]
         if !isapprox(val, zero(T); rtol = rtol, atol = atol)
@@ -231,10 +235,12 @@ Base.round(p::P, args...;kwargs...) where {P <: AbstractPolynomial} = P(round.(c
     variable(::Type{<:AbstractPolynomial}, var=:x)
     variable(p::AbstractPolynomial, var=p.var)
 
-Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref).
+Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
 
 # Examples
-```jldoctest
+```jldoctest  common
+julia> using Polynomials
+
 julia> x = variable()
 Polynomial(x)
 
@@ -243,8 +249,8 @@ Polynomial(100 + 24*x - 3*x^2)
 
 julia> roots((x - 3) * (x + 2))
 2-element Array{Float64,1}:
-  3.0
  -2.0
+  3.0
 
 ```
 """
@@ -334,7 +340,9 @@ domain(::P) where {P <: AbstractPolynomial} = domain(P)
 Given values of x that are assumed to be unbounded (-∞, ∞), return values rescaled to the domain of the given polynomial.
 
 # Examples
-```jldoctest
+```jldoctest  common
+julia> using Polynomials
+
 julia> x = -10:10
 -10:10
 
@@ -490,7 +498,9 @@ Find the greatest common denominator of two polynomials recursively using
 
 # Examples
 
-```jldoctest
+```jldoctest common
+julia> using Polynomials
+
 julia> gcd(fromroots([1, 1, 2]), fromroots([1, 2, 3]))
 Polynomial(4.0 - 6.0*x + 2.0*x^2)
 

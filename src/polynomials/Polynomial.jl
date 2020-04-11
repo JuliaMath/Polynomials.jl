@@ -14,6 +14,11 @@ with combinations of polynomials and scalars. However, operations involving two
 polynomials of different variables causes an error.
 
 # Examples
+```@meta
+DocTestSetup = quote
+    using Polynomials
+end
+```
 
 ```jldoctest
 julia> Polynomial([1, 0, 3, 4])
@@ -46,6 +51,12 @@ mapdomain(::Type{<:Polynomial}, x::AbstractArray) = x
     (p::Polynomial)(x)
 
 Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division.
+
+```@meta
+DocTestSetup = quote
+    using Polynomials
+end
+```
 
 # Examples
 ```jldoctest

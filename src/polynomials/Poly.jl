@@ -13,7 +13,10 @@ export Poly
 
 Type of polynomial to support legacy code. Use of this type  is  not  encouraged.
 
-This type provides  support for `poly`, `polyval`,  `polyder`, and `polyint` to support older code.
+This type provides support for `poly`, `polyval`, `polyder`, and
+`polyint` to support older code. It should not be used for new code
+base.
+
 """
 struct Poly{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
