@@ -447,8 +447,8 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P)
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}) where {P <: AbstractPolynomial} = P(ones(1))
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
+Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(ones(1), var)
+Base.one(p::P, var=:x) where {P <: AbstractPolynomial} = one(P, var)
 
 #=
 arithmetic =#
