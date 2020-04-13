@@ -439,8 +439,8 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 
 Returns a representation of 0 as the given polynomial.
 """
-Base.zero(::Type{P}) where {P <: AbstractPolynomial} = P(zeros(1))
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P)
+Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(zeros(1), var)
+Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
@@ -448,7 +448,7 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P)
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(ones(1), var)
-Base.one(p::P, var=:x) where {P <: AbstractPolynomial} = one(P, var)
+Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
 
 #=
 arithmetic =#
