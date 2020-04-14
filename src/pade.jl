@@ -1,6 +1,7 @@
 module PadeApproximation
 
 using ..Polynomials
+using ..PolyCompat
 export Pade, padeval
 
 #=
@@ -26,6 +27,7 @@ struct Pade{T <: Number,S <: Number}
     q::Union{Poly{S}, Polynomial{S}}
     var::Symbol
     function Pade{T,S}(p::Union{Poly{T}, Polynomial{T}}, q::Union{Poly{S}, Polynomial{S}}) where {T,S}
+        Base.depwarn("Use of `Pade` from v1.0 forward will require `using Polynomials.PolyCompat`", :Pade)
         if p.var != q.var error("Polynomials must have same variable") end
         new{T,S}(p, q, p.var)
     end

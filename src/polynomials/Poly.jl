@@ -3,10 +3,10 @@ module PolyCompat
 using ..Polynomials
 
 #=
-This type is only here to provide stability while deprecating. This will eventually be removed in favor
-of `Polynomial` =#
+Compat support for old code. This will be opt-in by v1.0, through "using Polynomials.PolyCompat"
+=#
 
-export Poly
+## Poly
 
 """
     Poly{T}
@@ -23,7 +23,7 @@ struct Poly{T <: Number} <: AbstractPolynomial{T}
     var::Symbol
     function Poly(a::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {T <: Number}
         # if a == [] we replace it with a = [0]
-        depwarn("Use of `Poly` from v1.0 forward will require `using PolyCompat`", Poly)
+        Base.depwarn("Use of `Poly` from v1.0 forward will require `using Polynomials.PolyCompat`", :Poly)
         if length(a) == 0
             return new{T}(zeros(T, 1), Symbol(var))
         else
@@ -194,6 +194,14 @@ polyder(p::AbstractPolynomial, args...) =  error("`polyder` is a legacy name for
 polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
 polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
 
-export poly, polyval, polyint, polyder, polyfit
+export Poly, poly, polyval, polyint, polyder#, polyfit
+
+
+## Pade
+include("../pade.jl")
+using .PadeApproximation
+export Pade
+export padeval
+
 
 end
