@@ -385,3 +385,38 @@ fit(Poly, xx,yy,2)
 
 ## Issue with overflow and polyder Issue #159
 @test !iszero(polyder(Poly(BigInt[0, 1])^100, 100))
+
+
+
+
+
+@testset "Pade" begin
+    # exponential
+    coeffs = 1 .// BigInt.(gamma.(1:17))
+    a = Polynomial(coeffs)
+    PQexp = Pade(a, 8, 8)
+    @test PQexp(1.0) ≈ exp(1.0)
+    @test PQexp(-1.0) ≈ exp(-1.0)
+
+    # sine
+    coeffs = BigInt.(sinpi.((0:16) ./ 2)) .// BigInt.(gamma.(1:17))
+    p = Polynomial(coeffs)
+    PQsin = Pade(p, 8, 7)
+    @test PQsin(1.0) ≈ sin(1.0)
+    @test PQsin(-1.0) ≈ sin(-1.0)
+
+    # cosine
+    coeffs = BigInt.(sinpi.((1:17) ./ 2)) .// BigInt.(gamma.(1:17))
+    p = Polynomial(coeffs)
+    PQcos = Pade(p, 8, 8)
+    @test PQcos(1.0) ≈ cos(1.0)
+    @test PQcos(-1.0) ≈ cos(-1.0)
+
+    # summation of a factorially divergent series
+    γ = 0.5772156649015
+    s = BigInt.(gamma.(BigInt(1):BigInt(61)))
+    coeffs = (BigInt(-1)).^(0:60) .* s .// 1
+    d = Polynomial(coeffs)
+    PQexpint = Pade(d, 30, 30)
+    @test Float64(PQexpint(1.0)) ≈ exp(1) * (-γ - sum([(-1)^k / k / gamma(k + 1) for k = 1:20]))
+end

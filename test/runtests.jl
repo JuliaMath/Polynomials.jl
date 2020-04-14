@@ -9,4 +9,4 @@ import SparseArrays: sparse, nnz
 
 @testset "Polynomial" begin include("Polynomial.jl") end
 @testset "ChebyshevT" begin include("ChebyshevT.jl") end
-@testset "Poly (compatability)" begin include("Poly.jl") end
+@testset "Poly, Pade (compatability)" begin include("Poly.jl") end
