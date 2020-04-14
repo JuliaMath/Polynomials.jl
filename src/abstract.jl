@@ -3,7 +3,7 @@ export AbstractPolynomial
 const SymbolLike = Union{AbstractString,Char,Symbol}
 
 """
-    AbstractPolynomial{<:Number}
+    AbstractPolynomial{T}
 
 An abstract container for various polynomials. 
 
@@ -11,7 +11,7 @@ An abstract container for various polynomials.
 - `coeffs` - The coefficients of the polynomial
 - `var` - The indeterminate of the polynomial
 """
-abstract type AbstractPolynomial{T<:Number} end
+abstract type AbstractPolynomial{T} end
 
 
 """

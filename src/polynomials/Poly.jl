@@ -22,7 +22,8 @@ struct Poly{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
     function Poly(a::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {T <: Number}
-      # if a == [] we replace it with a = [0]
+        # if a == [] we replace it with a = [0]
+        depwarn("Use of `Poly` from v1.0 forward will require `using PolyCompat`", Poly)
         if length(a) == 0
             return new{T}(zeros(T, 1), Symbol(var))
         else
@@ -188,10 +189,11 @@ polyint(p::AbstractPolynomial, args...)  = error("`polyint` is a legacy name for
 polyder(p::Poly, ord = 1) = derivative(p, ord)
 polyder(p::AbstractPolynomial, args...) =  error("`polyder` is a legacy name for use with `Poly` objects only. Use `derivative(p,[order=1])`.")
 
-# polyfit was deprecated
-#polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
-#polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
+# polyfit was deprecated to avoid a default calling `Poly`. Once
+# PolyCompat is required, it can be used again
+polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
+polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
 
-export poly, polyval, polyint, polyder
+export poly, polyval, polyint, polyder, polyfit
 
 end
