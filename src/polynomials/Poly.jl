@@ -15,7 +15,7 @@ Type of polynomial to support legacy code. Use of this type  is  not  encouraged
 
 This type provides support for `poly`, `polyval`, `polyder`, and
 `polyint` to support older code. It should not be used for new code
-base.
+base. Call `using Polynomial.PolyCompat` to enable this module.
 
 """
 struct Poly{T <: Number} <: AbstractPolynomial{T}
@@ -23,7 +23,6 @@ struct Poly{T <: Number} <: AbstractPolynomial{T}
     var::Symbol
     function Poly(a::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {T <: Number}
         # if a == [] we replace it with a = [0]
-        Base.depwarn("Use of `Poly` from v1.0 forward will require `using Polynomials.PolyCompat`", :Poly)
         if length(a) == 0
             return new{T}(zeros(T, 1), Symbol(var))
         else
@@ -161,7 +160,7 @@ function Base.divrem(num::Poly{T}, den::Poly{S}) where {T,S}
     return P(q_coeff, num.var), P(r_coeff, num.var)
 end
 
-Polynomials.showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimetype) where {T} = showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
+Polynomials.showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimetype) where {T} = Polynomials.showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
 
 
 
@@ -189,12 +188,10 @@ polyint(p::AbstractPolynomial, args...)  = error("`polyint` is a legacy name for
 polyder(p::Poly, ord = 1) = derivative(p, ord)
 polyder(p::AbstractPolynomial, args...) =  error("`polyder` is a legacy name for use with `Poly` objects only. Use `derivative(p,[order=1])`.")
 
-# polyfit was deprecated to avoid a default calling `Poly`. Once
-# PolyCompat is required, it can be used again
 polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
 polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
 
-export Poly, poly, polyval, polyint, polyder#, polyfit
+export Poly, poly, polyval, polyint, polyder, polyfit
 
 
 ## Pade

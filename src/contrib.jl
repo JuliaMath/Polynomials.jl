@@ -31,7 +31,7 @@ end
 ## Code from Julia 1.4   (https://github.com/JuliaLang/julia/blob/master/base/math.jl#L101 on 4/8/20)
 ## cf. https://github.com/JuliaLang/julia/pull/32753
 ## Slight modification when `x` is a matrix
-## Remove once dependencies for Julia 1.0.0
+## Remove once dependencies for Julia 1.0.0 are dropped
 function evalpoly(x::S, p::Tuple) where {S}
     if @generated
         N = length(p.parameters)
@@ -105,7 +105,7 @@ function _evalpoly(z::Complex, p)
     muladd(ai, z, b)
 end
 
-## modify muladd for matrices
+## modify muladd, as needed
 _muladd(a,b,c) = muladd(a,b,c)
 _muladd(a::Matrix, b, c) = a*(b*I) + c*I
 

@@ -140,8 +140,6 @@ For example. for a `Polynomial` this would show the term `pj * var^j`.
 """
 function showterm(io::IO, ::Type{AbstractPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} end
 
-@deprecate showterm(io::IO, pj::T, var, j, first::Bool, mimetype) where {T} showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
-
 
 ## print the sign
 ## returns aspos(pj)

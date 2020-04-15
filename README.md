@@ -11,7 +11,7 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 ## Installation
 
 ```julia
-(v1.2) pkg> add Polynomials
+(v1.4) pkg> add Polynomials
 
 julia> using Polynomials
 ```
@@ -186,14 +186,24 @@ Polynomial objects also have other methods:
 
 ## Related Packages
 
+* [StaticUnivariatePolynomials.jl](https://github.com/tkoolen/StaticUnivariatePolynomials.jl) Fixed-size univariate polynomials backed by a Tuple
+
 * [MultiPoly.jl](https://github.com/daviddelaat/MultiPoly.jl) for sparse multivariate polynomials
 
-* [MultivariatePolynomials.jl](https://github.com/blegat/MultivariatePolynomials.jl) for multivariate polynomials and moments of commutative or non-commutative variables
+* [DynamicPolynomals.jl](https://github.com/JuliaAlgebra/DynamicPolynomials.jl) Multivariate polynomials implementation of commutative and non-commutative variables
 
-* [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series
+* [MultivariatePolynomials.jl](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl) for multivariate polynomials and moments of commutative or non-commutative variables
 
-* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder
+* [PolynomialRings](https://github.com/tkluck/PolynomialRings.jl) A library for arithmetic and algebra with multi-variable polynomials.
 
+* [AbstractAlgebra.jl](https://github.com/wbhart/AbstractAlgebra.jl) and [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series
+
+* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [AMRVW](https://github.com/jverzani/AMRVW.jl).
+
+
+## Legacy code
+
+As of v0.7, the internals of this package were greatly generalized and new types and method names were introduced. For compatability purposes, legacy code can be run after issuing `using Polynomials.PolyCompat`.
 
 ## Contributing
 
