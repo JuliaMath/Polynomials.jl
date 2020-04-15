@@ -24,7 +24,9 @@ export fromroots,
 Construct a polynomial of the given type given the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest
+```jldoctest common
+julia> using Polynomials
+
 julia> r = [3, 2]; # (x - 3)(x - 2)
 
 julia> fromroots(r)
@@ -46,7 +48,9 @@ fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
 Construct a polynomial of the given type using the eigenvalues of the given matrix as the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest
+```jldoctest common
+julia> using Polynomials
+
 julia> A = [1 2; 3 4]; # (x - 5.37228)(x + 0.37228)
 
 julia> fromroots(A)
@@ -195,9 +199,9 @@ In-place version of [`chop`](@ref)
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-    isempty(coeffs(p)) && p
+    isempty(coeffs(p)) && return p
     for i = lastindex(p):-1:0
-        val = p[i]
+        val = p[i];
         if !isapprox(val, zero(T); rtol = rtol, atol = atol)
             resize!(p.coeffs, i + 1); 
             return p
@@ -231,10 +235,12 @@ Base.round(p::P, args...;kwargs...) where {P <: AbstractPolynomial} = P(round.(c
     variable(::Type{<:AbstractPolynomial}, var=:x)
     variable(p::AbstractPolynomial, var=p.var)
 
-Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref).
+Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
 
 # Examples
-```jldoctest
+```jldoctest  common
+julia> using Polynomials
+
 julia> x = variable()
 Polynomial(x)
 
@@ -243,8 +249,8 @@ Polynomial(100 + 24*x - 3*x^2)
 
 julia> roots((x - 3) * (x + 2))
 2-element Array{Float64,1}:
-  3.0
  -2.0
+  3.0
 
 ```
 """
@@ -334,7 +340,9 @@ domain(::P) where {P <: AbstractPolynomial} = domain(P)
 Given values of x that are assumed to be unbounded (-∞, ∞), return values rescaled to the domain of the given polynomial.
 
 # Examples
-```jldoctest
+```jldoctest  common
+julia> using Polynomials
+
 julia> x = -10:10
 -10:10
 
@@ -431,16 +439,16 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 
 Returns a representation of 0 as the given polynomial.
 """
-Base.zero(::Type{P}) where {P <: AbstractPolynomial} = P(zeros(1))
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P)
+Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(zeros(1), var)
+Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}) where {P <: AbstractPolynomial} = P(ones(1))
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
+Base.one(::Type{P}, var=:x) where {T, P <: AbstractPolynomial{T}} = P(ones(T, 1), var)
+Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
 
 #=
 arithmetic =#
@@ -455,7 +463,7 @@ function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     return T(coeffs(p) .* c, p.var)
 end
 function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
-    R = promote_type(P, eltype(one(T) / one(S)))
+    R = promote_type(P, Base.promote_op(/, T, S))
     return R(coeffs(p) ./ c, p.var)
 end
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
@@ -490,7 +498,9 @@ Find the greatest common denominator of two polynomials recursively using
 
 # Examples
 
-```jldoctest
+```jldoctest common
+julia> using Polynomials
+
 julia> gcd(fromroots([1, 1, 2]), fromroots([1, 2, 3]))
 Polynomial(4.0 - 6.0*x + 2.0*x^2)
 
@@ -525,7 +535,7 @@ Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
 Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
     (p1.var == p2.var) && (coeffs(p1) == coeffs(p2))
-Base.:(==)(p::AbstractPolynomial, n::Number) = coeffs(p) == [n]
+Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && p[0] == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial{T},

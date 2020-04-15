@@ -1,6 +1,7 @@
 module PadeApproximation
 
 using ..Polynomials
+using ..PolyCompat
 export Pade, padeval
 
 #=
@@ -86,12 +87,14 @@ end
 Evaluate the Pade approximant at the given point.
 
 # Examples
-```jldoctest
-julia> using SpecialFunctions
+```jldoctest pade
+julia> using SpecialFunctions, Polynomials
 
 julia> p = Polynomial(@.(1 // BigInt(gamma(1:17))));
 
+
 julia> pade = Pade(p, 8, 8);
+
 
 julia> pade(1.0) ≈ exp(1.0)
 true

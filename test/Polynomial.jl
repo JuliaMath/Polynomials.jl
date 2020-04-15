@@ -366,7 +366,7 @@ end
     @test p[1:2] == [3, 5]
     @test p[:] == [-1, 3, 5, -2]
 
-    p1    = Poly([1,2,1])
+    p1    = Polynomial([1,2,1])
     p1[5] = 1
     @test p1[5] == 1
     @test p1 == Polynomial([1,2,1,0,0,1])
@@ -392,7 +392,7 @@ end
     @test eltype(p1) == Int
     @test eltype(collect(p1)) == Polynomial{Int}
     @test eltype(collect(Polynomial{Float64}, p1)) == Polynomial{Float64}
-    @test_throws InexactError collect(Polynomial{Int}, Polynomial([1.2]))
+    @test_throws TypeError collect(Polynomial{Int}, Polynomial([1.2]))
 
     @test length(collect(p1)) == degree(p1) + 1
 
@@ -422,36 +422,6 @@ end
     @test 2. ∈ res
 end
 
-@testset "Pade" begin
-    # exponential
-    coeffs = 1 .// BigInt.(gamma.(1:17))
-    a = Polynomial(coeffs)
-    PQexp = Pade(a, 8, 8)
-    @test PQexp(1.0) ≈ exp(1.0)
-    @test PQexp(-1.0) ≈ exp(-1.0)
-
-    # sine
-    coeffs = BigInt.(sinpi.((0:16) ./ 2)) .// BigInt.(gamma.(1:17))
-    p = Polynomial(coeffs)
-    PQsin = Pade(p, 8, 7)
-    @test PQsin(1.0) ≈ sin(1.0)
-    @test PQsin(-1.0) ≈ sin(-1.0)
-
-    # cosine
-    coeffs = BigInt.(sinpi.((1:17) ./ 2)) .// BigInt.(gamma.(1:17))
-    p = Polynomial(coeffs)
-    PQcos = Pade(p, 8, 8)
-    @test PQcos(1.0) ≈ cos(1.0)
-    @test PQcos(-1.0) ≈ cos(-1.0)
-
-    # summation of a factorially divergent series
-    γ = 0.5772156649015
-    s = BigInt.(gamma.(BigInt(1):BigInt(61)))
-    coeffs = (BigInt(-1)).^(0:60) .* s .// 1
-    d = Polynomial(coeffs)
-    PQexpint = Pade(d, 30, 30)
-    @test Float64(PQexpint(1.0)) ≈ exp(1) * (-γ - sum([(-1)^k / k / gamma(k + 1) for k = 1:20]))
-end
 
 @testset "Showing" begin
     p = Polynomial([1, 2, 3])
@@ -464,8 +434,11 @@ end
     @test sprint(show, p) == "Polynomial((1 + 1im) - 2im*x)"
 
     p = Polynomial{Rational}([1, 4])
-    @test sprint(show, p) == "Polynomial(1//1 + 4//1*x)"
+    @test sprint(show, p) == "Polynomial(1 + 4*x)"
 
+    p = Polynomial{Rational{Int}}([1, 4])
+    @test sprint(show, p) == "Polynomial(1//1 + 4//1*x)"
+    
     p = Polynomial([1,2,3,1])  # leading coefficient of 1
     @test repr(p) == "Polynomial(1 + 2*x + 3*x^2 + x^3)"
     p = Polynomial([1.0, 2.0, 3.0, 1.0])
