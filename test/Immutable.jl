@@ -10,9 +10,11 @@ function  upto_tz(as, bs)
     end
     true
 end
+
+# comparer upto trailing zeros
 ==ᵗ⁰(a,b) = upto_tz(a,b)
 
-Ps = (ImmutablePolynomial, Poly, Polynomial)
+Ps = (ImmutablePolynomial, Polynomial)
 
 @testset "Construction" for coeff in [
     Int64[1, 1, 1, 1],
@@ -45,14 +47,14 @@ end
 end
 
 @testset "Other Construction" begin
-    for P in (ImmutablePolynomial{10}, Polynomial, Poly)
+    for P in (ImmutablePolynomial{10}, Polynomial)
 
         # Leading 0s
         p = P([1, 2, 0, 0])
         @test p.coeffs ==ᵗ⁰ [1, 2]
 
         # different type
-        p = Polynomial{Float64}(ones(Int32, 4))
+        p = P{Float64}(ones(Int32, 4))
         @test p.coeffs ==ᵗ⁰ ones(Float64, 4)
 
 
@@ -137,7 +139,7 @@ end
         p4 = p2 * p3
         @test divrem(p4, p2) == (p3, zero(p3))
         @test p3 % p2 == p3
-        @test all((map(abs, (p2 ÷ p3 - Polynomial([1 / 9,2 / 3])).coeffs)) .< eps())
+        @test all((map(abs, (p2 ÷ p3 - P([1 / 9,2 / 3])).coeffs)) .< eps())
         @test divrem(p0, p1) == (p0, p0)
         @test divrem(p1, p1) == (p1, p0)
         @test divrem(p2, p2) == (p1, p0)
@@ -258,12 +260,14 @@ end
 
 @testset "Conversion" begin
     # unnecessary copy in convert #65
-    for P in (Polynomial, Poly)
+    for P in (Polynomial,)
         p1 = P([1,2])
         p2 = convert(P{Int64}, p1)
         p2[3] = 3
         @test p1[3] == 3
+    end
 
+    for P in (Polynomial, ImmutablePolynomial{2})
         p = P([0,one(Float64)])
         @test P{Complex{Float64}} == typeof(p + 1im)
         @test P{Complex{Float64}} == typeof(1im - p)
@@ -335,15 +339,16 @@ end
         int = integrate(der, 1)
         @test int.coeffs ==ᵗ⁰ c
         
-        @test derivative(integrate(pN)) == convert(P{Float64}, pN)
+
         @test derivative(pR) == P([-2 // 1,2 // 1])
         @test derivative(p3) == P([2,2])
         @test derivative(p1) == derivative(p0) == derivative(pNULL) == pNULL
         @test_throws ErrorException derivative(pR, -1)
-        @test integrate(pNULL, 1) == convert(P{Float64}, p1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
 
-        if P ∈ (Polynomial, Poly)
+        if P ∈ (Polynomial,)
+            @test derivative(integrate(pN)) == convert(P{Float64}, pN)
+            @test integrate(pNULL, 1) == convert(P{Float64}, p1)
             rc = Rational{Int64}[1,2,3]
             @test integrate(P(rc)) == P{eltype(rc)}([0, 1, 1, 1])
         end
@@ -447,7 +452,7 @@ end
         @test p[:] ==ᵗ⁰ [-1, 3, 5, -2]
 
         if P != ImmutablePolynomial
-            p1  = Poly([1,2,1])
+            p1  = P([1,2,1])
             p1[5] = 1
             @test p1[5] == 1
             @test p1 == P([1,2,1,0,0,1])
@@ -476,7 +481,7 @@ end
         if P != ImmutablePolynomial
             @test eltype(collect(p1)) == P{Int}
             @test eltype(collect(P{Float64}, p1)) == P{Float64}
-            @test_throws InexactError collect(P{Int}, P([1.2]))
+            @test_throws TypeError collect(P{Int}, P([1.2]))
         end
         
         @test length(collect(p1)) == degree(p1) + 1
@@ -512,77 +517,54 @@ end
     end
 end
 
-@testset "Pade" begin
-    # exponential
-    coeffs = 1 .// BigInt.(gamma.(1:17))
-    a = Polynomial(coeffs)
-    PQexp = Pade(a, 8, 8)
-    @test PQexp(1.0) ≈ exp(1.0)
-    @test PQexp(-1.0) ≈ exp(-1.0)
-    
-    # sine
-    coeffs = BigInt.(sinpi.((0:16) ./ 2)) .// BigInt.(gamma.(1:17))
-    p = Polynomial(coeffs)
-    PQsin = Pade(p, 8, 7)
-    @test PQsin(1.0) ≈ sin(1.0)
-    @test PQsin(-1.0) ≈ sin(-1.0)
-    
-    # cosine
-    coeffs = BigInt.(sinpi.((1:17) ./ 2)) .// BigInt.(gamma.(1:17))
-    p = Polynomial(coeffs)
-    PQcos = Pade(p, 8, 8)
-    @test PQcos(1.0) ≈ cos(1.0)
-    @test PQcos(-1.0) ≈ cos(-1.0)
-    
-    # summation of a factorially divergent series
-    γ = 0.5772156649015
-    s = BigInt.(gamma.(BigInt(1):BigInt(61)))
-    coeffs = (BigInt(-1)).^(0:60) .* s .// 1
-    d = Polynomial(coeffs)
-    PQexpint = Pade(d, 30, 30)
-    @test Float64(PQexpint(1.0)) ≈ exp(1) * (-γ - sum([(-1)^k / k / gamma(k + 1) for k = 1:20]))
-end
 
 @testset "Showing" begin
-    p = Polynomial([1, 2, 3])
-    @test sprint(show, p) == "Polynomial(1 + 2*x + 3*x^2)"
-
-    p = Polynomial([1.0, 2.0, 3.0])
-    @test sprint(show, p) == "Polynomial(1.0 + 2.0*x + 3.0*x^2)"
-
-    p = Polynomial([1 + 1im, -2im])
-    @test sprint(show, p) == "Polynomial((1 + 1im) - 2im*x)"
 
     p = Polynomial{Rational}([1, 4])
+    @test sprint(show, p) == "Polynomial(1 + 4*x)"
+
+    p = Polynomial{Rational{Int}}([1, 4])
     @test sprint(show, p) == "Polynomial(1//1 + 4//1*x)"
 
-    p = Polynomial([1,2,3,1])  # leading coefficient of 1
-    @test repr(p) == "Polynomial(1 + 2*x + 3*x^2 + x^3)"
-    p = Polynomial([1.0, 2.0, 3.0, 1.0])
-    @test repr(p) == "Polynomial(1.0 + 2.0*x + 3.0*x^2 + 1.0*x^3)"
-    p = Polynomial([1, im])
-    @test repr(p) == "Polynomial(1 + im*x)"
-    p = Polynomial([1 + im, 1 - im, -1 + im, -1 - im])# minus signs
-    @test repr(p) == "Polynomial((1 + 1im) + (1 - 1im)*x - (1 - 1im)*x^2 - (1 + 1im)*x^3)"
-    p = Polynomial([1.0, 0 + NaN * im, NaN, Inf, 0 - Inf * im]) # handle NaN or Inf appropriately
-    @test repr(p) == "Polynomial(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
-
-    p = Polynomial([1,2,3])
-
-    @test repr("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
-    p = Polynomial([1 // 2, 2 // 3, 1])
-    @test repr("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
-
-    # customized printing with printpoly
-    function printpoly_to_string(args...; kwargs...)
-        buf = IOBuffer()
-        printpoly(buf, args...; kwargs...)
-        return String(take!(buf))
+    for P in (Polynomial, ImmutablePolynomial)
+        p = P([1, 2, 3])
+        @test sprint(show, p) == "$P(1 + 2*x + 3*x^2)"
+        
+        p = P([1.0, 2.0, 3.0])
+        @test sprint(show, p) == "$P(1.0 + 2.0*x + 3.0*x^2)"
+        
+        p = P([1 + 1im, -2im])
+        @test sprint(show, p) == "$P((1 + 1im) - 2im*x)"
+        
+                
+        p = P([1,2,3,1])  # leading coefficient of 1
+        @test repr(p) == "$P(1 + 2*x + 3*x^2 + x^3)"
+        p = P([1.0, 2.0, 3.0, 1.0])
+        @test repr(p) == "$P(1.0 + 2.0*x + 3.0*x^2 + 1.0*x^3)"
+        p = P([1, im])
+        @test repr(p) == "$P(1 + im*x)"
+        p = P([1 + im, 1 - im, -1 + im, -1 - im])# minus signs
+        @test repr(p) == "$P((1 + 1im) + (1 - 1im)*x - (1 - 1im)*x^2 - (1 + 1im)*x^3)"
+        p = P([1.0, 0 + NaN * im, NaN, Inf, 0 - Inf * im]) # handle NaN or Inf appropriately
+        @test repr(p) == "$P(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
+        
+        p = P([1,2,3])
+        
+        @test repr("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
+        p = P([1 // 2, 2 // 3, 1])
+        @test repr("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
+        
+        # customized printing with printpoly
+        function printpoly_to_string(args...; kwargs...)
+            buf = IOBuffer()
+            printpoly(buf, args...; kwargs...)
+            return String(take!(buf))
+        end
+        @test printpoly_to_string(P([1,2,3], "y")) == "1 + 2*y + 3*y^2"
+        @test printpoly_to_string(P([1,2,3], "y"), descending_powers = true) == "3*y^2 + 2*y + 1"
+        @test printpoly_to_string(P([2, 3, 1], :z), descending_powers = true, offset = -2) == "1 + 3*z^-1 + 2*z^-2"
+        @test printpoly_to_string(P([-1, 0, 1], :z), offset = -1, descending_powers = true) == "z - z^-1"
     end
-    @test printpoly_to_string(Polynomial([1,2,3], "y")) == "1 + 2*y + 3*y^2"
-    @test printpoly_to_string(Polynomial([1,2,3], "y"), descending_powers = true) == "3*y^2 + 2*y + 1"
-    @test printpoly_to_string(Polynomial([2, 3, 1], :z), descending_powers = true, offset = -2) == "1 + 3*z^-1 + 2*z^-2"
-    @test printpoly_to_string(Polynomial([-1, 0, 1], :z), offset = -1, descending_powers = true) == "z - z^-1"
 end
 
 @testset "Plotting" begin

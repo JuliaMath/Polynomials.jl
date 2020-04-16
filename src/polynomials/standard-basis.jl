@@ -27,16 +27,17 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
     return P(reverse(c), var)
 end
 
-
+# Not type stable, size N-order
 function derivative(p::P, order::Integer = 1) where {P <: StandardBasisPolynomial}
     order < 0 && error("Order of derivative must be non-negative")
     T = eltype(p)
     R = Base.promote_op(*, T, Int)
-    order == 0 && return P(R[c for c in coeffs(p)], p.var)
+    order == 0 && return p
     hasnan(p) && return P(R[NaN], p.var)
     order > length(p) && return P(R[0], p.var)
-
-    n = length(p)
+    d = degree(p)
+    d <= 0 && return zero(p)
+    n = d + 1
     a2 = Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
@@ -114,8 +115,8 @@ function companion(p::P) where {P <: StandardBasisPolynomial}
 end
 
 function  roots(p::P; kwargs...)  where  {P <: StandardBasisPolynomial}
-    d = length(p) - 1
-    if d < 1
+    d = degree(p)
+    if d <= 0
         return []
     end
     d == 1 && return [-p[0] / p[1]]
