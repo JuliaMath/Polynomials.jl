@@ -36,6 +36,7 @@ end
 
 Polynomials.@register Poly
 
+Polynomials.:⟒(::Type{<:Poly}) = Poly
 
 Base.convert(P::Type{<:Polynomial}, p::Poly{T}) where {T} = P(p.coeffs, p.var)
 

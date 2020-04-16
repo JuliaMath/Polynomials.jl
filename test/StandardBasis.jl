@@ -1,5 +1,7 @@
 using LinearAlgebra
 
+## Test Polynomial and ImmutablePolynomial with (nearly) the same tests
+
 #   compare upto trailing  zeros
 function  upto_tz(as, bs)
     n,m = findlast.(!iszero, (as,bs))
@@ -11,7 +13,7 @@ function  upto_tz(as, bs)
     true
 end
 
-# comparer upto trailing zeros
+# compare upto trailing zeros infix operator
 ==ᵗ⁰(a,b) = upto_tz(a,b)
 
 Ps = (ImmutablePolynomial, Polynomial)
@@ -25,13 +27,17 @@ Ps = (ImmutablePolynomial, Polynomial)
 
     for P in Ps
         p = P(coeff)
+        @test p.coeffs ==ᵗ⁰ coeff
+        @test coeffs(p) ==ᵗ⁰ coeff
         @test degree(p) == length(coeff) - 1
         @test p.var == :x
-        @test length(p) == length(coeff)
-        @test eltype(p) == eltype(coeffs(p))
+        P == Polynomial && @test length(p) == length(coeff)
+        P == Polynomial && @test size(p) == size(coeff)
+        P == Polynomial && @test size(p, 1) == size(coeff, 1)
+        P == Polynomial && @test typeof(p).parameters[1] == eltype(coeff)
+        @test eltype(p) == eltype(coeff)
         @test all([-200, -0.3, 1, 48.2] .∈ domain(p))
     end
-    
 end
 
 @testset "Mapdomain" begin
@@ -52,11 +58,11 @@ end
         # Leading 0s
         p = P([1, 2, 0, 0])
         @test p.coeffs ==ᵗ⁰ [1, 2]
+        P == Polynomial && @test length(p) == 2
 
         # different type
         p = P{Float64}(ones(Int32, 4))
         @test p.coeffs ==ᵗ⁰ ones(Float64, 4)
-
 
         p = P(30)
         @test p.coeffs ==ᵗ⁰ [30]
@@ -85,15 +91,15 @@ end
     end
 end
 
-pNULL = Polynomial(Int[])
-p0 = Polynomial([0])
-p1 = Polynomial([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
-p2 = Polynomial([1,1,0,0])
-p3 = Polynomial([1,2,1,0,0,0,0])
-p4 = Polynomial([1,3,3,1,0,0])
-p5 = Polynomial([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
-pN = Polynomial([276,3,87,15,24,0])
-pR = Polynomial([3 // 4, -2 // 1, 1 // 1])
+# pNULL = Polynomial(Int[])
+# p0 = Polynomial([0])
+# p1 = Polynomial([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
+# p2 = Polynomial([1,1,0,0])
+# p3 = Polynomial([1,2,1,0,0,0,0])
+# p4 = Polynomial([1,3,3,1,0,0])
+# p5 = Polynomial([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
+# pN = Polynomial([276,3,87,15,24,0])
+# pR = Polynomial([3 // 4, -2 // 1, 1 // 1])
 
 @testset "Arithmetic" begin
 
@@ -137,6 +143,9 @@ end
         p2 = P([5, 6, -3, 2 ,4])
         p3 = P([7, -3, 2, 6])
         p4 = p2 * p3
+        pN = P([276,3,87,15,24,0])
+        pR = P([3 // 4, -2 // 1, 1 // 1])
+        
         @test divrem(p4, p2) == (p3, zero(p3))
         @test p3 % p2 == p3
         @test all((map(abs, (p2 ÷ p3 - P([1 / 9,2 / 3])).coeffs)) .< eps())
@@ -230,12 +239,23 @@ end
         # Getting error on passing Real arrays to polyfit #146
         xx = Real[20.0, 30.0, 40.0]
         yy = Real[15.7696, 21.4851, 28.2463]
-        fit(xx, yy, 2)
+        fit(P, xx, yy, 2)
     end
 end
 
 @testset "Values" begin
     for P in Ps
+        pNULL = P(Int[])
+        p0 = P([0])
+        p1 = P([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
+        p2 = P([1,1,0,0])
+        p3 = P([1,2,1,0,0,0,0])
+        p4 = P([1,3,3,1,0,0])
+        p5 = P([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
+        pN = P([276,3,87,15,24,0])
+        pR = P([3 // 4, -2 // 1, 1 // 1])
+
+        
         @test fromroots(P, Int[])(2.) == 1.
         @test pN(-.125) == 276.9609375
         @test pNULL(10) == 0
@@ -260,12 +280,11 @@ end
 
 @testset "Conversion" begin
     # unnecessary copy in convert #65
-    for P in (Polynomial,)
-        p1 = P([1,2])
-        p2 = convert(P{Int64}, p1)
-        p2[3] = 3
-        @test p1[3] == 3
-    end
+    # unnecessary copy in convert #65
+    p1 = Polynomial([1,2])
+    p2 = convert(Polynomial{Int64}, p1)
+    p2[3] = 3
+    @test p1[3] == 3
 
     for P in (Polynomial, ImmutablePolynomial{2})
         p = P([0,one(Float64)])
@@ -399,8 +418,15 @@ end
 @testset "Chop and Truncate" begin
     # chop and truncate
     for P in Ps
-        p = P([1, 1, 1, 0])
-        p = chop(p)
+        if P == Polynomial
+            p = P([1, 1, 1, 1])
+            p.coeffs[end] = 0
+            @assert p.coeffs == [1, 1, 1, 0]
+            p = chop(p)
+        elseif P == ImmutablePolynomial
+            p = P([1, 1, 1, 0])
+        end
+
         @test p.coeffs ==ᵗ⁰ [1, 1, 1]
         ## truncation
         p1 = P([1,1] / 10)
@@ -435,7 +461,7 @@ end
         p2 = conj(p)
         @test p2.coeffs ==ᵗ⁰ [1 + 1im, 2 + 3im]
         @test transpose(p) == p
-        @test transpose!(p) == p
+        P != ImmutablePolynomial && @test transpose!(p) == p
         
         @test norm(P([1., 2.])) == norm([1., 2.])
         @test norm(P([1., 2.]), 1) == norm([1., 2.], 1)
@@ -445,6 +471,7 @@ end
 @testset "Indexing" begin
     # Indexing
     for P in Ps
+        # getindex
         p = P([-1, 3, 5, -2])
         @test p[0] == -1
         @test p[[1, 2]] ==ᵗ⁰ [3, 5]
@@ -452,6 +479,7 @@ end
         @test p[:] ==ᵗ⁰ [-1, 3, 5, -2]
 
         if P != ImmutablePolynomial
+            # setindex
             p1  = P([1,2,1])
             p1[5] = 1
             @test p1[5] == 1
@@ -478,12 +506,14 @@ end
         end
         
         @test eltype(p1) == Int
-        if P != ImmutablePolynomial
-            @test eltype(collect(p1)) == P{Int}
-            @test eltype(collect(P{Float64}, p1)) == P{Float64}
-            @test_throws TypeError collect(P{Int}, P([1.2]))
+        for Q in (Polynomial, ImmutablePolynomial{5})
+            p1 = Q([1,2,0,3])
+            @test eltype(collect(p1)) == Q{Int}
+            @test eltype(collect(Q{Float64}, p1)) == Q{Float64}
+            @test_throws InexactError collect(Q{Int}, Q([1.2]))
         end
-        
+
+        p1 = P([1,2,0,3])
         @test length(collect(p1)) == degree(p1) + 1
         
         @test [p1[idx] for idx in eachindex(p1)] ==ᵗ⁰ [1,2,0,3]
@@ -521,7 +551,7 @@ end
 @testset "Showing" begin
 
     p = Polynomial{Rational}([1, 4])
-    @test sprint(show, p) == "Polynomial(1 + 4*x)"
+    @test sprint(show, p) == "Polynomial(1//1 + 4//1*x)"
 
     p = Polynomial{Rational{Int}}([1, 4])
     @test sprint(show, p) == "Polynomial(1//1 + 4//1*x)"

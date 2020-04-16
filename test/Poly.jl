@@ -393,7 +393,7 @@ end
 @test eltype(p1) == Int
 @test eltype(collect(p1)) == Poly{Int}
 @test eltype(collect(Poly{Float64}, p1)) == Poly{Float64}
-@test_throws TypeError collect(Poly{Int}, Poly([1.2]))
+@test_throws InexactError collect(Poly{Int}, Poly([1.2]))
 
 @test length(collect(p1)) == degree(p1)+1
 

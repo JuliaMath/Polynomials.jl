@@ -109,3 +109,15 @@ end
 _muladd(a,b,c) = muladd(a,b,c)
 _muladd(a::Matrix, b, c) = a*(b*I) + c*I
 
+
+## get type of parametric composite type without type parameters
+## this is needed when the underlying type changes, e.g. with integration
+## where T=Int might become T=Float64
+##
+## trick from [ConstructionBase.jl](https://github.com/JuliaObjects/ConstructionBase.jl/blob/b5686b755bd3bee29b181b3cb18fe2effa0f10a2/src/ConstructionBase.jl#L25)
+## as noted in https://discourse.julialang.org/t/get-new-type-with-different-parameter/37253/4
+##
+@generated function constructorof(::Type{T}) where T
+    getfield(parentmodule(T), nameof(T))
+end
+

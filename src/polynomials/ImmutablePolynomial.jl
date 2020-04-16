@@ -16,7 +16,7 @@ polynomials of different variables causes an error.
 This has the advantage over `Polynomial` as it can take advantage of faster polynomial evaluation
 provided by `evalpoly` from Julia 1.4. Other operations may be slower though.
 
-# Examples
+    # Examples
 
 ```jldoctest
 julia> ImmutablePolynomial((1, 0, 3, 4))
@@ -40,25 +40,29 @@ struct ImmutablePolynomial{N, T <: Number} <: StandardBasisPolynomial{T}
         new{N,T}(coeffs, var)
     end
     function ImmutablePolynomial{N,T}(coeffs::NTuple{M,S}, var::Symbol=:x) where {N, M, T, S<: Number}
-        R = promote_type(T,S)
-        new{M,R}(R.(coeffs), var)
+        M > N && throw(ArgumentError("coeffs too big for the specified type"))
+        if M < N
+            cs = NTuple{N,T}(i <= M ? T(coeffs[i]) : zero(T) for i in 1:N)
+        else
+            cs = NTuple{N,T}(T(c) for c in coeffs)
+        end
+        new{N,T}(cs, var)
     end
     function ImmutablePolynomial{N,T}(coeffs::AbstractVector{S}, var::Symbol=:x) where {N, T <: Number, S}
-        R = promote_type(T, S)
-        length(coeffs) == 0 && return zero(ImmutablePolynomial{N,S}, var)
-        last_nz = findlast(!iszero, coeffs)
-        M = max(1, last_nz === nothing ? 0 : last_nz)
-        NN = max(N,M)
-        if M < N # pad to N
-            cs = NTuple{NN,R}(i <= M ? R(coeffs[i]) : zero(R) for i in 1:N)
-        else # assume coeffs knows best
-            cs = NTuple{NN,R}(R(c) for c in coeffs)
+        M = findlast(!iszero, coeffs)
+        isnothing(M) && return zero(ImmutablePolynomial{N,T})
+        if M < N
+            cs = NTuple{N,T}(i <= M ? T(coeffs[i]) : zero(T) for i in 1:N)
+        else
+            cs = NTuple{N,T}(T(c) for c in coeffs)
         end
-        new{NN,R}(cs, var)
+        new{N,T}(cs, var)
     end
 end
 
 @register1 ImmutablePolynomial
+
+⟒(::Type{<:ImmutablePolynomial}) = ImmutablePolynomial
 
 ## promote N,M case
 function Base.promote(p::ImmutablePolynomial{N,T}, q::ImmutablePolynomial{M,S}) where {N,T,M,S}
@@ -73,6 +77,7 @@ ImmutablePolynomial(coeffs::NTuple{N,T}, var::Polynomials.SymbolLike = :x) where
 # vector
 function ImmutablePolynomial(coeffs::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where{N,T}
     M = length(coeffs)
+    M == 0 && return zero(ImmutablePolynomial{1, T}, var)
     ImmutablePolynomial{M,T}(NTuple{M,T}(x for x in coeffs), Symbol(var))
 end
 
@@ -87,8 +92,7 @@ ImmutablePolynomial(var::Polynomials.SymbolLike = :x)  = variable(ImmutablePolyn
 Polynomial(coeffs::NTuple{N,T}, var::Polynomials.SymbolLike = :x) where{N,T} =
     ImmutablePolynomial(coeffs, var)
 function Polynomial{T}(coeffs::NTuple{N,S}, var::Polynomials.SymbolLike = :x) where{N,T,S}
-    R = promote_type(T,S)
-    ImmutablePolynomial{N,R}(R.(coeffs), var)
+    ImmutablePolynomial{N,T}(T.(coeffs), var)
 end
 
 
@@ -178,14 +182,14 @@ LinearAlgebra.conj(p::P) where {P <: ImmutablePolynomial} = P(conj([aᵢ for a�
 
 function Base.:+(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
     p1.var != p2.var && error("Polynomials must have same variable")
-    R = Base.promote_op(+,T,S)
+    R = eltype(one(T)+one(S))
     NN = max(N, M)
     return ImmutablePolynomial{NN, R}(NTuple{NN, R}(p1[i] + p2[i] for i in 0:NN-1), p1.var)
 end
 
 
 function Base.:+(p::ImmutablePolynomial{N, T}, c::S) where {N, T,S<:Number}
-    R = Base.promote_op(+, T, S)
+    R = eltype(one(T)+one(S))
     cs= coeffs(p)
     if isempty(cs)
         return ImmutablePolynomial{1,R}(NTuple{1,R}(R(c)), p.var)
@@ -200,7 +204,7 @@ end
 
 ## from https://github.com/tkoolen/StaticUnivariatePolynomials.jl/blob/master/src/monomial_basis.jl
 @generated function ⊗(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
-    R = Base.promote_op(*,T,S)
+    R = eltype(one(T)*one(S))
     P = M + N - 1
     exprs = Any[nothing for i = 1 : P]
     for i in 1 : N
@@ -221,7 +225,7 @@ end
 
 
 function Base.:*(p::ImmutablePolynomial{N,T}, c::S) where {N,T,S <: Number}
-    R = Base.promote_op(*, T, S)
+    R = eltype(one(T)*one(S))
     return ImmutablePolynomial{N,R}(NTuple{N,R}(p[i]*c for i in eachindex(p)), p.var)
 end
 

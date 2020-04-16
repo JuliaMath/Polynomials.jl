@@ -392,7 +392,7 @@ end
     @test eltype(p1) == Int
     @test eltype(collect(p1)) == Polynomial{Int}
     @test eltype(collect(Polynomial{Float64}, p1)) == Polynomial{Float64}
-    @test_throws TypeError collect(Polynomial{Int}, Polynomial([1.2]))
+    @test_throws InexactError collect(Polynomial{Int}, Polynomial([1.2]))
 
     @test length(collect(p1)) == degree(p1) + 1
 
@@ -434,9 +434,6 @@ end
     @test sprint(show, p) == "Polynomial((1 + 1im) - 2im*x)"
 
     p = Polynomial{Rational}([1, 4])
-    @test sprint(show, p) == "Polynomial(1 + 4*x)"
-
-    p = Polynomial{Rational{Int}}([1, 4])
     @test sprint(show, p) == "Polynomial(1//1 + 4//1*x)"
     
     p = Polynomial([1,2,3,1])  # leading coefficient of 1

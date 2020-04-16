@@ -1,5 +1,7 @@
 abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
+const ⟒ = constructorof #\upin
+
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
@@ -27,11 +29,13 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
     return P(reverse(c), var)
 end
 
-# Not type stable, size N-order
 function derivative(p::P, order::Integer = 1) where {P <: StandardBasisPolynomial}
     order < 0 && error("Order of derivative must be non-negative")
     T = eltype(p)
-    R = Base.promote_op(*, T, Int)
+    # we avoid usage like Base.promote_op(*, T, Int) here, say, as
+    # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
+    # Base.promote_op(*, Complex, Int)
+    R = eltype(one(T)*1) 
     order == 0 && return p
     hasnan(p) && return P(R[NaN], p.var)
     order > length(p) && return P(R[0], p.var)
@@ -42,15 +46,15 @@ function derivative(p::P, order::Integer = 1) where {P <: StandardBasisPolynomia
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
     end
-    return P(a2, p.var)
+    return ⟒(P)(a2, p.var)
 end
 
 
-function integrate(p::P, k::S) where {P <: StandardBasisPolynomial, S <: Number}
+function integrate(p::P, k::S) where {P <: StandardBasisPolynomial, S<:Number}
     T = eltype(p)
-    R = eltype(one(S)*one(T)/1)
+    R = eltype((one(T)+one(S))/1)
     if hasnan(p) || isnan(k)
-        return P([NaN])
+        return ⟒(P)([NaN])
     end
     n = length(p)
     a2 = Vector{R}(undef, n + 1)
@@ -58,7 +62,7 @@ function integrate(p::P, k::S) where {P <: StandardBasisPolynomial, S <: Number}
     @inbounds for i in 1:n
         a2[i + 1] = p[i - 1] / i
     end
-    return P(a2, p.var)
+    return ⟒(P)(a2, p.var)
 end
 
 
@@ -66,7 +70,6 @@ function Base.divrem(num::P, den::Q) where {P <: StandardBasisPolynomial, Q <: S
     num.var != den.var && error("Polynomials must have same variable")
     var = num.var
     
-    T, S =  eltype(num), eltype(den)
     
     n = degree(num)
     m = degree(den)
@@ -74,12 +77,15 @@ function Base.divrem(num::P, den::Q) where {P <: StandardBasisPolynomial, Q <: S
     m == -1 && throw(DivideError())
     if m == 0 && den[0] ≈ 0 throw(DivideError()) end
     
-    R = Base.promote_op(/, T, S)
+    T, S =  eltype(num), eltype(den)
+    R = eltype(one(T)/one(S))
+
     deg = n - m + 1
 
     if deg ≤ 0
-        return zero(P, var), P(coeffs(num), var)
+        return zero(P, var), num
     end
+
     q_coeff = zeros(R, deg)
     r_coeff = R[ num[i-1] for i in 1:n+1 ]
 
@@ -92,8 +98,7 @@ function Base.divrem(num::P, den::Q) where {P <: StandardBasisPolynomial, Q <: S
         end
     end
 
-    
-    return P(q_coeff, var), P(r_coeff, var)
+    return ⟒(P)(q_coeff, var), ⟒(P)(r_coeff, var)
     
 end
 
@@ -105,7 +110,8 @@ function companion(p::P) where {P <: StandardBasisPolynomial}
 
     
     T = eltype(p)
-    R = Base.promote_op(/, T, T)
+    R = eltype(one(T)/one(T))
+    
     comp = diagm(-1 => ones(R, d - 1))
     ani = 1 / p[end]
     for j in  0:(degree(p)-1)
@@ -115,23 +121,25 @@ function companion(p::P) where {P <: StandardBasisPolynomial}
 end
 
 function  roots(p::P; kwargs...)  where  {P <: StandardBasisPolynomial}
-    d = degree(p)
-    if d <= 0
+    T = eltype(p)
+    R = eltype(one(T)/one(T))    
+    d = length(p) - 1
+    if d < 1
         return []
     end
-    d == 1 && return [-p[0] / p[1]]
+    d == 1 && return R[-p[0] / p[1]]
 
     as = coeffs(p)
     K  = findlast(!iszero, as)
     if K == nothing
-        return eltype(p[0]/p[0])[]
+        return R[]
     end
     k =  findfirst(!iszero, as)
 
-    k  == K && return zeros(eltype(p[0]/p[0]), k-1)
+    k  == K && return zeros(R, k-1)
 
-    comp  = companion(typeof(p)(as[k:K], p.var))
-    #L = eigvals(rot180(comp); kwargs...)
+    # find eigenvalues of the  companion matrix
+    comp  = companion(⟒(P)(as[k:K], p.var))
     L = eigvals(comp; kwargs...)
     append!(L, zeros(eltype(L), k-1))
 

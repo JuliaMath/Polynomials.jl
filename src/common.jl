@@ -389,14 +389,6 @@ end
 
 Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 
-function Base.getproperty(p::AbstractPolynomial, nm::Symbol)
-    if nm == :a
-        throw(ArgumentError("AbstractPolynomial.a is not supported, use coeffs(AbstractPolynomial) instead."))
-    end
-    return getfield(p, nm)
-end
-
-
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
     idx < 0 && throw(BoundsError(p, idx))
