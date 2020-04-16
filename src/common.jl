@@ -109,7 +109,7 @@ Returns the roots of the given polynomial. This is calculated via the eigenvalue
 
 !!! note
 
-    The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and  abit more accurate; the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package provides an alternative for high-degree polynomials.
+    The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package provides an alternative for high-degree polynomials.
 
 """
 function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: Number}
@@ -369,8 +369,8 @@ Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # basis
 # return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
-function basis(p::P, k::Int) where {P<:AbstractPolynomial}
-    basis(P, k)
+function basis(p::P, k::Int; var=:x) where {P<:AbstractPolynomial}
+    basis(P, k, var=var)
 end
 
 function basis(::Type{P}, k::Int; var=:x) where {P <: AbstractPolynomial}

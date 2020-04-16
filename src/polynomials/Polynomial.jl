@@ -49,7 +49,7 @@ end
 """
     (p::Polynomial)(x)
 
-Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division.
+Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division, as implemented in `evalpoly` of base `Julia`.
 
 ```@meta
 DocTestSetup = quote

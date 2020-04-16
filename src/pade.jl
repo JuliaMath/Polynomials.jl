@@ -88,12 +88,13 @@ Evaluate the Pade approximant at the given point.
 
 # Examples
 ```jldoctest pade
-julia> using SpecialFunctions, Polynomials
+julia> using Polynomials, Polynomials.PolyCompat, SpecialFunctions
 
 julia> p = Polynomial(@.(1 // BigInt(gamma(1:17))));
 
 
 julia> pade = Pade(p, 8, 8);
+
 
 
 julia> pade(1.0) ≈ exp(1.0)

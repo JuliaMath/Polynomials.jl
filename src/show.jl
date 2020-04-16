@@ -116,7 +116,9 @@ julia> printpoly(stdout, Polynomial([-1, 0, 1], :z), offset=-1, descending_power
 z - z^-1
 
 julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true, var=:x)
-x - x^-1
+ERROR: UndefVarError: Poly not defined
+Stacktrace:
+ [1] top-level scope at none:1
 ```
 """
 function printpoly(io::IO, p::P, mimetype=MIME"text/plain"(); descending_powers=false, offset::Int=0, var=p.var) where {T,P<:AbstractPolynomial{T}}

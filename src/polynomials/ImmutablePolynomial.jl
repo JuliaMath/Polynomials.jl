@@ -3,8 +3,9 @@ export ImmutablePolynomial
 """
     ImmutablePolynomial{T<:Number}(coeffs::AbstractVector{T}, var=:x)
 
-Construct an immutable (static) polynomial from its coefficients `a`, lowest order first, optionally in
-terms of the given variable `x`. `x` can be a character, symbol, or string.
+Construct an immutable (static) polynomial from its coefficients `a`,
+lowest order first, optionally in terms of the given variable `x`
+where `x` can be a character, symbol, or string.
 
 If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct this through
 `ImmutablePolynomial((a_0, a_1, ..., a_n))`.
@@ -95,6 +96,9 @@ function Polynomial{T}(coeffs::NTuple{N,S}, var::Polynomials.SymbolLike = :x) wh
     ImmutablePolynomial{N,T}(T.(coeffs), var)
 end
 
+##
+## ----
+##
 
 # overrides from common.jl due to coeffs possibly being padded
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p), p.var)
@@ -177,6 +181,7 @@ LinearAlgebra.conj(p::P) where {P <: ImmutablePolynomial} = P(conj([aáµ¢ for aáµ
 
 ##
 ## --------------------
+##
 
 (p::ImmutablePolynomial{N, T})(x::S) where {N, T,S} = evalpoly(x, coeffs(p))
 

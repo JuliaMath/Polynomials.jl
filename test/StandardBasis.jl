@@ -91,15 +91,6 @@ end
     end
 end
 
-# pNULL = Polynomial(Int[])
-# p0 = Polynomial([0])
-# p1 = Polynomial([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
-# p2 = Polynomial([1,1,0,0])
-# p3 = Polynomial([1,2,1,0,0,0,0])
-# p4 = Polynomial([1,3,3,1,0,0])
-# p5 = Polynomial([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
-# pN = Polynomial([276,3,87,15,24,0])
-# pR = Polynomial([3 // 4, -2 // 1, 1 // 1])
 
 @testset "Arithmetic" begin
 
@@ -279,19 +270,19 @@ end
 end
 
 @testset "Conversion" begin
-    # unnecessary copy in convert #65
-    # unnecessary copy in convert #65
-    p1 = Polynomial([1,2])
-    p2 = convert(Polynomial{Int64}, p1)
-    p2[3] = 3
-    @test p1[3] == 3
-
     for P in (Polynomial, ImmutablePolynomial{2})
         p = P([0,one(Float64)])
         @test P{Complex{Float64}} == typeof(p + 1im)
         @test P{Complex{Float64}} == typeof(1im - p)
         @test P{Complex{Float64}} == typeof(p * 1im)
     end
+
+    # unnecessary copy in convert #65
+    p1 = Polynomial([1,2])
+    p2 = convert(Polynomial{Int64}, p1)
+    p2[3] = 3
+    @test p1[3] == 3
+
 end
 
 @testset "Roots" begin

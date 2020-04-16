@@ -21,6 +21,7 @@ julia> using Polynomials
 #### Available Polynomials
 
 * `Polynomial` - Standard polynomials
+* `ImmutablePolynomial` - standard polynomial backed by a tuple for faster evaluation of values
 * `ChebyshevT` - Chebyshev polynomials of the first kind
 
 #### Construction and Evaluation
