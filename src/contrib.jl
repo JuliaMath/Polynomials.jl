@@ -107,6 +107,7 @@ end
 
 ## modify muladd, as needed
 _muladd(a,b,c) = muladd(a,b,c)
+_muladd(a::Vector, b, c) = a.*b .+ c
 _muladd(a::Matrix, b, c) = a*(b*I) + c*I
 
 
