@@ -223,12 +223,6 @@ function Base.chop(p::AbstractPolynomial{T};
     chop!(deepcopy(p), rtol = rtol, atol = atol)
 end
 
-"""
-    round(p::AbstractPolynomial, args...; kwargs)
-
-Applies `round` to  the cofficients  of `p` with the given arguments. Returns a new polynomial.
-"""
-Base.round(p::P, args...;kwargs...) where {P <: AbstractPolynomial} = P(round.(coeffs(p), args...; kwargs...), p.var)
 
 """
     variable(var=:x)

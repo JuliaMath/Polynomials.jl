@@ -142,15 +142,15 @@ julia> roots(Polynomial([0, 0, 1]))
 
 #### Fitting arbitrary data
 
-Fit a polynomial (of degree `deg`) to `x` and `y` using a least-squares approximation.
+Fit a polynomial (of degree `deg` or less) to `x` and `y` using a least-squares approximation.
 
 ```julia
 julia> xs = 0:4; ys = @. exp(-xs) + sin(xs);
 
-julia> fit(xs, ys) |> x -> round(x, digits=4)
+julia> fit(xs, ys) |> p -> round.(coeffs(p), digits=4) |> Polynomial
 Polynomial(1.0 + 0.0593*x + 0.3959*x^2 - 0.2846*x^3 + 0.0387*x^4)
 
-julia> fit(ChebyshevT, xs, ys, deg=2) |> x -> round(x, digits=4)
+julia> fit(ChebyshevT, xs, ys, 2) |> p -> round.(coeffs(p), digits=4) |> ChebyshevT
 ChebyshevT(0.5413⋅T_0(x) - 0.8991⋅T_1(x) - 0.4238⋅T_2(x))
 ```
 

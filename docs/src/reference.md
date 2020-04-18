@@ -23,7 +23,6 @@ domain
 mapdomain
 chop
 chop!
-round
 truncate
 truncate!
 ```

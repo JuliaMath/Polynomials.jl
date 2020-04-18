@@ -365,8 +365,8 @@ end
 
         for i in 1:10
             p = P(rand(1:5, 6))
-            @test degree(round(p - integrate(derivative(p)), digits=13)) <= 0
-            @test degree(round(p - derivative(integrate(p)), digits=13)) <= 0
+            @test degree(truncate(p - integrate(derivative(p)), atol=1e-13)) <= 0
+            @test degree(truncate(p - derivative(integrate(p)), atol=1e-13)) <= 0
         end
             
         
@@ -434,10 +434,6 @@ end
         pchop = P([1, 2, 3, 0, 0, 0])
         pchopped = chop(pchop)
         @test roots(pchop) == roots(pchopped)
-        
-        # round
-        psmall = P(eps()*rand(1:10,  9))
-        @test degree(round(psmall, digits=14)) == -1
         
     end
 end
