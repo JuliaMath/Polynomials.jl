@@ -4,33 +4,14 @@
 ## For now  we ensure compatability by defining these for `Poly` objects such
 ## that they do not signal a deprecation (save polyfit)),
 ## but  do for other `AbstractPolynomial` types.
-## At v1.0, it is likely these will be removed.
-
-## Ensure compatability for now
-@deprecate polyval(p::AbstractPolynomial, x::Number)  p(x)
-@deprecate polyval(p::AbstractPolynomial, x)  p.(x)
-
-
-@deprecate polyint(p::AbstractPolynomial, C = 0)  integrate(p, C)
-@deprecate polyint(p::AbstractPolynomial, a, b)  integrate(p, a, b)
-
-@deprecate polyder(p::AbstractPolynomial, ord = 1)  derivative(p, ord)
-
-@deprecate polyfit(x, y, n = length(x) - 1, sym=:x)  fit(Poly, x, y, n; var = sym)
-@deprecate polyfit(x, y, sym::Symbol)  fit(Poly, x, y, var = sym)
+## At v1.0, these will be opt-in via `using Polynomials.PolyCompat`
 
 
 include("polynomials/Poly.jl")
 using .PolyCompat
 export Poly
-export poly, polyval, polyint, polyder, polyfit
-
-
-
+export poly, polyval, polyint, polyder
 
 ## Pade
-## Pade will  likely be moved into a separate pacakge
-include("pade.jl")
-using .PadeApproximation
-export Pade
-export padeval
+## Pade will  likely be moved into a separate package, for now we will put into PolyCompat
+export Pade, padeval

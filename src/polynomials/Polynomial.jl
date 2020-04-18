@@ -14,6 +14,11 @@ with combinations of polynomials and scalars. However, operations involving two
 polynomials of different variables causes an error.
 
 # Examples
+```@meta
+DocTestSetup = quote
+    using Polynomials
+end
+```
 
 ```jldoctest
 julia> Polynomial([1, 0, 3, 4])
@@ -47,6 +52,12 @@ mapdomain(::Type{<:Polynomial}, x::AbstractArray) = x
 
 Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division.
 
+```@meta
+DocTestSetup = quote
+    using Polynomials
+end
+```
+
 # Examples
 ```jldoctest
 julia> p = Polynomial([1, 0, 3])
@@ -63,37 +74,7 @@ julia> p.(0:3)
  28
 ```
 """
-function (p::Polynomial{T})(x::S) where {T,S}
-    oS = one(x)
-    length(p) == 0 && return zero(T) *  oS
-    b = p[end]  *  oS
-    @inbounds for i in (lastindex(p) - 1):-1:0
-        b = p[i]*oS .+ x * b # not muladd(x,b,p[i]), unless we want to add methods for matrices, ...
-    end
-    return b
-end
-
-## From base/math.jl from Julia 1.4
-function (p::Polynomial{T})(z::S) where {T,S <: Complex}
-    d = degree(p)
-    d == -1 && zero(z)
-    d == 0 && return p[0]
-    N = d + 1
-    a = p[end]
-    b = p[end-1]
-
-    x = real(z)
-    y = imag(z)
-    r = 2x
-    s = muladd(x, x, y*y)
-    for i in d-2:-1:0
-        ai = a
-        a = muladd(r, ai, b)
-        b = p[i] - s * ai
-    end
-    ai = a
-    muladd(ai, z, b)
-end
+(p::Polynomial{T})(x::S) where {T,S} = evalpoly(x, coeffs(p))
 
 
 function fromroots(P::Type{<:Polynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}

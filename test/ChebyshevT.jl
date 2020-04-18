@@ -175,8 +175,8 @@ end
 
     for i in 1:10
         p = ChebyshevT{Float64}(rand(1:5, 6))
-        @test degree(round(p - integrate(derivative(p)), digits=13)) <= 0
-        @test degree(round(p - derivative(integrate(p)), digits=13)) <= 0
+        @test degree(truncate(p - integrate(derivative(p)), atol=1e-8)) <= 0
+        @test degree(truncate(p - derivative(integrate(p)), atol=1e-8)) <= 0
     end
 end
 

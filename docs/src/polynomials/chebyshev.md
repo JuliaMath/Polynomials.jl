@@ -14,7 +14,6 @@ The [Chebyshev polynomials](https://en.wikipedia.org/wiki/Chebyshev_polynomials)
 
 ```@docs
 ChebyshevT
-ChebyshevT()
 ```
 
 The `ChebyshevT` type holds coefficients representing the polynomial `a_0 T_0 + a_1 T_1 + ... + a_n T_n`.

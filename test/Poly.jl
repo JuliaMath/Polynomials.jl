@@ -1,3 +1,6 @@
+## Tests for compatiability with the old form
+## the methods  `polyval`, `polyint` and `polyder` are only for the
+## legacy `Poly`  type.
 pNULL = Poly(Float32[])
 p0 = Poly([0])
 p1 = Poly([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
@@ -58,14 +61,14 @@ sprint(show, pNULL)
 
 
 @test pN(-.125) == 276.9609375
-@test pN([0.1, 0.2, 0.3]) == polyval(pN, [0.1, 0.2, 0.3])
+@test pN.([0.1, 0.2, 0.3]) == polyval.(pN, [0.1, 0.2, 0.3])
 
 @test poly([-1,-1]) == p3
 @test roots(p0)==roots(p1)==roots(pNULL)==[]
 @test roots(Poly([0,1,0])) == [0.0]
 r = roots(Poly([0,1,0]))
 @test roots(p2) == [-1]
-a_roots = copy(pN.a)
+a_roots = copy(coeffs(pN))
 @test all(map(abs,sort(roots(poly(a_roots))) - sort(a_roots)) .< 1e6)
 @test length(roots(p5)) == 4
 @test roots(pNULL) == []
@@ -87,7 +90,7 @@ p3 = Poly([7, -3, 2, 6])
 p4 = p2 * p3
 @test divrem(p4, p2) == (p3, zero(p3))
 @test p3%p2 == p3
-@test all((map(abs,(p2 ÷ p3 - Poly([1/9,2/3])).a)) .< eps())
+@test all((map(abs,(p2 ÷ p3 - Poly([1/9,2/3]))|> coeffs)) .< eps())
 @test divrem(p0,p1) == (p0,p0)
 @test divrem(p1,p1) == (p1,p0)
 @test divrem(p2,p2) == (p1,p0)
@@ -145,17 +148,17 @@ PQexpint = Pade(d,30,30)
                exp(1)*(-_γ-sum([(-1).^k/k./gamma(k+1) for k=1:20])))
 
 
-## polyfit
+## polyfit(xs,ys) -> fit(Poly, xs, ys)
 xs = range(0, stop=pi, length=10)
 
 ys = map(sin,xs)
-p = polyfit(xs, ys)
-p = polyfit(xs, ys, :t)
-p = polyfit(xs, ys, 2)
+p = fit(Poly, xs, ys)
+p = fit(Poly, xs, ys, var=:t)
+p = fit(Poly, xs, ys, 2)
 @test maximum(map(abs,map(x->polyval(p, x), xs) - ys)) <= 0.03
 #https://stackoverflow.com/questions/50832823/error-with-polyfit-function-julia
 # relax type assumptions on x, y
-polyfit(Number[1,2,3], Number[2,3,1])
+fit(Poly, Number[1,2,3], Number[2,3,1])
 
 ## truncation
 p1 = Poly([1,1]/10)
@@ -378,7 +381,42 @@ p2 = poly([1.,2.,6.])
 ## Getting error on passing Real arrays to polyfit #146
 xx = Real[20.0, 30.0, 40.0]
 yy = Real[15.7696, 21.4851, 28.2463]
-polyfit(xx,yy,2)
+fit(Poly, xx,yy,2)
 
 ## Issue with overflow and polyder Issue #159
 @test !iszero(polyder(Poly(BigInt[0, 1])^100, 100))
+
+
+
+
+
+@testset "Pade" begin
+    # exponential
+    coeffs = 1 .// BigInt.(gamma.(1:17))
+    a = Polynomial(coeffs)
+    PQexp = Pade(a, 8, 8)
+    @test PQexp(1.0) ≈ exp(1.0)
+    @test PQexp(-1.0) ≈ exp(-1.0)
+
+    # sine
+    coeffs = BigInt.(sinpi.((0:16) ./ 2)) .// BigInt.(gamma.(1:17))
+    p = Polynomial(coeffs)
+    PQsin = Pade(p, 8, 7)
+    @test PQsin(1.0) ≈ sin(1.0)
+    @test PQsin(-1.0) ≈ sin(-1.0)
+
+    # cosine
+    coeffs = BigInt.(sinpi.((1:17) ./ 2)) .// BigInt.(gamma.(1:17))
+    p = Polynomial(coeffs)
+    PQcos = Pade(p, 8, 8)
+    @test PQcos(1.0) ≈ cos(1.0)
+    @test PQcos(-1.0) ≈ cos(-1.0)
+
+    # summation of a factorially divergent series
+    γ = 0.5772156649015
+    s = BigInt.(gamma.(BigInt(1):BigInt(61)))
+    coeffs = (BigInt(-1)).^(0:60) .* s .// 1
+    d = Polynomial(coeffs)
+    PQexpint = Pade(d, 30, 30)
+    @test Float64(PQexpint(1.0)) ≈ exp(1) * (-γ - sum([(-1)^k / k / gamma(k + 1) for k = 1:20]))
+end

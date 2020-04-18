@@ -24,7 +24,9 @@ export fromroots,
 Construct a polynomial of the given type given the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest
+```jldoctest common
+julia> using Polynomials
+
 julia> r = [3, 2]; # (x - 3)(x - 2)
 
 julia> fromroots(r)
@@ -46,7 +48,9 @@ fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
 Construct a polynomial of the given type using the eigenvalues of the given matrix as the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest
+```jldoctest common
+julia> using Polynomials
+
 julia> A = [1 2; 3 4]; # (x - 5.37228)(x + 0.37228)
 
 julia> fromroots(A)
@@ -195,11 +199,11 @@ In-place version of [`chop`](@ref)
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-    degree(p) == -1 && return p
+    isempty(coeffs(p)) && return p
     for i = lastindex(p):-1:0
         val = p[i]
         if !isapprox(val, zero(T); rtol = rtol, atol = atol)
-            resize!(p.coeffs, i + 1)
+            resize!(p.coeffs, i + 1); 
             return p
         end
     end
@@ -219,22 +223,18 @@ function Base.chop(p::AbstractPolynomial{T};
     chop!(deepcopy(p), rtol = rtol, atol = atol)
 end
 
-"""
-    round(p::AbstractPolynomial, args...; kwargs)
-
-Applies `round` to  the cofficients  of `p` with the given arguments. Returns a new polynomial.
-"""
-Base.round(p::P, args...;kwargs...) where {P <: AbstractPolynomial} = P(round.(coeffs(p), args...; kwargs...), p.var)
 
 """
     variable(var=:x)
     variable(::Type{<:AbstractPolynomial}, var=:x)
     variable(p::AbstractPolynomial, var=p.var)
 
-Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref).
+Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
 
 # Examples
-```jldoctest
+```jldoctest  common
+julia> using Polynomials
+
 julia> x = variable()
 Polynomial(x)
 
@@ -243,8 +243,8 @@ Polynomial(100 + 24*x - 3*x^2)
 
 julia> roots((x - 3) * (x + 2))
 2-element Array{Float64,1}:
-  3.0
  -2.0
+  3.0
 
 ```
 """
@@ -299,7 +299,7 @@ function Base.iszero(p::AbstractPolynomial)
     if length(p) == 0
         return true
     end
-    return length(p) == 1 && p[0] == 0
+    return all(iszero.(coeffs(p))) && p[0] == 0
 end
 
 """
@@ -334,7 +334,9 @@ domain(::P) where {P <: AbstractPolynomial} = domain(P)
 Given values of x that are assumed to be unbounded (-∞, ∞), return values rescaled to the domain of the given polynomial.
 
 # Examples
-```jldoctest
+```jldoctest  common
+julia> using Polynomials
+
 julia> x = -10:10
 -10:10
 
@@ -383,10 +385,7 @@ Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 
 function Base.getproperty(p::AbstractPolynomial, nm::Symbol)
     if nm == :a
-        Base.depwarn("AbstractPolynomial.a is deprecated, use AbstractPolynomial.coeffs or coeffs(AbstractPolynomial) instead.",
-            Symbol("Base.getproperty"),
-        )
-        return getfield(p, :coeffs)
+        throw(ArgumentError("AbstractPolynomial.a is not supported, use coeffs(AbstractPolynomial) instead."))
     end
     return getfield(p, nm)
 end
@@ -434,16 +433,16 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 
 Returns a representation of 0 as the given polynomial.
 """
-Base.zero(::Type{P}) where {P <: AbstractPolynomial} = P(zeros(1))
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P)
+Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(zeros(1), var)
+Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}) where {P <: AbstractPolynomial} = P(ones(1))
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
+Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(ones(1), var)
+Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
 
 #=
 arithmetic =#
@@ -493,7 +492,9 @@ Find the greatest common denominator of two polynomials recursively using
 
 # Examples
 
-```jldoctest
+```jldoctest common
+julia> using Polynomials
+
 julia> gcd(fromroots([1, 1, 2]), fromroots([1, 2, 3]))
 Polynomial(4.0 - 6.0*x + 2.0*x^2)
 
@@ -504,7 +505,7 @@ function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T
     iter = 1
     itermax = length(r₁)
 
-    while r₁ ≉ zero(r₁) && iter ≤ itermax   # just to avoid unnecessary recursion
+    while !iszero(r₁) && iter ≤ itermax
         _, rtemp = divrem(r₀, r₁)
         r₀ = r₁
         r₁ = truncate(rtemp)  

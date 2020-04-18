@@ -1,20 +1,29 @@
 module PolyCompat
 
 using ..Polynomials
-export poly, polyval, polyint, polyder #, polyfit
 
 #=
-This type is only here to provide stability while deprecating. This will eventually be removed in favor
-of `Polynomial` =#
+Compat support for old code. This will be opt-in by v1.0, through "using Polynomials.PolyCompat"
+=#
 
-export Poly
+## Poly
 
+"""
+    Poly{T}
+
+Type of polynomial to support legacy code. Use of this type  is  not  encouraged.
+
+This type provides support for `poly`, `polyval`, `polyder`, and
+`polyint` to support older code. It should not be used for new code
+base.
+
+"""
 struct Poly{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
     function Poly(a::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {T <: Number}
-      # if a == [] we replace it with a = [0]
-##        Base.depwarn("Poly is deprecated and will be removed in a future release. Please use Polynomial instead", :Poly)
+        # if a == [] we replace it with a = [0]
+        Base.depwarn("Use of `Poly` from v1.0 forward will require `using Polynomials.PolyCompat`", :Poly)
         if length(a) == 0
             return new{T}(zeros(T, 1), Symbol(var))
         else
@@ -27,9 +36,6 @@ struct Poly{T <: Number} <: AbstractPolynomial{T}
 end
 
 Polynomials.@register Poly
-
-
-
 
 
 Base.convert(P::Type{<:Polynomial}, p::Poly{T}) where {T} = P(p.coeffs, p.var)
@@ -160,10 +166,14 @@ Polynomials.showterm(io::IO, ::Type{Poly{T}}, pj::T, var, j, first::Bool, mimety
 
 
 ## Compat
+## As this is an older package with many examples out in the wild
+## rather than remove these, we limit them to this `Poly` type only
+
 poly(r, var = :x) = fromroots(Poly, r; var = var)
 
-Polynomials.polyval(p::Poly, x::Number) = p(x)
-Polynomials.polyval(p::Poly, x) = p.(x)
+polyval(p::Poly, x::Number) = p(x)
+polyval(p::Poly, x) = p.(x)
+polyval(p::AbstractPolynomial, x) = error("`polyval` is a legacy name for use with `Poly` objects only. Use `p(x)`.")
 
 function Base.getproperty(p::Poly, nm::Symbol)
     if nm == :a
@@ -172,11 +182,26 @@ function Base.getproperty(p::Poly, nm::Symbol)
     return getfield(p, nm)
 end
 
-Polynomials.polyint(p::Poly, C = 0) = integrate(p, C)
-Polynomials.polyint(p::Poly, a, b) = integrate(p, a, b)
-Polynomials.polyder(p::Poly, ord = 1) = derivative(p, ord)
+polyint(p::Poly, C = 0) = integrate(p, C)
+polyint(p::Poly, a, b) = integrate(p, a, b)
+polyint(p::AbstractPolynomial, args...)  = error("`polyint` is a legacy name for use with `Poly` objects only. Use `integrate(p,...)`.")
 
-#polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
-#polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
+polyder(p::Poly, ord = 1) = derivative(p, ord)
+polyder(p::AbstractPolynomial, args...) =  error("`polyder` is a legacy name for use with `Poly` objects only. Use `derivative(p,[order=1])`.")
+
+# polyfit was deprecated to avoid a default calling `Poly`. Once
+# PolyCompat is required, it can be used again
+polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
+polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
+
+export Poly, poly, polyval, polyint, polyder#, polyfit
+
+
+## Pade
+include("../pade.jl")
+using .PadeApproximation
+export Pade
+export padeval
+
 
 end

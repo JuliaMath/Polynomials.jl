@@ -120,7 +120,7 @@ resulting polynomial is one lower than the degree of `p`.
 
 ```jldoctest
 julia> derivative(Polynomial([1, 3, -1]))
-Polynomial(3 - 2*x)
+Polynomial(3.0 - 2.0*x)
 ```
 
 ### Root-finding
@@ -132,18 +132,18 @@ the returned roots may be real or complex.
 ```jldoctest
 julia> roots(Polynomial([1, 0, -1]))
 2-element Array{Float64,1}:
-  1.0
  -1.0
+  1.0
 
 julia> roots(Polynomial([1, 0, 1]))
 2-element Array{Complex{Float64},1}:
-  0.0 - 1.0im
-  0.0 + 1.0im
+ 0.0 - 1.0im
+ 0.0 + 1.0im
 
 julia> roots(Polynomial([0, 0, 1]))
 2-element Array{Float64,1}:
-  0.0
- -0.0
+ 0.0
+ 0.0
 ```
 
 ### Fitting arbitrary data
@@ -193,6 +193,8 @@ julia> convert(ChebyshevT, Polynomial([1.0, 2,  3]))
 ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))
 ```
 
+!!! Note
+    The older  `Poly` type that this package used prior to `v0.7`  is implemented as an alternate basis  to provide support for older code bases. As of `v1.0`,  this type will be only available by executing `using Polynomials.PolyCompat`.
 
 ### Iteration
 
