@@ -63,8 +63,6 @@ end
 
 @register1 ImmutablePolynomial
 
-⟒(::Type{<:ImmutablePolynomial}) = ImmutablePolynomial
-
 ## promote N,M case
 function Base.promote(p::ImmutablePolynomial{N,T}, q::ImmutablePolynomial{M,S}) where {N,T,M,S}
     NN, R = max(N,M), promote_type(T,S)

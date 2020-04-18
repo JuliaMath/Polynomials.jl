@@ -44,8 +44,6 @@ end
 
 @register Polynomial
 
-⟒(::Type{<:Polynomial}) = Polynomial
-
 """
     (p::Polynomial)(x)
 
