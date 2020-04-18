@@ -20,6 +20,8 @@ provided by `evalpoly` from Julia 1.4. Other operations may be slower though.
     # Examples
 
 ```jldoctest
+julia> using  Polynomials
+
 julia> ImmutablePolynomial((1, 0, 3, 4))
 ImmutablePolynomial(1 + 3*x^2 + 4*x^3)
 

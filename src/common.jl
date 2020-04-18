@@ -425,6 +425,7 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 
 Returns a representation of 0 as the given polynomial.
 """
+Base.zero(::Type{P}, var=:x) where {T, P <: AbstractPolynomial{T}} = P(zeros(T, 1), var)
 Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(zeros(1), var)
 Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 """
@@ -434,6 +435,7 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}, var=:x) where {T, P <: AbstractPolynomial{T}} = P(ones(T, 1), var)
+Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(ones(1), var)
 Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
 
 #=
@@ -449,7 +451,7 @@ function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     return T(coeffs(p) .* c, p.var)
 end
 function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
-    R = promote_type(P, Base.promote_op(/, T, S))
+    R = eltype(one(T)/one(S))
     return R(coeffs(p) ./ c, p.var)
 end
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)

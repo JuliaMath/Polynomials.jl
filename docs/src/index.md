@@ -120,7 +120,7 @@ resulting polynomial is one lower than the degree of `p`.
 
 ```jldoctest
 julia> derivative(Polynomial([1, 3, -1]))
-Polynomial(3.0 - 2.0*x)
+Polynomial(3 - 2*x)
 ```
 
 ### Root-finding
@@ -221,7 +221,8 @@ julia> as[3], p[2], collect(p)[3]
 
 * [AbstractAlgebra.jl](https://github.com/wbhart/AbstractAlgebra.jl) and [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series
 
-* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [AMRVW](https://github.com/jverzani/AMRVW.jl).
+* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) and [AMRVW](https://github.com/jverzani/AMRVW.jl).
+
 
 
 ## Contributing
