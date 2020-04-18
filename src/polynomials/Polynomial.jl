@@ -55,6 +55,12 @@ DocTestSetup = quote
 end
 ```
 
+```@meta
+DocTestSetup = quote
+    using Polynomials
+end
+```
+
 # Examples
 ```jldoctest
 julia> p = Polynomial([1, 0, 3])

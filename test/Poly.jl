@@ -1,5 +1,4 @@
 ## Tests for compatiability with the old form
-
 # test for not loaded
 @test_throws UndefVarError Poly([1,2,3])
 @test_throws UndefVarError poly([1,2,3])
@@ -187,13 +186,13 @@ PQexpint = Pade(d,30,30)
 xs = range(0, stop=pi, length=10)
 
 ys = map(sin,xs)
-p = polyfit(xs, ys)
-p = polyfit(xs, ys, :t)
-p = polyfit(xs, ys, 2)
+p = fit(Poly, xs, ys)
+p = fit(Poly, xs, ys, var=:t)
+p = fit(Poly, xs, ys, 2)
 @test maximum(map(abs,map(x->polyval(p, x), xs) - ys)) <= 0.03
 #https://stackoverflow.com/questions/50832823/error-with-polyfit-function-julia
 # relax type assumptions on x, y
-polyfit(Number[1,2,3], Number[2,3,1])
+fit(Poly, Number[1,2,3], Number[2,3,1])
 
 ## truncation
 p1 = Poly([1,1]/10)

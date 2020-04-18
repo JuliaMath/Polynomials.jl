@@ -98,7 +98,6 @@ polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
 
 export Poly, poly, polyval, polyint, polyder, polyfit
 
-
 ## Pade
 include("../pade.jl")
 using .PadeApproximation
