@@ -116,6 +116,9 @@ julia> printpoly(stdout, Polynomial([-1, 0, 1], :z), offset=-1, descending_power
 z - z^-1
 
 julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true, var=:x)
+┌ Warning: Use of `Poly` from v1.0 forward will require `using Polynomials.PolyCompat`
+│   caller = top-level scope at none:6
+└ @ Core none:6
 x - x^-1
 ```
 """

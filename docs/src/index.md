@@ -1,4 +1,4 @@
-# Polynomials.jl
+# Polynomial.jl
 
 Polynomials.jl is a Julia package that provides basic arithmetic, integration,
 differentiation, evaluation, and root finding over dense univariate polynomials.
@@ -153,11 +153,13 @@ Fit a polynomial (of degree `deg`) to `x` and `y` using polynomial interpolation
 ```@example
 using Plots, Polynomials
 xs = range(0, 10, length=10)
-ys = exp.(-xs)
-f = fit(xs, ys)  # fit(xs, ys, k)  for fitting a kth degreee polynomial
+ys = @. exp(-xs)
+f = fit(xs, ys) # degree = length(xs) - 1 
+f2 = fit(xs, ys, 2) # degree = 2
 
-scatter(xs, ys, label="Data");
-plot!(f, extrema(xs)..., label="Fit");
+scatter(xs, ys, markerstrokewidth=0, label="Data")
+plot!(f, extrema(xs)..., label="Fit")
+plot!(f2, extrema(xs)..., label="Quadratic Fit")
 savefig("polyfit.svg"); nothing # hide
 ```
 
@@ -193,7 +195,7 @@ julia> convert(ChebyshevT, Polynomial([1.0, 2,  3]))
 ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))
 ```
 
-!!! Note
+!!! warning
     The older  `Poly` type that this package used prior to `v0.7`  is implemented as an alternate basis  to provide support for older code bases. As of `v1.0`,  this type will be only available by executing `using Polynomials.PolyCompat`.
 
 ### Iteration
