@@ -1,4 +1,4 @@
-# Polynomial.jl
+# Polynomials.jl
 
 Polynomials.jl is a Julia package that provides basic arithmetic, integration,
 differentiation, evaluation, and root finding over dense univariate polynomials.
