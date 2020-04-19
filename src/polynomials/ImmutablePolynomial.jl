@@ -53,7 +53,7 @@ struct ImmutablePolynomial{N, T <: Number} <: StandardBasisPolynomial{T}
     end
     function ImmutablePolynomial{N,T}(coeffs::AbstractVector{S}, var::Symbol=:x) where {N, T <: Number, S}
         M = findlast(!iszero, coeffs)
-        isnothing(M) && return zero(ImmutablePolynomial{N,T})
+        M == nothing && return zero(ImmutablePolynomial{N,T})
         if M < N
             cs = NTuple{N,T}(i <= M ? T(coeffs[i]) : zero(T) for i in 1:N)
         else
@@ -104,7 +104,7 @@ end
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p), p.var)
 function Base.hash(p::ImmutablePolynomial{N,T}, h::UInt) where {N,T}
     n = findlast(!iszero, coeffs(p))
-    isnothing(n) && return hash(p.var, hash(NTuple{0,T}(),h))
+    n == nothing && return hash(p.var, hash(NTuple{0,T}(),h))
     hash(p.var, hash(coeffs(p)[1:n], h))
 end
 
@@ -116,7 +116,7 @@ Base.zero(::Type{ImmutablePolynomial{N}}, var=:x) where {N}  = zero(ImmutablePol
 
 function degree(p::ImmutablePolynomial{N,T}) where {N, T}
     n = findlast(!iszero, coeffs(p))
-    isnothing(n) ? -1 : n-1
+    n == nothing ? -1 : n-1
 end
 
 for op in [:isequal, :(==)]
@@ -126,8 +126,8 @@ for op in [:isequal, :(==)]
         (N == M  && $op(p1s,p2s)) &&  return  true
         n1 = findlast(!iszero, p1s) # now trim out zeros
         n2 = findlast(!iszero, p2s)
-        isnothing(n1) && isnothing(n2) && return true
-        (isnothing(n1) || isnothing(n2)) && return false
+        (n1 == nothing && n2 == nothing) && return true
+        (n1 == nothing || n2  == nothing) && return false
         $op(p1s[1:n1],p2s[1:n2]) &&  return true 
         false
     end

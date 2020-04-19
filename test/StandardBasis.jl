@@ -6,7 +6,7 @@ using LinearAlgebra
 function  upto_tz(as, bs)
     n,m = findlast.(!iszero, (as,bs))
     n == m || return false
-    isnothing(n) &&  return true
+    n == nothing &&  return true
     for i in 1:n
         as[i] != bs[i] && return false
     end
