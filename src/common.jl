@@ -64,8 +64,9 @@ fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} =
     fromroots(Polynomial, eigvals(A), var = var)
 
 """
-    fit(x, y; [weights], deg=length(x) - 1, var=:x)
-    fit(::Type{<:AbstractPolynomial}, x, y; [weights], deg=length(x)-1, var=:x)
+    fit(x, y, deg=length(x) - 1; [weights], var=:x)
+    fit(::Type{<:AbstractPolynomial}, x, y, deg=length(x)-1; [weights], var=:x)
+
 Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref)
 """
 function fit(P::Type{<:AbstractPolynomial},
