@@ -58,7 +58,7 @@ macro register1(name)
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.convert(P::Type{<:$poly}, p::$poly{α,T}) where {α,T} = P(coeffs(p), p.var)
+        Base.convert(P::Type{<:$poly{α,T}}, p::$poly{α,S}) where {α,T,S} = P(p.coeffs, p.var)
         Base.promote_rule(::Type{$poly{α,T}}, ::Type{$poly{α,S}}) where {α,T,S} =
             $poly{α,promote_type(T, S)}
         Base.promote_rule(::Type{$poly{α,T}}, ::Type{S}) where {α,T,S<:Number} = 
@@ -81,7 +81,7 @@ macro register2(name)
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.convert(P::Type{<:$poly}, p::$poly{α, β, T}) where {α, β, T} = P(coeffs(p), p.var)
+        Base.convert(P::Type{<:$poly{α, β,T}}, p::$poly{α, β, S}) where {α, β, T, S} = P(p.coeffs, p.var)
         Base.promote_rule(::Type{$poly{α,β,T}}, ::Type{$poly{α,β,S}}) where {α,β,T,S} =
             $poly{α,β,promote_type(T, S)}
         Base.promote_rule(::Type{$poly{α,β,T}}, ::Type{S}) where {α,β,T,S<:Number} =
