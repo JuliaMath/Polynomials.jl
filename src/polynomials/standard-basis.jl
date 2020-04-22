@@ -2,6 +2,7 @@ abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
 const ⟒ = constructorof #\upin
 
+
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
@@ -28,6 +29,16 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
     #return P(c, var)
     return P(reverse(c), var)
 end
+
+
+function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
+    U = promote_type(T, S)
+    q = copy(p)
+    p2 = U == S ? q : convert(Polynomial{U}, q)
+    p2[0] += c
+    return p2
+end
+
 
 function derivative(p::P, order::Integer = 1) where {P <: StandardBasisPolynomial}
     order < 0 && error("Order of derivative must be non-negative")

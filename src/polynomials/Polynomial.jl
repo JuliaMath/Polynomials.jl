@@ -80,9 +80,8 @@ julia> p.(0:3)
 (p::Polynomial{T})(x::S) where {T,S} = evalpoly(x, coeffs(p))
 
 
-
+   
 function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
-    R = promote_type(T,S)
     p1.var != p2.var && error("Polynomials must have same variable")
 
     n1, n2 = length(p1), length(p2)
@@ -90,14 +89,6 @@ function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
     return Polynomial(c, p1.var)
 end
 
-
-function Base.:+(p::Polynomial{T}, c::S) where {T,S<:Number}
-    U = promote_type(T, S)
-    q = copy(p)
-    p2 = U == S ? q : convert(Polynomial{U}, q)
-    p2[0] += c
-    return p2
-end
 
 function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     p1.var != p2.var && error("Polynomials must have same variable")

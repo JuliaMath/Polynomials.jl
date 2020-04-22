@@ -544,9 +544,9 @@ function Base.isapprox(p1::AbstractPolynomial{T},
 end
 
 function Base.isapprox(p1::AbstractPolynomial{T},
-    n::S;
-    rtol::Real = (Base.rtoldefault(T, S, 0)),
-    atol::Real = 0,) where {T,S}
+                       n::S;
+                       rtol::Real = (Base.rtoldefault(T, S, 0)),
+                       atol::Real = 0,) where {T,S}
     p1t = truncate(p1, rtol = rtol, atol = atol)
     if length(p1t) != 1
         return false

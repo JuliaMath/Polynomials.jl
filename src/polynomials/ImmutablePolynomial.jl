@@ -90,11 +90,11 @@ ImmutablePolynomial(n::T, var::Polynomials.SymbolLike = :x) where {T <: Number} 
 ImmutablePolynomial(var::Polynomials.SymbolLike = :x)  = variable(ImmutablePolynomial{2, Int}, var)
 
 # Convenience; pass tuple to Polynomial
-Polynomial(coeffs::NTuple{N,T}, var::Polynomials.SymbolLike = :x) where{N,T} =
-    ImmutablePolynomial(coeffs, var)
-function Polynomial{T}(coeffs::NTuple{N,S}, var::Polynomials.SymbolLike = :x) where{N,T,S}
-    ImmutablePolynomial{N,T}(T.(coeffs), var)
-end
+#Polynomial(coeffs::NTuple{N,T}, var::Polynomials.SymbolLike = :x) where{N,T} =
+#    ImmutablePolynomial(coeffs, var)
+#function Polynomial{T}(coeffs::NTuple{N,S}, var::Polynomials.SymbolLike = :x) where{N,T,S}
+#    ImmutablePolynomial{N,T}(T.(coeffs), var)
+#end
 
 ##
 ## ----
