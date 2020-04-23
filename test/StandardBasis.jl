@@ -602,3 +602,24 @@ end
     @test rec[1].args == (r, p.(r))
 
 end
+
+
+@testset "Matrices" begin
+
+    for P in Ps
+        p = P([1,2,3], :x)
+        A = [1 p; p^2 p^3]
+        @test !issymmetric(A)
+        @test issymmetric(A*transpose(A))
+        diagm(0 => [1, p^3], 1=>[p^2], -1=>[p])
+    end
+
+    # issue 206 with mixed variable types and promotion
+    for P in (ImmutablePolynomial,)
+        λ = P([0,1],:λ)
+        A = [1 λ; λ^2 λ^3]
+        @test A ==  diagm(0 => [1, λ^3], 1=>[λ], -1=>[λ^2])
+        @test all([1 -λ]*[λ^2 λ; λ 1] .== 0)
+        @test [λ 1] + [1 λ] == (λ+1) .* [1 1] # (λ+1) not a number so scalar multiplication does not apply,  so we broadcast
+    end
+end

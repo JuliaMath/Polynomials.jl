@@ -10,12 +10,15 @@ where `x` can be a character, symbol, or string.
 If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct this through
 `ImmutablePolynomial((a_0, a_1, ..., a_n))`.
 
-The usual arithmetic operators are overloaded to work with polynomials as well as
-with combinations of polynomials and scalars. However, operations involving two
-polynomials of different variables causes an error.
+The usual arithmetic operators are overloaded to work with polynomials
+as well as with combinations of polynomials and scalars. However,
+operations involving two polynomials of different variables causes an
+error, though for `+` and `*` operations, constant polynomials are
+treated as having no variable. (This adds a runtime check, but is useful for using with
+matrices.)
 
 This has the advantage over `Polynomial` as it can take advantage of faster polynomial evaluation
-provided by `evalpoly` from Julia 1.4. Other operations may be slower though.
+provided by `evalpoly` from Julia 1.4. 
 
     # Examples
 
@@ -90,18 +93,27 @@ ImmutablePolynomial(n::T, var::Polynomials.SymbolLike = :x) where {T <: Number} 
 ImmutablePolynomial(var::Polynomials.SymbolLike = :x)  = variable(ImmutablePolynomial{2, Int}, var)
 
 # Convenience; pass tuple to Polynomial
-#Polynomial(coeffs::NTuple{N,T}, var::Polynomials.SymbolLike = :x) where{N,T} =
-#    ImmutablePolynomial(coeffs, var)
-#function Polynomial{T}(coeffs::NTuple{N,S}, var::Polynomials.SymbolLike = :x) where{N,T,S}
-#    ImmutablePolynomial{N,T}(T.(coeffs), var)
-#end
+# Not documented, not sure this is a good idea as P(...)::P is not true...
+Polynomial(coeffs::NTuple{N,T}, var::Polynomials.SymbolLike = :x) where{N,T} =
+    ImmutablePolynomial(coeffs, var)
+function Polynomial{T}(coeffs::NTuple{N,S}, var::Polynomials.SymbolLike = :x) where{N,T,S}
+    ImmutablePolynomial{N,T}(T.(coeffs), var)
+end
 
 ##
 ## ----
 ##
 
-# overrides from common.jl due to coeffs possibly being padded
+# overrides from common.jl due to coeffs possibly being padded, coeffs being no mutable, ...
+Base.promote_rule(::Type{<:ImmutablePolynomial{N, T}}, ::Type{<:ImmutablePolynomial{M,S}}) where {N,T,M,S} =
+    ImmutablePolynomial{max(N,M), promote_type(T, S)}
+
+Base.convert(::Type{<:ImmutablePolynomial{N, T}}, p::ImmutablePolynomial{M,S}) where {N,T,M,S} = 
+    ImmutablePolynomial{N,T}(p.coeffs,  p.var)
+
+
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p), p.var)
+
 function Base.hash(p::ImmutablePolynomial{N,T}, h::UInt) where {N,T}
     n = findlast(!iszero, coeffs(p))
     n == nothing && return hash(p.var, hash(NTuple{0,T}(),h))
@@ -185,24 +197,37 @@ LinearAlgebra.conj(p::P) where {P <: ImmutablePolynomial} = P(conj([aᵢ for a�
 
 (p::ImmutablePolynomial{N, T})(x::S) where {N, T,S} = evalpoly(x, coeffs(p))
 
-function Base.:+(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
-    p1.var != p2.var && error("Polynomials must have same variable")
-    R = eltype(one(T)+one(S))
-    NN = max(N, M)
-    return ImmutablePolynomial{NN, R}(NTuple{NN, R}(p1[i] + p2[i] for i in 0:NN-1), p1.var)
-end
-
-
-function Base.:+(p::ImmutablePolynomial{N, T}, c::S) where {N, T,S<:Number}
-    R = eltype(one(T)+one(S))
-    cs= coeffs(p)
-    if isempty(cs)
-        return ImmutablePolynomial{1,R}(NTuple{1,R}(R(c)), p.var)
+# used to treat constants as havinig same variable as counterpart in + and *
+function promote_constants(p::ImmutablePolynomial{N,T}, q::ImmutablePolynomial{M,S}) where {N,T,M,S}
+    if  degree(p) <= 0
+        p  = ImmutablePolynomial{N,T}(p.coeffs, q.var)
+    elseif degree(q) <= 0
+        q  = ImmutablePolynomial{M,S}(q.coeffs, p.var)
     end
-    ImmutablePolynomial{N,R}(NTuple{N,R}(i==1 ? c + cs[1] : R(cs[i]) for i in eachindex(cs)), p.var)
+    p,q
 end
+
+function Base.:+(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
+    p1,p2 = promote_constants(p1, p2)
+    p1.var != p2.var && error("Polynomials must have same variable")
+    
+    R = Base.promote_op(+, T,S)
+    NN = max(N, M)
+    P = ImmutablePolynomial{NN,R}
+    ⊕(convert(P,p1), convert(P,p2))
+end
+
+function ⊕(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{N,T}) where {N,T}
+    cs = NTuple{N, T}(p1[i] + p2[i] for i in 0:N-1)
+    return ImmutablePolynomial{N, T}(cs, p1.var)
+end
+
+
+Base.:+(p::ImmutablePolynomial{N, T}, c::S) where {N, T,S<:Number} =
+    p + ImmutablePolynomial((c,), p.var)
 
 function Base.:*(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
+    p1,p2 = promote_constants(p1, p2)
     p1.var != p2.var && error("Polynomials must have same variable")
     p1 ⊗ p2
 end
@@ -224,7 +249,7 @@ end
     end
     return quote
         Base.@_inline_meta
-        ImmutablePolynomial{$(max(0,P)), $(R)}(tuple($(exprs...)))
+        ImmutablePolynomial{$(max(0,P)), $(R)}(tuple($(exprs...)), p1.var)
     end
 end
 

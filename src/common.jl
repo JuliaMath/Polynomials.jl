@@ -438,7 +438,8 @@ Returns a representation of 1 as the given polynomial.
 Base.one(::Type{P}, var=:x) where {T, P <: AbstractPolynomial{T}} = P(ones(T, 1), var)
 Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(ones(1), var)
 Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
-
+Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
+Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 #=
 arithmetic =#
 Base.:-(p::P) where {P <: AbstractPolynomial} = P(-coeffs(p), p.var)

@@ -34,7 +34,7 @@ end
 function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
     U = promote_type(T, S)
     q = copy(p)
-    p2 = U == S ? q : convert(Polynomial{U}, q)
+    p2 = U == S ? q : convert(⟒(P){U}, q)
     p2[0] += c
     return p2
 end
