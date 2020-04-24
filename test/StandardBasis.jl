@@ -231,6 +231,13 @@ end
         xx = Real[20.0, 30.0, 40.0]
         yy = Real[15.7696, 21.4851, 28.2463]
         fit(P, xx, yy, 2)
+
+        # Issue #208 and  type of output
+        p1=P([1//1])
+        p2=P([0, 0.9])
+        p3=p1(p2)
+        @test isa(p3, P)
+        @test eltype(p3) == eltype(p2)
     end
 end
 
@@ -438,6 +445,27 @@ end
     end
 end
 
+
+@testset "As matrix elements" begin
+
+    for P in Ps
+        p = P([1,2,3], :x)
+        A = [1 p; p^2 p^3]
+        @test !issymmetric(A)
+        @test issymmetric(A*transpose(A))
+        diagm(0 => [1, p^3], 1=>[p^2], -1=>[p])
+    end
+
+    # issue 206 with mixed variable types and promotion
+    for P in (ImmutablePolynomial,)
+        λ = P([0,1],:λ)
+        A = [1 λ; λ^2 λ^3]
+        @test A ==  diagm(0 => [1, λ^3], 1=>[λ], -1=>[λ^2])
+        @test all([1 -λ]*[λ^2 λ; λ 1] .== 0)
+        @test [λ 1] + [1 λ] == (λ+1) .* [1 1] # (λ+1) not a number, so we broadcast
+    end
+end
+
 @testset "Linear Algebra" begin
     for P in Ps
         p = P([3, 4])
@@ -603,23 +631,3 @@ end
 
 end
 
-
-@testset "Matrices" begin
-
-    for P in Ps
-        p = P([1,2,3], :x)
-        A = [1 p; p^2 p^3]
-        @test !issymmetric(A)
-        @test issymmetric(A*transpose(A))
-        diagm(0 => [1, p^3], 1=>[p^2], -1=>[p])
-    end
-
-    # issue 206 with mixed variable types and promotion
-    for P in (ImmutablePolynomial,)
-        λ = P([0,1],:λ)
-        A = [1 λ; λ^2 λ^3]
-        @test A ==  diagm(0 => [1, λ^3], 1=>[λ], -1=>[λ^2])
-        @test all([1 -λ]*[λ^2 λ; λ 1] .== 0)
-        @test [λ 1] + [1 λ] == (λ+1) .* [1 1] # (λ+1) not a number so scalar multiplication does not apply,  so we broadcast
-    end
-end

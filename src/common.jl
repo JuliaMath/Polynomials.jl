@@ -452,6 +452,7 @@ function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     T = promote_type(P, S)
     return T(coeffs(p) .* c, p.var)
 end
+
 function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
     R = promote_type(P, eltype(one(T) / one(S)))
     return R(coeffs(p) ./ c, p.var)

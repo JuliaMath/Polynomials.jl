@@ -35,7 +35,7 @@ end
 function evalpoly(x::S, p::Tuple) where {S}
     if @generated
         N = length(p.parameters)
-        ex = :(p[end])
+        ex = :(p[end]*one(eltype(S)))
         for i in N-1:-1:1
             ex = :(_muladd(x, $ex, p[$i]))
         end
@@ -49,7 +49,7 @@ evalpoly(x, p::AbstractVector) = _evalpoly(x, p)
 
 function _evalpoly(x::S, p) where {S}
     N = length(p)
-    ex = p[end]
+    ex = p[end]*one(eltype(S))
     for i in N-1:-1:1
         ex = _muladd(x, ex, p[i])
     end
