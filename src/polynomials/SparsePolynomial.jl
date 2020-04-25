@@ -260,7 +260,7 @@ function derivative(p::SparsePolynomial{T}, order::Integer = 1) where {T}
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
 
-    R = eltype(one(T)/1)
+    R = eltype(one(T)*1)
     P = SparsePolynomial
     hasnan(p) && return P(Dict(0 => R(NaN)), p.var)
 
@@ -269,7 +269,7 @@ function derivative(p::SparsePolynomial{T}, order::Integer = 1) where {T}
 
     dpn = zero(P{R}, p.var)
     @inbounds for (k,val) in p.coeffs
-        dpn[k-order] = prod(j for j in k:k-order+1)  * val
+        dpn[k-order] =  reduce(*, (n - order + 1):n, init = val)
     end
 
     return dpn
