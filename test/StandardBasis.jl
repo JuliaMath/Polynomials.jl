@@ -270,13 +270,36 @@ end
         @test isnan(p1(0))
         @test p2(-Inf) == -Inf
 
-        
         # issue #189
         p = P([0,1,2,3])
         A = [0 1; 0  0];
         @test  p(A) == A  + 2A^2 + 3A^3
     end
 
+    # constant polynomials and type
+    Ts = (Int, Float32, Float64, Complex{Int}, Complex{Float64})
+    for P in (Polynomial, ImmutablePolynomial{1}, SparsePolynomial)
+        for T in Ts
+            for S in Ts
+                c = 2
+                p = P{T}(c)
+                x = one(S)
+                y = p(x)
+                @test y === c * one(T)*one(S)
+                q = P{T}([c,c])
+                @test typeof(q(x)) == typeof(p(x))
+            end
+        end
+    end
+
+    for P in Ps
+        p = P(1)
+        x = [1 0; 0 1]
+        y = p(x)
+        @test y == x
+    end
+    
+    
 end
 
 @testset "Conversion" begin

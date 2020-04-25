@@ -178,7 +178,7 @@ end
 
 function (p::SparsePolynomial{T})(x::S) where {T,S}
     
-    tot = zero(T)*one(eltype(x))
+    tot = zero(T) * _one(x) 
     for (k,v) in p.coeffs
         tot = _muladd(x^k, v, tot)
     end
