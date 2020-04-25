@@ -12,6 +12,7 @@ Polynomial
 
 ```@docs
 ImmutablePolynomial
+SparsePolynomial
 ```
 
 
