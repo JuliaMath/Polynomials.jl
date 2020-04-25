@@ -234,12 +234,6 @@ end
         yy = Real[15.7696, 21.4851, 28.2463]
         fit(P, xx, yy, 2)
 
-        # Issue #208 and  type of output
-        p1=P([1//1])
-        p2=P([0, 0.9])
-        p3=p1(p2)
-        @test isa(p3, P)
-        @test eltype(p3) == eltype(p2)
     end
 end
 
@@ -297,8 +291,15 @@ end
         x = [1 0; 0 1]
         y = p(x)
         @test y == x
-    end
     
+        # Issue #208 and  type of output
+        p1=P([1//1])
+        p2=P([0, 0.9])
+        p3=p1(p2)
+        @test isa(p3, P)
+        @test eltype(p3) == eltype(p2)
+    end
+
     
 end
 
@@ -377,6 +378,7 @@ end
 
         c = [1, 2, 3, 4]
         p = P(c)
+
         der = derivative(p)
         @test coeffs(der) ==ᵗ⁰ [2, 6, 12]
         int = integrate(der, 1)

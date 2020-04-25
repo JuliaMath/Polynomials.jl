@@ -269,7 +269,7 @@ function derivative(p::SparsePolynomial{T}, order::Integer = 1) where {T}
 
     dpn = zero(P{R}, p.var)
     @inbounds for (k,val) in p.coeffs
-        dpn[k-order] =  reduce(*, (n - order + 1):n, init = val)
+        dpn[k-order] =  reduce(*, (k - order + 1):k, init = val)
     end
 
     return dpn
