@@ -197,18 +197,21 @@ LinearAlgebra.conj(p::P) where {P <: ImmutablePolynomial} = P(conj([aᵢ for a�
 
 (p::ImmutablePolynomial{N, T})(x::S) where {N, T,S} = evalpoly(x, coeffs(p))
 
-# used to treat constants as havinig same variable as counterpart in + and *
-function promote_constants(p::ImmutablePolynomial{N,T}, q::ImmutablePolynomial{M,S}) where {N,T,M,S}
+# used to treat constants as having same variable as counterpart in + and *
+function _promote_constant_variable(p::P, q::Q) where {N, T, P <: ImmutablePolynomial{N,T},
+                                                       M, S, Q <: ImmutablePolynomial{M,S}}
     if  degree(p) <= 0
-        p  = ImmutablePolynomial{N,T}(p.coeffs, q.var)
+        p  = P(p.coeffs, q.var)
     elseif degree(q) <= 0
-        q  = ImmutablePolynomial{M,S}(q.coeffs, p.var)
+        q  = Q(q.coeffs, p.var)
     end
+    
     p,q
+    
 end
 
 function Base.:+(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
-    p1,p2 = promote_constants(p1, p2)
+    p1,p2 = _promote_constant_variable(p1, p2)
     p1.var != p2.var && error("Polynomials must have same variable")
     
     R = Base.promote_op(+, T,S)
@@ -227,7 +230,7 @@ Base.:+(p::ImmutablePolynomial{N, T}, c::S) where {N, T,S<:Number} =
     p + ImmutablePolynomial((c,), p.var)
 
 function Base.:*(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
-    p1,p2 = promote_constants(p1, p2)
+    p1,p2 = _promote_constant_variable(p1, p2)
     p1.var != p2.var && error("Polynomials must have same variable")
     p1 ⊗ p2
 end

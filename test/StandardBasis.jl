@@ -13,10 +13,13 @@ function  upto_tz(as, bs)
     true
 end
 
+upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
+    
 # compare upto trailing zeros infix operator
 ==ᵗ⁰(a,b) = upto_tz(a,b)
+==ᵗᶻ(a,b) = upto_z(a,b)
 
-Ps = (ImmutablePolynomial, Polynomial)
+Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial)
 
 @testset "Construction" for coeff in [
     Int64[1, 1, 1, 1],
@@ -27,7 +30,6 @@ Ps = (ImmutablePolynomial, Polynomial)
 
     for P in Ps
         p = P(coeff)
-        @test p.coeffs ==ᵗ⁰ coeff
         @test coeffs(p) ==ᵗ⁰ coeff
         @test degree(p) == length(coeff) - 1
         @test p.var == :x
@@ -57,21 +59,21 @@ end
 
         # Leading 0s
         p = P([1, 2, 0, 0])
-        @test p.coeffs ==ᵗ⁰ [1, 2]
+        @test coeffs(p) ==ᵗ⁰ [1, 2]
         P == Polynomial && @test length(p) == 2
 
         # different type
         p = P{Float64}(ones(Int32, 4))
-        @test p.coeffs ==ᵗ⁰ ones(Float64, 4)
+        @test coeffs(p) ==ᵗ⁰ ones(Float64, 4)
 
         p = P(30)
-        @test p.coeffs ==ᵗ⁰ [30]
+        @test coeffs(p) ==ᵗ⁰ [30]
 
         p = zero(P{Int})
-        @test p.coeffs ==ᵗ⁰ [0]
+        @test coeffs(p) ==ᵗ⁰ [0]
 
         p = one(P{Int})
-        @test p.coeffs ==ᵗ⁰ [1]
+        @test coeffs(p) ==ᵗ⁰ [1]
 
         pNULL = P(Int[])
         @test iszero(pNULL)
@@ -139,7 +141,7 @@ end
         
         @test divrem(p4, p2) == (p3, zero(p3))
         @test p3 % p2 == p3
-        @test all((map(abs, (p2 ÷ p3 - P([1 / 9,2 / 3])).coeffs)) .< eps())
+        @test all((map(abs, coeffs(p2 ÷ p3 - P([1 / 9,2 / 3])))) .< eps())
         @test divrem(p0, p1) == (p0, p0)
         @test divrem(p1, p1) == (p1, p0)
         @test divrem(p2, p2) == (p1, p0)
@@ -174,7 +176,7 @@ end
         p2 = P([0., 5., Inf])
         p3 = P([0, NaN])
 
-        @test p1 == p2 && !isequal(p1, p2)
+        P != SparsePolynomial && (@test p1 == p2 && !isequal(p1, p2))  # SparsePolynomial doesn't store -0.0,  0.0.
         @test p3 === p3 && p3 ≠ p3 && isequal(p3, p3)
         
         p = fromroots(P, [1,2,3])
@@ -267,6 +269,7 @@ end
         @test isnan(p1(-Inf))
         @test isnan(p1(0))
         @test p2(-Inf) == -Inf
+
         
         # issue #189
         p = P([0,1,2,3])
@@ -352,9 +355,9 @@ end
         c = [1, 2, 3, 4]
         p = P(c)
         der = derivative(p)
-        @test der.coeffs ==ᵗ⁰ [2, 6, 12]
+        @test coeffs(der) ==ᵗ⁰ [2, 6, 12]
         int = integrate(der, 1)
-        @test int.coeffs ==ᵗ⁰ c
+        @test coeffs(int) ==ᵗ⁰ c
         
 
         @test derivative(pR) == P([-2 // 1,2 // 1])
@@ -418,14 +421,14 @@ end
     for P in Ps
         if P == Polynomial
             p = P([1, 1, 1, 1])
-            p.coeffs[end] = 0
-            @assert p.coeffs == [1, 1, 1, 0]
+            coeffs(p)[end] = 0
+            @assert coeffs(p) == [1, 1, 1, 0]
             p = chop(p)
-        elseif P == ImmutablePolynomial
+        else
             p = P([1, 1, 1, 0])
         end
 
-        @test p.coeffs ==ᵗ⁰ [1, 1, 1]
+        @test coeffs(p) ==ᵗ⁰ [1, 1, 1]
         ## truncation
         p1 = P([1,1] / 10)
         p2 = P([1,2] / 10)
@@ -474,7 +477,7 @@ end
         @test norm(p) ≈ 6.244997998398398
         p = P([1 - 1im, 2 - 3im])
         p2 = conj(p)
-        @test p2.coeffs ==ᵗ⁰ [1 + 1im, 2 + 3im]
+        @test coeffs(p2) ==ᵗ⁰ [1 + 1im, 2 + 3im]
         @test transpose(p) == p
         P != ImmutablePolynomial && @test transpose!(p) == p
         
@@ -500,16 +503,19 @@ end
             @test p1[5] == 1
             @test p1 == P([1,2,1,0,0,1])
         
-            @test p[end] == p.coeffs[end]
-            p[1] = 2
-            @test p.coeffs[2] == 2
-            p[2:3] = [1, 2]
-            @test p.coeffs[3:4] == [1, 2]
-            p[0:1] = 0
-            @test p.coeffs[1:2] == [0, 0]
-            p[:] = 1
-            @test p.coeffs == ones(4)
+            @test p[end] == coeffs(p)[end]
+
+            if P != SparsePolynomial
+                p[1] = 2
+                @test coeffs(p)[2] == 2
+                p[2:3] = [1, 2]
+                @test coeffs(p)[3:4] == [1, 2]
+                p[0:1] = 0
+                @test coeffs(p)[1:2] ==ᵗ⁰ [0, 0]
             
+                p[:] = 1
+                @test coeffs(p) ==ᵗ⁰ ones(4)
+            end
 
             p[:] = 0
             @test chop(p) ≈ zero(p)
@@ -531,7 +537,7 @@ end
         p1 = P([1,2,0,3])
         @test length(collect(p1)) == degree(p1) + 1
         
-        @test [p1[idx] for idx in eachindex(p1)] ==ᵗ⁰ [1,2,0,3]
+        @test [p1[idx] for idx in eachindex(p1)] ==ᵗᶻ [1,2,0,3]
     end
 end
 
