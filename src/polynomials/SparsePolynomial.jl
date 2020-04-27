@@ -77,6 +77,10 @@ function SparsePolynomial(coeffs::AbstractVector{T}, var::Symbol) where {T <: Nu
     SparsePolynomial{T}(coeffs, var)
 end
 
+# Interface through `Polynomial`
+Polynomial{T}(coeffs::Dict{Int,T}, var::SymbolLike = :x) where {T} = SparsePolynomial{T}(coeffs, var)
+Polynomial(coeffs::Dict{Int,T}, var::SymbolLike = :x) where {T} = SparsePolynomial{T}(coeffs, var)
+
 # conversion
 function Base.convert(P::Type{<:Polynomial}, q::SparsePolynomial)
     ⟒(P)(coeffs(q), q.var)
@@ -198,9 +202,22 @@ function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
     P = SparsePolynomial
 
     p = zero(P{R}, p1.var)
-    for i in union(keys(p1.coeffs), keys(p2.coeffs))
+
+    # this allocates in the union
+#    for i in union(eachindex(p1), eachindex(p2)) 
+#        p[i] = p1[i] + p2[i]
+#    end
+
+    # this seems faster
+    for i in eachindex(p1)
         p[i] = p1[i] + p2[i]
     end
+    for i in eachindex(p2)
+        if iszero(p[i])
+            p[i] = p1[i] + p2[i]
+        end
+    end
+    
 
     return  p
 
@@ -212,8 +229,8 @@ function Base.:+(p::SparsePolynomial{T}, c::S) where {T, S <: Number}
     P = SparsePolynomial
     
     q = zero(P{R}, p.var)
-    for (k,v) in p.coeffs
-        q[k] = R(v)
+    for k in eachindex(p)
+        q[k] = R(p[k])
     end
     q[0] = q[0] + c
 
@@ -229,9 +246,9 @@ function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
     P = SparsePolynomial
     
     p  = zero(P{R},  p1.var)
-    for  (k1, v1)  in p1.coeffs
-        for  (k2, v2) in  p2.coeffs
-            p[k1+k2] = muladd(v1, v2, p[k1+k2])
+    for i in eachindex(p1)
+        for j in eachindex(p2)
+            p[i+j] = muladd(p1[i], p2[j], p[i+j])
         end
     end
     
@@ -246,8 +263,8 @@ function Base.:*(p::SparsePolynomial{T}, c::S) where {T, S}
     P = SparsePolynomial
 
     q  = zero(P{R},  p.var)
-    for (k,v) in p.coeffs
-        q[k] = v * c
+    for k in eachindex(p)
+        q[k] = p[k] * c
     end
     
     return q
@@ -268,8 +285,8 @@ function derivative(p::SparsePolynomial{T}, order::Integer = 1) where {T}
     order > n && return zero(P{R}, p.var)
 
     dpn = zero(P{R}, p.var)
-    @inbounds for (k,val) in p.coeffs
-        dpn[k-order] =  reduce(*, (k - order + 1):k, init = val)
+    @inbounds for k in eachindex(p)
+        dpn[k-order] =  reduce(*, (k - order + 1):k, init = p[k])
     end
 
     return dpn
@@ -287,8 +304,8 @@ function integrate(p::SparsePolynomial{T}, k::S) where {T, S<:Number}
     end
 
     ∫p = P{R}(R(k), p.var)
-    for (k,val) in p.coeffs
-        ∫p[k + 1] = val / (k+1)
+    for k in eachindex(p)
+        ∫p[k + 1] = p[k] / (k+1)
     end
     
     return ∫p

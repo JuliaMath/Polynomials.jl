@@ -75,28 +75,28 @@ function Base.promote(p::ImmutablePolynomial{N,T}, q::ImmutablePolynomial{M,S}) 
 end
 ## Need defaults when N not specified
 # tuple
-ImmutablePolynomial(coeffs::NTuple{N,T}, var::Polynomials.SymbolLike = :x) where{N,T} =
+ImmutablePolynomial(coeffs::NTuple{N,T}, var::SymbolLike = :x) where{N,T} =
      ImmutablePolynomial{N,T}(coeffs, Symbol(var))
 
 # vector
-function ImmutablePolynomial(coeffs::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where{N,T}
+function ImmutablePolynomial(coeffs::AbstractVector{T}, var::SymbolLike = :x) where{N,T}
     M = length(coeffs)
     M == 0 && return zero(ImmutablePolynomial{1, T}, var)
     ImmutablePolynomial{M,T}(NTuple{M,T}(x for x in coeffs), Symbol(var))
 end
 
 # number
-ImmutablePolynomial(n::T, var::Polynomials.SymbolLike = :x) where {T <: Number} =
+ImmutablePolynomial(n::T, var::SymbolLike = :x) where {T <: Number} =
      ImmutablePolynomial{1,T}(NTuple{1,T}(n), Symbol(var))
 
 # variable
-ImmutablePolynomial(var::Polynomials.SymbolLike = :x)  = variable(ImmutablePolynomial{2, Int}, var)
+ImmutablePolynomial(var::SymbolLike = :x)  = variable(ImmutablePolynomial{2, Int}, var)
 
 # Convenience; pass tuple to Polynomial
 # Not documented, not sure this is a good idea as P(...)::P is not true...
-Polynomial(coeffs::NTuple{N,T}, var::Polynomials.SymbolLike = :x) where{N,T} =
+Polynomial(coeffs::NTuple{N,T}, var::SymbolLike = :x) where{N,T} =
     ImmutablePolynomial(coeffs, var)
-function Polynomial{T}(coeffs::NTuple{N,S}, var::Polynomials.SymbolLike = :x) where{N,T,S}
+function Polynomial{T}(coeffs::NTuple{N,S}, var::SymbolLike = :x) where{N,T,S}
     ImmutablePolynomial{N,T}(T.(coeffs), var)
 end
 
