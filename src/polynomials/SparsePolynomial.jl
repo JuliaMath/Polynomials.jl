@@ -70,11 +70,11 @@ end
 
 @register SparsePolynomial
 
-function SparsePolynomial(coeffs::Dict{Int, T}, var::Symbol) where {T <: Number}
-    SparsePolynomial{T}(coeffs, var)
+function SparsePolynomial(coeffs::Dict{Int, T}, var::SymbolLike=:x) where {T <: Number}
+    SparsePolynomial{T}(coeffs, Symbol(var))
 end
-function SparsePolynomial(coeffs::AbstractVector{T}, var::Symbol) where {T <: Number}
-    SparsePolynomial{T}(coeffs, var)
+function SparsePolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
+    SparsePolynomial{T}(coeffs, Symbol(var))
 end
 
 # Interface through `Polynomial`

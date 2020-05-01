@@ -15,7 +15,7 @@ function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, firs
 end
 
 # allows  broadcast  issue #209
-evalpoly(x, p::StandardBasisPolynomial) = evalpoly(x, coeffs(p))
+evalpoly(x, p::StandardBasisPolynomial) = p(x)
 
 domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
