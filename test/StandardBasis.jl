@@ -268,6 +268,10 @@ end
         p = P([0,1,2,3])
         A = [0 1; 0  0];
         @test  p(A) == A  + 2A^2 + 3A^3
+
+        # issue #209
+        ps  = [P([0,1]), P([0,0,1])]
+        @test Polynomials.evalpoly.(1/2, ps) ≈ [p(1/2)  for  p  in ps]
     end
 
     # constant polynomials and type
