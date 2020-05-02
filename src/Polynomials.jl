@@ -13,10 +13,14 @@ include("common.jl")
 
 
 # Polynomials
+include("polynomials/standard-basis.jl")
 include("polynomials/Polynomial.jl")
+include("polynomials/ImmutablePolynomial.jl")
+include("polynomials/SparsePolynomial.jl")
+
 include("polynomials/ChebyshevT.jl")
 
-# to be deprecated, then removed
-include("compat.jl")
+# compat; opt-in with `using Polynomials.PolyCompat`
+include("polynomials/Poly.jl")
 
 end # module

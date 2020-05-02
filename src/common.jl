@@ -110,7 +110,7 @@ Returns the roots of the given polynomial. This is calculated via the eigenvalue
 
 !!! note
 
-    The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and  abit more accurate; the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package provides an alternative for high-degree polynomials.
+        The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) provides an interface to FORTRAN code implementing an algorithm that can handle very large polynomials (it is  `O(n^2)` not `O(n^3)`. the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package implements the algorithm in Julia, allowing the use of other  number types.
 
 """
 function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: Number}
@@ -364,8 +364,8 @@ Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # basis
 # return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
-function basis(p::P, k::Int) where {P<:AbstractPolynomial}
-    basis(P, k)
+function basis(p::P, k::Int; var=:x) where {P<:AbstractPolynomial}
+    basis(P, k, var=var)
 end
 
 function basis(::Type{P}, k::Int; var=:x) where {P <: AbstractPolynomial}
@@ -383,14 +383,6 @@ end
 
 
 Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
-
-function Base.getproperty(p::AbstractPolynomial, nm::Symbol)
-    if nm == :a
-        throw(ArgumentError("AbstractPolynomial.a is not supported, use coeffs(AbstractPolynomial) instead."))
-    end
-    return getfield(p, nm)
-end
-
 
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
@@ -434,6 +426,7 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 
 Returns a representation of 0 as the given polynomial.
 """
+Base.zero(::Type{P}, var=:x) where {T, P <: AbstractPolynomial{T}} = P(zeros(T, 1), var)
 Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(zeros(1), var)
 Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 """
@@ -442,9 +435,11 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 
 Returns a representation of 1 as the given polynomial.
 """
+Base.one(::Type{P}, var=:x) where {T, P <: AbstractPolynomial{T}} = P(ones(T, 1), var)
 Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(ones(1), var)
 Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
-
+Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
+Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 #=
 arithmetic =#
 Base.:-(p::P) where {P <: AbstractPolynomial} = P(-coeffs(p), p.var)
@@ -457,10 +452,12 @@ function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     T = promote_type(P, S)
     return T(coeffs(p) .* c, p.var)
 end
+
 function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
     R = promote_type(P, eltype(one(T) / one(S)))
     return R(coeffs(p) ./ c, p.var)
 end
+
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
 function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
@@ -530,7 +527,7 @@ Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
 Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
     (p1.var == p2.var) && (coeffs(p1) == coeffs(p2))
-Base.:(==)(p::AbstractPolynomial, n::Number) = coeffs(p) == [n]
+Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && p[0] == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial{T},
@@ -550,9 +547,9 @@ function Base.isapprox(p1::AbstractPolynomial{T},
 end
 
 function Base.isapprox(p1::AbstractPolynomial{T},
-    n::S;
-    rtol::Real = (Base.rtoldefault(T, S, 0)),
-    atol::Real = 0,) where {T,S}
+                       n::S;
+                       rtol::Real = (Base.rtoldefault(T, S, 0)),
+                       atol::Real = 0,) where {T,S}
     p1t = truncate(p1, rtol = rtol, atol = atol)
     if length(p1t) != 1
         return false

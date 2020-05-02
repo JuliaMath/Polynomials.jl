@@ -11,7 +11,8 @@ Polynomial
 ```
 
 ```@docs
-Pade
-Pade(x)
+ImmutablePolynomial
+SparsePolynomial
 ```
+
 

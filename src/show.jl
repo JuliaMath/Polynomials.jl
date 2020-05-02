@@ -115,7 +115,7 @@ julia> printpoly(stdout, Polynomial([2, 3, 1], :z), descending_powers=true, offs
 julia> printpoly(stdout, Polynomial([-1, 0, 1], :z), offset=-1, descending_powers=true)
 z - z^-1
 
-julia> printpoly(stdout, Poly([-1, 0, 1], :z), offset=-1, descending_powers=true, var=:x)
+julia> printpoly(stdout, Polynomial([-1, 0, 1], :z), offset=-1, descending_powers=true, var=:x)
 x - x^-1
 ```
 """
@@ -139,8 +139,6 @@ Shows the j'th term of the given polynomial. Returns `true` after successfully p
 For example. for a `Polynomial` this would show the term `pj * var^j`.
 """
 function showterm(io::IO, ::Type{AbstractPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} end
-
-@deprecate showterm(io::IO, pj::T, var, j, first::Bool, mimetype) where {T} showterm(io, Polynomial{T}, pj, var, j, first, mimetype)
 
 
 ## print the sign

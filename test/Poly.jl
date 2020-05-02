@@ -1,6 +1,40 @@
 ## Tests for compatiability with the old form
+# test for not loaded
+@test_throws UndefVarError Poly([1,2,3])
+@test_throws UndefVarError poly([1,2,3])
+@test_throws UndefVarError polyval(Polynomial([1,2,3]), 1)
+@test_throws UndefVarError polyder(Polynomial([1,2,3]))
+@test_throws UndefVarError polyint(Polynomial([1,2,3]))
+a = Polynomial(1 .//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
+@test_throws UndefVarError Pade(a,8,8)
+
+# must load the compatability module to have access
+using Polynomials.PolyCompat
+
 ## the methods  `polyval`, `polyint` and `polyder` are only for the
 ## legacy `Poly`  type.
+# check method are defined
+p = Poly([1,2,3])
+q = poly([1,2,3])
+polyval(p, 1)
+polyint(p)
+polyder(p)
+a = Poly(1 .//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
+pp = Pade(a,8,8)
+padeval(pp, 1)
+
+p = Polynomial([1,2,3])
+@test_throws ErrorException polyval(p,1)
+@test_throws ErrorException polyint(p)
+@test_throws ErrorException polyder(p)
+
+
+        
+
+
+## ---------
+## Tests for  Poly, and Pade types once PolyCompat is loaded
+
 pNULL = Poly(Float32[])
 p0 = Poly([0])
 p1 = Poly([1,0,0,0,0,0,0,0,0,0,0,0,0,0])

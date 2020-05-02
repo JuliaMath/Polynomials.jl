@@ -120,7 +120,7 @@ resulting polynomial is one lower than the degree of `p`.
 
 ```jldoctest
 julia> derivative(Polynomial([1, 3, -1]))
-Polynomial(3.0 - 2.0*x)
+Polynomial(3 - 2*x)
 ```
 
 ### Root-finding
@@ -211,13 +211,21 @@ julia> as[3], p[2], collect(p)[3]
 
 ## Related Packages
 
+* [StaticUnivariatePolynomials.jl](https://github.com/tkoolen/StaticUnivariatePolynomials.jl) Fixed-size univariate polynomials backed by a Tuple
+
 * [MultiPoly.jl](https://github.com/daviddelaat/MultiPoly.jl) for sparse multivariate polynomials
 
-* [MultivariatePolynomials.jl](https://github.com/blegat/MultivariatePolynomials.jl) for multivariate polynomials and moments of commutative or non-commutative variables
+* [DynamicPolynomals.jl](https://github.com/JuliaAlgebra/DynamicPolynomials.jl) Multivariate polynomials implementation of commutative and non-commutative variables
 
-* [AbstractAlgeebra.jl](https://github.com/wbhart/AbstractAlgebra.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series.
+* [MultivariatePolynomials.jl](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl) for multivariate polynomials and moments of commutative or non-commutative variables
 
-* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder
+* [PolynomialRings](https://github.com/tkluck/PolynomialRings.jl) A library for arithmetic and algebra with multi-variable polynomials.
+
+* [AbstractAlgebra.jl](https://github.com/wbhart/AbstractAlgebra.jl) and [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series
+
+* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) and [AMRVW](https://github.com/jverzani/AMRVW.jl).
+
+
 
 ## Contributing
 
