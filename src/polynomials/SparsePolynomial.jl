@@ -3,9 +3,10 @@ export   SparsePolynomial
 """
     SparsePolynomial(coeffs::Dict, var)
 
-Polynomials in the standard basis backed by a dictionary holding the non-zero coefficients. For
-polynomials of high degree, this might be advantageous.
-Addition and multiplication with constant polynomials are treated as symboless.
+Polynomials in the standard basis backed by a dictionary holding the
+non-zero coefficients. For polynomials of high degree, this might be
+advantageous. Addition and multiplication with constant polynomials
+are treated as having no symbol.
 
 Examples:
 
@@ -15,19 +16,19 @@ julia> using Polynomials
 julia> P  = SparsePolynomial
 SparsePolynomial
 
-julia> p,q = P([1,2,3]), P([4,3,2,1])
+julia> p, q = P([1,2,3]), P([4,3,2,1])
 (SparsePolynomial(1 + 2*x + 3*x^2), SparsePolynomial(4 + 3*x + 2*x^2 + x^3))
 
-julia> p+q
+julia> p + q
 SparsePolynomial(5 + 5*x + 5*x^2 + x^3)
 
-julia> p*q
+julia> p * q
 SparsePolynomial(4 + 11*x + 20*x^2 + 14*x^3 + 8*x^4 + 3*x^5)
 
-julia> p+1
+julia> p + 1
 SparsePolynomial(2 + 2*x + 3*x^2)
 
-julia> q*2
+julia> q * 2
 SparsePolynomial(8 + 6*x + 4*x^2 + 2*x^3)
 
 julia> p = Polynomials.basis(P, 10^9) - Polynomials.basis(P,0) # also P(Dict(0=>-1, 10^9=>1))
@@ -52,14 +53,10 @@ mutable struct SparsePolynomial{T <: Number} <: StandardBasisPolynomial{T}
     end
     function SparsePolynomial{T}(coeffs::AbstractVector{T}, var::Symbol) where {T <: Number}
 
-        last_nz = findlast(!iszero, coeffs)
-
         D = Dict{Int,T}()
-        if last_nz != nothing
-            for i in 1:last_nz
-                if !iszero(coeffs[i])
-                    D[i-1] = coeffs[i]
-                end
+        for (i,val) in enumerate(coeffs)
+            if !iszero(val)
+                D[i-1] = val
             end
         end
         
@@ -77,7 +74,7 @@ function SparsePolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {
     SparsePolynomial{T}(coeffs, Symbol(var))
 end
 
-# Interface through `Polynomial`
+# Interface through `Polynomial`. As with ImmutablePolynomial, this may not be  good idea...
 Polynomial{T}(coeffs::Dict{Int,T}, var::SymbolLike = :x) where {T} = SparsePolynomial{T}(coeffs, var)
 Polynomial(coeffs::Dict{Int,T}, var::SymbolLike = :x) where {T} = SparsePolynomial{T}(coeffs, var)
 
@@ -167,7 +164,7 @@ end
 ## ----
 ##
     
-# ignore variaible of  constants for `+` or `*`
+# ignore variable of  constants for `+` or `*`
 function _promote_constant_variable(p::P, q::Q) where {P<:SparsePolynomial, Q<:SparsePolynomial}
     
     if  degree(p) <= 0

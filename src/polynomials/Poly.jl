@@ -15,7 +15,7 @@ Type of polynomial to support legacy code. Use of this type  is  not  encouraged
 
 This type provides support for `poly`, `polyval`, `polyder`, and
 `polyint` to support older code. It should not be used for a new code
-base. Call `using Polynomial.PolyCompat` to enable this module.
+base. Call `using Polynomials.PolyCompat` to enable this module.
 
 """
 struct Poly{T <: Number} <: Polynomials.StandardBasisPolynomial{T}

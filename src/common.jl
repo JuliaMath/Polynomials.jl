@@ -110,7 +110,7 @@ Returns the roots of the given polynomial. This is calculated via the eigenvalue
 
 !!! note
 
-    The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package provides an alternative for high-degree polynomials.
+        The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) provides an interface to FORTRAN code implementing an algorithm that can handle very large polynomials (it is  `O(n^2)` not `O(n^3)`. the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package implements the algorithm in Julia, allowing the use of other  number types.
 
 """
 function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: Number}
@@ -202,7 +202,7 @@ function chop!(p::AbstractPolynomial{T};
                atol::Real = 0,) where {T}
     isempty(coeffs(p)) && return p
     for i = lastindex(p):-1:0
-        val = p[i];
+        val = p[i]
         if !isapprox(val, zero(T); rtol = rtol, atol = atol)
             resize!(p.coeffs, i + 1); 
             return p
@@ -457,6 +457,7 @@ function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
     R = promote_type(P, eltype(one(T) / one(S)))
     return R(coeffs(p) ./ c, p.var)
 end
+
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
 function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}

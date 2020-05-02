@@ -14,11 +14,9 @@ The usual arithmetic operators are overloaded to work with polynomials
 as well as with combinations of polynomials and scalars. However,
 operations involving two polynomials of different variables causes an
 error, though for `+` and `*` operations, constant polynomials are
-treated as having no variable. (This adds a runtime check, but is useful for using with
-matrices.)
+treated as having no variable. (This adds a runtime check, but is useful when working with matrices of polynomials.)
 
-This has the advantage over `Polynomial` as it can take advantage of faster polynomial evaluation
-provided by `evalpoly` from Julia 1.4. 
+As the coefficient size is a compile-time constant, immutable polynomials can take advantage of faster polynomial evaluation provided by `evalpoly` from Julia 1.4.
 
     # Examples
 
@@ -104,7 +102,7 @@ end
 ## ----
 ##
 
-# overrides from common.jl due to coeffs possibly being padded, coeffs being no mutable, ...
+# overrides from common.jl due to coeffs possibly being padded, coeffs being non mutable, ...
 Base.promote_rule(::Type{<:ImmutablePolynomial{N, T}}, ::Type{<:ImmutablePolynomial{M,S}}) where {N,T,M,S} =
     ImmutablePolynomial{max(N,M), promote_type(T, S)}
 
@@ -174,7 +172,6 @@ function Base.chop(p::ImmutablePolynomial{N,T};
     end
     zero(ImmutablePolynomial{0,T})
 end
-chop!(p::ImmutablePolynomial; kwargs...) =  chop(p; kwargs...)
 
 function Base.truncate(p::ImmutablePolynomial{N,T};
                        rtol::Real = Base.rtoldefault(real(T)),
@@ -186,6 +183,8 @@ function Base.truncate(p::ImmutablePolynomial{N,T};
     ImmutablePolynomial{length(cs), T}(map(c->abs(c) <= thresh ? zero(T) : c, coeffs(q)), p.var)
 end
 
+# no in-place chop! and truncate!
+chop!(p::ImmutablePolynomial; kwargs...) =  chop(p; kwargs...)
 truncate!(p::ImmutablePolynomial; kwargs...) =  truncate(p; kwargs...)
 
 LinearAlgebra.conj(p::P) where {P <: ImmutablePolynomial} = P(conj([aᵢ for aᵢ in coeffs(p)]))

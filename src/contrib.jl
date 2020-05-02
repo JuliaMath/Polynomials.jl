@@ -49,7 +49,7 @@ evalpoly(x, p::AbstractVector) = _evalpoly(x, p)
 
 function _evalpoly(x::S, p) where {S}
     N = length(p)
-    ex =  p[end]*_one(x)
+    ex = p[end]*_one(x)
     for i in N-1:-1:1
         ex = _muladd(x, ex, p[i])
     end
