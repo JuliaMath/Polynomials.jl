@@ -65,7 +65,7 @@ julia> x^degree(p) * p(x⁻¹) # reverses  coefficients
 LaurentPolynomial(3.0 + 2.0*x + 1.0*x²)
 ```
 """
-mutable struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
+struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
     m::Base.RefValue{Int64}
@@ -73,7 +73,7 @@ mutable struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
     function LaurentPolynomial{T}(coeffs::AbstractVector{T},
                                   rng::UnitRange{Int64}=0:length(coeffs)-1,
                                   var::Symbol=:x) where {T <: Number}
-        
+
         m,n = first(rng), last(rng)
 
         # trim zeros from front and back
@@ -86,9 +86,9 @@ mutable struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
             n = m + (lnz-fnz)
         end
         (n-m+1  == length(coeffs)) || throw(ArgumentError("Lengths do not match"))
-        
+
         new{T}(coeffs, var, Ref(m),  Ref(n))
-        
+
     end
 end
 
@@ -164,7 +164,7 @@ basis(P::Type{LaurentPolynomial}, n::Int, var=:x) = LaurentPolynomial(ones(Float
 Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  LaurentPolynomial{T}(zeros(T,1),  0:0, Symbol(var))
 Base.zero(::Type{LaurentPolynomial},  var=Symbollike=:x) =  zero(LaurentPolynomial{Float64}, var)
 Base.zero(p::P, var=Symbollike=:x) where {P  <: LaurentPolynomial} = zero(P, var)
-          
+
 
 # get/set index. Work with  offset
 function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T <: Number}
@@ -185,9 +185,9 @@ function Base.setindex!(p::LaurentPolynomial{T}, value::Number, idx::Int) where 
     elseif idx < m
         prepend!(p.coeffs, zeros(T, m-idx))
         m = idx
-        p.m[] = m        
+        p.m[] = m
     end
-                 
+
     i = idx - m + 1
     p.coeffs[i] = value
 
@@ -222,12 +222,14 @@ function chop!(p::P;
     end
 
     cs = coeffs(p)
-    p.coeffs = coeffs(p)[m-m0+1:n-m0+1]
+    rng = m-m0+1:n-m0+1
+    resize!(p.coeffs, length(rng))
+    p.coeffs[:] = coeffs(p)[rng]
     isempty(p.coeffs) && push!(p.coeffs,zero(T))
     p.m[], p.n[] = m, max(m,n)
 
     p
-    
+
 end
 
 function truncate!(p::LaurentPolynomial{T};

@@ -39,7 +39,7 @@ julia> p(1)
 ```
 
 """
-mutable struct SparsePolynomial{T <: Number} <: StandardBasisPolynomial{T}
+struct SparsePolynomial{T <: Number} <: StandardBasisPolynomial{T}
     coeffs::Dict{Int, T}
     var::Symbol
     function SparsePolynomial{T}(coeffs::Dict{Int, T}, var::Symbol) where {T <: Number}
