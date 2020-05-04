@@ -1,5 +1,7 @@
 # Polynomial
 
+Polynomial types using the standard basis.
+
 ```@meta
 DocTestSetup = quote
   using Polynomials
@@ -13,6 +15,7 @@ Polynomial
 ```@docs
 ImmutablePolynomial
 SparsePolynomial
+LaurentPolynomial
 ```
 
 

@@ -128,7 +128,14 @@ function degree(p::ImmutablePolynomial{N,T}) where {N, T}
     n = findlast(!iszero, coeffs(p))
     n == nothing ? -1 : n-1
 end
-
+isconstant(p::ImmutablePolynomial{0}) = true
+isconstant(p::ImmutablePolynomial{1}) = true
+function  isconstant(p::ImmutablePolynomial{N})  where {N}
+    for i in 2:length(p.coeffs)
+        !iszero(p.coeffs[i]) && return false
+    end
+    return true
+end
 for op in [:isequal, :(==)]
     @eval function Base.$op(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
         (p1.var == p2.var) || return false
@@ -196,21 +203,11 @@ LinearAlgebra.conj(p::P) where {P <: ImmutablePolynomial} = P(conj([aᵢ for a�
 
 (p::ImmutablePolynomial{N, T})(x::S) where {N, T,S} = evalpoly(x, coeffs(p))
 
-# used to treat constants as having same variable as counterpart in + and *
-function _promote_constant_variable(p::P, q::Q) where {N, T, P <: ImmutablePolynomial{N,T},
-                                                       M, S, Q <: ImmutablePolynomial{M,S}}
-    if  degree(p) <= 0
-        p  = P(p.coeffs, q.var)
-    elseif degree(q) <= 0
-        q  = Q(q.coeffs, p.var)
-    end
-    
-    p,q
-    
-end
 
 function Base.:+(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
-    p1,p2 = _promote_constant_variable(p1, p2)
+
+    isconstant(p1) && return p2 + p1[0] 
+    isconstant(p2) && return p1 + p2[0]
     p1.var != p2.var && error("Polynomials must have same variable")
     
     R = Base.promote_op(+, T,S)
@@ -225,11 +222,15 @@ function ⊕(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{N,T}) where {
 end
 
 
-Base.:+(p::ImmutablePolynomial{N, T}, c::S) where {N, T,S<:Number} =
-    p + ImmutablePolynomial((c,), p.var)
+function Base.:+(p::ImmutablePolynomial{N, T}, c::S) where {N, T, S<:Number}
+    R = promote_type(T,S)
+    as = NTuple{N,R}(i == 1 ? ai + c : ai for (i,ai) in enumerate(p.coeffs))
+    ImmutablePolynomial(as, p.var)
+end
 
 function Base.:*(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
-    p1,p2 = _promote_constant_variable(p1, p2)
+    isconstant(p1) && return p2 * p1[0] 
+    isconstant(p2) && return p1 * p2[0]
     p1.var != p2.var && error("Polynomials must have same variable")
     p1 ⊗ p2
 end
@@ -258,7 +259,8 @@ end
 
 function Base.:*(p::ImmutablePolynomial{N,T}, c::S) where {N,T,S <: Number}
     R = eltype(one(T)*one(S))
-    return ImmutablePolynomial{N,R}(NTuple{N,R}(p[i]*c for i in eachindex(p)), p.var)
+    cs = NTuple{N,R}(p[i]*c for i in eachindex(p))
+    return ImmutablePolynomial{N,R}(cs, p.var)
 end
 
 Base.:-(p::ImmutablePolynomial{N,T}) where {N,T} = ImmutablePolynomial(NTuple{N,T}(-pi for pi in p.coeffs), p.var)

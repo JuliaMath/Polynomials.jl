@@ -20,6 +20,10 @@ evalpoly(x, p::StandardBasisPolynomial) = p(x)
 domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 
+## generic test if polynomial `p` is a constant
+isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
+
+Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
 
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
@@ -34,11 +38,10 @@ end
 
 
 function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
-    U = promote_type(T, S)
-    q = copy(p)
-    p2 = U == S ? q : convert(⟒(P){U}, q)
-    p2[0] += c
-    return p2
+    R = promote_type(T,S)
+    as = R[c  for c in coeffs(p)]
+    as[1] += c
+    ⟒(P)(as, p.var)
 end
 
 
@@ -136,13 +139,13 @@ end
 function  roots(p::P; kwargs...)  where  {P <: StandardBasisPolynomial}
     T = eltype(p)
     R = eltype(one(T)/one(T))    
-    d = length(p) - 1
+    d = degree(p)
     if d < 1
         return []
     end
     d == 1 && return R[-p[0] / p[1]]
 
-    as = coeffs(p)
+    as = [p[i] for i in 0:d]
     K  = findlast(!iszero, as)
     if K == nothing
         return R[]
