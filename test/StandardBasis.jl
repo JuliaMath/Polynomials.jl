@@ -90,6 +90,16 @@ end
         @test P()(1) == 1
         @test variable(P, :y) == P(:y)
 
+        # test degree, isconstant
+        @test degree(zero(P)) ==  -1
+        @test degree(one(P)) == 0
+        @test degree(P(1))  ==  0
+        @test degree(P([1]))  ==  0
+        @test degree(P(:x)) ==  1
+        @test degree(variable(P)) == 1
+        @test degree(Polynomials.basis(P,5)) == 5
+        @test Polynomials.isconstant(P(1))
+        @test !Polynomials.isconstant(variable(P))
     end
 end
 

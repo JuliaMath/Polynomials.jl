@@ -90,6 +90,12 @@ end
 
 ## changes to common
 degree(p::SparsePolynomial) = isempty(p.coeffs) ? -1 : maximum(keys(p.coeffs))
+function isconstant(p::SparsePolynomial)
+    n = length(keys(p.coeffs))
+    (n > 1 || iszero(p[0])) && return false
+    return true
+end
+
 basis(P::Type{<:SparsePolynomial}, n::Int, var=:x) =
     SparsePolynomial(Dict(n=>one(eltype(one(P)))), var)
 
@@ -180,8 +186,8 @@ end
    
 function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
 
-    degree(p1) <= 0 && return p2 + p1[0]
-    degree(p2) <= 0 && return p1 + p2[0]
+    isconstant(p1) && return p2 + p1[0]
+    isconstant(p2) && return p1 + p2[0]
     
     p1.var != p2.var && error("SparsePolynomials must have same variable")
 
@@ -226,8 +232,8 @@ end
 
 function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
 
-    degree(p1) <= 0 && return p2 * p1[0]
-    degree(p2) <= 0 && return p1 * p2[0]
+    isconstant(p1) && return p2 * p1[0]
+    isconstant(p2) && return p1 * p2[0]
     p1.var != p2.var && error("SparsePolynomials must have same variable")
 
     R = promote_type(T,S)

@@ -20,6 +20,9 @@ evalpoly(x, p::StandardBasisPolynomial) = p(x)
 domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 
+## generic test if polynomial `p` is a constant
+isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
+
 Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
 
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}

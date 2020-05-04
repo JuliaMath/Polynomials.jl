@@ -53,7 +53,7 @@ julia> integrate(P([1,1,1], -5:-3))
 LaurentPolynomial(-0.25*x⁻⁴ - 0.3333333333333333*x⁻³ - 0.5*x⁻²)
 
 julia> x⁻¹ = inv(variable(LaurentPolynomial)) # `inv` defined on monomials
-LaurentPolynomial(x⁻¹)
+LaurentPolynomial(1.0*x⁻¹)
 
 julia> p = Polynomial([1,2,3])
 Polynomial(1 + 2*x + 3*x^2)
@@ -62,7 +62,7 @@ julia> x = variable()
 Polynomial(x)
 
 julia> x^degree(p) * p(x⁻¹) # reverses  coefficients
-LaurentPolynomial(3 + 2*x + x²)
+LaurentPolynomial(3.0 + 2.0*x + 1.0*x²)
 ```
 """
 mutable struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
@@ -93,6 +93,12 @@ mutable struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
 end
 
 @register LaurentPolynomial
+
+function  LaurentPolynomial{T}(coeffs::AbstractVector{S},
+                               rng::UnitRange{Int64}=0:length(coeffs)-1,
+                               var::Symbol=:x) where {T <: Number, S <: Number}
+    LaurentPolynomial{T}(T.(coeffs), rng, var)
+end
 
 function LaurentPolynomial(coeffs::AbstractVector{T}, rng::UnitRange, var::SymbolLike=:x) where {T <: Number}
     LaurentPolynomial{T}(coeffs, rng, Symbol(var))
@@ -151,6 +157,7 @@ Base.:(==)(p1::LaurentPolynomial, p2::LaurentPolynomial) =
 Base.hash(p::LaurentPolynomial, h::UInt) = hash(p.var, hash(range(p), hash(coeffs(p), h)))
 
 degree(p::LaurentPolynomial) = p.n[]
+isconstant(p::LaurentPolynomial) = range(p) == 0:0
 basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var=:x) where{T} = LaurentPolynomial(ones(T,1), n:n, var)
 basis(P::Type{LaurentPolynomial}, n::Int, var=:x) = LaurentPolynomial(ones(Float64, 1), n:n, var)
 
@@ -275,18 +282,6 @@ function (p::LaurentPolynomial{T})(x::S) where {T,S}
 end
                  
         
-# ignore underlying variable of constants for `+` or `*`
-function _promote_constant_variable(p::P, q::Q) where {T, P <: LaurentPolynomial{T},
-                                                       S, Q <: LaurentPolynomial{S}}
-    if  extrema(p) == (0,0)
-        p  = P(p.coeffs, q.var)
-    elseif extrema(q)  == (0,0)
-        q  = Q(q.coeffs, p.var)
-    end
-    
-    p,q
-    
-end
 
 # scalar operattoinis
 Base.:-(p::P) where {P <: LaurentPolynomial} = P(-coeffs(p), range(p), p.var)
@@ -312,9 +307,9 @@ end
 ##
 function Base.:+(p1::P1, p2::P2) where {T,P1<:LaurentPolynomial{T}, S, P2<:LaurentPolynomial{S}}
 
-    if degree(p1) <= 0
+    if isconstant(p1)
         p1 = P1(p1.coeffs, range(p1), p2.var)
-    elseif degree(p2)  <= 0
+    elseif isconstant(p2)
         p2 = P2(p2.coeffs, range(p2), p1.var)
     end
     
@@ -340,10 +335,9 @@ end
 
 function Base.:*(p1::LaurentPolynomial{T}, p2::LaurentPolynomial{S}) where {T,S}
 
-    degree(p1) <= 0 && return p2 * p1[0]
-    degree(p2) <= 0 && return p1 * p2[0]
+    isconstant(p1) && return p2 * p1[0]
+    isconstant(p2) && return p1 * p2[0]
 
-    #p1, p2 = _promote_constant_variable(p1, p2)
     p1.var != p2.var && error("LaurentPolynomials must have same variable")
 
     R = promote_type(T,S)

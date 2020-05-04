@@ -83,8 +83,8 @@ julia> p.(0:3)
    
 function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
 
-    #degree(p1) <= 0 && return p2 + p1[0] #  factor of 2  slower with this check
-    #degree(p2) <= 0 && return p1 + p2[0]
+    #isconstant(p1) && return p2 + p1[0] #  factor of 2  slower with this check
+    #isconstant(p2) && return p1 + p2[0]
     p1.var != p2.var && error("Polynomials must have same variable")
 
     n1, n2 = length(p1), length(p2)
@@ -95,8 +95,8 @@ end
 
 function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
 
-    #degree(p1) <= 0 && return p2 * p1[0] # no real effect
-    #degree(p2) <= 0 && return p1 * p2[0]
+    #isconstant(p1) && return p2 * p1[0] # no real effect
+    #isconstant(p2) && return p1 * p2[0]
     p1.var != p2.var && error("Polynomials must have same variable")
     n,m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
     R = promote_type(T, S)

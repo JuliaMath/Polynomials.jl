@@ -128,7 +128,14 @@ function degree(p::ImmutablePolynomial{N,T}) where {N, T}
     n = findlast(!iszero, coeffs(p))
     n == nothing ? -1 : n-1
 end
-
+isconstant(p::ImmutablePolynomial{0}) = true
+isconstant(p::ImmutablePolynomial{1}) = true
+function  isconstant(p::ImmutablePolynomial{N})  where {N}
+    for i in 2:length(p.coeffs)
+        !iszero(p.coeffs[i]) && return false
+    end
+    return true
+end
 for op in [:isequal, :(==)]
     @eval function Base.$op(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
         (p1.var == p2.var) || return false
@@ -199,8 +206,8 @@ LinearAlgebra.conj(p::P) where {P <: ImmutablePolynomial} = P(conj([aᵢ for a�
 
 function Base.:+(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
 
-    degree(p1) <= 0 && return p2 + p1[0] 
-    degree(p2) <= 0 && return p1 + p2[0]
+    isconstant(p1) && return p2 + p1[0] 
+    isconstant(p2) && return p1 + p2[0]
     p1.var != p2.var && error("Polynomials must have same variable")
     
     R = Base.promote_op(+, T,S)
@@ -222,8 +229,8 @@ function Base.:+(p::ImmutablePolynomial{N, T}, c::S) where {N, T, S<:Number}
 end
 
 function Base.:*(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
-    degree(p1) <= 0 && return p2 * p1[0] 
-    degree(p2) <= 0 && return p1 * p2[0]
+    isconstant(p1) && return p2 * p1[0] 
+    isconstant(p2) && return p1 * p2[0]
     p1.var != p2.var && error("Polynomials must have same variable")
     p1 ⊗ p2
 end
