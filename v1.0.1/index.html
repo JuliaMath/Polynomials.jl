@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · Polynomials.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href><img src="assets/logo.svg" alt="Polynomials.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit">Polynomials.jl</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li><a class="tocitem" href="#Quick-Start-1"><span>Quick Start</span></a></li><li><a class="tocitem" href="#Related-Packages-1"><span>Related Packages</span></a></li><li><a class="tocitem" href="#Contributing-1"><span>Contributing</span></a></li></ul></li><li><a class="tocitem" href="reference/">Reference/API</a></li><li><span class="tocitem">Polynomial Types</span><ul><li><a class="tocitem" href="polynomials/polynomial/">Polynomial</a></li><li><a class="tocitem" href="polynomials/chebyshev/">Chebyshev</a></li></ul></li><li><a class="tocitem" href="extending/">Extending</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaMath/Polynomials.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Polynomials.jl-1"><a class="docs-heading-anchor" href="#Polynomials.jl-1">Polynomials.jl</a><a class="docs-heading-anchor-permalink" href="#Polynomials.jl-1" title="Permalink"></a></h1><p>Polynomials.jl is a Julia package that provides basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate polynomials.</p><p>To install the package, run</p><pre><code class="language-julia">(v1.2) pkg&gt; add Polynomials</code></pre><p>The package can then be loaded into the current session using</p><pre><code class="language-julia">using Polynomials</code></pre><h2 id="Quick-Start-1"><a class="docs-heading-anchor" href="#Quick-Start-1">Quick Start</a><a class="docs-heading-anchor-permalink" href="#Quick-Start-1" title="Permalink"></a></h2><h3 id="Construction-and-Evaluation-1"><a class="docs-heading-anchor" href="#Construction-and-Evaluation-1">Construction and Evaluation</a><a class="docs-heading-anchor-permalink" href="#Construction-and-Evaluation-1" title="Permalink"></a></h3><p>Construct a polynomial from its coefficients, lowest order first.</p><pre><code class="language-julia-repl">julia&gt; Polynomial([1,0,3,4])
+Polynomial(1 + 3*x^2 + 4*x^3)</code></pre><p>An optional variable parameter can be added.</p><pre><code class="language-julia-repl">julia&gt; Polynomial([1,2,3], :s)
+Polynomial(1 + 2*s + 3*s^2)</code></pre><p>Construct a polynomial from its roots.</p><pre><code class="language-julia-repl">julia&gt; fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
+Polynomial(-6 + 11*x - 6*x^2 + x^3)</code></pre><p>Evaluate the polynomial <code>p</code> at <code>x</code>.</p><pre><code class="language-julia-repl">julia&gt; p = Polynomial([1, 0, -1])
+Polynomial(1 - x^2)
+
+julia&gt; p(1)
+0
+</code></pre><h3 id="Arithmetic-1"><a class="docs-heading-anchor" href="#Arithmetic-1">Arithmetic</a><a class="docs-heading-anchor-permalink" href="#Arithmetic-1" title="Permalink"></a></h3><p>The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.</p><pre><code class="language-julia-repl">julia&gt; p = Polynomial([1,2])
+Polynomial(1 + 2*x)
+
+julia&gt; q = Polynomial([1, 0, -1])
+Polynomial(1 - x^2)
+
+julia&gt; 2p
+Polynomial(2 + 4*x)
+
+julia&gt; 2 + p
+Polynomial(3 + 2*x)
+
+julia&gt; p - q
+Polynomial(2*x + x^2)
+
+julia&gt; p * q
+Polynomial(1 + 2*x - x^2 - 2*x^3)
+
+julia&gt; q / 2
+Polynomial(0.5 - 0.5*x^2)
+
+julia&gt; q ÷ p  # `div`, also `rem` and `divrem`
+Polynomial(0.25 - 0.5*x)</code></pre><p>Note that operations involving polynomials with different variables will error.</p><pre><code class="language-julia-repl">julia&gt; p = Polynomial([1, 2, 3], :x)
+Polynomial(1 + 2*x + 3*x^2)
+
+julia&gt; q = Polynomial([1, 2, 3], :s)
+Polynomial(1 + 2*s + 3*s^2)
+
+julia&gt; p + q
+ERROR: Polynomials must have same variable
+[...]</code></pre><h3 id="Integrals-and-Derivatives-1"><a class="docs-heading-anchor" href="#Integrals-and-Derivatives-1">Integrals and Derivatives</a><a class="docs-heading-anchor-permalink" href="#Integrals-and-Derivatives-1" title="Permalink"></a></h3><p>Integrate the polynomial <code>p</code> term by term, optionally adding constant term <code>C</code>. The degree of the resulting polynomial is one higher than the degree of <code>p</code>.</p><pre><code class="language-julia-repl">julia&gt; integrate(Polynomial([1, 0, -1]))
+Polynomial(1.0*x - 0.3333333333333333*x^3)
+
+julia&gt; integrate(Polynomial([1, 0, -1]), 2)
+Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)</code></pre><p>Differentiate the polynomial <code>p</code> term by term. The degree of the resulting polynomial is one lower than the degree of <code>p</code>.</p><pre><code class="language-julia-repl">julia&gt; derivative(Polynomial([1, 3, -1]))
+Polynomial(3 - 2*x)</code></pre><h3 id="Root-finding-1"><a class="docs-heading-anchor" href="#Root-finding-1">Root-finding</a><a class="docs-heading-anchor-permalink" href="#Root-finding-1" title="Permalink"></a></h3><p>Return the roots (zeros) of <code>p</code>, with multiplicity. The number of roots returned is equal to the order of <code>p</code>. By design, this is not type-stable, the returned roots may be real or complex.</p><pre><code class="language-julia-repl">julia&gt; roots(Polynomial([1, 0, -1]))
+2-element Array{Float64,1}:
+ -1.0
+  1.0
+
+julia&gt; roots(Polynomial([1, 0, 1]))
+2-element Array{Complex{Float64},1}:
+ 0.0 - 1.0im
+ 0.0 + 1.0im
+
+julia&gt; roots(Polynomial([0, 0, 1]))
+2-element Array{Float64,1}:
+ 0.0
+ 0.0</code></pre><h3 id="Fitting-arbitrary-data-1"><a class="docs-heading-anchor" href="#Fitting-arbitrary-data-1">Fitting arbitrary data</a><a class="docs-heading-anchor-permalink" href="#Fitting-arbitrary-data-1" title="Permalink"></a></h3><p>Fit a polynomial (of degree <code>deg</code>) to <code>x</code> and <code>y</code> using polynomial interpolation or a (weighted) least-squares approximation.</p><pre><code class="language-julia">using Plots, Polynomials
+xs = range(0, 10, length=10)
+ys = @. exp(-xs)
+f = fit(xs, ys) # degree = length(xs) - 1
+f2 = fit(xs, ys, 2) # degree = 2
+
+scatter(xs, ys, markerstrokewidth=0, label=&quot;Data&quot;)
+plot!(f, extrema(xs)..., label=&quot;Fit&quot;)
+plot!(f2, extrema(xs)..., label=&quot;Quadratic Fit&quot;)</code></pre><pre><code class="language-none">/home/travis/.julia/packages/GR/2wKV9/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
+connect: Connection refused
+GKS: can&#39;t connect to GKS socket application
+
+GKS: Open failed in routine OPEN_WS
+GKS: GKS not in proper state. GKS must be either in the state WSOP or WSAC in routine ACTIVATE_WS</code></pre><p><img src="polyfit.svg" alt/></p><h3 id="Other-bases-1"><a class="docs-heading-anchor" href="#Other-bases-1">Other bases</a><a class="docs-heading-anchor-permalink" href="#Other-bases-1" title="Permalink"></a></h3><p>A polynomial, e.g. <code>a_0 + a_1 x + a_2 x^2 + ... + a_n x^n</code>, can be seen as a collection of coefficients, <code>[a_0, a_1, ..., a_n]</code>, relative to some polynomial basis. The most  familiar basis being  the standard one: <code>1</code>, <code>x</code>, <code>x^2</code>, ...  Alternative bases are possible.  The <code>ChebyshevT</code> polynomials are  implemented, as an example. Instead of <code>Polynomial</code>  or  <code>Polynomial{T}</code>, <code>ChebyshevT</code> or  <code>ChebyshevT{T}</code> constructors are used:</p><pre><code class="language-julia-repl">julia&gt; p1 = ChebyshevT([1.0, 2.0, 3.0])
+ChebyshevT(1.0⋅T_0(x) + 2.0⋅T_1(x) + 3.0⋅T_2(x))
+
+julia&gt; p2 = ChebyshevT{Float64}([0, 1, 2])
+ChebyshevT(1.0⋅T_1(x) + 2.0⋅T_2(x))
+
+julia&gt; p1 + p2
+ChebyshevT(1.0⋅T_0(x) + 3.0⋅T_1(x) + 5.0⋅T_2(x))
+
+julia&gt; p1 * p2
+ChebyshevT(4.0⋅T_0(x) + 4.5⋅T_1(x) + 3.0⋅T_2(x) + 3.5⋅T_3(x) + 3.0⋅T_4(x))
+
+julia&gt; derivative(p1)
+ChebyshevT(2.0⋅T_0(x) + 12.0⋅T_1(x))
+
+julia&gt; integrate(p2)
+ChebyshevT(0.25⋅T_0(x) - 1.0⋅T_1(x) + 0.25⋅T_2(x) + 0.3333333333333333⋅T_3(x))
+
+julia&gt; convert(Polynomial, p1)
+Polynomial(-2.0 + 2.0*x + 6.0*x^2)
+
+julia&gt; convert(ChebyshevT, Polynomial([1.0, 2,  3]))
+ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>The older  <code>Poly</code> type that this package used prior to <code>v0.7</code>  is implemented as an alternate basis  to provide support for older code bases. As of <code>v1.0</code>,  this type will be only available by executing <code>using Polynomials.PolyCompat</code>.</p></div></div><h3 id="Iteration-1"><a class="docs-heading-anchor" href="#Iteration-1">Iteration</a><a class="docs-heading-anchor-permalink" href="#Iteration-1" title="Permalink"></a></h3><p>If its basis is implicit, then a polynomial may be  seen as just a vector of  coefficients. Vectors or 1-based, but, for convenience, polynomial types are 0-based, for purposes of indexing (e.g. <code>getindex</code>, <code>setindex!</code>, <code>eachindex</code>). Iteration over a polynomial steps through the basis vectors, e.g. <code>a_0</code>, <code>a_1*x</code>, ...</p><pre><code class="language-julia-repl">julia&gt; as = [1,2,3,4,5]; p = Polynomial(as);
+
+julia&gt; as[3], p[2], collect(p)[3]
+(3, 3, Polynomial(3*x^2))</code></pre><h2 id="Related-Packages-1"><a class="docs-heading-anchor" href="#Related-Packages-1">Related Packages</a><a class="docs-heading-anchor-permalink" href="#Related-Packages-1" title="Permalink"></a></h2><ul><li><p><a href="https://github.com/tkoolen/StaticUnivariatePolynomials.jl">StaticUnivariatePolynomials.jl</a> Fixed-size univariate polynomials backed by a Tuple</p></li><li><p><a href="https://github.com/daviddelaat/MultiPoly.jl">MultiPoly.jl</a> for sparse multivariate polynomials</p></li><li><p><a href="https://github.com/JuliaAlgebra/DynamicPolynomials.jl">DynamicPolynomals.jl</a> Multivariate polynomials implementation of commutative and non-commutative variables</p></li><li><p><a href="https://github.com/JuliaAlgebra/MultivariatePolynomials.jl">MultivariatePolynomials.jl</a> for multivariate polynomials and moments of commutative or non-commutative variables</p></li><li><p><a href="https://github.com/tkluck/PolynomialRings.jl">PolynomialRings</a> A library for arithmetic and algebra with multi-variable polynomials.</p></li><li><p><a href="https://github.com/wbhart/AbstractAlgebra.jl">AbstractAlgebra.jl</a> and <a href="https://github.com/wbhart/Nemo.jl">Nemo.jl</a> for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series</p></li><li><p><a href="https://github.com/giordano/PolynomialRoots.jl">PolynomialRoots.jl</a> for a fast complex polynomial root finder. For larger degree problems, also <a href="https://github.com/andreasnoack/FastPolynomialRoots.jl">FastPolynomialRoots</a> and <a href="https://github.com/jverzani/AMRVW.jl">AMRVW</a>.</p></li></ul><h2 id="Contributing-1"><a class="docs-heading-anchor" href="#Contributing-1">Contributing</a><a class="docs-heading-anchor-permalink" href="#Contributing-1" title="Permalink"></a></h2><p>If you are interested in this project, feel free to open an issue or pull request! In general, any changes must be thoroughly tested, allow deprecation, and not deviate too far from the common interface. All PR&#39;s must have an updated project version, as well, to keep the continuous delivery cycle up-to-date.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="reference/">Reference/API »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 4 May 2020 22:34">Monday 4 May 2020</span>. Using Julia version 1.4.1.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
