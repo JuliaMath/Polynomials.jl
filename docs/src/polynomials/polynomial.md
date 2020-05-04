@@ -13,6 +13,7 @@ Polynomial
 ```@docs
 ImmutablePolynomial
 SparsePolynomial
+LaurentPolynomial
 ```
 
 

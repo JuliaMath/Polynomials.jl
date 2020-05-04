@@ -1,6 +1,6 @@
 using LinearAlgebra
 
-## Test Polynomial and ImmutablePolynomial with (nearly) the same tests
+## Test standard basis polynomials with (nearly) the same tests
 
 #   compare upto trailing  zeros
 function  upto_tz(as, bs)
@@ -19,7 +19,7 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 ==ᵗ⁰(a,b) = upto_tz(a,b)
 ==ᵗᶻ(a,b) = upto_z(a,b)
 
-Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial)
+Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
 
 @testset "Construction" for coeff in [
     Int64[1, 1, 1, 1],
@@ -127,10 +127,18 @@ end
         @test 2 - p2 == P([1,-1])
 
     end
+
+    for P in Ps # ensure promotion of scalar +,*,/
+        p = P([1,2,3])
+        @test p + 0.5 == P([1.5, 2.0, 3.0])
+        @test p / 2  == P([1/2, 1.0, 3/2])
+        @test p * 0.5 == P([1/2, 1.0, 3/2])
+    end
 end
 
 @testset "Divrem" begin
     for P in  Ps
+
         p0 = P([0])
         p1 = P([1])
         p2 = P([5, 6, -3, 2 ,4])
@@ -172,8 +180,8 @@ end
         @test pcpy1 == pcpy2
         
         # Check for isequal
-        p1 = P([-0., 5., Inf])
-        p2 = P([0., 5., Inf])
+        p1 = P([1.0, -0.0, 5.0, Inf])
+        p2 = P([1.0,  0.0, 5.0, Inf])
         p3 = P([0, NaN])
 
         P != SparsePolynomial && (@test p1 == p2 && !isequal(p1, p2))  # SparsePolynomial doesn't store -0.0,  0.0.
@@ -344,8 +352,7 @@ end
         @test sort(roots(p)) ≈ r
         
         @test roots(p0) == roots(p1) == roots(pNULL) == []
-        @test roots(P([0,1,0])) == [0.0]
-        r = roots(P([0,1,0]))
+        @test P == LaurentPolynomial ? roots(variable(P)) == [0.0] : roots(P([0,1,0])) == [0.0]
         
         @test roots(p2) == [-1]
         a_roots = [c for c in coeffs(copy(pN))]
@@ -423,7 +430,7 @@ end
         @test isequal(pint, P([NaN]))
         
         # Issue with overflow and polyder Issue #159
-        @test !iszero(derivative(P(BigInt[0, 1])^100, 100))
+        @test derivative(P(BigInt[0, 1])^100, 100) == P(factorial(big(100)))
     end
 end
 
@@ -531,7 +538,7 @@ end
             p1[5] = 1
             @test p1[5] == 1
             @test p1 == P([1,2,1,0,0,1])
-        
+
             @test p[end] == coeffs(p)[end]
 
             if P != SparsePolynomial
@@ -666,3 +673,51 @@ end
 
 end
 
+@testset "Promotion"  begin
+    
+    # Test different types work together
+    Ps = (Polynomial,  ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
+    for P₁ in Ps
+        for   P₂ in Ps
+            p₁, p₂ = P₁(rand(1:5, 4)), P₂(rand(1:5, 5))
+            p₁ + p₂
+            p₁ * p₂
+
+            p₁, p₂ = P₁(rand(1:5, 4)), P₂(5) # constant
+            p₁ + p₂
+            p₁ * p₂
+
+            p₁, p₂ = P₁(rand(1:5, 4)), P₂(5, :y) # constant, but wrong variable
+            if !(promote_type(P₁, P₂) <: Polynomial || promote_type(P₁, P₂) <: Polynomials.StandardBasisPolynomial)
+                p₁ + p₂
+                p₁ * p₂
+            end
+        end
+    end
+
+    # P{T}(vector{S}) will promote to P{T}
+    for Ts in ((Int32, Int,  BigInt),
+               (Int,  Rational{Int}, Float64),
+               (Float32, Float64, BigFloat)
+               )
+
+        n = length(Ts)
+        for i in 1:n-1
+            T1,T2 = Ts[i],Ts[i+1]
+            for P in (Polynomial,  ImmutablePolynomial{5}, SparsePolynomial, LaurentPolynomial)
+                p = P{T2}(T1.(rand(1:3,3)))
+                @test typeof(p) == P{T2}
+            end
+        end
+    end
+
+    # test P{T}(...) is P{T}
+    for P in (Polynomial,  ImmutablePolynomial{5}, SparsePolynomial, LaurentPolynomial)
+        for  T in (Int32, Int64, BigInt)
+            p₁ =  P{T}(Float64.(rand(1:3,5)))
+            @test typeof(p₁) == P{T} # conversion works
+            @test_throws InexactError  P{T}(rand(5))
+        end
+    end
+
+end

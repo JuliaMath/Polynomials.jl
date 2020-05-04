@@ -238,3 +238,13 @@ function printexponent(io, var, i, mimetype::MIME)
         print(io, var, exponent_text(i, mimetype))
     end
 end
+
+function unicode_exponent(io, var, j)
+    iszero(j) && return
+    print(io, var)
+    j ==1  && return
+    a = ("⁻","","","⁰","¹","²","³","⁴","⁵","⁶","⁷","⁸","⁹")
+    for i in string(j)
+        print(io, a[Int(i)-44])
+    end
+end

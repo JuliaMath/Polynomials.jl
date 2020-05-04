@@ -164,18 +164,6 @@ end
 ## ----
 ##
     
-# ignore variable of  constants for `+` or `*`
-function _promote_constant_variable(p::P, q::Q) where {P<:SparsePolynomial, Q<:SparsePolynomial}
-    
-    if  degree(p) <= 0
-        p  = P(p.coeffs, q.var)
-    elseif degree(q) <= 0
-        q  = Q(q.coeffs, p.var)
-    end
-    
-    return p,q
-    
-end
 
 function (p::SparsePolynomial{T})(x::S) where {T,S}
     
@@ -192,7 +180,9 @@ end
    
 function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
 
-    p1,p2 = _promote_constant_variable(p1, p2) ## check degree 0 or 1
+    degree(p1) <= 0 && return p2 + p1[0]
+    degree(p2) <= 0 && return p1 + p2[0]
+    
     p1.var != p2.var && error("SparsePolynomials must have same variable")
 
     R = promote_type(T,S)
@@ -211,7 +201,7 @@ function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
     end
     for i in eachindex(p2)
         if iszero(p[i])
-            p[i] = p1[i] + p2[i]
+            @inbounds p[i] = p1[i] + p2[i]
         end
     end
     
@@ -227,7 +217,7 @@ function Base.:+(p::SparsePolynomial{T}, c::S) where {T, S <: Number}
     
     q = zero(P{R}, p.var)
     for k in eachindex(p)
-        q[k] = R(p[k])
+        @inbounds q[k] = R(p[k])
     end
     q[0] = q[0] + c
 
@@ -236,7 +226,8 @@ end
 
 function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
 
-    p1, p2 = _promote_constant_variable(p1, p2)
+    degree(p1) <= 0 && return p2 * p1[0]
+    degree(p2) <= 0 && return p1 * p2[0]
     p1.var != p2.var && error("SparsePolynomials must have same variable")
 
     R = promote_type(T,S)
@@ -244,8 +235,9 @@ function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
     
     p  = zero(P{R},  p1.var)
     for i in eachindex(p1)
+        p1ᵢ = p1[i]
         for j in eachindex(p2)
-            p[i+j] = muladd(p1[i], p2[j], p[i+j])
+            @inbounds p[i+j] = muladd(p1ᵢ, p2[j], p[i+j])
         end
     end
     
@@ -254,12 +246,10 @@ function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
 end
 
 
-function Base.:*(p::SparsePolynomial{T}, c::S) where {T, S}
+function Base.:*(p::P, c::S) where {T, P <: SparsePolynomial{T}, S <: Number}
 
     R = promote_type(T,S)
-    P = SparsePolynomial
-
-    q  = zero(P{R},  p.var)
+    q  = zero(⟒(P){R},  p.var)
     for k in eachindex(p)
         q[k] = p[k] * c
     end

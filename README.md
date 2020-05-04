@@ -20,9 +20,10 @@ julia> using Polynomials
 
 #### Available Polynomials
 
-* `Polynomial` - Standard polynomials
-* `ImmutablePolynomial` - Standard polynomial backed by a tuple for faster evaluation of values
+	* `Polynomial` - Standard basis polynomials, `a_0 + a_1⋅x + a_2⋅x^2 + ⋯ + a_n⋅xⁿ`,  `n ∈ ℕ`
+* `ImmutablePolynomial` - Standard basis polynomials backed by a tuple for faster evaluation of values
 * `SparsePolynomial` - Standard basis polynomial backed by a dictionary to hold  sparse high-degree  polynomials
+* `LaurentPolynomial` - Laurent polynomials, `a_m⋅x^m + ⋯ a_n⋅x^n` `m ≤ n`, `m,n ∈ ℤ` backed by an offset array
 * `ChebyshevT` - Chebyshev polynomials of the first kind
 
 #### Construction and Evaluation
