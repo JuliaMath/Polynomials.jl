@@ -55,7 +55,7 @@ end
 end
 
 @testset "Other Construction" begin
-    for P in (ImmutablePolynomial{10}, Polynomial)
+    for P in (ImmutablePolynomial{10}, Polynomial, SparsePolynomial, LaurentPolynomial)
 
         # Leading 0s
         p = P([1, 2, 0, 0])
@@ -77,11 +77,11 @@ end
 
         pNULL = P(Int[])
         @test iszero(pNULL)
-        @test degree(pNULL) == -1
+        P != LaurentPolynomial && @test degree(pNULL) == -1
 
         p0 = P([0])
         @test iszero(p0)
-        @test degree(p0) == -1
+        P != LaurentPolynomial && @test degree(p0) == -1
 
         # variable(), P() to generate `x` in given basis
         @test degree(variable(P)) == 1
@@ -91,7 +91,7 @@ end
         @test variable(P, :y) == P(:y)
 
         # test degree, isconstant
-        @test degree(zero(P)) ==  -1
+        P != LaurentPolynomial &&  @test degree(zero(P)) ==  -1
         @test degree(one(P)) == 0
         @test degree(P(1))  ==  0
         @test degree(P([1]))  ==  0
@@ -506,7 +506,7 @@ end
     end
 
     # issue 206 with mixed variable types and promotion
-    for P in (ImmutablePolynomial,)
+    for P in Ps
         λ = P([0,1],:λ)
         A = [1 λ; λ^2 λ^3]
         @test A ==  diagm(0 => [1, λ^3], 1=>[λ], -1=>[λ^2])
