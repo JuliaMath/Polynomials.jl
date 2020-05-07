@@ -92,7 +92,7 @@ end
 degree(p::SparsePolynomial) = isempty(p.coeffs) ? -1 : maximum(keys(p.coeffs))
 function isconstant(p::SparsePolynomial)
     n = length(keys(p.coeffs))
-    (n > 1 || iszero(p[0])) && return false
+    (n > 1 || (n==1 && iszero(p[0]))) && return false
     return true
 end
 
@@ -188,7 +188,7 @@ function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
 
     isconstant(p1) && return p2 + p1[0]
     isconstant(p2) && return p1 + p2[0]
-    
+
     p1.var != p2.var && error("SparsePolynomials must have same variable")
 
     R = promote_type(T,S)
