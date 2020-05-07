@@ -101,6 +101,19 @@ ERROR: Polynomials must have same variable
 [...]
 ```
 
+Except for operations  involving constant polynomials.
+
+```jldoctest
+julia> p = Polynomial([1, 2, 3], :x)
+Polynomial(1 + 2*x + 3*x^2)
+
+julia> q = Polynomial(1, :y)
+Polynomial(1)
+
+julia> p+q
+Polynomial(2 + 2*x + 3*x^2)
+```
+
 ### Integrals and Derivatives
 
 Integrate the polynomial `p` term by term, optionally adding constant

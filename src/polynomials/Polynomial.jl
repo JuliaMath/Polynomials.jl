@@ -11,7 +11,7 @@ If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct this through
 
 The usual arithmetic operators are overloaded to work with polynomials as well as
 with combinations of polynomials and scalars. However, operations involving two
-polynomials of different variables causes an error.
+polynomials of different variables causes an error except those involving a constant polynomial.
 
 # Examples
 ```@meta
@@ -85,14 +85,24 @@ function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
     n1, n2 = length(p1), length(p2)
     if n1 > 1 && n2 > 1
        p1.var != p2.var && error("Polynomials must have same variable")
-       c = [p1[i] + p2[i] for i = 0:max(n1, n2)]
-       return Polynomial(c, p1.var)
+       if n1 >= n2
+          c = copy(p1.coeffs)
+          for i = 1:n2
+            c[i] += p2.coeffs[i]
+          end
+        else
+            c = copy(p2.coeffs)
+            for i = 1:n1
+              c[i] += p1.coeffs[i]
+            end
+        end
+        return Polynomial(c, p1.var)
     elseif n1 <= 1
-       c = copy(p2.coeffs )
+       c = copy(p2.coeffs)
        c[1] += p1[0]
        return Polynomial(c, p2.var)
     else 
-       c = copy(p1.coeffs )
+       c = copy(p1.coeffs)
        c[1] += p2[0]
        return Polynomial(c, p1.var)
     end
