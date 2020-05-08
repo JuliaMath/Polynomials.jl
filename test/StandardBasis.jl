@@ -144,6 +144,13 @@ end
         @test p / 2  == P([1/2, 1.0, 3/2])
         @test p * 0.5 == P([1/2, 1.0, 3/2])
     end
+
+    # ensure  promotion of +,*; issue 215
+    for P in Ps
+        p,q = P([1,2,3]), P(im, :θ)
+        @test p+q == P([1+im, 2, 3])
+        @test p*q == P(im*[1,2,3])
+    end
 end
 
 @testset "Divrem" begin
