@@ -83,7 +83,8 @@ end
 
 
 function Base.divrem(num::P, den::Q) where {P <: StandardBasisPolynomial, Q <: StandardBasisPolynomial}
-    num.var != den.var && error("Polynomials must have same variable")
+
+    check_same_variable(num, den) || error("Polynomials must have same variable")
     var = num.var
     
     
