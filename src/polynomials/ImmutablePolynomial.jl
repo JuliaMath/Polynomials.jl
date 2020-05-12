@@ -154,7 +154,7 @@ function Base.isapprox(p1::ImmutablePolynomial{N,T},
                        p2::ImmutablePolynomial{M,S};
                        rtol::Real = (Base.rtoldefault(T, S, 0)),
                        atol::Real = 0,) where {N,T,M,S}
-    p1.var == p2.var || error("p1 and p2 must have same var")
+    check_same_variable(p1, p2) || error("p1 and p2 must have same var")
     NN = max(N,M)
     for i in 1:NN-1
         isapprox(p1[i],p2[i], rtol=rtol, atol=atol) || return false

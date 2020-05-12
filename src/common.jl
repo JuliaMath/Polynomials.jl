@@ -253,6 +253,14 @@ variable(::Type{P}, var::SymbolLike = :x) where {P <: AbstractPolynomial} = P([0
 variable(p::AbstractPolynomial, var::SymbolLike = p.var) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int})
 
+"""
+    check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
+
+Check if either `p` or `q` is constant or if `p` and `q` share the same variable
+"""
+check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial) =
+    (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || p.var ==  q.var
+
 #=
 Linear Algebra =#
 """
@@ -317,6 +325,17 @@ Return the degree of the polynomial, i.e. the highest exponent in the polynomial
 has a nonzero coefficient. The degree of the zero polynomial is defined to be -1.
 """
 degree(p::AbstractPolynomial) = iszero(p) ? -1 : length(p) - 1
+
+
+"""
+    isconstant(::AbstractPolynomial)
+
+Is the polynomial  `p` a constant.
+"""
+isconstant(p::AbstractPolynomial) = degree(p) <= 0
+
+
+
 
 hasnan(p::AbstractPolynomial) = any(isnan.(coeffs(p)))
 
@@ -535,9 +554,7 @@ function Base.isapprox(p1::AbstractPolynomial{T},
     rtol::Real = (Base.rtoldefault(T, S, 0)),
     atol::Real = 0,) where {T,S}
     p1, p2 = promote(p1, p2)
-    if p1.var != p2.var
-        error("p1 and p2 must have same var")
-    end
+    check_same_variable(p1, p2)  || error("p1 and p2 must have same var")
     p1t = truncate(p1; rtol = rtol, atol = atol)
     p2t = truncate(p2; rtol = rtol, atol = atol)
     if length(p1t) ≠ length(p2t)
