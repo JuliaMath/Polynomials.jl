@@ -138,7 +138,7 @@ function  isconstant(p::ImmutablePolynomial{N})  where {N}
 end
 for op in [:isequal, :(==)]
     @eval function Base.$op(p1::ImmutablePolynomial{N,T}, p2::ImmutablePolynomial{M,S}) where {N,T,M,S}
-        (p1.var == p2.var) || return false
+        check_same_variable(p1,p2) || return false
         p1s, p2s = coeffs(p1), coeffs(p2)
         (N == M  && $op(p1s,p2s)) &&  return  true
         n1 = findlast(!iszero, p1s) # now trim out zeros

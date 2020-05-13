@@ -230,10 +230,19 @@ end
         @test P([0.5]) + 2 == P([2.5])
         @test 2 - P([0.5]) == P([1.5])
 
-        # check isapprox ignores variable mismatch when constants are involved, issue #217
-        @test Polynomial(1, :x) ≈ Polynomial(1, :y)
-        @test (variable(Polynomial, :x) ≈ variable(Polynomial, :x))
-        @test_throws ErrorException variable(Polynomial, :x) ≈ variable(Polynomial, :y)
+        # check how ==, ===, isapprox ignore variable mismatch when constants are involved, issue #217, issue #219
+        @test zero(P, :x) == zero(P, :y)
+        @test one(P, :x) == one(P, :y)
+        @test !(variable(P, :x) == variable(P,:y))
+
+        @test !(zero(P, :x) === zero(P, :y))
+        @test !(one(P, :x) === one(P, :y))
+        @test !(variable(P, :x) === variable(P,:y))
+
+        @test zero(P, :x) ≈ zero(P, :y)
+        @test one(P, :x) ≈ one(P, :y)
+        @test (variable(P, :x) ≈ variable(P, :x))
+        @test_throws ErrorException variable(P, :x) ≈ variable(P, :y)
 
     end
 end

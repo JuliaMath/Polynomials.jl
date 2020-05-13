@@ -545,7 +545,7 @@ Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
 Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
-    (p1.var == p2.var) && (coeffs(p1) == coeffs(p2))
+    check_same_variable(p1,p2) && (coeffs(p1) == coeffs(p2))
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && p[0] == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
