@@ -153,7 +153,7 @@ end
 ##
 Base.copy(p::P) where {P <: LaurentPolynomial} = P(copy(coeffs(p)), range(p), p.var)
 Base.:(==)(p1::LaurentPolynomial, p2::LaurentPolynomial) =
-    (p1.var == p2.var) && (range(p1) == range(p2)) && (coeffs(p1) == coeffs(p2))
+    check_same_variable(p1, p2) && (range(p1) == range(p2)) && (coeffs(p1) == coeffs(p2))
 Base.hash(p::LaurentPolynomial, h::UInt) = hash(p.var, hash(range(p), hash(coeffs(p), h)))
 
 degree(p::LaurentPolynomial) = p.n[]
