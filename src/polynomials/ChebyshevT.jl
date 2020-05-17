@@ -59,7 +59,7 @@ function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
 end
 
 domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
-
+variable(P::Type{<:ChebyshevT}, var::SymbolLike=:x ) = P([0,1], var)
 """
     (::ChebyshevT)(x)
 

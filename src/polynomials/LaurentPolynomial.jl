@@ -158,8 +158,8 @@ Base.hash(p::LaurentPolynomial, h::UInt) = hash(p.var, hash(range(p), hash(coeff
 
 degree(p::LaurentPolynomial) = p.n[]
 isconstant(p::LaurentPolynomial) = range(p) == 0:0
-basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var=:x) where{T} = LaurentPolynomial(ones(T,1), n:n, var)
-basis(P::Type{LaurentPolynomial}, n::Int, var=:x) = LaurentPolynomial(ones(Float64, 1), n:n, var)
+basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var::SymbolLike=:x) where{T} = LaurentPolynomial(ones(T,1), n:n, var)
+basis(P::Type{LaurentPolynomial}, n::Int, var::SymbolLike=:x) = LaurentPolynomial(ones(Float64, 1), n:n, var)
 
 Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  LaurentPolynomial{T}(zeros(T,1),  0:0, Symbol(var))
 Base.zero(::Type{LaurentPolynomial},  var=Symbollike=:x) =  zero(LaurentPolynomial{Float64}, var)
@@ -259,7 +259,10 @@ function showterm(io::IO, ::Type{<:LaurentPolynomial}, pj::T, var, j, first::Boo
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)
-    unicode_exponent(io, var, j)
+    iszero(j) && return
+    print(io, var)
+    j ==1  && return
+    unicode_exponent(io, j)
     return true
 end
 

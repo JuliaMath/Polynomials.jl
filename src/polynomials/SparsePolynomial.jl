@@ -96,7 +96,7 @@ function isconstant(p::SparsePolynomial)
     return true
 end
 
-basis(P::Type{<:SparsePolynomial}, n::Int, var=:x) =
+basis(P::Type{<:SparsePolynomial}, n::Int, var::SymbolLike=:x) =
     SparsePolynomial(Dict(n=>one(eltype(one(P)))), var)
 
 # return coeffs as  a vector
