@@ -172,7 +172,11 @@ In-place version of [`truncate`](@ref)
 """
 function truncate!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
-    atol::Real = 0,) where {T}
+                   atol::Real = 0,) where {T}
+
+    # 
+
+    
     max_coeff = maximum(abs, coeffs(p))
     thresh = max_coeff * rtol + atol
     map!(c->abs(c) <= thresh ? zero(T) : c, coeffs(p), coeffs(p))
@@ -392,7 +396,7 @@ Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
     zs = zeros(Int, k+1)
     zs[end] = 1
-    P(zs, var)
+    ⟒(P){eltype(P)}(zs, var)
 end
 basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
 
@@ -452,7 +456,7 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 
 Returns a representation of 0 as the given polynomial.
 """
-Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(zeros(eltype(P), 1), var)
+Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(zeros(eltype(P), 1), var)
 Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 """
     one(::Type{<:AbstractPolynomial})
@@ -460,7 +464,7 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = P(ones(eltype(P),1), var)
+Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(ones(eltype(P),1), var)
 Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
@@ -556,11 +560,11 @@ Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && p[0] == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
+
 function Base.isapprox(p1::AbstractPolynomial{T},
     p2::AbstractPolynomial{S};
     rtol::Real = (Base.rtoldefault(T, S, 0)),
-                       atol::Real = 0,) where {T,S}
-    
+    atol::Real = 0,) where {T,S}
     p1, p2 = promote(p1, p2)
     check_same_variable(p1, p2)  || error("p1 and p2 must have same var")
     p1t = truncate(p1; rtol = rtol, atol = atol)
@@ -569,7 +573,6 @@ function Base.isapprox(p1::AbstractPolynomial{T},
         return false
     end
     isapprox(coeffs(p1t), coeffs(p2t), rtol = rtol, atol = atol)
-    
 end
 
 function Base.isapprox(p1::AbstractPolynomial{T},
@@ -582,6 +585,7 @@ function Base.isapprox(p1::AbstractPolynomial{T},
     end
     isapprox(coeffs(p1t), [n], rtol = rtol, atol = atol)
 end
+
 
 Base.isapprox(n::S,
     p1::AbstractPolynomial{T};

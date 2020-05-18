@@ -1,8 +1,5 @@
 abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
-# We want  ⟒(P{α…,T}) = P{α…}
-# For StandardBasisPolynomials this is
-⟒(P::Type{<:StandardBasisPolynomial}) = constructorof(P)
 
 
 
@@ -59,10 +56,10 @@ function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolyno
     # Base.promote_op(*, Complex, Int)
     R = eltype(one(T)*1) 
     order == 0 && return p
-    hasnan(p) && return P(R[NaN], p.var)
-    order > length(p) && return P(R[0], p.var)
+    hasnan(p) && return ⟒(P){R}(R[NaN], p.var)
+    order > length(p) && return zero(⟒(P){R},p.var)
     d = degree(p)
-    d <= 0 && return zero(p)
+    d <= 0 && return zero(⟒(P){R},p.var)
     n = d + 1
     a2 = Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1

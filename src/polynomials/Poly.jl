@@ -43,6 +43,11 @@ Base.zero(::Type{<:Poly{T}},var=:x)  where {T} = Poly{T}(zeros(T,0), var)
 Base.zero(::Type{<:Poly},var=:x)  where {T} = Poly(zeros(Float64,0), var)
 Base.one(::Type{<:Poly{T}},var=:x)  where {T} = Poly{T}(ones(T,1), var)
 Base.one(::Type{<:Poly},var=:x)  where {T} = Poly(ones(Float64,1), var)
+function Polynomials.basis(P::Type{<:Poly}, k::Int, _var::Polynomials.SymbolLike=:x; var=_var) 
+    zs = zeros(Int, k+1)
+    zs[end] = 1
+    P(zs, var)
+end
 
 function (p::Poly{T})(x::S) where {T,S}
     oS = one(x)

@@ -13,6 +13,9 @@ An abstract container for various polynomials.
 """
 abstract type AbstractPolynomial{T} end
 
+# We want  ⟒(P{α…,T}) = P{α…}; this default
+# works for most cases
+⟒(P::Type{<:AbstractPolynomial}) = constructorof(P)
 
 """
     Polynomials.@register(name)
@@ -36,9 +39,9 @@ macro register(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
         Base.convert(P::Type{<:$poly}, p::$poly{T}) where {T} = P(coeffs(p), p.var)
-        Base.promote_rule(::Type{$poly{T}}, ::Type{$poly{S}}) where {T,S} =
+        Base.promote_rule(::Type{<:$poly{T}}, ::Type{<:$poly{S}}) where {T,S} =
             $poly{promote_type(T, S)}
-        Base.promote_rule(::Type{$poly{T}}, ::Type{S}) where {T,S<:Number} =
+        Base.promote_rule(::Type{<:$poly{T}}, ::Type{S}) where {T,S<:Number} =
             $poly{promote_type(T, S)}
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =
             $poly{T}(coeffs, Symbol(var))
