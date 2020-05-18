@@ -259,9 +259,9 @@ function showterm(io::IO, ::Type{<:LaurentPolynomial}, pj::T, var, j, first::Boo
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)
-    iszero(j) && return
+    iszero(j) && return  true
     print(io, var)
-    j ==1  && return
+    j ==1  && return  true
     unicode_exponent(io, j)
     return true
 end
