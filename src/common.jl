@@ -229,33 +229,7 @@ function Base.chop(p::AbstractPolynomial{T};
 end
 
 
-"""
-    variable(var=:x)
-    variable(::Type{<:AbstractPolynomial}, var=:x)
-    variable(p::AbstractPolynomial, var=p.var)
 
-Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
-
-# Examples
-```jldoctest  common
-julia> using Polynomials
-
-julia> x = variable()
-Polynomial(x)
-
-julia> p = 100 + 24x - 3x^2
-Polynomial(100 + 24*x - 3*x^2)
-
-julia> roots((x - 3) * (x + 2))
-2-element Array{Float64,1}:
- -2.0
-  3.0
-
-```
-"""
-variable(::Type{P}, var::SymbolLike = :x) where {P <: AbstractPolynomial} = MethodError()
-variable(p::AbstractPolynomial, var::SymbolLike = p.var) = variable(typeof(p), var)
-variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
 """
     check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
@@ -388,18 +362,6 @@ Base.lastindex(p::AbstractPolynomial) = length(p) - 1
 Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
-# basis
-# var is a positional argument, not a keyword; can't deprecate so we do `_var; var=_var`
-#@deprecate basis(p::P, k::Int; var=:x)  where {P<:AbstractPolynomial}  basis(p, k, var)
-#@deprecate basis(::Type{P}, k::Int; var=:x) where {P <: AbstractPolynomial} basis(P, k,var)
-# return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
-function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
-    zs = zeros(Int, k+1)
-    zs[end] = 1
-    ⟒(P){eltype(P)}(zs, var)
-end
-basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
-
 
 
 
@@ -450,6 +412,9 @@ Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
 identity =#
 Base.copy(p::P) where {P <: AbstractPolynomial} = P(copy(coeffs(p)), p.var)
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
+
+#=
+zero, one, variable, basis =#
 """
     zero(::Type{<:AbstractPolynomial})
     zero(::AbstractPolynomial)
@@ -469,6 +434,47 @@ Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
+
+
+"""
+    variable(var=:x)
+    variable(::Type{<:AbstractPolynomial}, var=:x)
+    variable(p::AbstractPolynomial, var=p.var)
+
+Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
+
+# Examples
+```jldoctest  common
+julia> using Polynomials
+
+julia> x = variable()
+Polynomial(x)
+
+julia> p = 100 + 24x - 3x^2
+Polynomial(100 + 24*x - 3*x^2)
+
+julia> roots((x - 3) * (x + 2))
+2-element Array{Float64,1}:
+ -2.0
+  3.0
+
+```
+"""
+variable(::Type{P}, var::SymbolLike = :x) where {P <: AbstractPolynomial} = MethodError()
+variable(p::AbstractPolynomial, var::SymbolLike = p.var) = variable(typeof(p), var)
+variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
+
+# basis
+# var is a positional argument, not a keyword; can't deprecate so we do `_var; var=_var`
+#@deprecate basis(p::P, k::Int; var=:x)  where {P<:AbstractPolynomial}  basis(p, k, var)
+#@deprecate basis(::Type{P}, k::Int; var=:x) where {P <: AbstractPolynomial} basis(P, k,var)
+# return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
+function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
+    zs = zeros(Int, k+1)
+    zs[end] = 1
+    ⟒(P){eltype(P)}(zs, var)
+end
+basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
 
 #=
 arithmetic =#

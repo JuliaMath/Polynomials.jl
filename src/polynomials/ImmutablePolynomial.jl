@@ -7,16 +7,19 @@ Construct an immutable (static) polynomial from its coefficients `a`,
 lowest order first, optionally in terms of the given variable `x`
 where `x` can be a character, symbol, or string.
 
-If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct this through
-`ImmutablePolynomial((a_0, a_1, ..., a_n))`.
+If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct
+this through `ImmutablePolynomial((a_0, a_1, ..., a_n))` (assuming
+`a_n ≠ 0`). As well, a vector or number can be used for construction.
 
 The usual arithmetic operators are overloaded to work with polynomials
 as well as with combinations of polynomials and scalars. However,
 operations involving two polynomials of different variables causes an
 error, though for `+` and `*` operations, constant polynomials are
-treated as having no variable. (This adds a runtime check, but is useful when working with matrices of polynomials.)
+treated as having no variable. 
 
-As the coefficient size is a compile-time constant, immutable polynomials can take advantage of faster polynomial evaluation provided by `evalpoly` from Julia 1.4.
+As the coefficient size is a compile-time constant, immutable
+polynomials can take advantage of faster polynomial evaluation
+provided by `evalpoly` from Julia 1.4.
 
     # Examples
 
@@ -74,12 +77,6 @@ end
 
 @register ImmutablePolynomial
 
-#Base.promote_rule(::Type{ImmutablePolynomial{T,N}},q::Type{ImmutablePolynomial{S,M}}) where {T,N,S,M} =
-#    ImmutablePolynomial{promote_type(T,S)}
-
-#Base.promote_rule(::Type{ImmutablePolynomial{T,N}}, ::Type{S}) where {T,N, S<:Number} =
-#    ImmutablePolynomial{promote_type(T, S)}
-
 function ImmutablePolynomial{T,N}(coeffs::Tuple, var)  where {T,N}
     ImmutablePolynomial{T,N}(NTuple{N,T}(c for c in coeffs), var)
 end
@@ -94,21 +91,6 @@ function ImmutablePolynomial(coeffs::NTuple{M,T}, var::SymbolLike=:x) where {M, 
         end
     ImmutablePolynomial{T,N}(cs, var)
 end
-function ImmutablePolynomial(coeffs::Vector{T}, var::SymbolLike=:x) where {T}
-    N = findlast(!iszero, coeffs)
-    if N == nothing
-        return  zero(ImmutablePolynomial{T},var)
-    else
-        cs = NTuple{N,T}(T(c) for  c in  coeffs[1:N])
-    end
-    ImmutablePolynomial{T,N}(cs, var)
-end
-
-#ImmutablePolynomial(n::T, var::SymbolLike = :x) where {T <: Number} =
-#    ImmutablePolynomial{T,1}(NTuple{1,T}(n), var)
-
-#ImmutablePolynomial(var::SymbolLike=:x)  = variable(ImmutablePolynomial,  var)
-
 
 # Convenience; pass tuple to Polynomial
 # Not documented, not sure this is a good idea as P(...)::P is not true...
@@ -123,24 +105,12 @@ end
 ##
 # overrides from common.jl due to coeffs possibly being padded, coeffs being non mutable, ...
 
-## promote N,M case; may not change p,q if T==S
-#function Base.promote(p::ImmutablePolynomial{T,N}, q::ImmutablePolynomial{S,M}) where {N,T,M,S}
-#    R = promote_type(T,S)
-#    ImmutablePolynomial{R}(p.coeffs, p.var), ImmutablePolynomial{R}(q.coeffs, q.var)
-#end
-
 Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
 
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p), p.var)
 
-#function Base.hash(p::ImmutablePolynomial{T,N}, h::UInt) where {T,N}
-#    n = findlast(!iszero, coeffs(p))
-#    n == nothing && return hash(p.var, hash(NTuple{0,T}(),h))
-#    hash(p.var, hash(coeffs(p)[1:n], h))
-#end
-
 # catch q == 0 case
-LinearAlgebra.norm(q::ImmutablePolynomial{T}, p::Real = 2) where {T}= degree(q) == -1 ? zero(T) : norm(coeffs(q), p)
+LinearAlgebra.norm(q::ImmutablePolynomial{T}, p::Real = 2) where {T} = degree(q) == -1 ? zero(T) : norm(coeffs(q), p)
 
 #  zero, one, variable
 function Base.zero(P::Type{<:ImmutablePolynomial},var::SymbolLike=:x)
@@ -276,10 +246,8 @@ function Base.:+(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) whe
         return ImmutablePolynomial(cs, p1.var) # N  unknown, as leading terms can cancel
     elseif N < M
         ⊕(p2,p1)
-
     else
         ⊕(p1,p2)
-
     end
 
 end
@@ -301,6 +269,7 @@ end
         Base.@_inline_meta
         ImmutablePolynomial{$(R),$(N)}(tuple($(exprs...)), p1.var)
     end
+
 end
 
 
@@ -328,10 +297,12 @@ end
             end
         end
     end
+
     return quote
         Base.@_inline_meta
         ImmutablePolynomial{$(R),$(max(0,P))}(tuple($(exprs...)), p1.var)
     end
+
 end
 
 # scalar ops
