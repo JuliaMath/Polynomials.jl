@@ -173,10 +173,6 @@ In-place version of [`truncate`](@ref)
 function truncate!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0,) where {T}
-
-    # 
-
-    
     max_coeff = maximum(abs, coeffs(p))
     thresh = max_coeff * rtol + atol
     map!(c->abs(c) <= thresh ? zero(T) : c, coeffs(p), coeffs(p))
@@ -361,10 +357,6 @@ Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1
 Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
-
-
-
-
 
 # iteration
 # iteration occurs over the basis polynomials
@@ -566,7 +558,6 @@ Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && p[0] == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
-
 function Base.isapprox(p1::AbstractPolynomial{T},
     p2::AbstractPolynomial{S};
     rtol::Real = (Base.rtoldefault(T, S, 0)),
@@ -591,7 +582,6 @@ function Base.isapprox(p1::AbstractPolynomial{T},
     end
     isapprox(coeffs(p1t), [n], rtol = rtol, atol = atol)
 end
-
 
 Base.isapprox(n::S,
     p1::AbstractPolynomial{T};

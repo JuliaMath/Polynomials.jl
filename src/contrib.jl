@@ -37,10 +37,8 @@ function evalpoly(x::S, p::Tuple) where {S}
     if @generated
         N = length(p.parameters)
         ex = :(p[end]*_one(S))
-        if N > 0
-            for i in N-1:-1:1
-                ex = :(_muladd(x, $ex, p[$i]))
-            end
+        for i in N-1:-1:1
+            ex = :(_muladd(x, $ex, p[$i]))
         end
         ex
     else

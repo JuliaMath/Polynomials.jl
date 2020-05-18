@@ -2,7 +2,6 @@ abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
 
 
-
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
@@ -13,7 +12,6 @@ function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, firs
     printexponent(io, var, j, mimetype)
     return true
 end
-
 
 # allows  broadcast  issue #209
 evalpoly(x, p::StandardBasisPolynomial) = p(x)
