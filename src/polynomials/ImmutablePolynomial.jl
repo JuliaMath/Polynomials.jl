@@ -124,10 +124,10 @@ end
 # overrides from common.jl due to coeffs possibly being padded, coeffs being non mutable, ...
 
 ## promote N,M case; may not change p,q if T==S
-function Base.promote(p::ImmutablePolynomial{T,N}, q::ImmutablePolynomial{S,M}) where {N,T,M,S}
-    R = promote_type(T,S)
-    ImmutablePolynomial{R}(p.coeffs, p.var), ImmutablePolynomial{R}(q.coeffs, q.var)
-end
+#function Base.promote(p::ImmutablePolynomial{T,N}, q::ImmutablePolynomial{S,M}) where {N,T,M,S}
+#    R = promote_type(T,S)
+#    ImmutablePolynomial{R}(p.coeffs, p.var), ImmutablePolynomial{R}(q.coeffs, q.var)
+#end
 
 Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
 
