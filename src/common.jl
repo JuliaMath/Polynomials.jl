@@ -561,26 +561,28 @@ Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 function Base.isapprox(p1::AbstractPolynomial{T},
     p2::AbstractPolynomial{S};
     rtol::Real = (Base.rtoldefault(T, S, 0)),
-    atol::Real = 0,) where {T,S}
+                       atol::Real = 0,) where {T,S}
+    
     p1, p2 = promote(p1, p2)
     check_same_variable(p1, p2)  || error("p1 and p2 must have same var")
-    p1t = truncate(p1; rtol = rtol, atol = atol)
-    p2t = truncate(p2; rtol = rtol, atol = atol)
-    if length(p1t) ≠ length(p2t)
-        return false
+
+    # copy over from abstractarray.jl
+    Δ  = norm(p1-p2)
+    if isfinite(Δ)
+        return Δ <= max(atol, rtol*max(norm(p1), norm(p2)))
+    else
+        for i in 0:max(degree(p1), degree(p2))
+            isapprox(p1[i], p2[i]; rtol=rtol, atol=atol) || return false
+        end
+        return true
     end
-    isapprox(coeffs(p1t), coeffs(p2t), rtol = rtol, atol = atol)
 end
 
-function Base.isapprox(p1::AbstractPolynomial{T},
+function Base.isapprox(p1::P,
                        n::S;
                        rtol::Real = (Base.rtoldefault(T, S, 0)),
-                       atol::Real = 0,) where {T,S}
-    p1t = truncate(p1, rtol = rtol, atol = atol)
-    if length(p1t) != 1
-        return false
-    end
-    isapprox(coeffs(p1t), [n], rtol = rtol, atol = atol)
+                       atol::Real = 0,) where {T,S, P<:AbstractPolynomial{T}}
+    return isapprox(p1, ⟒(P){T}(n,p1.var))
 end
 
 Base.isapprox(n::S,
