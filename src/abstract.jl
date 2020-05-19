@@ -13,6 +13,9 @@ An abstract container for various polynomials.
 """
 abstract type AbstractPolynomial{T} end
 
+# We want  ⟒(P{α…,T}) = P{α…}; this default
+# works for most cases
+⟒(P::Type{<:AbstractPolynomial}) = constructorof(P)
 
 """
     Polynomials.@register(name)
@@ -36,17 +39,18 @@ macro register(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
         Base.convert(P::Type{<:$poly}, p::$poly{T}) where {T} = P(coeffs(p), p.var)
-        Base.promote_rule(::Type{$poly{T}}, ::Type{$poly{S}}) where {T,S} =
+        Base.promote(p::P, q::Q) where {T, P <:$poly{T}, Q <: $poly{T}} = p,q
+        Base.promote_rule(::Type{<:$poly{T}}, ::Type{<:$poly{S}}) where {T,S} =
             $poly{promote_type(T, S)}
-        Base.promote_rule(::Type{$poly{T}}, ::Type{S}) where {T,S<:Number} =
+        Base.promote_rule(::Type{<:$poly{T}}, ::Type{S}) where {T,S<:Number} =
             $poly{promote_type(T, S)}
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =
             $poly{T}(coeffs, Symbol(var))
-        $poly{T}(x::AbstractVector{S}, var = :x) where {T,S<:Number} =
-            $poly(T.(x), var)
-        $poly{T}(n::S, var = :x) where {T, S<:Number} =
-            $poly(T[n], var)
-        $poly(n::Number, var = :x) = $poly([n], var)
+        $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S<:Number} =
+            $poly(T.(x), Symbol(var))
+        $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
+            $poly(T[n], Symbol(var))
+        $poly(n::Number, var::SymbolLike = :x) = $poly([n], Symbol(var))
         $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T}, Symbol(var))
         $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
     end
@@ -58,19 +62,20 @@ macro register1(name)
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.promote_rule(::Type{$poly{α,T}}, ::Type{$poly{α,S}}) where {α,T,S} =
+        Base.promote(p::P, q::Q) where {α,T, P <:$poly{α,T}, Q <: $poly{α,T}} = p,q
+        Base.promote_rule(::Type{<:$poly{α,T}}, ::Type{<:$poly{α,S}}) where {α,T,S} =
             $poly{α,promote_type(T, S)}
-        Base.promote_rule(::Type{$poly{α,T}}, ::Type{S}) where {α,T,S<:Number} = 
+        Base.promote_rule(::Type{<:$poly{α,T}}, ::Type{S}) where {α,T,S<:Number} = 
             $poly{α,promote_type(T,S)}
-        function $poly{α,T}(x::AbstractVector{S}, var::Polynomials.SymbolLike = :x) where {α,T,S}
+        function $poly{α,T}(x::AbstractVector{S}, var::SymbolLike = :x) where {α,T,S}
             $poly{α,T}(T.(x), Symbol(var))
         end
-        $poly{α}(coeffs::AbstractVector{T}, var::Polynomials.SymbolLike=:x) where {α,T} =
+        $poly{α}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {α,T} =
             $poly{α,T}(coeffs, Symbol(var))
-        $poly{α,T}(n::Number, var::Polynomials.SymbolLike = :x) where {α,T} = n*one($poly{α,T}, Symbol(var))
-        $poly{α}(n::Number, var::Polynomials.SymbolLike = :x) where {α} = n*one($poly{α}, Symbol(var))
-        $poly{α,T}(var::Polynomials.SymbolLike=:x) where {α, T} = variable($poly{α,T}, Symbol(var))
-        $poly{α}(var::Polynomials.SymbolLike=:x) where {α} = variable($poly{α}, Symbol(var))
+        $poly{α,T}(n::Number, var::SymbolLike = :x) where {α,T} = n*one($poly{α,T}, Symbol(var))
+        $poly{α}(n::Number, var::SymbolLike = :x) where {α} = n*one($poly{α}, Symbol(var))
+        $poly{α,T}(var::SymbolLike=:x) where {α, T} = variable($poly{α,T}, Symbol(var))
+        $poly{α}(var::SymbolLike=:x) where {α} = variable($poly{α}, Symbol(var))
     end
 end
 
@@ -80,17 +85,18 @@ macro register2(name)
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.promote_rule(::Type{$poly{α,β,T}}, ::Type{$poly{α,β,S}}) where {α,β,T,S} =
+        Base.promote(p::P, q::Q) where {α,β,T, P <:$poly{α,β,T}, Q <: $poly{α,β,T}} = p,q        
+        Base.promote_rule(::Type{<:$poly{α,β,T}}, ::Type{<:$poly{α,β,S}}) where {α,β,T,S} =
             $poly{α,β,promote_type(T, S)}
-        Base.promote_rule(::Type{$poly{α,β,T}}, ::Type{S}) where {α,β,T,S<:Number} =
+        Base.promote_rule(::Type{<:$poly{α,β,T}}, ::Type{S}) where {α,β,T,S<:Number} =
             $poly{α,β,promote_type(T, S)}
-        $poly{α,β}(coeffs::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {α,β,T} =
+        $poly{α,β}(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {α,β,T} =
             $poly{α,β,T}(coeffs, Symbol(var))
-        $poly{α,β,T}(x::AbstractVector{S}, var = :x) where {α,β,T,S<:Number} = $poly{α,β,T}(T.(x), var)
-        $poly{α,β,T}(n::Number, var = :x) where {α,β,T} = n*one($poly{α,β,T}, var)
-        $poly{α,β}(n::Number, var = :x) where {α,β} = n*one($poly{α,β}, var)
-        $poly{α,β,T}(var=:x) where {α,β, T} = variable($poly{α,β,T}, var)
-        $poly{α,β}(var=:x) where {α,β} = variable($poly{α,β}, var)
+        $poly{α,β,T}(x::AbstractVector{S}, var::SymbolLike = :x) where {α,β,T,S<:Number} = $poly{α,β,T}(T.(x), var)
+        $poly{α,β,T}(n::Number, var::SymbolLike = :x) where {α,β,T} = n*one($poly{α,β,T}, Symbol(var))
+        $poly{α,β}(n::Number, va::SymbolLiker = :x) where {α,β} = n*one($poly{α,β}, Symbol(var))
+        $poly{α,β,T}(var::SymbolLike=:x) where {α,β, T} = variable($poly{α,β,T}, Symbol(var))
+        $poly{α,β}(var::SymbolLike=:x) where {α,β} = variable($poly{α,β}, Symbol(var))
     end
 end
 

@@ -1,6 +1,5 @@
 abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
-const ⟒ = constructorof #\upin
 
 
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
@@ -25,6 +24,8 @@ isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 
 Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
 
+variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = P([0, 1], var)
+
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)
@@ -45,18 +46,18 @@ function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Numbe
 end
 
 
-function derivative(p::P, order::Integer = 1) where {P <: StandardBasisPolynomial}
+function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolynomial{T}}
     order < 0 && error("Order of derivative must be non-negative")
-    T = eltype(p)
+
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
     R = eltype(one(T)*1) 
     order == 0 && return p
-    hasnan(p) && return P(R[NaN], p.var)
-    order > length(p) && return P(R[0], p.var)
+    hasnan(p) && return ⟒(P){R}(R[NaN], p.var)
+    order > length(p) && return zero(⟒(P){R},p.var)
     d = degree(p)
-    d <= 0 && return zero(p)
+    d <= 0 && return zero(⟒(P){R},p.var)
     n = d + 1
     a2 = Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1
@@ -66,8 +67,8 @@ function derivative(p::P, order::Integer = 1) where {P <: StandardBasisPolynomia
 end
 
 
-function integrate(p::P, k::S) where {P <: StandardBasisPolynomial, S<:Number}
-    T = eltype(p)
+function integrate(p::P, k::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
+
     R = eltype((one(T)+one(S))/1)
     if hasnan(p) || isnan(k)
         return ⟒(P)([NaN])
@@ -82,7 +83,7 @@ function integrate(p::P, k::S) where {P <: StandardBasisPolynomial, S<:Number}
 end
 
 
-function Base.divrem(num::P, den::Q) where {P <: StandardBasisPolynomial, Q <: StandardBasisPolynomial}
+function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
 
     check_same_variable(num, den) || error("Polynomials must have same variable")
     var = num.var
@@ -94,7 +95,6 @@ function Base.divrem(num::P, den::Q) where {P <: StandardBasisPolynomial, Q <: S
     m == -1 && throw(DivideError())
     if m == 0 && den[0] ≈ 0 throw(DivideError()) end
     
-    T, S =  eltype(num), eltype(den)
     R = eltype(one(T)/one(S))
 
     deg = n - m + 1
@@ -120,13 +120,12 @@ function Base.divrem(num::P, den::Q) where {P <: StandardBasisPolynomial, Q <: S
 end
 
 
-function companion(p::P) where {P <: StandardBasisPolynomial}
+function companion(p::P) where {T, P <: StandardBasisPolynomial{T}}
     d = length(p) - 1
     d < 1 && error("Series must have degree greater than 1")
     d == 1 && return diagm(0 => [-p[0] / p[1]])
 
     
-    T = eltype(p)
     R = eltype(one(T)/one(T))
     
     comp = diagm(-1 => ones(R, d - 1))
@@ -137,8 +136,8 @@ function companion(p::P) where {P <: StandardBasisPolynomial}
     return comp
 end
 
-function  roots(p::P; kwargs...)  where  {P <: StandardBasisPolynomial}
-    T = eltype(p)
+function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
+
     R = eltype(one(T)/one(T))    
     d = degree(p)
     if d < 1

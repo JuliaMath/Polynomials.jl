@@ -33,6 +33,7 @@ end
 ## Slight modification when `x` is a matrix
 ## Remove once dependencies for Julia 1.0.0 are dropped
 function evalpoly(x::S, p::Tuple) where {S}
+    p == () && return zero(S)
     if @generated
         N = length(p.parameters)
         ex = :(p[end]*_one(S))

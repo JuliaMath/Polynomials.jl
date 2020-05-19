@@ -55,7 +55,7 @@ end
 end
 
 @testset "Other Construction" begin
-    for P in (ImmutablePolynomial{10}, Polynomial, SparsePolynomial, LaurentPolynomial)
+    for P in (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
 
         # Leading 0s
         p = P([1, 2, 0, 0])
@@ -230,6 +230,7 @@ end
         @test P([0.5]) + 2 == P([2.5])
         @test 2 - P([0.5]) == P([1.5])
 
+
         # check how ==, ===, isapprox ignore variable mismatch when constants are involved, issue #217, issue #219
         @test zero(P, :x) == zero(P, :y)
         @test one(P, :x) == one(P, :y)
@@ -316,7 +317,7 @@ end
 
     # constant polynomials and type
     Ts = (Int, Float32, Float64, Complex{Int}, Complex{Float64})
-    for P in (Polynomial, ImmutablePolynomial{1}, SparsePolynomial)
+    for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
         for T in Ts
             for S in Ts
                 c = 2
@@ -348,11 +349,19 @@ end
 end
 
 @testset "Conversion" begin
-    for P in (Polynomial, ImmutablePolynomial{2})
+    for P in (Polynomial, SparsePolynomial, LaurentPolynomial)
         p = P([0,one(Float64)])
         @test P{Complex{Float64}} == typeof(p + 1im)
         @test P{Complex{Float64}} == typeof(1im - p)
         @test P{Complex{Float64}} == typeof(p * 1im)
+    end
+    
+    for P in (ImmutablePolynomial,)
+        p = P([0,one(Float64)])
+        N=2
+        @test P{Complex{Float64},N} == typeof(p + 1im)
+        @test P{Complex{Float64},N} == typeof(1im - p)
+        @test P{Complex{Float64},N} == typeof(p * 1im)
     end
 
     # unnecessary copy in convert #65
@@ -433,13 +442,12 @@ end
         @test derivative(p1) == derivative(p0) == derivative(pNULL) == pNULL
         @test_throws ErrorException derivative(pR, -1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
-
-        if P ∈ (Polynomial,)
-            @test derivative(integrate(pN)) == convert(P{Float64}, pN)
-            @test integrate(pNULL, 1) == convert(P{Float64}, p1)
-            rc = Rational{Int64}[1,2,3]
-            @test integrate(P(rc)) == P{eltype(rc)}([0, 1, 1, 1])
-        end
+        
+        @test derivative(integrate(pN)) == convert(P{Float64}, pN)
+        @test integrate(pNULL, 1) == convert(P{Float64}, p1)
+        rc = Rational{Int64}[1,2,3]
+        @test integrate(P(rc)) == P{eltype(rc)}([0, 1, 1, 1])
+    
 
         for i in 1:10
             p = P(rand(1:5, 6))
@@ -472,8 +480,15 @@ end
         p2  = P([3, 1.])
         p   = [p1, p2]
         q   = [3, p1]
-        @test q isa Vector{typeof(p1)}
-        @test p isa Vector{typeof(p2)}
+        if P !=  ImmutablePolynomial
+            @test q isa Vector{typeof(p1)}
+            @test p isa Vector{typeof(p2)} 
+        else
+            @test q isa Vector{P{eltype(p1)}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
+            @test p isa Vector{P{eltype(p2)}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
+        end
+
+
 
         psum  = p .+ 3
         pprod = p .* 3
@@ -595,11 +610,11 @@ end
         end
         
         @test eltype(p1) == Int
-        for Q in (Polynomial, ImmutablePolynomial{5})
-            p1 = Q([1,2,0,3])
-            @test eltype(collect(p1)) == Q{Int}
-            @test eltype(collect(Q{Float64}, p1)) == Q{Float64}
-            @test_throws InexactError collect(Q{Int}, Q([1.2]))
+        for P in Ps 
+            p1 = P([1,2,0,3])
+            @test eltype(collect(p1)) <: P{Int}
+            @test eltype(collect(P{Float64}, p1)) <: P{Float64}
+            @test_throws InexactError collect(P{Int}, P([1.2]))
         end
 
         p1 = P([1,2,0,3])
@@ -736,20 +751,34 @@ end
         n = length(Ts)
         for i in 1:n-1
             T1,T2 = Ts[i],Ts[i+1]
-            for P in (Polynomial,  ImmutablePolynomial{5}, SparsePolynomial, LaurentPolynomial)
+            for P in (Polynomial, SparsePolynomial, LaurentPolynomial)
                 p = P{T2}(T1.(rand(1:3,3)))
                 @test typeof(p) == P{T2}
             end
+            for P in (ImmutablePolynomial,)
+                N = 3
+                p = P{T2}(T1.(rand(1:3,N)))
+                @test typeof(p) == P{T2,N}
+            end
+
         end
     end
 
     # test P{T}(...) is P{T}
-    for P in (Polynomial,  ImmutablePolynomial{5}, SparsePolynomial, LaurentPolynomial)
+    for P in (Polynomial,   SparsePolynomial, LaurentPolynomial)
         for  T in (Int32, Int64, BigInt)
             p₁ =  P{T}(Float64.(rand(1:3,5)))
             @test typeof(p₁) == P{T} # conversion works
             @test_throws InexactError  P{T}(rand(5))
         end
     end
+    for P in (ImmutablePolynomial,)
+        for  T in (Int32, Int64, BigInt)
+            N = 5
+            p₁ =  P{T}(Float64.(rand(1:3,5)))
+            @test typeof(p₁) == P{T,5} # conversion works
+            @test_throws InexactError  P{T}(rand(5))
+        end
+    end        
 
 end

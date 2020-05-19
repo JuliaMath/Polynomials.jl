@@ -239,11 +239,15 @@ function printexponent(io, var, i, mimetype::MIME)
     end
 end
 
-function unicode_exponent(io, var, j)
-    iszero(j) && return
-    print(io, var)
-    j ==1  && return
+function unicode_exponent(io, j)
     a = ("⁻","","","⁰","¹","²","³","⁴","⁵","⁶","⁷","⁸","⁹")
+    for i in string(j)
+        print(io, a[Int(i)-44])
+    end
+end
+
+function unicode_subscript(io, j)
+    a = ("₋","","","₀","₁","₂","₃","₄","₅","₆","₇","₈","₉")
     for i in string(j)
         print(io, a[Int(i)-44])
     end
