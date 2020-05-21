@@ -57,8 +57,35 @@ macro register(name)
 end
 
 
+macro registerN(name, params...)
+    poly = esc(name)
+    αs = tuple(esc.(params)...)
+    quote
+        Base.convert(::Type{P}, q::Q) where {$(αs...),T, P<:$poly{$(αs...),T}, Q <: $poly{$(αs...),T}} = q
+        Base.convert(::Type{$poly{$(αs...)}}, q::Q) where {$(αs...),T, Q <: $poly{$(αs...),T}} = q        
+        Base.promote(p::P, q::Q) where {$(αs...),T, P <:$poly{$(αs...),T}, Q <: $poly{$(αs...),T}} = p,q
+        Base.promote_rule(::Type{<:$poly{$(αs...),T}}, ::Type{<:$poly{$(αs...),S}}) where {$(αs...),T,S} =
+            $poly{$(αs...),promote_type(T, S)}
+        Base.promote_rule(::Type{<:$poly{$(αs...),T}}, ::Type{S}) where {$(αs...),T,S<:Number} = 
+            $poly{$(αs...),promote_type(T,S)}
+
+        function $poly{$(αs...),T}(x::AbstractVector{S}, var::SymbolLike = :x) where {$(αs...),T,S}
+            $poly{$(αs...),T}(T.(x), Symbol(var))
+        end
+        $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
+            $poly{$(αs...),T}(coeffs, Symbol(var))
+        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = n*one($poly{$(αs...),T}, Symbol(var))
+        $poly{$(αs...)}(n::Number, var::SymbolLike = :x) where {$(αs...)} = n*one($poly{$(αs...)}, Symbol(var))
+        $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T}, Symbol(var))
+        $poly{$(αs...)}(var::SymbolLike=:x) where {$(αs...)} = variable($poly{$(αs...)}, Symbol(var))
+    end
+end
+
+
+# deprecated. If desired,  replace with  @registerN  type  parameters... macro
 # Macros to register POLY{α, T} and POLY{α, β, T}
 macro register1(name)
+    @warn "@register1 is deprecated use @registerN"
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
@@ -82,6 +109,7 @@ end
 
 # Macro to register POLY{α, β, T}
 macro register2(name)
+    @warn "@register2  is deprecated use @registerN"
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p

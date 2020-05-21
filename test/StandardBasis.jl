@@ -286,6 +286,9 @@ end
         yy = Real[15.7696, 21.4851, 28.2463]
         fit(P, xx, yy, 2)
 
+        # issue #214 --  should error
+        @test_throws MethodError fit(Polynomial, rand(2,2), rand(2,2))
+
     end
 end
 
@@ -574,6 +577,8 @@ end
         @test coeffs(p2) ==ᵗ⁰ [1 + 1im, 2 + 3im]
         @test transpose(p) == p
         P != ImmutablePolynomial && @test transpose!(p) == p
+        @test adjoint(Polynomial(im)) == Polynomial(-im) # issue 215
+        @test conj(Polynomial(im)) == Polynomial(-im) # issue 215
         
         @test norm(P([1., 2.])) == norm([1., 2.])
         @test norm(P([1., 2.]), 1) == norm([1., 2.], 1)

@@ -90,8 +90,16 @@ fit(P::Type{<:AbstractPolynomial},
     y,
     deg::Integer = length(x) - 1;
     weights = nothing,
-    var = :x,) = fit(P, promote(collect(x), collect(y))..., deg; weights = weights, var = var)
+    var = :x,) = fit'(P, promote(collect(x), collect(y))..., deg; weights = weights, var = var)
 
+#  avoid issue  214
+fit′(P::Type{<:AbstractPolynomial}, x, y, args...;kwargs...) = throw(MethodError("x and y do not produce abstract   vectors"))
+fit′(P::Type{<:AbstractPolynomial},
+     x::AbstractVector{T},
+     y::AbstractVector{T},
+     args...; kwargs...) where {T} = fit(P,x,y,args...;  kwargs...)
+         
+         
 fit(x::AbstractVector,
     y::AbstractVector,
     deg::Integer = length(x) - 1;
@@ -249,7 +257,8 @@ LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2) = norm(coeffs(q), p)
 
 Returns the complex conjugate of the polynomial
 """
-LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = P(conj(coeffs(p)))
+LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = ⟒(P)(conj(coeffs(p)), p.var)
+LinearAlgebra.adjoint(p::P) where {P <: AbstractPolynomial} = ⟒(P)(adjoint.(coeffs(p)), p.var)
 LinearAlgebra.transpose(p::AbstractPolynomial) = p
 LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 
