@@ -230,6 +230,17 @@ end
         @test P([0.5]) + 2 == P([2.5])
         @test 2 - P([0.5]) == P([1.5])
 
+        # check ≈ for P matches usage for Vector{T} (possibly padded with trailing zeros)
+        @test (P([NaN]) ≈ P([NaN]))               == ([NaN] ≈ [NaN]) # false
+        @test (P([NaN]) ≈ NaN)                    == (false)
+        @test (P([Inf]) ≈ P([Inf]))               == ([Inf] ≈ [Inf]) # true
+        @test (P([Inf]) ≈ Inf)                    == (true)
+        @test (P([1,Inf]) ≈ P([0,Inf]))           == ([1,Inf] ≈ [0,Inf]) # false 
+        @test (P([1,NaN,Inf]) ≈ P([0,NaN, Inf]))  == ([1,NaN,Inf] ≈ [0,NaN, Inf]) #false  
+        @test (P([eps(), eps()]) ≈ P([0,0]))      == ([eps(), eps()] ≈ [0,0]) # false
+        @test (P([1,eps(), 1]) ≈ P([1,0,1]))      == ([1,eps(), 1] ≈ [1,0,1]) # true
+        @test (P([1,2]) ≈ P([1,2,eps()]))         == ([1,2,0] ≈ [1,2,eps()])
+
 
         # check how ==, ===, isapprox ignore variable mismatch when constants are involved, issue #217, issue #219
         @test zero(P, :x) == zero(P, :y)
