@@ -290,6 +290,9 @@ end
         @test_throws MethodError fit(Polynomial, rand(2,2), rand(2,2))
 
     end
+
+    # test default   (issue  #228)
+    fit(1:3,  rand(3))
 end
 
 @testset "Values" begin

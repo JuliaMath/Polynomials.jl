@@ -90,7 +90,7 @@ fit(P::Type{<:AbstractPolynomial},
     y,
     deg::Integer = length(x) - 1;
     weights = nothing,
-    var = :x,) = fit'(P, promote(collect(x), collect(y))..., deg; weights = weights, var = var)
+    var = :x,) = fit′(P, promote(collect(x), collect(y))..., deg; weights = weights, var = var)
 
 #  avoid issue  214
 fit′(P::Type{<:AbstractPolynomial}, x, y, args...;kwargs...) = throw(MethodError("x and y do not produce abstract   vectors"))
