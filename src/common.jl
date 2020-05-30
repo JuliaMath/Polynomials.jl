@@ -378,9 +378,9 @@ end
 Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 
 # getindex
-function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
+function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T}
     idx < 0 && throw(BoundsError(p, idx))
-    idx ≥ length(p) && return zero(T)
+    idx ≥ length(p) && return zero(eltype(T))
     return coeffs(p)[idx + 1]
 end
 Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
@@ -423,7 +423,7 @@ zero, one, variable, basis =#
 Returns a representation of 0 as the given polynomial.
 """
 Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(zeros(eltype(P), 1), var)
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
+Base.zero(p::P) where {P <: AbstractPolynomial} = 0*p
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
@@ -431,7 +431,7 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(ones(eltype(P),1), var)
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
+Base.one(p::P) where {P <: AbstractPolynomial} = ⟒(P)([one(p[0])], p.var)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
@@ -480,41 +480,42 @@ basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial}
 #=
 arithmetic =#
 Base.:-(p::P) where {P <: AbstractPolynomial} = P(-coeffs(p), p.var)
-Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
-Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
-Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
+Base.:+(c, p::AbstractPolynomial) = +(p, c)
+Base.:-(p::AbstractPolynomial, c) = +(p, -c)
+Base.:-(c, p::AbstractPolynomial) = +(-p, c)
 Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
-function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
-    T = promote_type(P, S)
-    return T(coeffs(p) .* c, p.var)
-end
-
-function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
-    R = promote_type(P, eltype(one(T) / one(S)))
-    return R(coeffs(p) ./ c, p.var)
-end
-
-Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
-
-function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
+# scalar Ops
+function Base.:+(p::AbstractPolynomial, n) 
     p1, p2 = promote(p, n)
     return p1 + p2
 end
 
-function Base.:+(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    p1, p2 = promote(p1, p2)
-    return p1 + p2
+function Base.:*(p::P, c::Number) where {P  <:  AbstractPolynomial}
+    return ⟒(P)(coeffs(p) .* c, p.var)
 end
 
-function Base.:*(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    p1, p2 = promote(p1, p2)
-    return p1 * p2
+function Base.:/(p::P, c::Number) where {P <: AbstractPolynomial}
+    return ⟒(P)(coeffs(p) ./ c, p.var)
 end
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
-function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+##  poly/poly
+#function Base.:+(p1::AbstractPolynomial, p2::AbstractPolynomial)
+#    p1, p2 = promote(p1, p2)
+#    return p1 + p2
+#end
+
+Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
+
+function Base.:*(p1::AbstractPolynomial, p2::AbstractPolynomial)
+    p1, p2 = promote(p1, p2)
+    return p1 * p2
+end
+
+
+function Base.divrem(num::AbstractPolynomial, den::AbstractPolynomial) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
     n, d = promote(num, den)
     return divrem(n, d)
 end

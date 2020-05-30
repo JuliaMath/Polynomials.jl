@@ -10,14 +10,18 @@ export printpoly
 hasneg(::Type{T}) where {T} = false
 
 "Could value possibly be negative and if so, is it?"
-isneg(pj::T) where {T} = hasneg(T) && pj < zero(T)
+isneg(pj::T) where {T  <: Number} = hasneg(T) && pj < zero(T)
+isneg(pj) =  false
 
 "Make `pj` positive if it is negative. (Don't call `abs` as that may not be defined, or appropriate.)"
 aspos(pj::T) where {T} = (hasneg(T) && isneg(pj)) ? -pj : pj
 
 "Should a value of `one(T)` be shown as a coefficient of monomial `x^i`, `i >= 1`? (`1.0x^2` is shown, `1 x^2` is not)"
-showone(::Type{T}) where {T} = true
+showone(::Type{T}) where {T <: Number} = true
+showone(::Type{T}) where {T} = false
 
+hasone(::Type{T})  where {T <: Number} = true
+hasone(::Type{T}) where  {T} = false
 
 #####
 
@@ -127,7 +131,7 @@ function printpoly(io::IO, p::P, mimetype=MIME"text/plain"(); descending_powers=
         first &= !printed
         printed_anything |= printed
     end
-    printed_anything || print(io, zero(T))
+    printed_anything || print(io, p[0])
     return nothing
 end
 
@@ -155,8 +159,8 @@ end
 
 ## print * or cdot, ...
 function printproductsign(io::IO, pj::T, j, mimetype) where {T}
-    j == 0 && return
-    (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
+    iszero(j) && return
+    (showone(T) ||  !isone(pj)) &&  print(io, showop(mimetype, "*"))
 end
 
 # show a single term
@@ -199,7 +203,7 @@ printcoefficient(io::IO, pj::Any, j, mimetype) = Base.show_unquoted(io, pj, 0, B
 
 # pretty print rational numbers in latex
 function printcoefficient(io::IO, a::Rational{T}, j, mimetype::MIME"text/latex") where {T}
-    abs(a.den) == one(T) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
+    isone(abs(a.den)) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
 end
 
 # print complex numbers with parentheses as needed
@@ -212,7 +216,7 @@ function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
         Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
     elseif hasreal
         a = real(pj)
-        (j==0 || showone(T) || a != one(T)) && printcoefficient(io, a, j, mimetype)
+        (iszero(j) || showone(T) || !isone(a)) && printcoefficient(io, a, j, mimetype)
     elseif hasimag
         b = imag(pj)
         (showone(T) || b != one(T)) && printcoefficient(io, b, j,  mimetype)

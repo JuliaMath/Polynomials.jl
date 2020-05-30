@@ -5,7 +5,7 @@ abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
-    if !(pj == one(T) && !(showone(T) || j == 0))
+    if !(isone(pj) && !(showone(T) || iszero(j)))
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)
@@ -38,7 +38,7 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
 end
 
 
-function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
+function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S}
     R = promote_type(T,S)
     as = R[c  for c in coeffs(p)]
     as[1] += c

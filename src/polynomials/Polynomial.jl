@@ -1,7 +1,7 @@
 export Polynomial
 
 """
-    Polynomial{T<:Number}(coeffs::AbstractVector{T}, var=:x)
+    Polynomial{T}(coeffs::AbstractVector{T}, var=:x)
 
 Construct a polynomial from its coefficients `a`, lowest order first, optionally in
 terms of the given variable `x`. `x` can be a character, symbol, or string.
@@ -29,12 +29,13 @@ Polynomial(1 + 2*s + 3*s^2)
 
 julia> one(Polynomial)
 Polynomial(1.0)
+
 ```
 """
-struct Polynomial{T <: Number} <: StandardBasisPolynomial{T}
+struct Polynomial{T} <: StandardBasisPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
-    function Polynomial{T}(coeffs::Vector{T}, var::Symbol) where {T <: Number}
+    function Polynomial{T}(coeffs::Vector{T}, var::Symbol) where {T}
         length(coeffs) == 0 && return new{T}(zeros(T, 1), var)
         last_nz = findlast(!iszero, coeffs)
         last = max(1, last_nz === nothing ? 0 : last_nz)
@@ -116,7 +117,7 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     if n > 0 && m > 0
         p1.var != p2.var && error("Polynomials must have same variable")
         R = promote_type(T, S)
-        c = zeros(R, m + n + 1)
+        c = _zeros(p1,p2, m + n + 1)
         for i in 0:n, j in 0:m
             @inbounds c[i + j + 1] += p1[i] * p2[j]
         end
