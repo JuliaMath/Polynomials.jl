@@ -106,6 +106,7 @@ function _evalpoly(z::Complex, p)
     muladd(ai, z, b)
 end
 
+## Avoid type piracy
 ## modify muladd, as needed
 _muladd(a,b,c) = muladd(a,b,c)
 _muladd(a::Vector, b, c) = a.*b .+ c
@@ -117,22 +118,8 @@ _one(P::Type{<:Matrix}) = one(eltype(P))*I
 _one(x::Matrix) = one(eltype(x))*I
 _one(x) = one(x)
 
-
-#  Type piracy
-_one(x::Vector) = NaN
-_one(::Type{P}) where {P <: Vector} = NaN
-
-# match shape
-function _zeros(p1, n)
-    [0*p1[0] for  _ in  1:n]
-end
-
-function _zeros(p1,p2, n)
-    [0*p1[0] .+ 0*p2[0] for _ in 1:n]
-end
-
-# _zero(p::AbstractPolynomial) = 0*p[0]
-# _zero(p::T) where  {T} = zero(T)
+_isone(x) = isone(x)
+_isone(x::Vector) = false
 
 ## get type of parametric composite type without type parameters
 ## this is needed when the underlying type changes, e.g. with integration

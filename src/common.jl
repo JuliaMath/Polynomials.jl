@@ -153,7 +153,7 @@ vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 Returns the indefinite integral of the polynomial with constant `C`.
 """
-integrate(p::AbstractPolynomial, C::Number = 0) = integrate(p, C)
+integrate(p::AbstractPolynomial, C = 0) = integrate(p, C)
 
 """
     integrate(::AbstractPolynomial, a, b)
@@ -322,9 +322,10 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0
 
 
 
-
-hasnan(p::AbstractPolynomial) = any(isnan.(coeffs(p)))
-
+hasnan(x::AbstractFloat)  =  isnan(x)
+hasnan(x::Number)  = false
+hasnan(x::AbstractArray) = any(hasnan.(x))
+hasnan(p::AbstractPolynomial) = any(hasnan(c) for c  in coeffs(p))
 """
     domain(::Type{<:AbstractPolynomial})
 
@@ -388,7 +389,7 @@ Base.getindex(p::AbstractPolynomial, indices) = [getindex(p, i) for i in indices
 Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 
 # setindex
-function Base.setindex!(p::AbstractPolynomial, value::Number, idx::Int)
+function Base.setindex!(p::AbstractPolynomial, value, idx::Int)
     n = length(coeffs(p))
     if n ≤ idx
         resize!(p.coeffs, idx + 1)

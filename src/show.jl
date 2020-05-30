@@ -160,7 +160,7 @@ end
 ## print * or cdot, ...
 function printproductsign(io::IO, pj::T, j, mimetype) where {T}
     iszero(j) && return
-    (showone(T) ||  !isone(pj)) &&  print(io, showop(mimetype, "*"))
+    (showone(T) ||  !_isone(pj)) &&  print(io, showop(mimetype, "*"))
 end
 
 # show a single term
@@ -203,7 +203,7 @@ printcoefficient(io::IO, pj::Any, j, mimetype) = Base.show_unquoted(io, pj, 0, B
 
 # pretty print rational numbers in latex
 function printcoefficient(io::IO, a::Rational{T}, j, mimetype::MIME"text/latex") where {T}
-    isone(abs(a.den)) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
+    _isone(abs(a.den)) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
 end
 
 # print complex numbers with parentheses as needed
@@ -216,7 +216,7 @@ function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
         Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
     elseif hasreal
         a = real(pj)
-        (iszero(j) || showone(T) || !isone(a)) && printcoefficient(io, a, j, mimetype)
+        (iszero(j) || showone(T) || !_isone(a)) && printcoefficient(io, a, j, mimetype)
     elseif hasimag
         b = imag(pj)
         (showone(T) || b != one(T)) && printcoefficient(io, b, j,  mimetype)

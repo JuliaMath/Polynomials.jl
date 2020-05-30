@@ -116,8 +116,9 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     n, m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
     if n > 0 && m > 0
         p1.var != p2.var && error("Polynomials must have same variable")
-        R = promote_type(T, S)
-        c = _zeros(p1,p2, m + n + 1)
+        #R = promote_type(T, S)
+        #c = zeros(R, m+n+1)
+        c = [0*p1[0]*p2[0]  for _  in  1:m+n+1] 
         for i in 0:n, j in 0:m
             @inbounds c[i + j + 1] += p1[i] * p2[j]
         end

@@ -5,7 +5,7 @@ abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
-    if !(isone(pj) && !(showone(T) || iszero(j)))
+    if !(_isone(pj) && !(showone(T) || iszero(j)))
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)
@@ -18,15 +18,23 @@ evalpoly(x, p::StandardBasisPolynomial) = p(x)
 
 domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
-
 ## generic test if polynomial `p` is a constant
 isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 
 Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
 
 variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = P([0, 1], var)
+variable(p::P) where {P  <: StandardBasisPolynomial} = ⟒(P)([zero(p[0]), one(p[0])])
 
-function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
+function  basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:StandardBasisPolynomial}
+    cs  = [zero(p[0]) for _ in 0:k]
+    cs[end] = one(p[0])
+    P(cs, var)
+end
+
+function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T}
+    x = variable(⟒(P)([one(first(r))], var))
+    return prod(x - rᵢ for rᵢ in r)
     n = length(r)
     c = zeros(T, n + 1)
     c[1] = one(T)
@@ -45,6 +53,11 @@ function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S}
     ⟒(P)(as, p.var)
 end
 
+# ambiguity
+Base.:+(p::StandardBasisPolynomial, q::AbstractPolynomial) = +(promote(p,q)...)
+Base.:+(p::AbstractPolynomial, q::StandardBasisPolynomial) = +(promote(p,q)...)
+Base.:+(p::P, q::Q)  where  {P  <: StandardBasisPolynomial, Q <: StandardBasisPolynomial} = +(promote(p,q)...)
+
 
 function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolynomial{T}}
     order < 0 && error("Order of derivative must be non-negative")
@@ -52,14 +65,14 @@ function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolyno
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
-    R = eltype(one(T)*1) 
+    R = eltype(0*p[0]) 
     order == 0 && return p
     hasnan(p) && return ⟒(P){R}(R[NaN], p.var)
-    order > length(p) && return zero(⟒(P){R},p.var)
+    order >= length(p) && return zero(p) * 1 #zero(⟒(P){R},p.var)
     d = degree(p)
-    d <= 0 && return zero(⟒(P){R},p.var)
+    d <= 0 && return zero(p)*1 #zero(⟒(P){R},p.var)
     n = d + 1
-    a2 = Vector{R}(undef, n - order)
+    a2 = [0*p[0] for  _ in 1:n-order] #Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
     end
@@ -67,14 +80,14 @@ function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolyno
 end
 
 
-function integrate(p::P, k::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
+function integrate(p::P, k::S=0*p[0]) where {T, P <: StandardBasisPolynomial{T}, S}
 
-    R = eltype((one(T)+one(S))/1)
-    if hasnan(p) || isnan(k)
+    #R = eltype((one(T)+one(S))/1)
+    if hasnan(p) || hasnan(k)
         return ⟒(P)([NaN])
     end
     n = length(p)
-    a2 = Vector{R}(undef, n + 1)
+    a2 = [0*p[0] for  _ in 1:n+1] #Vector{R}(undef, n + 1)
     a2[1] = k
     @inbounds for i in 1:n
         a2[i + 1] = p[i - 1] / i
