@@ -130,3 +130,9 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     end
 
 end
+
+function fromroots(p::Type{P}, r::AbstractVector{T}; var::SymbolLike = :x) where {T, P  <: Polynomial}
+    isempty(r)  && return ⟒(P)([one(T)], var)
+    x = variable(⟒(P)([one(first(r))], var))
+    return prod(x - rᵢ for rᵢ in r)
+end

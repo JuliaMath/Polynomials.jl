@@ -29,20 +29,21 @@ variable(p::P) where {P  <: StandardBasisPolynomial} = ⟒(P)([zero(p[0]), one(p
 function  basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:StandardBasisPolynomial}
     cs  = [zero(p[0]) for _ in 0:k]
     cs[end] = one(p[0])
-    P(cs, var)
+    ⟒(P)(cs, var)
 end
 
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T}
-    x = variable(⟒(P)([one(first(r))], var))
-    return prod(x - rᵢ for rᵢ in r)
     n = length(r)
+    iszero(n)  && return ⟒(P)([one(T)], var)
+    
+    
     c = zeros(T, n + 1)
     c[1] = one(T)
     for j in 1:n, i in j:-1:1
         c[(i + 1)] = c[(i + 1)] - r[j] * c[i]
     end
     #return P(c, var)
-    return P(reverse(c), var)
+    return ⟒(P)(reverse(c), var)
 end
 
 
@@ -87,7 +88,7 @@ function integrate(p::P, k::S=0*p[0]) where {T, P <: StandardBasisPolynomial{T},
         return ⟒(P)([NaN])
     end
     n = length(p)
-    a2 = [0*p[0] for  _ in 1:n+1] #Vector{R}(undef, n + 1)
+    a2 = [0*p[0]/1 for  _ in 1:n+1] #Vector{R}(undef, n + 1)
     a2[1] = k
     @inbounds for i in 1:n
         a2[i + 1] = p[i - 1] / i

@@ -399,15 +399,15 @@ function Base.setindex!(p::AbstractPolynomial, value, idx::Int)
     return p
 end
 
-Base.setindex!(p::AbstractPolynomial, value::Number, idx::Number) =
+Base.setindex!(p::AbstractPolynomial, value, idx::Number) =
     setindex!(p, value, convert(Int, idx))
-Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
+Base.setindex!(p::AbstractPolynomial, value, indices) =
     [setindex!(p, value, i) for i in indices]
-Base.setindex!(p::AbstractPolynomial, values, indices) =
+Base.setindex!(p::AbstractPolynomial, values::Union{Tuple,AbstractArray}, indices) =
     [setindex!(p, v, i) for (v, i) in zip(values, indices)]
-Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) =
+Base.setindex!(p::AbstractPolynomial, value, ::Colon) =
     setindex!(p, value, eachindex(p))
-Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
+Base.setindex!(p::AbstractPolynomial, values::Union{Tuple,AbstractArray}, ::Colon) =
     [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
 
 #=
