@@ -299,7 +299,7 @@ function Base.iszero(p::AbstractPolynomial)
     if length(p) == 0
         return true
     end
-    return all(iszero.(coeffs(p))) && p[0] == 0
+    return all(iszero.(coeffs(p))) && p[0] == 0*p[0]
 end
 
 """
@@ -654,7 +654,7 @@ function LinearAlgebra.lmul!(cs::Dict{Int,T}, c::S) where {T,S}
 end
 
 #  Traits to determine if p+c or  p*c  can be defined
-canadd(c::T, ::Type{P})  where {T, P} = Val(Base.promote_op(+, Int, Vector{Int}) == Union{})
+canadd(c::T, ::Type{P})  where {T, P} = Val(Base.promote_op(+, T, P) == Union{})
 canadd(c::T, ::Type{P})  where {T<:Number, S<:Number, P<:AbstractPolynomial{S}} = Val(false)
 canadd(c::T, ::Type{P})  where {T<:Number, P<:AbstractPolynomial{T}} = Val(false)
 

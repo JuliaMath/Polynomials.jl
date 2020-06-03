@@ -42,7 +42,7 @@ julia> p(1)
 struct SparsePolynomial{T <: Number} <: StandardBasisPolynomial{T}
     coeffs::Dict{Int, T}
     var::Symbol
-    function SparsePolynomial{T}(coeffs::Dict{Int, T}, var::Symbol) where {T <: Number}
+    function SparsePolynomial{T}(coeffs::Dict{Int, T}, var::Symbol) where {T}
 
         for (k,v)  in coeffs
             iszero(v) && pop!(coeffs,  k)
@@ -51,7 +51,7 @@ struct SparsePolynomial{T <: Number} <: StandardBasisPolynomial{T}
         new{T}(coeffs, var)
         
     end
-    function SparsePolynomial{T}(coeffs::AbstractVector{T}, var::Symbol) where {T <: Number}
+    function SparsePolynomial{T}(coeffs::AbstractVector{T}, var::Symbol) where {T}
 
         D = Dict{Int,T}()
         for (i,val) in enumerate(coeffs)
@@ -67,11 +67,11 @@ end
 
 @register SparsePolynomial
 
-function SparsePolynomial(coeffs::Dict{Int, T}, var::SymbolLike=:x) where {T <: Number}
+function SparsePolynomial(coeffs::Dict{Int, T}, var::SymbolLike=:x) where {T}
     SparsePolynomial{T}(coeffs, Symbol(var))
 end
 function SparsePolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
-    SparsePolynomial{T}(coeffs, Symbol(var))
+     SparsePolynomial{T}(coeffs, Symbol(var))
 end
 
 # Interface through `Polynomial`. As with ImmutablePolynomial, this may not be  good idea...
@@ -113,7 +113,7 @@ function  coeffs(p::SparsePolynomial{T})  where {T}
 end
 
 # get/set index
-function Base.getindex(p::SparsePolynomial{T}, idx::Int) where {T <: Number}
+function Base.getindex(p::SparsePolynomial{T}, idx::Int) where {T}
     get(p.coeffs, idx, zero(T))
 end
 
@@ -183,54 +183,6 @@ function (p::SparsePolynomial{T})(x::S) where {T,S}
 end
 
 
-   
-# function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
-
-#     isconstant(p1) && return p2 + p1[0]
-#     isconstant(p2) && return p1 + p2[0]
-
-#     p1.var != p2.var && error("SparsePolynomials must have same variable")
-
-#     R = promote_type(T,S)
-#     P = SparsePolynomial
-
-#     p = zero(P{R}, p1.var)
-
-#     # this allocates in the union
-# #    for i in union(eachindex(p1), eachindex(p2)) 
-# #        p[i] = p1[i] + p2[i]
-# #    end
-
-#     # this seems faster
-#     for i in eachindex(p1)
-#         p[i] = p1[i] + p2[i]
-#     end
-#     for i in eachindex(p2)
-#         if iszero(p[i])
-#             @inbounds p[i] = p1[i] + p2[i]
-#         end
-#     end
-    
-
-#     return  p
-
-# end
-
-# function Base.:+(p::SparsePolynomial{T}, c::S) where {T, S <: Number}
-
-#     R = promote_type(T,S)
-#     P = SparsePolynomial
-    
-#     q = zero(P{R}, p.var)
-#     for k in eachindex(p)
-#         @inbounds
-
-#q[k] = R(p[k])
-#     end
-#     q[0] = q[0] + c
-
-#     return q
-# end
 
 function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
 
@@ -240,8 +192,9 @@ function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
 
     R = promote_type(T,S)
     P = SparsePolynomial
-    
-    p  = zero(P{R},  p1.var)
+
+    d = Dict{Int,R}()
+    p = P(d, p1.var)
     for i in eachindex(p1)
         p1ᵢ = p1[i]
         for j in eachindex(p2)
@@ -252,19 +205,6 @@ function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
     return p
     
 end
-
-
-# function Base.:*(p::P, c::S) where {T, P <: SparsePolynomial{T}, S <: Number}
-
-#     R = promote_type(T,S)
-#     q  = zero(⟒(P){R},  p.var)
-#     for k in eachindex(p)
-#         q[k] = p[k] * c
-#     end
-    
-#     return q
-# end
-
 
 
 function derivative(p::SparsePolynomial{T}, order::Integer = 1) where {T}
@@ -289,7 +229,7 @@ function derivative(p::SparsePolynomial{T}, order::Integer = 1) where {T}
 end
 
 
-function integrate(p::SparsePolynomial{T}, k::S) where {T, S<:Number}
+function integrate(p::SparsePolynomial{T}, k::S) where {T, S}
     
     R = eltype((one(T)+one(S))/1)
     P = SparsePolynomial

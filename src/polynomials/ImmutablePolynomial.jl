@@ -115,6 +115,7 @@ LinearAlgebra.norm(q::ImmutablePolynomial{T}, p::Real = 2) where {T} = degree(q)
 #  zero, one, variable
 function Base.zero(P::Type{<:ImmutablePolynomial},var::SymbolLike=:x)
     R = eltype(P)
+    zeros(R,1)  # can't have  zero if  can't construct zero(R)
     ImmutablePolynomial{R,0}(NTuple{0,R}(),var)
 end
 
@@ -133,7 +134,8 @@ degree(p::ImmutablePolynomial{T,N}) where {T,N} = N - 1
 isconstant(p::ImmutablePolynomial{T,N}) where {T,N}  = N <= 1
 
 function Base.getindex(p::ImmutablePolynomial{T,N}, idx::Int) where {T,N}
-    (idx <  0 || idx > N-1) && return zero(T)
+    N ==  0 && return  0
+    (idx <  0 || idx > N-1) && return 0*p.coeffs[1]
     return p.coeffs[idx + 1]
 end
 
@@ -308,33 +310,33 @@ end
 
 # scalar ops; override for performance
 function ⊕(scalar::Val{true}, p::P, c::S) where {T, N, P  <: ImmutablePolynomial{T,N}, S}  
-    R = promote_type(T,S)
-    iszero(c) && return ImmutablePolynomial{R,N}(R.(p.coeffs), p.var)
-    N == 0 && return ImmutablePolynomial{R,1}((R(c),), p.var)
-    N == 1 && return ImmutablePolynomial(R[p[0]+c])
-    return p + ImmutablePolynomial{R,1}(R[c],p.var)
+    iszero(c) && return p + c*zero(p) 
+    N == 0 && return ImmutablePolynomial([c], p.var)
+    N == 1 && return ImmutablePolynomial([p[0]+c],  p.var)
+    cs = coeffs(p)
+    R = typeof(cs[1] + c)
 
-    qs = _add_c(coeffs(p),c)
-    ImmutablePolynomial{R,N}(qs,  p.var)
+    return ImmutablePolynomial{R,N}(NTuple{N,R}(isone(i) ? cs[i]  + c  : cs[i]  for i in 1:N),  p.var)
 end
 
 function ⊗(scalar::Val{true}, p::P, c::S) where {T,N, P  <: ImmutablePolynomial{T,N}, S}  
     R = promote_type(T,S)
     (iszero(N) || iszero(c)) && return zero(ImmutablePolynomial{R,1}, p.var)
-    #qs = _mul_c(coeffs(p),c,Val(:right))
-    ImmutablePolynomial{R,N}(p.coeffs .* c,  p.var)
+    ImmutablePolynomial{R,N}(p.coeffs .* Ref(c),  p.var)
 end
 function ⊗(scalar::Val{true},  c::S, p::P) where {T,N, P  <: ImmutablePolynomial{T,N}, S}  
     R = promote_type(T,S)
     (iszero(N) || iszero(c)) && return zero(ImmutablePolynomial{R,1}, p.var)
     #qs = _mul_c(coeffs(p),c,Val(:left))
-    ImmutablePolynomial{R,N}(c .* p.coeffs,  p.var)
+    ImmutablePolynomial{R,N}(Ref(c) .* p.coeffs,  p.var)
 end
 
 function Base.:/(p::ImmutablePolynomial{T,N}, c::S) where {T,N,S}
-    R = eltype(one(T)/one(S))
-    isinf(c)  && return zero(ImmutablePolynomial{R})
-    ImmutablePolynomial{R,N}(p.coeffs ./ c, p.var)
+    isinf(c)  && return (0/c) *  p
+    cs = p.coeffs ./ c
+    R =  eltype(cs)
+    
+    ImmutablePolynomial{R,N}(cs, p.var)
 end
 
 

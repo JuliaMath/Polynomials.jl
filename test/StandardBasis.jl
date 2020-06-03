@@ -801,3 +801,133 @@ end
     end        
 
 end
+
+@testset "General  T" begin
+
+    
+    
+    for  P in (Polynomial, ImmutablePolynomial) # only these two work
+        # T = Vector
+        xs = [[1,2], [2,3], [3,4]]
+        p, q, s, c = P(xs), P(xs[1:2]), xs[1], 1
+            
+        P == ImmutablePolynomial &&  (@test_broken p ≈ p)
+
+
+        @test_throws Exception p + c
+        @test p + s == s + p
+        @test_throws Exception p + float(c)
+        @test p + float.(s)  == float.(s) + p
+        
+        @test_throws  Exception  p  - c
+        @test p - s == p + (-s)
+        
+        @test p*c == c*p
+        @test_throws Exception  p*s
+        
+        @test p/c == P(xs ./ c)
+        @test_throws  Exception p/s
+
+        @test p + q == q + p
+        @test_throws Exception  p*q
+        @test_throws Exception  p^2
+
+        if P == ImmutablePolynomial # zero(p::ImmutablePolynomial{T}) requires zero(T)  to be defined
+            @test_throws Exception iszero(zero(p))
+        else
+            @test iszero(zero(p))
+        end
+        @test_throws Exception one(p) ## no one(T)
+        @test_throws Exception variable(p)
+        @test_throws Exception Polynomials.basis(p, 2)
+        
+        @test_throws Exception zero(typeof(p)) ## no size in T
+        @test_throws Exception one(typeof(p))
+        @test_throws Exception variable(typeof(p))
+        @test_throws Exception Polynomials.basis(typeof(p), 2)
+
+        @test derivative(integrate(p)) ==  p
+        @test integrate(p, 0, 1) == integrate(p)(1) - integrate(p)(0)
+
+
+        # T = Matrix
+        xs =  [[1 2;3 4], [2 3; 3 4], [3 4; 4 5]]
+        p, q, s, c = P(xs), P(xs[1:2]), xs[1], 1
+            
+        @test_throws Exception p + c
+        @test p + s == s + p
+        @test_throws Exception p + float(c)
+        @test p + float.(s)  == float.(s) + p
+        
+        @test_throws  Exception  p  - c
+        @test p - s == p + (-s)
+        
+        @test p*c == c*p
+        @test !iszero(p*s - s*p)
+        
+        @test p/c == P(xs ./ c)
+        @test_throws  Exception p/s
+
+        @test p + q == q + p
+        @test !iszero(p*q-q*p)
+        @test p^2 == p * p
+
+        if P == ImmutablePolynomial
+            @test_throws Exception iszero(zero(p))
+        else
+            @test iszero(zero(p))
+        end
+        @test one(p) == P([[1 0;0 1]])
+        @test variable(p) ==  P([[0 0;0 0], [1 0;0 1]])
+        @test Polynomials.basis(p, 2) == P([[0 0;0 0],[0 0;0 0], [1 0;0 1]])
+        
+        @test_throws Exception zero(typeof(p)) ## no size in T
+        @test_throws Exception one(typeof(p))
+        @test_throws Exception variable(typeof(p))
+        @test_throws Exception Polynomials.basis(typeof(p), 2)
+
+        @test derivative(integrate(p)) ==  p
+        @test integrate(p, 0, 1) == integrate(p)(1) - integrate(p)(0)
+
+
+
+        # T = Polynomial(:y)
+        xs = [Polynomials.basis(Polynomial, i, :y) for  i in 1:3]
+        p, q, s, c = P(xs), P(xs[1:2]), xs[1], 1
+            
+        @test p + c ==  c +  p
+        @test_throws Exception p + s
+        @test p + float(c) == float(c) + p
+        @test_throws Exception p + float.(s)
+        
+        @test p - c == p + (-c)
+        @test_throws  Exception  p  - s
+        
+        @test p*c == c*p
+        @test_throws Exception p*s
+        
+        @test p/c == P(xs ./ c)
+        @test_throws  Exception p/s
+
+        @test p + q == q + p
+        @test p*q  ==  q*p
+        @test p^2 == p * p
+        
+        @test iszero(zero(p))
+        @test isone(one(p))
+        @test variable(p) ==  P([zero(Polynomial{Int},:y),one(Polynomial{Int},:y)])
+        @test Polynomials.basis(p, 2) == P([zero(Polynomial{Int},:y), zero(Polynomial{Int},:y),one(Polynomial{Int},:y)])
+
+        @test iszero(zero(typeof(p)))
+        @test isone(one(typeof(p)))
+        @test variable(typeof(p)) ==  P([zero(Polynomial{Int},:y),one(Polynomial{Int},:y)])
+        @test Polynomials.basis(typeof(p), 2) == P([zero(Polynomial{Int},:y), zero(Polynomial{Int},:y),one(Polynomial{Int},:y)])
+
+        @test derivative(integrate(p)) ==  p
+        @test integrate(p, 0, 1) == integrate(p)(1) - integrate(p)(0)
+        
+    end
+        
+
+    
+end

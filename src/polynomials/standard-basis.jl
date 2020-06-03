@@ -1,12 +1,19 @@
 abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
+# Integrate in  some  different types
+# Allow P{Array{T,N}) to have p  +  s defined
+canadd(c::P, ::Type{Q}) where {T,N, P <: AbstractArray{T,N}, S, R<:AbstractArray{S,N}, Q<:Polynomials.StandardBasisPolynomial{R}} = Val(true)
+#  allow P{Matrix{T}} to  have s*p  or p*s   defined
+isscalar(c::P, ::Type{Q}) where {P <: Matrix, T<:Matrix, Q<:Polynomials.StandardBasisPolynomial{T}} = Val(true)
+
+
+
+
 
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
-    if !(pj == one(T) && !(showone(T) || j == 0))
-    #if !(!(showone(T) || j == 0) && pj == one(T))
-    #if (showone(T) || j == 0) || !isone(pj)
+    if (showone(T) || j == 0) || !isone(pj)
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)
