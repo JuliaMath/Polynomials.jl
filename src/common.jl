@@ -589,14 +589,12 @@ end
 
 # work with coeffs container; 
 function rmul(cs::AbstractVector{T}, c::S) where {T,S}
-    R = promote_type(T,S)
-    qs  =  R[cᵢ*c  for cᵢ in cs]
+    qs = Ref(c) .* cs
     qs
 end
 
 function lmul(cs::AbstractVector{T}, c::S) where {T,S}
-    R = promote_type(T,S)
-    qs  =  R[c*cᵢ  for cᵢ in cs]
+    qs = cs .* Ref(c)
     qs
 end
 
@@ -656,7 +654,7 @@ function LinearAlgebra.lmul!(cs::Dict{Int,T}, c::S) where {T,S}
 end
 
 #  Traits to determine if p+c or  p*c  can be defined
-canadd(c::T, ::Type{P})  where {T, P} = Base.promote_op(+, Int, Vector{Int}) == Union{}
+canadd(c::T, ::Type{P})  where {T, P} = Val(Base.promote_op(+, Int, Vector{Int}) == Union{})
 canadd(c::T, ::Type{P})  where {T<:Number, S<:Number, P<:AbstractPolynomial{S}} = Val(false)
 canadd(c::T, ::Type{P})  where {T<:Number, P<:AbstractPolynomial{T}} = Val(false)
 
@@ -715,7 +713,7 @@ Base.:-(p::P, q::Q) where  {P <: AbstractPolynomial,Q <: AbstractPolynomial} = p
 Base.:/(p::P, c) where {P <: AbstractPolynomial} = ⊗(isscalar(c,P), p, 1/c)
 
 # binary *
-Base.:*(c,  p::P) where {P <: AbstractPolynomial} = ⊗(isscalar(c,P), p, c)
+Base.:*(c,  p::P) where {P <: AbstractPolynomial} = ⊗(isscalar(c,P), c, p)
 Base.:*(p::P, c) where {P <: AbstractPolynomial} = ⊗(isscalar(c,P), p, c)
 Base.:*(p::P, q::Q) where {P <: AbstractPolynomial,Q <: AbstractPolynomial} = ⊗(Val(false),   p,q)
 function ⊗(scalar::Val{true}, p::P, c)  where  {P <: AbstractPolynomial}

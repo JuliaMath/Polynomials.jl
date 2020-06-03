@@ -31,10 +31,10 @@ julia> one(Polynomial)
 Polynomial(1.0)
 ```
 """
-struct Polynomial{T <: Number} <: StandardBasisPolynomial{T}
+struct Polynomial{T} <: StandardBasisPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
-    function Polynomial{T}(coeffs::Vector{T}, var::Symbol) where {T <: Number}
+    function Polynomial{T}(coeffs::Vector{T}, var::Symbol) where {T}
         length(coeffs) == 0 && return new{T}(zeros(T, 1), var)
         last_nz = findlast(!iszero, coeffs)
         last = max(1, last_nz === nothing ? 0 : last_nz)
@@ -80,34 +80,34 @@ julia> p.(0:3)
 (p::Polynomial{T})(x::S) where {T,S} = evalpoly(x, coeffs(p))
 
 
-   
-# function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
-#     n1, n2 = length(p1), length(p2)
-#     R = promote_type(T,S)
-#     if n1 > 1 && n2 > 1
-#        p1.var != p2.var && error("Polynomials must have same variable")
-#        if n1 >= n2
-#           c = R.(copy(p1.coeffs))
-#           for i = 1:n2
-#             c[i] += p2.coeffs[i]
-#           end
-#         else
-#             c = R.(copy(p2.coeffs))
-#             for i = 1:n1
-#               c[i] += p1.coeffs[i]
-#             end
-#         end
-#         return Polynomial(c, p1.var)
-#     elseif n1 <= 1
-#        c = R.(copy(p2.coeffs))
-#        c[1] += p1[0]
-#        return Polynomial(c, p2.var)
-#     else 
-#        c = R.(copy(p1.coeffs))
-#        c[1] += p2[0]
-#        return Polynomial(c, p1.var)
-#     end
-# end
+# Provides a factor of 2 speedup over that in common.jl
+function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
+    n1, n2 = length(p1), length(p2)
+    R = promote_type(T,S)
+    if n1 > 1 && n2 > 1
+       p1.var != p2.var && error("Polynomials must have same variable")
+       if n1 >= n2
+          c = R.(copy(p1.coeffs))
+          for i = 1:n2
+            c[i] += p2.coeffs[i]
+          end
+        else
+            c = R.(copy(p2.coeffs))
+            for i = 1:n1
+              c[i] += p1.coeffs[i]
+            end
+        end
+        return Polynomial(c, p1.var)
+    elseif n1 <= 1
+       c = R.(copy(p2.coeffs))
+       c[1] += p1[0]
+       return Polynomial(c, p2.var)
+    else 
+       c = R.(copy(p1.coeffs))
+       c[1] += p2[0]
+       return Polynomial(c, p1.var)
+    end
+end
 
 
 function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
@@ -115,8 +115,9 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     n, m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
     if n > 0 && m > 0
         p1.var != p2.var && error("Polynomials must have same variable")
-        R = promote_type(T, S)
-        c = zeros(R, m + n + 1)
+        #R = promote_type(T, S)
+        #c = zeros(R, m + n + 1)
+        c = [0*p1[0] + 0*p2[0] for  _  in 1:m+n+1]
         for i in 0:n, j in 0:m
             @inbounds c[i + j + 1] += p1[i] * p2[j]
         end

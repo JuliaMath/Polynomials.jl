@@ -46,7 +46,7 @@ macro register(name)
             $poly{promote_type(T, S)}
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =
             $poly{T}(coeffs, Symbol(var))
-        $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S<:Number} =
+        $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S} =
             $poly(T.(x), Symbol(var))
         $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
             $poly(T[n], Symbol(var))
@@ -120,7 +120,7 @@ macro register2(name)
             $poly{α,β,promote_type(T, S)}
         $poly{α,β}(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {α,β,T} =
             $poly{α,β,T}(coeffs, Symbol(var))
-        $poly{α,β,T}(x::AbstractVector{S}, var::SymbolLike = :x) where {α,β,T,S<:Number} = $poly{α,β,T}(T.(x), var)
+        $poly{α,β,T}(x::AbstractVector{S}, var::SymbolLike = :x) where {α,β,T,S} = $poly{α,β,T}(T.(x), var)
         $poly{α,β,T}(n::Number, var::SymbolLike = :x) where {α,β,T} = n*one($poly{α,β,T}, Symbol(var))
         $poly{α,β}(n::Number, va::SymbolLiker = :x) where {α,β} = n*one($poly{α,β}, Symbol(var))
         $poly{α,β,T}(var::SymbolLike=:x) where {α,β, T} = variable($poly{α,β,T}, Symbol(var))

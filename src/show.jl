@@ -155,8 +155,8 @@ end
 
 ## print * or cdot, ...
 function printproductsign(io::IO, pj::T, j, mimetype) where {T}
-    j == 0 && return
-    (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
+    iszero(j) && return
+    (showone(T) || !isone(pj)) &&  print(io, showop(mimetype, "*"))
 end
 
 # show a single term

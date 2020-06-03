@@ -4,7 +4,9 @@ abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
-    if (showone(T) || j == 0) || !isone(pj)
+    if !(pj == one(T) && !(showone(T) || j == 0))
+    #if !(!(showone(T) || j == 0) && pj == one(T))
+    #if (showone(T) || j == 0) || !isone(pj)
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)
@@ -25,6 +27,7 @@ isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
 
 variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = P([0, 1], var)
+variable(p::P,  var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = basis(p,1, var)
 
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
