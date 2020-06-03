@@ -37,9 +37,8 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
     return P(reverse(c), var)
 end
 
-
+canadd(c::T, ::Type{P})  where {T<:Number, P<:StandardBasisPolynomial{T}} = Val(true)
 canadd(c::T, ::Type{P})  where {T<:Number, S<:Number, P<:StandardBasisPolynomial{S}} = Val(true)
-canadd(c::T, ::Type{P})  where {T<:Number, P<:StandardBasisPolynomial{T}} = Val(false)
 
 function ⊕(scalar::Val{true}, p::P, c) where {T, P  <: StandardBasisPolynomial{T}}  
     qs = _add_c(coeffs(p),c)
