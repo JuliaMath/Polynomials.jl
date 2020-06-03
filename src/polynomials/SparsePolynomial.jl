@@ -184,51 +184,53 @@ end
 
 
    
-function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
+# function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
 
-    isconstant(p1) && return p2 + p1[0]
-    isconstant(p2) && return p1 + p2[0]
+#     isconstant(p1) && return p2 + p1[0]
+#     isconstant(p2) && return p1 + p2[0]
 
-    p1.var != p2.var && error("SparsePolynomials must have same variable")
+#     p1.var != p2.var && error("SparsePolynomials must have same variable")
 
-    R = promote_type(T,S)
-    P = SparsePolynomial
+#     R = promote_type(T,S)
+#     P = SparsePolynomial
 
-    p = zero(P{R}, p1.var)
+#     p = zero(P{R}, p1.var)
 
-    # this allocates in the union
-#    for i in union(eachindex(p1), eachindex(p2)) 
-#        p[i] = p1[i] + p2[i]
-#    end
+#     # this allocates in the union
+# #    for i in union(eachindex(p1), eachindex(p2)) 
+# #        p[i] = p1[i] + p2[i]
+# #    end
 
-    # this seems faster
-    for i in eachindex(p1)
-        p[i] = p1[i] + p2[i]
-    end
-    for i in eachindex(p2)
-        if iszero(p[i])
-            @inbounds p[i] = p1[i] + p2[i]
-        end
-    end
+#     # this seems faster
+#     for i in eachindex(p1)
+#         p[i] = p1[i] + p2[i]
+#     end
+#     for i in eachindex(p2)
+#         if iszero(p[i])
+#             @inbounds p[i] = p1[i] + p2[i]
+#         end
+#     end
     
 
-    return  p
+#     return  p
 
-end
+# end
 
-function Base.:+(p::SparsePolynomial{T}, c::S) where {T, S <: Number}
+# function Base.:+(p::SparsePolynomial{T}, c::S) where {T, S <: Number}
 
-    R = promote_type(T,S)
-    P = SparsePolynomial
+#     R = promote_type(T,S)
+#     P = SparsePolynomial
     
-    q = zero(P{R}, p.var)
-    for k in eachindex(p)
-        @inbounds q[k] = R(p[k])
-    end
-    q[0] = q[0] + c
+#     q = zero(P{R}, p.var)
+#     for k in eachindex(p)
+#         @inbounds
 
-    return q
-end
+#q[k] = R(p[k])
+#     end
+#     q[0] = q[0] + c
+
+#     return q
+# end
 
 function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
 
@@ -252,16 +254,16 @@ function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
 end
 
 
-function Base.:*(p::P, c::S) where {T, P <: SparsePolynomial{T}, S <: Number}
+# function Base.:*(p::P, c::S) where {T, P <: SparsePolynomial{T}, S <: Number}
 
-    R = promote_type(T,S)
-    q  = zero(⟒(P){R},  p.var)
-    for k in eachindex(p)
-        q[k] = p[k] * c
-    end
+#     R = promote_type(T,S)
+#     q  = zero(⟒(P){R},  p.var)
+#     for k in eachindex(p)
+#         q[k] = p[k] * c
+#     end
     
-    return q
-end
+#     return q
+# end
 
 
 

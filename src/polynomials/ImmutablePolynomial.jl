@@ -105,7 +105,7 @@ end
 ##
 # overrides from common.jl due to coeffs possibly being padded, coeffs being non mutable, ...
 
-Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
+Base.collect(p::P) where {T,P <: ImmutablePolynomial{T}} = [pᵢ for pᵢ ∈ p]
 
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p), p.var)
 
@@ -146,7 +146,7 @@ for op in [:isequal, :(==)]
         n1 = findlast(!iszero, p1s) # now trim out zeros
         n2 = findlast(!iszero, p2s)
         (n1 == nothing && n2 == nothing) && return true
-        (n1 == nothing || n2  == nothing) && return false
+        (n1 == nothing || n2 == nothing) && return false
         $op(p1s[1:n1],p2s[1:n2]) &&  return true 
         false
     end
@@ -228,7 +228,7 @@ LinearAlgebra.conj(p::P) where {P <: ImmutablePolynomial} = P(conj([aᵢ for a�
 
 (p::ImmutablePolynomial{T,N})(x::S) where {T,N,S} = evalpoly(x, coeffs(p))
 
-
+# use generated  functions
 function Base.:+(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) where {T,N,S,M}
 
     R = promote_type(S,T)
@@ -306,22 +306,48 @@ end
 end
 
 # scalar ops
-function Base.:+(p::ImmutablePolynomial{T,N}, c::S) where {T, N, S<:Number}
+function ⊕(scalar::Val{true}, p::P, c::S) where {T, N, P  <: ImmutablePolynomial{T,N}, S}  
     R = promote_type(T,S)
     iszero(c) && return ImmutablePolynomial{R,N}(R.(p.coeffs), p.var)
     N == 0 && return ImmutablePolynomial{R,1}((R(c),), p.var)
     N == 1 && return ImmutablePolynomial(R[p[0]+c])
-
     return p + ImmutablePolynomial{R,1}(R[c],p.var)
-    
-    cs = NTuple{N,R}(iszero(i) ? p[i]+c : p[i] for i in 0:N-1)
-    return ImmutablePolynomial{R,N}(cs, p.var)
+
+    qs = _add_c(coeffs(p),c)
+    ImmutablePolynomial{R,N}(qs,  p.var)
 end
 
-function Base.:*(p::ImmutablePolynomial{T,N}, c::S) where {T, N, S <: Number}
+# faster  option
+# function Base.:+(p::ImmutablePolynomial{T,N}, c::S) where {T, N, S<:Number}
+#     R = promote_type(T,S)
+#     iszero(c) && return ImmutablePolynomial{R,N}(R.(p.coeffs), p.var)
+#     N == 0 && return ImmutablePolynomial{R,1}((R(c),), p.var)
+#     N == 1 && return ImmutablePolynomial(R[p[0]+c])
+
+#     return p + ImmutablePolynomial{R,1}(R[c],p.var)
+    
+#     cs = NTuple{N,R}(iszero(i) ? p[i]+c : p[i] for i in 0:N-1)
+#     return ImmutablePolynomial{R,N}(cs, p.var)
+# end
+
+##  fasterr options
+# function Base.:*(p::ImmutablePolynomial{T,N}, c::S) where {T, N, S <: Number}
+#     R = promote_type(T,S)
+#     iszero(c)  && return zero(ImmutablePolynomial{R})
+#     ImmutablePolynomial{R,N}(p.coeffs .* c, p.var)
+# end
+
+function ⊗(scalar::Val{true}, p::P, c::S) where {T,N, P  <: ImmutablePolynomial{T,N}, S}  
     R = promote_type(T,S)
-    iszero(c)  && return zero(ImmutablePolynomial{R})
-    ImmutablePolynomial{R,N}(p.coeffs .* c, p.var)
+    (iszero(N) || iszero(c)) && return zero(ImmutablePolynomial{R,1}, p.var)
+    #qs = _mul_c(coeffs(p),c,Val(:right))
+    ImmutablePolynomial{R,N}(p.coeffs .* c,  p.var)
+end
+function ⊗(scalar::Val{true},  c::S, p::P) where {T,N, P  <: ImmutablePolynomial{T,N}, S}  
+    R = promote_type(T,S)
+    (iszero(N) || iszero(c)) && return zero(ImmutablePolynomial{R,1}, p.var)
+    #qs = _mul_c(coeffs(p),c,Val(:left))
+    ImmutablePolynomial{R,N}(c .* p.coeffs,  p.var)
 end
 
 function Base.:/(p::ImmutablePolynomial{T,N}, c::S) where {T,N,S <: Number}
@@ -330,6 +356,9 @@ function Base.:/(p::ImmutablePolynomial{T,N}, c::S) where {T,N,S <: Number}
     ImmutablePolynomial{R,N}(p.coeffs ./ c, p.var)
 end
 
-Base.:-(p::ImmutablePolynomial{T,N}) where {T,N} = ImmutablePolynomial(NTuple{N,T}(-pi for pi in p.coeffs), p.var)
+
+
+
+#Base.:-(p::ImmutablePolynomial{T,N}) where {T,N} = ImmutablePolynomial(NTuple{N,T}(-pi for pi in p.coeffs), p.var)
 
 Base.to_power_type(p::ImmutablePolynomial{T,N}) where {T,N} = p

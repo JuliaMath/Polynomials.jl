@@ -153,7 +153,12 @@ vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 Returns the indefinite integral of the polynomial with constant `C`.
 """
-integrate(p::AbstractPolynomial, C::Number = 0) = integrate(p, C)
+function integrate(p::P, C) where {P  <:  AbstractPolynomial}
+    ∫dp = integrate(p)
+    hasnan(∫dp) && return ∫dp
+    hasnan(C) && return ⟒(P)([NaN])
+    ∫dp - (∫dp(0) - C)
+end
 
 """
     integrate(::AbstractPolynomial, a, b)
@@ -322,8 +327,11 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0
 
 
 
-
-hasnan(p::AbstractPolynomial) = any(isnan.(coeffs(p)))
+hasnan(x::AbstractFloat)  =  isnan(x)
+hasnan(x::Number)  = false
+hasnan(x::AbstractArray) = any(hasnan.(x))
+hasnan(p::AbstractPolynomial) = any(hasnan(c) for c  in coeffs(p))
+#hasnan(p::AbstractPolynomial) = any(isnan.(coeffs(p)))
 
 """
     domain(::Type{<:AbstractPolynomial})
@@ -369,7 +377,7 @@ Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # iteration
 # iteration occurs over the basis polynomials
-Base.iterate(p::AbstractPolynomial) = (p[0] * one(typeof(p)), 1)
+Base.iterate(p::AbstractPolynomial) = (p[0] * basis(p,0), 1)
 function Base.iterate(p::AbstractPolynomial, state)
     state <= length(p) - 1 ? (p[state] * basis(p, state), state + 1) : nothing
 end
@@ -378,9 +386,9 @@ end
 Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 
 # getindex
-function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
+function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T}
     idx < 0 && throw(BoundsError(p, idx))
-    idx ≥ length(p) && return zero(T)
+    idx ≥ length(p) && return zero(eltype(T))
     return coeffs(p)[idx + 1]
 end
 Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
@@ -388,7 +396,7 @@ Base.getindex(p::AbstractPolynomial, indices) = [getindex(p, i) for i in indices
 Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 
 # setindex
-function Base.setindex!(p::AbstractPolynomial, value::Number, idx::Int)
+function Base.setindex!(p::AbstractPolynomial, value, idx::Int)
     n = length(coeffs(p))
     if n ≤ idx
         resize!(p.coeffs, idx + 1)
@@ -398,16 +406,29 @@ function Base.setindex!(p::AbstractPolynomial, value::Number, idx::Int)
     return p
 end
 
-Base.setindex!(p::AbstractPolynomial, value::Number, idx::Number) =
+Base.setindex!(p::AbstractPolynomial, value, idx::Number) =
     setindex!(p, value, convert(Int, idx))
-Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
+Base.setindex!(p::AbstractPolynomial, value, indices) =
     [setindex!(p, value, i) for i in indices]
-Base.setindex!(p::AbstractPolynomial, values, indices) =
+Base.setindex!(p::AbstractPolynomial, values::AbstractArray, indices) =
     [setindex!(p, v, i) for (v, i) in zip(values, indices)]
-Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) =
+Base.setindex!(p::AbstractPolynomial, value, ::Colon) =
     setindex!(p, value, eachindex(p))
-Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
+Base.setindex!(p::AbstractPolynomial, values::AbstractArray, ::Colon) =
     [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
+
+
+# Base.setindex!(p::AbstractPolynomial, value::Number, idx::Number) =
+#     setindex!(p, value, convert(Int, idx))
+# Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
+#     [setindex!(p, value, i) for i in indices]
+# Base.setindex!(p::AbstractPolynomial, values, indices) =
+#     [setindex!(p, v, i) for (v, i) in zip(values, indices)]
+# Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) =
+#     setindex!(p, value, eachindex(p))
+# Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
+#     [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
+
 
 #=
 identity =#
@@ -423,7 +444,7 @@ zero, one, variable, basis =#
 Returns a representation of 0 as the given polynomial.
 """
 Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(zeros(eltype(P), 1), var)
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
+Base.zero(p::P) where {T, P <: AbstractPolynomial{T}} = ⟒(P)([zero(p[0])], p.var)
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
@@ -431,7 +452,7 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(ones(eltype(P),1), var)
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
+Base.one(p::P) where {T, P <: AbstractPolynomial{T}} = ⟒(P)([one(p[0])], p.var)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
@@ -475,44 +496,255 @@ function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: Abs
     zs[end] = 1
     ⟒(P){eltype(P)}(zs, var)
 end
-basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
+function basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial}
+    zs = [zero(p[0]) for _ in 1:k+1]
+    zs[end] = one(p[0])
+    ⟒(P)(zs, p.var)
+end
 
 #=
 arithmetic =#
-Base.:-(p::P) where {P <: AbstractPolynomial} = P(-coeffs(p), p.var)
-Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
-Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
-Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
-Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
-function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
-    T = promote_type(P, S)
-    return T(coeffs(p) .* c, p.var)
+# work with coeffs container so that  we  can  generically define  arithmetic  operations
+function _add_c(cs::AbstractVector{T}, c::S) where {T,S}
+    R = promote_type(T,S)
+    iszero(length(cs)) &&  return R[c]
+    qs  =  R[cᵢ  for cᵢ in cs]
+    qs[1] += c
+    qs
 end
 
-function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
-    R = promote_type(P, eltype(one(T) / one(S)))
-    return R(coeffs(p) ./ c, p.var)
+function _add_c(cs::NTuple{N,T}, c::S) where {N,T,S}
+    iszero(N) && return (c,)
+    R = promote_type(T,S)
+    NTuple{N,R}(isone(i) ? cs[i]+c : cs[i] for i in 1:N)
 end
 
-Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
-
-function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
-    p1, p2 = promote(p, n)
-    return p1 + p2
+function _add_c(cs::Dict{Int,T}, c::S) where {T,S}
+    R = promote_type(T,S)
+    qs = Dict{Int,R}()
+    for (k,v)  in cs
+        qs[k]=v
+    end
+    val = get(qs,0,zero(R)) + c
+    if iszero(val)
+        pop!(qs, 0)
+    else
+        qs[0] = val
+    end
+    qs
 end
 
-function Base.:+(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    p1, p2 = promote(p1, p2)
-    return p1 + p2
+_add_c!(cs::AbstractVector{T}, c::S) where {T,S} = (cs[1] += c; nothing)
+function _add_c!(cs::Dict{Int,T}, c::S) where {T,S}
+    val = get(cs,0,zero(R)) + c
+    if iszero(val)
+        pop!(cs, 0)
+    else
+        cs[0] = val
+    end
+    nothing
 end
 
-function Base.:*(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    p1, p2 = promote(p1, p2)
-    return p1 * p2
+function _add_ds(cs::AbstractVector{T}, ds::AbstractVector{S}) where {T, S}
+    R = promote_type(T,S)
+    n,m = length(cs), length(ds)
+    if n > m
+        qs = R[i <= m ? cs[i] + ds[i] : cs[i] for i in 1:n]
+    else
+        qs = R[i <= n ? cs[i] + ds[i] : ds[i] for i in 1:m]
+    end
+    qs
 end
 
+
+function _add_ds(cs::NTuple{N,T}, ds::NTuple{M,S}) where {N,T, M, S}
+    iszero(N) && return ds
+    iszero(M) && return cs
+    R = promote_type(T,S)
+    if N > M
+        qs = NTuple{N,R}(i <= m ? cs[i] + ds[i] : cs[i] for i in 1:N)
+    else
+        qs = NTuple{M,R}(i <= n ? cs[i] + ds[i] : ds[i] for i in 1:M)
+    end
+    qs
+end
+
+
+function _add_ds(cs::Dict{Int,T}, ds::Dict{Int,S}) where {T, S}
+    R = promote_type(T,S)
+    qs = Dict{Int,R}()
+    for (k,v)  in cs
+        qs[k] = v
+    end
+    for (k,v) in ds
+        val = get(qs,k,zero(R)) + v
+        if  !iszero(val) 
+            qs[k] = val 
+        end
+    end
+    qs
+end
+
+
+# work with coeffs container; 
+function rmul(cs::AbstractVector{T}, c::S) where {T,S}
+    R = promote_type(T,S)
+    qs  =  R[cᵢ*c  for cᵢ in cs]
+    qs
+end
+
+function lmul(cs::AbstractVector{T}, c::S) where {T,S}
+    R = promote_type(T,S)
+    qs  =  R[c*cᵢ  for cᵢ in cs]
+    qs
+end
+
+function rmul(cs::NTuple{N,T}, c::S) where {N,T,S}
+    N == 0 && return  cs # XXX
+    R = promote_type(T,S)
+    NTuple{N,R}(cs[i]*c for i in 1:N)
+end
+
+function lmul(cs::NTuple{N,T}, c::S) where {N,T,S}
+    N == 0 && return  cs # XXX    
+    R = promote_type(T,S)
+    NTuple{N,R}(c*cs[i] for i in 1:N)
+end
+
+function rmul(cs::Dict{Int,T}, c::S) where {T,S}
+    R = promote_type(T,S)
+    qs = Dict{Int,R}()
+    for (k,v)  in cs
+        qs[k]=v
+    end
+    qs[0] = get(qs,0,one(R)) * c
+    qs
+end
+function lmul(cs::Dict{Int,T}, c::S) where {T,S}
+    R = promote_type(T,S)
+    qs = Dict{Int,R}()
+    for (k,v)  in cs
+        qs[k]=v
+    end
+    qs[0] = c * get(qs,0,one(R))
+    qs
+end
+
+
+function LinearAlgebra.rmul!(cs::Dict{Int,T}, c::S) where {T,S}
+    for (k,v) in cs
+        val  =  k*c
+        if  iszero(val)
+            pop!(cs, k)
+        else
+            cs[k] = v
+        end
+    end
+    nothing
+end
+function LinearAlgebra.lmul!(cs::Dict{Int,T}, c::S) where {T,S}
+    for (k,v) in cs
+        val  =  c*k
+        if  iszero(val)
+            pop!(cs, k)
+        else
+            cs[k] = v
+        end
+    end
+    nothing
+end
+
+#  Traits to determine if p+c or  p*c  can be defined
+canadd(c::T, ::Type{P})  where {T, P} = Base.promote_op(+, Int, Vector{Int}) == Union{}
+canadd(c::T, ::Type{P})  where {T<:Number, S<:Number, P<:AbstractPolynomial{S}} = Val(false)
+canadd(c::T, ::Type{P})  where {T<:Number, P<:AbstractPolynomial{T}} = Val(false)
+
+"""
+    isscalar(c, P:AbstractPolynomial{T})
+
+The set of polynomials is closed under the operation `a⋅p + b⋅q` where
+`p` and `q` are polynomials and `a` and `b` are scalars. Allowable
+scalars depend on the polynomial, though the `Number` type is always
+included`. The `isscalar` function indicates if `c` is a scalar for
+the polynomial type `P`.
+
+The defaults should work without modification when `T <: Number`, but
+for other types, a method may need  to be defined.
+"""
+isscalar(c::Number, ::Type{<:AbstractPolynomial})  = Val(true)
+isscalar(c::T, ::Type{P}) where {T, P}  = Base.promote_op(*, T, eltype(P)) != Union{}
+
+# Polynomial  arithmetic
+#
+# In common, we have operations so  that a⋅p +  b⋅q is defined for scalars a,  b.
+# p+a is defined through promotion of `a` to a polynomial type in  general,
+# but for staandard basis polynomials a more efficient method is employed. Dispatch
+# is provided by the `canadd` trait.
+#
+# We have a generic  defintion  of `c*p`  and `p*c`  for scalar values `c`,  but
+# There is no generic definition for `p * q`
+#
+
+# Binary +
+Base.:+(c,  p::P) where {P <: AbstractPolynomial} = +(p,c) 
+Base.:+(p::P, c) where {P <: AbstractPolynomial} = ⊕(canadd(c,P), p, c) # default is to promote
+Base.:+(p::P, q::Q) where {P <: AbstractPolynomial,Q <: AbstractPolynomial} = ⊕(Val(false),   p,q)
+
+function ⊕(scalar::Val{false}, p::AbstractPolynomial, c)
+    +(promote(p,c)...)
+end
+
+function Base.:+(p1::P, p2::P) where {P <: AbstractPolynomial}
+    check_same_variable(p1, p2)  || error("p1 and p2 must have same var")
+    p1s,  p2s = coeffs(p1), coeffs(p2)
+    n1,  n2 = length(p1s),  length(p2s)
+    qs = _add_ds(coeffs(p1), coeffs(p2))
+    ⟒(P)(qs, n1 >= n2 ?  p1.var : p2.var)
+end
+
+#  better name  needed for  inplace addition  (add!)
+scalar_add!(p::AbstractPolynomial,  c)  = _add_c!(p.coeffs, c)
+
+# binary  -
+Base.:-(c,  p::P) where {P <: AbstractPolynomial} = (-p)+c
+Base.:-(p::P, c) where {P <: AbstractPolynomial} = p + (-c)
+Base.:-(p::P, q::Q) where  {P <: AbstractPolynomial,Q <: AbstractPolynomial} = p + (-q)
+
+# binary /
+Base.:/(p::P, c) where {P <: AbstractPolynomial} = ⊗(isscalar(c,P), p, 1/c)
+
+# binary *
+Base.:*(c,  p::P) where {P <: AbstractPolynomial} = ⊗(isscalar(c,P), p, c)
+Base.:*(p::P, c) where {P <: AbstractPolynomial} = ⊗(isscalar(c,P), p, c)
+Base.:*(p::P, q::Q) where {P <: AbstractPolynomial,Q <: AbstractPolynomial} = ⊗(Val(false),   p,q)
+function ⊗(scalar::Val{true}, p::P, c)  where  {P <: AbstractPolynomial}
+    qs = rmul(coeffs(p), c)
+    ⟒(P)(qs,  p.var)
+end
+function  ⊗(scalar::Val{true}, c, p::P)  where  {P <: AbstractPolynomial}
+    qs = lmul(coeffs(p), c)
+    ⟒(P)(qs,  p.var)
+end
+⊗(scalar::Val{false}, p::AbstractPolynomial, c) = *(promote(p,c)...)
+function Base.:*(p1::P, p2::P) where {P <: AbstractPolynomial}
+    check_same_variable(p1, p2)  || error("p1 and p2 must have same var")
+    throw(ArgumentError("No default for *"))
+end
+
+# in place
+LinearAlgebra.rmul!(p::P, c) where {P <: AbstractPolynomial} = rmul!(p.coeffs, c)
+LinearAlgebra.lmul!(p::P, c) where {P <: AbstractPolynomial} = lmul!(p.coeffs, c)
+
+# a^n
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
+
+# unary  -
+Base.:-(p::P) where {P <: AbstractPolynomial} = p*(-1)  #P(-coeffs(p), p.var)
+
+##
+## --------------------------------------------------
+
 
 function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
     n, d = promote(num, den)
@@ -569,7 +801,7 @@ Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial{T},
     p2::AbstractPolynomial{S};
-    rtol::Real = (Base.rtoldefault(T, S, 0)),
+    rtol::Real = (Base.rtoldefault(eltype(T), eltype(S), 0)),
                        atol::Real = 0,) where {T,S}
     
     p1, p2 = promote(p1, p2)
@@ -589,9 +821,9 @@ end
 
 function Base.isapprox(p1::P,
                        n::S;
-                       rtol::Real = (Base.rtoldefault(T, S, 0)),
+                       rtol::Real = (Base.rtoldefault(eltype(T), eltype(S), 0)),
                        atol::Real = 0,) where {T,S, P<:AbstractPolynomial{T}}
-    return isapprox(p1, ⟒(P){T}(n,p1.var))
+    return isapprox(p1, ⟒(P)([n],p1.var))
 end
 
 Base.isapprox(n::S,

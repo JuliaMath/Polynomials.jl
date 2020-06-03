@@ -127,7 +127,7 @@ function printpoly(io::IO, p::P, mimetype=MIME"text/plain"(); descending_powers=
         first &= !printed
         printed_anything |= printed
     end
-    printed_anything || print(io, zero(T))
+    printed_anything || print(io, 0*p[0])
     return nothing
 end
 

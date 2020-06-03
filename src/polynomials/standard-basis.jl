@@ -1,17 +1,17 @@
 abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
 
-
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
-    if !(pj == one(T) && !(showone(T) || j == 0))
+    if (showone(T) || j == 0) || !isone(pj)
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)
     printexponent(io, var, j, mimetype)
     return true
 end
+
 
 # allows  broadcast  issue #209
 evalpoly(x, p::StandardBasisPolynomial) = p(x)
@@ -38,11 +38,12 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
 end
 
 
-function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
-    R = promote_type(T,S)
-    as = R[c  for c in coeffs(p)]
-    as[1] += c
-    ⟒(P)(as, p.var)
+canadd(c::T, ::Type{P})  where {T<:Number, S<:Number, P<:StandardBasisPolynomial{S}} = Val(true)
+canadd(c::T, ::Type{P})  where {T<:Number, P<:StandardBasisPolynomial{T}} = Val(false)
+
+function ⊕(scalar::Val{true}, p::P, c) where {T, P  <: StandardBasisPolynomial{T}}  
+    qs = _add_c(coeffs(p),c)
+    ⟒(P)(qs,  p.var)
 end
 
 
@@ -52,14 +53,15 @@ function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolyno
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
-    R = eltype(one(T)*1) 
+    #R = eltype(one(T)*1) 
     order == 0 && return p
-    hasnan(p) && return ⟒(P){R}(R[NaN], p.var)
-    order > length(p) && return zero(⟒(P){R},p.var)
+    hasnan(p) && return ⟒(P)([NaN], p.var)
+    order > length(p) && return zero(1*p) #zero(⟒(P){R},p.var)
     d = degree(p)
-    d <= 0 && return zero(⟒(P){R},p.var)
+    d <= 0 && return zero(1*p) #zero(⟒(P){R},p.var)
     n = d + 1
-    a2 = Vector{R}(undef, n - order)
+    #a2 = Vector{R}(undef, n - order)
+    a2 = [1*zero(p[0]) for _ in 1:n-order]
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
     end
@@ -67,15 +69,15 @@ function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolyno
 end
 
 
-function integrate(p::P, k::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
+function integrate(p::P) where {T, P <: StandardBasisPolynomial{T}}
 
-    R = eltype((one(T)+one(S))/1)
-    if hasnan(p) || isnan(k)
+    #R = eltype((one(T)+one(S))/1)
+    if hasnan(p)
         return ⟒(P)([NaN])
     end
     n = length(p)
-    a2 = Vector{R}(undef, n + 1)
-    a2[1] = k
+ #   a2 = Vector{R}(undef, n + 1)
+    a2 = [zero(p[0])/1 for _ in 1:n+1]
     @inbounds for i in 1:n
         a2[i + 1] = p[i - 1] / i
     end
@@ -95,7 +97,7 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
     m == -1 && throw(DivideError())
     if m == 0 && den[0] ≈ 0 throw(DivideError()) end
     
-    R = eltype(one(T)/one(S))
+    R = eltype(one(num[0])/one(den[0]))
 
     deg = n - m + 1
 
@@ -103,8 +105,11 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
         return zero(P, var), num
     end
 
-    q_coeff = zeros(R, deg)
-    r_coeff = R[ num[i-1] for i in 1:n+1 ]
+    #q_coeff = zeros(R, deg)
+    #r_coeff = R[ num[i-1] for i in 1:n+1 ]
+
+    q_coeff = [zero(num[0])/one(den[0]) for _ in 1:deg]
+    r_coeff = [num[i-1]/one(den[0]) for i in 1:n+1]
 
     @inbounds for i in n:-1:m
         q = r_coeff[i + 1] / den[m]
