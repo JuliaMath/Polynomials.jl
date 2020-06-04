@@ -1,7 +1,7 @@
 export ImmutablePolynomial
 
 """
-    ImmutablePolynomial{T<:Number}(coeffs::AbstractVector{T}, var=:x)
+    ImmutablePolynomial{T}(coeffs::AbstractVector{T}, var=:x)
 
 Construct an immutable (static) polynomial from its coefficients `a`,
 lowest order first, optionally in terms of the given variable `x`
@@ -38,6 +38,10 @@ ImmutablePolynomial(1.0)
 
 !!! note
     This was modeled after https://github.com/tkoolen/StaticUnivariatePolynomials.jl by @tkoolen.
+
+The type `T` need not satisfy `T <: Number` (e.g,
+`T=Polynomial{S}(:y)` is possible), but some types will not have all
+features supported.
 
 """
 struct ImmutablePolynomial{T,  N} <: StandardBasisPolynomial{T}
@@ -129,7 +133,7 @@ function variable(P::Type{<:ImmutablePolynomial},var::SymbolLike=:x)
     ImmutablePolynomial{R,2}(NTuple{2,R}((0,1)),var)
 end
 
-# degree, isconstant
+# degree, is constant
 degree(p::ImmutablePolynomial{T,N}) where {T,N} = N - 1
 isconstant(p::ImmutablePolynomial{T,N}) where {T,N}  = N <= 1
 
@@ -155,20 +159,6 @@ for op in [:isequal, :(==)]
     end
 end
 
-##
-## Change ≈ to handle tuples for coefficients *and* get handling of Inf correct
-## right now
-## Inf ≈ Inf # true
-## [Inf] ≈ [Inf] # true
-## P([Inf]) ≈ P([Inf]) # false
-## P([Inf]) ≈ Inf # false
-## This fixes the last two cases for P=ImmutablePolynomial, and could replace
-## isapprox in common.jl
-##
-## check Inf values (matching Vector ≈ Vector)
-## @test P([Inf]) ≈ Inf
-## @test !(P([Inf]) ≈ P([-Inf])) # default compares zero(P) to zero(P)
-## @test !(P([1,2,Inf]) ≈ P([1,3,Inf])) # default uses truncate with  Inf which clobbers numbers
 function Base.isapprox(p1::ImmutablePolynomial{T},
     p2::ImmutablePolynomial{S};
     rtol::Real = (Base.rtoldefault(T, S, 0)),

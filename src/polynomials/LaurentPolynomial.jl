@@ -1,7 +1,7 @@
 export LaurentPolynomial
 
 """
-    LaurentPolynomial(coeffs, range, var)
+    LaurentPolynomial(coeffs::Vector{T}, range::UnitRange, var=:x)  where {T <: Number}
 
 A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of the form `a_{m}x^m + ... + a_{n}x^n` where `m,n` are  integers (not necessarily positive) with ` m <= n`.
 
@@ -47,10 +47,10 @@ julia> integrate(q)
 LaurentPolynomial(1.0*x + 0.5*x² + 0.3333333333333333*x³)
 
 julia> integrate(p)  # x⁻¹  term is an issue
-ERROR: ArgumentError: Can't integrate Laurent  polynomial with  `x⁻¹` term
+LaurentPolynomial(1.0*x + 0.5*x²)
 
 julia> integrate(P([1,1,1], -5:-3))
-LaurentPolynomial(-0.25*x⁻⁴ - 0.3333333333333333*x⁻³ - 0.5*x⁻²)
+LaurentPolynomial(0.0)
 
 julia> x⁻¹ = inv(variable(LaurentPolynomial)) # `inv` defined on monomials
 LaurentPolynomial(1.0*x⁻¹)
@@ -291,12 +291,14 @@ end
 # scalar operattoinis
 Base.:-(p::P) where {P <: LaurentPolynomial} = P(-coeffs(p), range(p), p.var)
 
+Base.:+(c::S,  p::P) where {T,P <: LaurentPolynomial{T},  S <: Number} = p+c
 function Base.:+(p::LaurentPolynomial{T}, c::S) where {T, S <: Number}
     q = LaurentPolynomial([c], 0:0, p.var)
     p + q
 end
 
-function Base.:*(p::P, c::S) where {T,P <: LaurentPolynomial,  S <: Number}
+Base.:*(c::S, p::P) where {T,P <: LaurentPolynomial,  S <: Number} = p*c
+function Base.:*(p::P, c::S) where {T,P <: LaurentPolynomial{T},  S <: Number}
     as = c * copy(coeffs(p))
     return ⟒(P)(as, range(p), p.var)
 end

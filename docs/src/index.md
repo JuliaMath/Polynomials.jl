@@ -97,8 +97,11 @@ julia> q = Polynomial([1, 2, 3], :s)
 Polynomial(1 + 2*s + 3*s^2)
 
 julia> p + q
-ERROR: Polynomials must have same variable
-[...]
+ERROR: p1 and p2 must have same var
+Stacktrace:
+ [1] error(::String) at ./error.jl:33
+ [2] +(::Polynomial{Int64}, ::Polynomial{Int64}) at /Users/verzani/julia/Polynomials/src/common.jl:699
+ [3] top-level scope at none:1
 ```
 
 Except for operations  involving constant polynomials.

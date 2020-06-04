@@ -1,7 +1,7 @@
 export Polynomial
 
 """
-    Polynomial{T<:Number}(coeffs::AbstractVector{T}, var=:x)
+    Polynomial{T}(coeffs::AbstractVector{T}, var=:x)
 
 Construct a polynomial from its coefficients `a`, lowest order first, optionally in
 terms of the given variable `x`. `x` can be a character, symbol, or string.
@@ -30,6 +30,11 @@ Polynomial(1 + 2*s + 3*s^2)
 julia> one(Polynomial)
 Polynomial(1.0)
 ```
+
+The type `T` need not satisfy `T <: Number` (e.g,
+`T=Polynomial{S}(:y)` is possible), but some types will not have all
+features supported.
+
 """
 struct Polynomial{T} <: StandardBasisPolynomial{T}
     coeffs::Vector{T}

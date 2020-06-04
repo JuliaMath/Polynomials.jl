@@ -36,7 +36,7 @@ Polynomial(6 - 5*x + x^2)
 function fromroots(P::Type{<:AbstractPolynomial}, roots::AbstractVector; var::SymbolLike = :x)
     x = variable(P, var)
     p =  prod(x - r for r in roots)
-    return truncate!(p)
+    return truncate(p)
 end
 fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
     fromroots(Polynomial, r, var = var)
@@ -117,8 +117,7 @@ _wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 Returns the roots of the given polynomial. This is calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgeebra.eigvals` call.
 
 !!! note
-
-        The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) provides an interface to FORTRAN code implementing an algorithm that can handle very large polynomials (it is  `O(n^2)` not `O(n^3)`. the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package implements the algorithm in Julia, allowing the use of other  number types.
+   The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) provides an interface to FORTRAN code implementing an algorithm that can handle very large polynomials (it is  `O(n^2)` not `O(n^3)`. the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package implements the algorithm in Julia, allowing the use of other  number types.
 
 """
 function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: Number}
@@ -149,10 +148,12 @@ Calculate the psuedo-Vandermonde matrix of the given polynomial type with the gi
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 """
+    integrate(::AbstractPolynomial)
     integrate(::AbstractPolynomial, C=0)
 
-Returns the indefinite integral of the polynomial with constant `C`.
+Returns the indefinite integral of the polynomial with optional constant `C`.
 """
+integrate(p::P) where {P  <:  AbstractPolynomial} = throw(ArgumentError("`integrate` undefined for type `P`"))
 function integrate(p::P, C) where {P  <:  AbstractPolynomial}
     ∫dp = integrate(p)
     hasnan(∫dp) && return ∫dp
@@ -271,6 +272,7 @@ LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 Conversions =#
 Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
 Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
+# in absence  of other directives, promote polynomials to the `Polynomial` type.
 Base.promote_rule(::Type{<:AbstractPolynomial{T}},
     ::Type{<:AbstractPolynomial{S}},
 ) where {T,S} = Polynomial{promote_type(T, S)}
@@ -290,11 +292,13 @@ Returns the size of the polynomials coefficients, along axis `i` if provided.
 """
 Base.size(p::AbstractPolynomial) = size(coeffs(p))
 Base.size(p::AbstractPolynomial, i::Integer) = size(coeffs(p), i)
+
 Base.eltype(p::AbstractPolynomial{T}) where {T} = T
 # in  analogy  with  polynomial as a Vector{T} with different operations defined.
 Base.eltype(::Type{<:AbstractPolynomial}) = Float64
 Base.eltype(::Type{<:AbstractPolynomial{T}}) where {T} = T
 #Base.eltype(::Type{P}) where {P <: AbstractPolynomial} = P # changed  in v1.1.0
+
 function Base.iszero(p::AbstractPolynomial)
     if length(p) == 0
         return true
@@ -305,7 +309,7 @@ end
 """
     coeffs(::AbstractPolynomial)
 
-Return the coefficient vector `[a_0, a_1, ..., a_n]` of a polynomial.
+Return the coefficients `a_0, a_1, ..., a_n` of a polynomial as a vector or tuple.
 """
 coeffs(p::AbstractPolynomial) = p.coeffs
 
@@ -313,7 +317,8 @@ coeffs(p::AbstractPolynomial) = p.coeffs
     degree(::AbstractPolynomial)
 
 Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
-has a nonzero coefficient. The degree of the zero polynomial is defined to be -1.
+has a nonzero coefficient. The degree of the zero polynomial in the standard basis is defined to be -1, 
+except for Laurent polynomials.
 """
 degree(p::AbstractPolynomial) = iszero(p) ? -1 : length(p) - 1
 
@@ -321,12 +326,12 @@ degree(p::AbstractPolynomial) = iszero(p) ? -1 : length(p) - 1
 """
     isconstant(::AbstractPolynomial)
 
-Is the polynomial  `p` a constant.
+Is the polynomial  `p` a constant, degree 0  or -1 (for  non-Laurent  polynomials)
 """
 isconstant(p::AbstractPolynomial) = degree(p) <= 0
 
 
-
+# does p have any `NaN` terms
 hasnan(x::AbstractFloat)  =  isnan(x)
 hasnan(x::Number)  = false
 hasnan(x::AbstractArray) = any(hasnan.(x))
@@ -370,13 +375,16 @@ end
 mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
 #=
 indexing =#
+
+# We  *assume* here non-Laurent polynomials. 
 Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1
+# may be just  the non-zero items for a sparse polynomial
 Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # iteration
-# iteration occurs over the basis polynomials
+# iteration occurs over monomials
 Base.iterate(p::AbstractPolynomial) = (p[0] * basis(p,0), 1)
 function Base.iterate(p::AbstractPolynomial, state)
     state <= length(p) - 1 ? (p[state] * basis(p, state), state + 1) : nothing
@@ -418,18 +426,6 @@ Base.setindex!(p::AbstractPolynomial, values::AbstractArray, ::Colon) =
     [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
 
 
-# Base.setindex!(p::AbstractPolynomial, value::Number, idx::Number) =
-#     setindex!(p, value, convert(Int, idx))
-# Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
-#     [setindex!(p, value, i) for i in indices]
-# Base.setindex!(p::AbstractPolynomial, values, indices) =
-#     [setindex!(p, v, i) for (v, i) in zip(values, indices)]
-# Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) =
-#     setindex!(p, value, eachindex(p))
-# Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
-#     [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
-
-
 #=
 identity =#
 Base.copy(p::P) where {P <: AbstractPolynomial} = P(copy(coeffs(p)), p.var)
@@ -438,16 +434,16 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 #=
 zero, one, variable, basis =#
 """
-    zero(::Type{<:AbstractPolynomial})
-    zero(::AbstractPolynomial)
+    zero(::Type{<:AbstractPolynomial}, var=:x)
+    zero(p::AbstractPolynomial, var=:x)
 
 Returns a representation of 0 as the given polynomial.
 """
 Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(zeros(eltype(P), 1), var)
 Base.zero(p::P) where {T, P <: AbstractPolynomial{T}} = ⟒(P)([zero(p[0])], p.var)
 """
-    one(::Type{<:AbstractPolynomial})
-    one(::AbstractPolynomial)
+    one(::Type{<:AbstractPolynomial}, var=:x)
+    one(::AbstractPolynomial, var=:x)
 
 Returns a representation of 1 as the given polynomial.
 """
@@ -459,9 +455,9 @@ Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
 
 
 """
-    variable(var=:x)
     variable(::Type{<:AbstractPolynomial}, var=:x)
     variable(p::AbstractPolynomial, var=p.var)
+    variable(var=:x)
 
 Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
 
@@ -490,7 +486,12 @@ variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 # var is a positional argument, not a keyword; can't deprecate so we do `_var; var=_var`
 #@deprecate basis(p::P, k::Int; var=:x)  where {P<:AbstractPolynomial}  basis(p, k, var)
 #@deprecate basis(::Type{P}, k::Int; var=:x) where {P <: AbstractPolynomial} basis(P, k,var)
-# return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
+"""
+    basis(::Type{P},k)
+    basis(p::P, k)
+
+ return the kth basis polynomial for the given polynomial type, e.g., `x^k` for `Polynomial{T}`.
+"""
 function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
     zs = zeros(Int, k+1)
     zs[end] = 1
@@ -677,7 +678,7 @@ isscalar(c::T, ::Type{P}) where {T, P}  = Base.promote_op(*, T, eltype(P)) != Un
 #
 # In common, we have operations so  that a⋅p +  b⋅q is defined for scalars a,  b.
 # p+a is defined through promotion of `a` to a polynomial type in  general,
-# but for staandard basis polynomials a more efficient method is employed. Dispatch
+# but for standard basis polynomials a more efficient method is employed. Dispatch
 # is provided by the `canadd` trait.
 #
 # We have a generic  defintion  of `c*p`  and `p*c`  for scalar values `c`,  but

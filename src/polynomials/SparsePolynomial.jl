@@ -1,7 +1,7 @@
 export   SparsePolynomial
 
 """
-    SparsePolynomial(coeffs::Dict, var)
+    SparsePolynomial(coeffs::Dict{Int,T}, var) where  {T <: Number}
 
 Polynomials in the standard basis backed by a dictionary holding the
 non-zero coefficients. For polynomials of high degree, this might be

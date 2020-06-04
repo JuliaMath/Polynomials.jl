@@ -1,15 +1,5 @@
 abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
-# Integrate in  some  different types
-# Allow P{Array{T,N}) to have p  +  s defined
-canadd(c::P, ::Type{Q}) where {T,N, P <: AbstractArray{T,N}, S, R<:AbstractArray{S,N}, Q<:Polynomials.StandardBasisPolynomial{R}} = Val(true)
-#  allow P{Matrix{T}} to  have s*p  or p*s   defined
-isscalar(c::P, ::Type{Q}) where {P <: Matrix, T<:Matrix, Q<:Polynomials.StandardBasisPolynomial{T}} = Val(true)
-
-
-
-
-
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
@@ -34,7 +24,7 @@ isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
 
 variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = P([0, 1], var)
-variable(p::P,  var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = basis(p,1, var)
+variable(p::P,  var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = basis(p, 1, var)
 
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
@@ -43,33 +33,39 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
     for j in 1:n, i in j:-1:1
         c[(i + 1)] = c[(i + 1)] - r[j] * c[i]
     end
-    #return P(c, var)
     return P(reverse(c), var)
 end
 
+##  Polynomial arithmetic
 canadd(c::T, ::Type{P})  where {T<:Number, P<:StandardBasisPolynomial{T}} = Val(true)
 canadd(c::T, ::Type{P})  where {T<:Number, S<:Number, P<:StandardBasisPolynomial{S}} = Val(true)
+
+# Integrate in  some  different types
+# Allow P{Array{T,N}) to have p  +  s defined
+canadd(c::P, ::Type{Q}) where {T,N, P <: AbstractArray{T,N}, S, R<:AbstractArray{S,N}, Q<:Polynomials.StandardBasisPolynomial{R}} = Val(true)
+#  allow P{Matrix{T}} to  have s*p  or p*s   defined
+isscalar(c::P, ::Type{Q}) where {P <: Matrix, T<:Matrix, Q<:Polynomials.StandardBasisPolynomial{T}} = Val(true)
+
 
 function ⊕(scalar::Val{true}, p::P, c) where {T, P  <: StandardBasisPolynomial{T}}  
     qs = _add_c(coeffs(p),c)
     ⟒(P)(qs,  p.var)
 end
 
+##
 
 function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolynomial{T}}
     order < 0 && error("Order of derivative must be non-negative")
 
-    # we avoid usage like Base.promote_op(*, T, Int) here, say, as
-    # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
-    # Base.promote_op(*, Complex, Int)
-    #R = eltype(one(T)*1) 
+    # we avoid usage like Base.promote_op(*, T, Int) here, say,  or
+    # R = eltype(one(T)*1) tricks
+    # and  use the instance  to generate a values
     order == 0 && return p
     hasnan(p) && return ⟒(P)([NaN], p.var)
     order > length(p) && return zero(1*p) #zero(⟒(P){R},p.var)
     d = degree(p)
     d <= 0 && return zero(1*p) #zero(⟒(P){R},p.var)
     n = d + 1
-    #a2 = Vector{R}(undef, n - order)
     a2 = [1*zero(p[0]) for _ in 1:n-order]
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
@@ -80,13 +76,17 @@ end
 
 function integrate(p::P) where {T, P <: StandardBasisPolynomial{T}}
 
-    #R = eltype((one(T)+one(S))/1)
+    # we avoid usage like Base.promote_op(*, T, Int) here, say,  or
+    # R = eltype((one(T)+one(S))/1)
+    # and  use the instance  to generate a values
+
     if hasnan(p)
         return ⟒(P)([NaN])
     end
+
     n = length(p)
- #   a2 = Vector{R}(undef, n + 1)
     a2 = [zero(p[0])/1 for _ in 1:n+1]
+
     @inbounds for i in 1:n
         a2[i + 1] = p[i - 1] / i
     end
@@ -114,9 +114,8 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
         return zero(P, var), num
     end
 
-    #q_coeff = zeros(R, deg)
-    #r_coeff = R[ num[i-1] for i in 1:n+1 ]
-
+    # use  instance, not `q_coeff = zeros(R, deg)` and `r_coeff = R[ num[i-1] for i in 1:n+1 ]`
+    # for cases  when `T,S ≰: Number
     q_coeff = [zero(num[0])/one(den[0]) for _ in 1:deg]
     r_coeff = [num[i-1]/one(den[0]) for i in 1:n+1]
 

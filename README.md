@@ -19,15 +19,15 @@ julia> using Polynomials
 
 #### Available Polynomials
 
-	* `Polynomial` - Standard basis polynomials, `a_0 + a_1⋅x + a_2⋅x^2 + ⋯ + a_n⋅xⁿ`,  `n ∈ ℕ`
+* `Polynomial` - Standard basis polynomials, `a_0 + a_1⋅x + a_2⋅x^2 + ⋯ + a_n⋅xⁿ`,  `n ∈ ℕ`
 * `ImmutablePolynomial` - Standard basis polynomials backed by a tuple for faster evaluation of values
-* `SparsePolynomial` - Standard basis polynomial backed by a dictionary to hold  sparse high-degree  polynomials
+* `SparsePolynomial` - Standard basis polynomials backed by a dictionary to hold  sparse high-degree  polynomials
 * `LaurentPolynomial` - Laurent polynomials, `a_m⋅x^m + ⋯ a_n⋅x^n` `m ≤ n`, `m,n ∈ ℤ` backed by an offset array
 * `ChebyshevT` - Chebyshev polynomials of the first kind
 
 #### Construction and Evaluation
 
-Construct a polynomial from its coefficients, lowest order first.
+Construct a polynomial of `Polynomial` type from its coefficients, lowest order first.
 
 ```julia
 julia> Polynomial([1,0,3,4])
@@ -41,7 +41,7 @@ julia> Polynomial([1,2,3], :s)
 Polynomial(1 + 2s + 3s^2)
 ```
 
-Construct a polynomial from its roots.
+Construct a polynomial of `Polynomial` type from its roots.
 
 ```julia
 julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
@@ -70,9 +70,6 @@ Polynomial(1 - x^2)
 julia> 2p
 Polynomial(2 + 4x)
 
-julia> 2+p
-Polynomial(3 + 2x)
-
 julia> p - q
 Poly(2x + x^2)
 
@@ -84,9 +81,16 @@ Polynomial(0.5 - 0.5x^2)
 
 julia> q ÷ p  # `div`, also `rem` and `divrem`
 Polynomial(0.25 - 0.5x)
+
+julia> 2+p
+Polynomial(3 + 2x)
+
 ```
 
-Note that operations involving polynomials with different variables will error.
+Polynomial types always  have values defined for  `a⋅p + b⋅q`, where `a`  and `b` are  scalars and  `p`  and `q`  are  polynomials. The last  example illustrates how  promotion and dispatch can be used for mixing of types.
+
+
+Note that operations involving polynomials with different variables will error (though constant polynomials are treated as having no  variable for purposes of polynomial  arithmetic):
 
 ```julia
 julia> p = Polynomial([1, 2, 3], :x)
@@ -94,6 +98,8 @@ julia> q = Polynomial([1, 2, 3], :s)
 julia> p + q
 ERROR: Polynomials must have same variable.
 ```
+
+
 
 #### Integrals and Derivatives
 
@@ -116,6 +122,8 @@ resulting polynomial is one lower than the degree of `p`.
 julia> derivative(Polynomial([1, 3, -1]))
 Polynomial(3 - 2x)
 ```
+
+Higher-order derivatives  are specified through `derivative(p, k)`.
 
 #### Root-finding
 
@@ -164,13 +172,13 @@ Visual example:
 Polynomial objects also have other methods:
 
 * 0-based indexing is used to extract the coefficients of `[a0, a1, a2, ...]`, coefficients may be changed using indexing
-  notation.
+  notation  (except for the  `ImmutablePolynomial` type)
 
 * `coeffs`: returns the entire coefficient vector
 
 * `degree`: returns the polynomial degree, `length` is number of stored coefficients
 
-* `variable`: returns the polynomial symbol as polynomial in the underlying type
+* `variable`: returns the monomial `x` as a polynomial in the underlying type
 
 * `norm`: find the `p`-norm of a polynomial
 
@@ -188,11 +196,11 @@ Polynomial objects also have other methods:
 
 ## Related Packages
 
-* [StaticUnivariatePolynomials.jl](https://github.com/tkoolen/StaticUnivariatePolynomials.jl) Fixed-size univariate polynomials backed by a Tuple
+* [StaticUnivariatePolynomials.jl](https://github.com/tkoolen/StaticUnivariatePolynomials.jl) Fixed-size univariate polynomials backed by a Tuple. The `ImmutablePolynomial` type borrows from this package.
 
-* [MultiPoly.jl](https://github.com/daviddelaat/MultiPoly.jl) for sparse multivariate polynomials
+* [MultiPoly.jl](https://github.com/daviddelaat/MultiPoly.jl) for sparse multivariate polynomials. The `SparsePolynomial`  type borrows ideas from this.
 
-* [DynamicPolynomals.jl](https://github.com/JuliaAlgebra/DynamicPolynomials.jl) Multivariate polynomials implementation of commutative and non-commutative variables
+* [DynamicPolynomals.jl](https://github.com/JuliaAlgebra/DynamicPolynomials.jl) Multivariate polynomials implementation of commutative and non-commutative variables. 
 
 * [MultivariatePolynomials.jl](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl) for multivariate polynomials and moments of commutative or non-commutative variables
 
@@ -200,7 +208,7 @@ Polynomial objects also have other methods:
 
 * [AbstractAlgebra.jl](https://github.com/wbhart/AbstractAlgebra.jl) and [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series
 
-* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) and [AMRVW](https://github.com/jverzani/AMRVW.jl).
+* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) for `Float64` and [AMRVW](https://github.com/jverzani/AMRVW.jl) for generic types.
 
 
 ## Legacy code
