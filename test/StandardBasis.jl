@@ -180,7 +180,7 @@ end
         q, r = divrem(num,den)  # expected degrees: degree(q) = degree(num)-degree(den) = 1, degree(r) = degree(den)-1 = 1
         @test num ≈ den*q+r  # true
         @test degree(q) == 1 # true
-        degree(r) <= degree(den)
+        degree(r) < degree(den)
     end
 end
 
