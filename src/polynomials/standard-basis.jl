@@ -114,6 +114,7 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
             r_coeff[i - m + j + 1] -= elem
         end
     end
+    resize!(r_coeff, min(length(r_coeff), m+1))
 
     return ⟒(P)(q_coeff, var), ⟒(P)(r_coeff, var)
     
