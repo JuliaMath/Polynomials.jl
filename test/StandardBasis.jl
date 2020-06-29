@@ -173,6 +173,14 @@ end
         @test divrem(pR, pR) == (one(pR), zero(pR))
         @test_throws DivideError p1 ÷ p0
         @test_throws DivideError divrem(p0, p0)
+
+        # issue #235
+        num = P([0.8581454436924945, 0.249671302254737, 0.8048498901050951, 0.1922713965697087]) # degree 3 polynomial
+        den = P([0.9261520696359462, 0.07141031902098072, 0.378071465860349]) # degree 2 polynomial
+        q, r = divrem(num,den)  # expected degrees: degree(q) = degree(num)-degree(den) = 1, degree(r) = degree(den)-1 = 1
+        @test num ≈ den*q+r  # true
+        @test degree(q) == 1 # true
+        degree(r) < degree(den)
     end
 end
 
