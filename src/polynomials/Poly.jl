@@ -39,10 +39,10 @@ Polynomials.@register Poly
 Base.convert(P::Type{<:Polynomial}, p::Poly{T}) where {T} = P(p.coeffs, p.var)
 
 Base.eltype(P::Type{<:Poly}) = P
-Base.zero(::Type{<:Poly{T}},var=:x)  where {T} = Poly{T}(zeros(T,0), var)
-Base.zero(::Type{<:Poly},var=:x)  where {T} = Poly(zeros(Float64,0), var)
-Base.one(::Type{<:Poly{T}},var=:x)  where {T} = Poly{T}(ones(T,1), var)
-Base.one(::Type{<:Poly},var=:x)  where {T} = Poly(ones(Float64,1), var)
+_eltype(::Type{<:Poly{T}}) where  {T} = T
+_eltype(::Type{Poly}) =  Float64
+Base.zero(P::Type{<:Poly},var=:x) = Poly(zeros(_eltype(P),0), var)
+Base.one(P::Type{<:Poly},var=:x) = Poly(ones(_eltype(P),1), var)
 function Polynomials.basis(P::Type{<:Poly}, k::Int, _var::Polynomials.SymbolLike=:x; var=_var) 
     zs = zeros(Int, k+1)
     zs[end] = 1

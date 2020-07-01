@@ -49,8 +49,8 @@ macro register(name)
         $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S<:Number} =
             $poly(T.(x), Symbol(var))
         $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
-            $poly(T[n], Symbol(var))
-        $poly(n::Number, var::SymbolLike = :x) = $poly([n], Symbol(var))
+            n *  one($poly{T}, Symbol(var))
+        $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S}, Symbol(var))
         $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T}, Symbol(var))
         $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
     end

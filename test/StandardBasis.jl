@@ -83,6 +83,10 @@ end
         @test iszero(p0)
         P != LaurentPolynomial && @test degree(p0) == -1
 
+        # P(2) is  2 (not  2p₀)  connvert(Polynomial, P(s::Number)) = Polynomial(s)
+        @test convert(Polynomial, P(2)) ≈ Polynomial(2)
+        @test P(2)  ≈ 2*one(P)
+        
         # variable(), P() to generate `x` in given basis
         @test degree(variable(P)) == 1
         @test variable(P)(1) == 1
