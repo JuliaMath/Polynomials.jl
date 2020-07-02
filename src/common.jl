@@ -209,9 +209,10 @@ function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
     isempty(coeffs(p)) && return p
+    tol = norm(coeffs(p)) * rtol + atol
     for i = lastindex(p):-1:0
         val = p[i]
-        if !isapprox(val, zero(T); rtol = rtol, atol = atol)
+        if abs(val) > tol #!isapprox(val, zero(T); rtol = rtol, atol = atol)
             resize!(p.coeffs, i + 1); 
             return p
         end
@@ -520,7 +521,7 @@ function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: Abstrac
 end
 
 """
-    gcd(a::AbstractPolynomial, b::AbstractPolynomial)
+    gcd(a::AbstractPolynomial, b::AbstractPolynomial; atol::Real=0, rtol::Real=Base.rtoldefault)
 
 Find the greatest common denominator of two polynomials recursively using
 [Euclid's algorithm](http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor#Euclid.27s_algorithm).
@@ -535,7 +536,10 @@ Polynomial(4.0 - 6.0*x + 2.0*x^2)
 
 ```
 """
-function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T,S}
+function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S};
+                  atol::Real=zero(real(promote_type(T,S))),
+                  rtol::Real=Base.rtoldefault(real(promote_type(T,S)))
+                  ) where {T,S}
     r₀, r₁ = promote(p1, p2)
     iter = 1
     itermax = length(r₁)
@@ -543,7 +547,7 @@ function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}) where {T
     while !iszero(r₁) && iter ≤ itermax
         _, rtemp = divrem(r₀, r₁)
         r₀ = r₁
-        r₁ = truncate(rtemp)  
+        r₁ = truncate(rtemp; atol=atol, rtol=rtol)  
         iter += 1
     end
     return r₀
