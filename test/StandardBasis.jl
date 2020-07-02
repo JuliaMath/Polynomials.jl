@@ -673,6 +673,13 @@ end
         @test degree(gcd(p1, P(eps(0.)))) == 0          # ditto
         @test degree(gcd(p1, P(0))) == degree(p1) # P(0) has the roots of p1
         @test degree(gcd(p1 + p2 * 170.10734737144486, p2)) == 0          # see, c.f., #122
+
+        ## Issue #240; add tolerance to gcd
+        a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
+        b = P([0.5410010714904849, 0.533604905984294]);
+        d = P([0.5490673726445683, 0.15991109487875477]);
+        @test Polynomials.isconstant(gcd(a*d,b*d))
+        @test !Polynomials.isconstant(gcd(a*d, b*d, atol=sqrt(eps())))
         
         p1 = fromroots(P, [1.,2.,3.])
         p2 = fromroots(P, [1.,2.,6.])
