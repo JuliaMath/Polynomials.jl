@@ -598,6 +598,16 @@ end
         @test norm(P([1., 2.])) == norm([1., 2.])
         @test norm(P([1., 2.]), 1) == norm([1., 2.], 1)
     end
+
+    ## Issue #225 and different meanings for "conjugate"
+    P = LaurentPolynomial
+    p = P(rand(Complex{Float64}, 4), -1:2)
+    z = rand(Complex{Float64})
+    s = imag(z)*im
+    @test conj(p)(z) ≈ (conj ∘ p ∘ conj)(z)
+    @test Polynomials.paraconj(p)(z) ≈ (conj ∘ p ∘ conj ∘ inv)(z)
+    @test Polynomials.cconj(p)(s) ≈ (conj ∘ p)(s)
+    
 end
 
 @testset "Indexing" begin
