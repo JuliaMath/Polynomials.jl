@@ -5,7 +5,7 @@ export LaurentPolynomial
 
 A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of the form `a_{m}x^m + ... + a_{n}x^n` where `m,n` are  integers (not necessarily positive) with ` m <= n`.
 
-The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. Rhe range specified is of the  form  `m:n`,  if left  empty, `0:length(coeffs)-1` is  used (i.e.,  the coefficients refer  to the standard basis).
+The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. The range specified is of the  form  `m:n`,  if left  empty, `0:length(coeffs)-1` is  used (i.e.,  the coefficients refer  to the standard basis). Alternatively, the coefficients can be specified using an `OffsetVector` from the `OffsetArrays` package.
 
 Laurent polynomials and standard basis polynomials  promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`
 . 
@@ -94,6 +94,17 @@ end
 
 @register LaurentPolynomial
 
+# Add interface for OffsetArray
+function  LaurentPolynomial{T}(coeffs::OffsetArray{S, 1, Array{S,1}}, var::SymbolLike=:x) where {T, S}
+    m,n = axes(coeffs, 1)
+    LaurentPolynomial{T}(T.(coeffs.parent), m:n, Symbol(var))
+end
+function  LaurentPolynomial(coeffs::OffsetArray{S, 1, Array{S,1}}, var::SymbolLike=:x) where {S}
+    LaurentPolynomial{S}(coeffs, var)
+end
+
+
+
 function  LaurentPolynomial{T}(coeffs::AbstractVector{S},
                                rng::UnitRange{Int64}=0:length(coeffs)-1,
                                var::Symbol=:x) where {T <: Number, S <: Number}
@@ -109,11 +120,11 @@ function LaurentPolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where 
 end
 
 ## Alternate interface
-Polynomial(coeffs::AbstractVector{T}, rng::UnitRange, var::SymbolLike=:x) where {T <: Number} =
-    LaurentPolynomial{T}(coeffs, rng, Symbol(var))
+Polynomial(coeffs::OffsetArray{T,1,Array{T,1}}, var::SymbolLike=:x) where {T <: Number} =
+    LaurentPolynomial{T}(coeffs, var)
 
-Polynomial{T}(coeffs::AbstractVector{S}, rng::UnitRange, var::SymbolLike=:x) where {T <: Number, S <: Number} =
-    LaurentPolynomial{T}(T.(coeffs), rng, Symbol(var))
+Polynomial{T}(coeffs::OffsetArray{S,1,Array{S,1}}, var::SymbolLike=:x) where {T <: Number, S <: Number} =
+    LaurentPolynomial{T}(coeffs, var)
 
 ##
 ## conversion
