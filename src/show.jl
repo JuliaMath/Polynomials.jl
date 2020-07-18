@@ -202,9 +202,10 @@ function printcoefficient(io::IO, a::Rational{T}, j, mimetype::MIME"text/latex")
     abs(a.den) == one(T) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
 end
 
-# print complex numbers with parentheses as needed. `imagsymbol` can be given to print the imaginary unit as some other string than `"im"`
-function printcoefficient(io::IO, pj::Complex{T}, j, mimetype; imagsymbol::String="im") where {T}
+# print complex numbers with parentheses as needed. Pretty print complex numbers in latex
+function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
 
+    imagsymbol = isa(mimetype::MIME"text/latex") ? "i" : "im"
     a = real(pj)
     b = imag(pj)
 
