@@ -205,7 +205,7 @@ end
 # print complex numbers with parentheses as needed. Pretty print complex numbers in latex
 function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
 
-    imagsymbol = isa(mimetype::MIME"text/latex") ? "i" : "im"
+    imagsymbol = isa(mimetype,MIME"text/latex") ? "i" : "im"
     a = real(pj)
     b = imag(pj)
 
