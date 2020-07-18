@@ -202,22 +202,24 @@ function printcoefficient(io::IO, a::Rational{T}, j, mimetype::MIME"text/latex")
     abs(a.den) == one(T) ? print(io, a.num) : print(io, "\\frac{$(a.num)}{$(a.den)}")
 end
 
-# print complex numbers with parentheses as needed
-function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
+# print complex numbers with parentheses as needed. `imagsymbol` can be given to print the imaginary unit as some other string than `"im"`
+function printcoefficient(io::IO, pj::Complex{T}, j, mimetype; imagsymbol::String="im") where {T}
 
-    hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
-    hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
+    a = real(pj)
+    b = imag(pj)
+
+    hasreal = abs(a) > 0 || isnan(a) || isinf(a)
+    hasimag = abs(b) > 0 || isnan(b) || isinf(b)
 
     if hasreal && hasimag
-        Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
+        print(io,"(",a)
+        print(printsign(io,b,false,mimetype),imagsymbol,")")
     elseif hasreal
-        a = real(pj)
         (j==0 || showone(T) || a != one(T)) && printcoefficient(io, a, j, mimetype)
     elseif hasimag
-        b = imag(pj)
         (showone(T) || b != one(T)) && printcoefficient(io, b, j,  mimetype)
         (isnan(imag(pj)) || isinf(imag(pj))) && print(io, showop(mimetype, "*"))
-        print(io, im)
+        print(io, imagsymbol)
     else
         return nothing
     end
