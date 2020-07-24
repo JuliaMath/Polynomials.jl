@@ -687,6 +687,50 @@ end
         @test 1. ∈ res
         @test 2. ∈ res
     end
+
+
+    # issue 240
+    P = Polynomial
+
+    # Example of Zeng
+    x = variable(P{Float64})
+    p = (x+10)*(x^9 + x^8/3 + 1)
+    q = (x+10)*(x^9 + x^8/7 - 6//7)
+
+    @test degree(gcd(p,q)) == 0
+    @test degree(gcd(p,q, method=:noda_sasaki)) == 1
+    @test degree(gcd(p,q, method=:numerical)) == 1
+
+    # more bits don't help Euclidean
+    x = variable(P{BigFloat})
+    p = (x+10)*(x^9 + x^8/3 + 1)
+    q = (x+10)*(x^9 + x^8/7 - 6//7)
+    @test degree(gcd(p,q)) == 0
+
+    # Test 1 of Zeng
+    x =  variable(P{Float64})
+    alpha(j,n) = cos(j*pi/n)
+    beta(j,n) = sin(j*pi/n)
+    r1, r2 = 1/2, 3/2
+    U(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in 1:n)
+    V(n) = prod( (x-r2*alpha(j,n))^2 + r2^2*beta(j,n)^2 for j in 1:n)
+W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
+    for n in 2:2:20
+        p = U(n) * V(n); q = U(n) * W(n)
+        @test degree(gcd(p,q, method=:numerical)) == degree(U(n))
+    end
+
+    # Test 5 of Zeng
+    x =  variable(P{Float64})
+    for ms in ((2,1,1,0), (3,2,1,0), (4,3,2,1), (5,3,2,1), (9,6,4,2),
+               (20, 14, 10, 5), (80,60,40,20), (100,60,40,20))
+        p = prod((x-i)^j for (i,j) in enumerate(ms))
+        dp = derivative(p)
+        @test degree(gcd(p,dp, method=:numerical)) == sum(max.(ms .- 1, 0))
+    end
+    
+
+    
 end
 
 

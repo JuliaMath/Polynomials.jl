@@ -120,6 +120,126 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
     
 end
 
+"""
+    gcd(p1::StandardBasisPolynomial, p2::StandardBasisPolynomial; method=:eculidean, kwargs...)
+
+Find the greatest common divisor.
+
+By default, uses the Euclidean division algorithm, which is susceptible to floating point issues.
+
+Passing `method=:noda_sasaki` uses scaling to circumvent some of these.
+
+Passing `method=:numerical` will call the internal method `NGCD.ngcd` for the numerical gcd. See the help page of [`Polynomials.NGCD.ngcd`](@ref) for details.
+"""
+function Base.gcd(p1::P, p2::Q, args...;
+                  method=:euclidean,
+                  kwargs...
+                  ) where {T, P <: StandardBasisPolynomial{T}, Q <: StandardBasisPolynomial{T}}
+    
+    gcd(Val(method), p1, p2, args...; kwargs...)
+end
+
+function Base.gcd(::Val{:euclidean},
+                  r₀::StandardBasisPolynomial{T}, r₁;
+                  atol=zero(real(T)),
+                  rtol=Base.rtoldefault(real(T)),
+                  kwargs...) where {T}
+    
+    
+    iter = 1
+    itermax = length(r₁)
+    
+    while !iszero(r₁) && iter ≤ itermax
+        _, rtemp = divrem(r₀, r₁)
+        r₀ = r₁
+        r₁ = truncate(rtemp; atol=atol, rtol=rtol)  
+        iter += 1
+    end
+    return r₀
+end
+
+
+Base.gcd(::Val{:noda_sasaki}, p, q; kwargs...) = gcd_noda_sasaki(p,q; kwargs...)
+
+"""
+     gcd_noda_sasaki(p,q; atol,  rtol)
+
+Greatest common divisor of two polynomials.
+Compute the greatest common divisor `d` of two polynomials `a` and `b` using 
+the Euclidian Algorithm with scaling as of [1]. 
+
+References:
+
+[1] M.-T. Noda and T. Sasaki. Approximate GCD and its application to ill-conditioned  algebraic equations. J. Comput. Appl. Math., 38:335–351, 1991.
+
+Author: Andreas Varga
+"""
+function  gcd_noda_sasaki(p::P, q::Q;
+                          atol::Real=zero(real(promote_type(T,S))),
+                          rtol::Real=Base.rtoldefault(real(promote_type(T,S)))
+                          ) where {T,S,
+                                   P<: StandardBasisPolynomial{T},
+                                   Q<: StandardBasisPolynomial{S},
+                                   }
+    ⟒(P) == ⟒(Q) ||  return gcd_noda_sasaki(promote(p,q);  atol=atotl, rtol=rtol)
+    ## check symbol
+    a, b = coeffs(p), coeffs(q)
+    as =  _gcd_noda_sasaki(a,b,atol=atol,  rtol=rtol)
+
+    ⟒(P)(as, p.var)
+end
+
+function _gcd_noda_sasaki(a::Vector{T}, b::Vector{S};
+              atol::Real=zero(real(promote_type(T,S))),
+              rtol::Real=Base.rtoldefault(real(promote_type(T,S)))
+              ) where {T,S}
+
+    R = eltype(one(T)/one(S))    
+
+    na1 = findlast(!iszero,a) # degree(a) + 1
+    na1 === nothing && return(ones(R, 1))
+
+    nb1 = findlast(!iszero,b) # degree(b) + 1
+    nb1 === nothing && return(ones(R, 1))
+
+    a1 = R[a[i] for i in 1:na1]
+    b1 = R[b[i] for i in 1:nb1]    
+    a1 ./= norm(a1)
+    b1 ./= norm(b1)
+
+    tol = atol + rtol
+
+    # determine the degree of GCD as the nullity of the Sylvester matrix 
+    # this computation can be replaced by simply setting nd = 1, in which case the Sylvester matrix is not formed
+
+    nd = na1 + nb1 - 2 - rank([NGCD.convmtx(a1,nb1-1) NGCD.convmtx(b1,na1-1)], atol = tol) # julia 1.1
+    nd == 0 && (return [one(R)]) 
+
+    sc = one(R)
+    while na1 > nd
+         na1 < nb1 && ((a1, b1, na1, nb1) = (b1, a1, nb1, na1))
+         @inbounds for i in na1:-1:nb1
+            s = -a1[i] / b1[nb1]
+            sc = max(sc, abs(s))
+            @inbounds for j in 1:nb1-1
+                a1[i-nb1+j] += b1[j] * s
+            end
+        end
+        a1 ./= sc
+        na1 = findlast(t -> (abs(t) > tol),a1[1:nb1-1])
+        na1 === nothing && (na1 = 0)
+        resize!(a1, na1)
+    end
+
+    return nb1 == 1 ? [one(R)] : b1
+
+end
+
+
+Base.gcd(::Val{:numerical}, p, q, args...; kwargs...) = ngcd(p,q, args...; kwargs...).u
+
+
+## --------------------------------------------------
 
 function companion(p::P) where {T, P <: StandardBasisPolynomial{T}}
     d = length(p) - 1
