@@ -714,7 +714,7 @@ end
     r1, r2 = 1/2, 3/2
     U(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in 1:n)
     V(n) = prod( (x-r2*alpha(j,n))^2 + r2^2*beta(j,n)^2 for j in 1:n)
-W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
+    W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
     for n in 2:2:20
         p = U(n) * V(n); q = U(n) * W(n)
         @test degree(gcd(p,q, method=:numerical)) == degree(U(n))
@@ -729,7 +729,16 @@ W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
         @test degree(gcd(p,dp, method=:numerical)) == sum(max.(ms .- 1, 0))
     end
     
-
+    #
+    x =  variable(P{Float64})
+    for n in (10,20,50, 100)
+        p = (x-1)^n * (x-2)^n * (x-3)
+        q = (x-1) * (x-2) * (x-4)
+        @test degree(gcd(p,q, method=:numerical)) != 2
+        @test degree(Polynomials.ngcd′(p,q)) == 2
+    end
+    
+    
     
 end
 

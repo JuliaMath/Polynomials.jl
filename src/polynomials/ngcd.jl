@@ -14,8 +14,10 @@ function ngcd(p::P, q::Q, args...;kwargs...) where {T, S, P<:StandardBasisPolyno
 
     p′,q′ = promote(p,q)
     u,v,w,Θ,κ = NGCD.ngcd(coeffs(p′), coeffs(q′), args...; kwargs...)
+
     PP = ⟒(typeof(p′))
     (u=PP(u, p.var), v=PP(v, p.var), w = PP(w, p.var), Θ=Θ, κ=κ)
+    
 end
 
 """
@@ -23,10 +25,26 @@ end
 
 When degree(p) ≫ degree(q), this uses a early call to `divrem`.
 """
-function ngcd′(p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
+function ngcd′(p::P, q::P;
+               atol = eps(real(float(T))),
+               # rtol=eps(real(float(T))),
+               rtol = Base.rtoldefault(real(float(T))), # relax this
+               satol= atol,
+               srtol= rtol,
+               kwargs...
+               ) where {T, P <: StandardBasisPolynomial{T}}
+
+
     a, b = divrem(p,q)
-    u,v,w,Θ, κ = ngcd(q, b; kwargs...)
-    ngcd(p, q, degree(u))
+
+    # check if a=u (p,q) ≈ (aq,q)
+    if isapprox(p, a*q, atol=atol, rtol=rtol)
+        return a
+    else
+        u,v,w,Θ, κ = ngcd(q, b; atol=100atol, rtol=100rtol, kwargs...)
+        u
+        #ngcd(p, q, degree(u))
+    end
 end
 
 
@@ -111,10 +129,10 @@ Note: Based on work by Andreas Varga
 function ngcd(ps::Vector{T},
               qs::Vector{T};
               scale::Bool=true,
-              atol=(length(ps)+length(qs))*eps(real(T)),  
-              rtol=eps(real(T)), #Base.rtoldefault(real(T)),
-              satol=atol,
-              srtol=eps(real(T)),
+              atol = eps(real(T)),  
+              rtol = eps(real(T)),
+              satol = atol,
+              srtol = rtol,
               verbose=false
               ) where {T <: AbstractFloat}
     
