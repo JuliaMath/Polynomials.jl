@@ -426,3 +426,20 @@ function integrate(p::P, k::S) where {T, P<: LaurentPolynomial{T}, S<:Number}
     return ⟒(P)(as, m:n, p.var)
     
 end
+
+
+function Base.gcd(p::LaurentPolynomial{T}, q::LaurentPolynomial{T}, args...; kwargs...) where {T}
+    mp, Mp = extrema(p)
+    mq, Mq = extrema(q)
+    if mp < 0 || mq < 0
+        throw(ArgumentError("GCD is not defined when there are `x⁻¹` terms"))
+    end
+
+    degree(p) == 0 && return iszero(p) ? q : one(q)
+    degree(q) == 0 && return iszero(q) ? p : one(p)
+    check_same_variable(p,q) || throw(ArgumentError("p and q have different symbols"))
+    
+    pp, qq = convert(Polynomial, p), convert(Polynomial, q)
+    u = gcd(pp, qq, args..., kwargs...)
+    return LaurentPolynomial(coeffs(u), p.var)
+end

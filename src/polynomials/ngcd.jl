@@ -1,34 +1,42 @@
 """
     ngcd(p,q, [k]; kwargs...)
 
-Find numerical GCD of polynomials `p` and `q` [`NGCD.ngcd`](@ref).
+Find numerical GCD of polynomials `p` and `q`. Refer to [`NGCD.ngcd`](@ref) for details.
+
+
+In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call one step of the Euclidean gcd approahc, and then call `ngcd` with relaxed tolerances.
 
 """
 function ngcd(p::P, q::Q, args...;kwargs...) where {T, S, P<:StandardBasisPolynomial{T}, Q <: StandardBasisPolynomial{S}}
 
+    degree(p) < 0 && return q
+    degree(p) == 0 && return one(q)
+    degree(q) < 0 && return p
+    degree(q) == 0 && return one(p)
     check_same_variable(p,q) || throw(ArgumentError("Mis-matched variables"))
 
-    if (P <: LaurentPolynomial && degree(p) < 0) || (Q <: LaurentPolynomial && degree(q) < 0) 
-        throw(ArgumentError("Laurent polynomials must have non-negative degree"))
-    end
-
     p′,q′ = promote(p,q)
-    u,v,w,Θ,κ = NGCD.ngcd(coeffs(p′), coeffs(q′), args...; kwargs...)
-
-    PP = ⟒(typeof(p′))
-    (u=PP(u, p.var), v=PP(v, p.var), w = PP(w, p.var), Θ=Θ, κ=κ)
+    
+    if degree(p′) > 5*degree(q′)
+        return  ngcd′(p′, q′, args...; kwargs...)
+    end
+    
+    ps, qs = [p′[i] for i in eachindex(p′)], [q′[i] for i in eachindex(q′)] # need vectors, want copy
+    u,v,w,Θ,κ = NGCD.ngcd(ps, qs, args...; kwargs...)
+    P′ = ⟒(typeof(p′))
+    (u=P′(u, p.var), v=P′(v, p.var), w = P′(w, p.var), Θ=Θ, κ=κ)
     
 end
 
 """
     ngcd′(p,q)
 
-When degree(p) ≫ degree(q), this uses a early call to `divrem`.
+When degree(p) ≫ degree(q), this uses a early call to `divrem` to bring about commensurate degrees
+before calling `ngcd`.
 """
 function ngcd′(p::P, q::P;
                atol = eps(real(float(T))),
-               # rtol=eps(real(float(T))),
-               rtol = Base.rtoldefault(real(float(T))), # relax this
+               rtol = atol, 
                satol= atol,
                srtol= rtol,
                kwargs...
@@ -42,8 +50,6 @@ function ngcd′(p::P, q::P;
         return a
     else
         u,v,w,Θ, κ = ngcd(q, b; atol=100atol, rtol=100rtol, kwargs...)
-        u
-        #ngcd(p, q, degree(u))
     end
 end
 
@@ -54,55 +60,59 @@ using LinearAlgebra
 """
     ngcd(ps::Vector{T}, qs::Vector{T}, [k::Int]; scale::Bool=true, atol=eps(T), rtol=eps(T), satol=atol, srtol=rtol)
 
-Return u,v,w, ρ, κ where `u⋅v ≈ ps` and `u⋅w ≈ qs`; Θ (`\\Theta[tab]`) is the residual error (`|| [u⋅v,u⋅w] - [ps,qs] ||`); and `κ` (`\\kappa[tab]`) is the numerical gcd condition number estimate.
+Return `u, v, w, Θ, κ` where ``u⋅v ≈ ps`` and ``u⋅w ≈ qs`` (polynomial multiplication); `Θ` (`\\Theta[tab]`) is the residual error (``‖ [u⋅v,u⋅w] - [ps,qs] ‖``); and `κ` (`\\kappa[tab]`) is the numerical gcd condition number estimate. When `scale=true` (the default), ``u⋅v ≈ ps/‖ps‖`` and ``u⋅w ≈ qs/‖qs‖``
 
-The numerical GCD problem is defined in [1] (5.4). Let (p,q) be a
+The numerical GCD problem is defined in [1] (5.4). Let ``(p,q)`` be a
 polynomial pair with degree m,n. Let Ρmn be set of all such pairs. Any
-given pair of polynomials has an exact greatest common divisor, u, of
-degree k, defined up to constant factors. Let Ρᵏmn be the manifold of
-all such (p,q) pairs with exact gcd of degree k. A given pair (p,q) with exact gcd of degree j will
-have some distance Θᵏ from Pᵏ.  For a given threshold ϵ > 0 a numerical GCD
-of (p,q) within ϵ is an exact GCD of a pair (p̂,q̂) in Ρᵏ with 
+given pair of polynomials has an exact greatest common divisor, ``u``, of
+degree ``k``, defined up to constant factors. Let ``Ρᵏmn`` be the manifold of
+all such ``(p,q)`` pairs with exact gcd of degree ``k``. A given pair ``(p,q)`` with exact gcd of degree ``j`` will
+have some distance ``Θᵏ`` from ``Pᵏ``.  For a given threshold ``ϵ > 0`` a numerical GCD
+of ``(p,q)`` within ``ϵ`` is an exact GCD of a pair ``(p̂,q̂)`` in ``Ρᵏ`` with 
 
-|| (p,q) - (p̂,q̂) || <= Θᵏ, where k is the largest value for which Θᵏ < ϵ. 
+``‖ (p,q) - (p̂,q̂) ‖ <= Θᵏ``, where ``k`` is the largest value for which ``Θᵏ < ϵ``. 
 
-(In the ϵ → 0 limit, this would be the exact GCD.)
-
-
-Suppose (p,q) is an ϵ pertubation from (p̂,q̂) where (p̂,q̂) has an exact gcd of degree k, then degree(gcdₑ(p,q)) = k; as ϵ → 0, gcdₑ(p,q) → gcd(p̂, q̂), and
-
-limsup_{(p,q)→(p̂,q̂)} inf{ || (u,v,w) - (û,v̂,ŵ) ||} / || (p,q) - (p̂,q̂) || < κₑ(p,q).
-
-κ is called the numerical GCD condition number.
+(In the ``ϵ → 0`` limit, this would be the exact GCD.)
 
 
-The Zeng algorithm proposes a degree for `u` and *if* a triple `(u,v,w)` with `u` of degree `k` and (u⋅v, u⋅w) in Ρᵏmn   can be found satisfying || (u⋅v, u⋅w) - (p,q) || < ϵ then (u,v,w) is returned; otherwise the proposed degree is reduced and the process repeats. If not terminated, at degree 0 a constant gcd is returned.
+Suppose ``(p,q)`` is an ``ϵ`` pertubation from ``(p̂,q̂)`` where ``(p̂,q̂)`` has an exact gcd of degree ``k``, then ``degree(gcdₑ(p,q)) = k``; as ``ϵ → 0``, ``gcdₑ(p,q) → gcd(p̂, q̂)``, and
 
-The initial proposed degree is the first `j`,  `j=min(m,n):-1:1`, where Sⱼ is believed to have a singular value of 0 (Sⱼ being related to the Sylvester matrix of `ps` and `qs`). The verification of the proposed degree is done using a Gauss-Newton iteration scheme holding the degree of `u` constant.
+``limsup_{(p,q)→(p̂,q̂)} inf{ ‖ (u,v,w) - (û,v̂,ŵ) ‖} / ‖ (p,q) - (p̂,q̂) ‖ < κₑ(p,q)``.
 
-Scaling:
+``κ`` is called the numerical GCD condition number.
 
-If `scale=true` (the default), the gcd of p/||p|| and q/||q|| is identified. Scaling can reduce the condition numbers significantly.
 
-Tolerances:
+The Zeng algorithm proposes a degree for ``u`` and *if* a triple ``(u,v,w)`` with ``u`` of degree ``k`` and ``(u⋅v, u⋅w)`` in ``Ρᵏmn`` can be found satisfying ``‖ (u⋅v, u⋅w) - (p,q) ‖ < ϵ`` then ``(u,v,w)`` is returned; otherwise the proposed degree is reduced and the process repeats. If not terminated, at degree ``0`` a constant gcd is returned.
+
+The initial proposed degree is the first ``j``,  ``j=min(m,n):-1:1``, where ``Sⱼ`` is believed to have a singular value of ``0`` (``Sⱼ`` being related to the Sylvester matrix of `ps` and `qs`). The verification of the proposed degree is done using a Gauss-Newton iteration scheme holding the degree of ``u`` constant.
+
+## Scaling:
+
+If `scale=true` (the default when a polynomial norm is large), the gcd of ``p/‖p‖`` and ``q/‖q‖`` is identified. Scaling can reduce the condition numbers significantly.
+
+## Tolerances:
 
 There are two places where tolerances are utilized:
 
-* in the identification of the rank of Sⱼ a value σ₁ = ||Rx|| is identified. To test if this is zero a tolerance of `max(satol, ||R||ₒₒ ⋅ srtol)` is used.
+* in the identification of the rank of ``Sⱼ`` a value ``σ₁ = ‖Rx‖`` is identified. To test if this is zero a tolerance of `max(satol, ‖R‖ₒₒ ⋅ srtol)` is used.
 
-* to test if (u ⋅ v, u ⋅ w) ≈ (p,q) a tolerance of `max(atol, λ⋅rtol)` is used with `λ` an estimate for κ⋅||(p,q)||.
+* to test if ``(u ⋅ v, u ⋅ w) ≈ (p,q)`` a tolerance of `max(atol, λ⋅rtol)` is used with `λ` chosen to be  ``(‖(p,q)‖⋅n⋅m)⋅κ′⋅‖A‖ₒₒ`` to reflect the scale of ``p`` and ``q`` and an estimate for the condition number of ``A`` (a Jacobian involved in the solution). 
 
-Specified degree:
 
-When `k` is specified, a value for `(u,v,w)` is identified with `degree(u)=k`. No tolerances are utilized in computing Θᵏ.
-
+This seems to work well for a reasaonable range of polynomials, however there can be issues: when the degree of ``p`` is much larger than the degree of ``q``, these choices can fail; when a higher rank is proposed, then too large a tolerance for `rtol` or `atol` can lead to a false verification; when a tolerance for `atol` or `rtol` is too strict, then a degree may not be verified. 
 
 !!! note:
     These tolerances are adjusted from those proposed in [1].
 
+## Specified degree:
+
+When `k` is specified, a value for ``(u,v,w)`` is identified with ``degree(u)=k``. No tolerances are utilized in computing ``Θᵏ``.
+
+
+
 Output:
 
-The function outputs a named tuple with names (`u`, `v`, `w`, `Θ`, `κ`). The components `u`,`v`,`w` estimate the gcd and give the divisor. The value `Θ` estimates Θᵏ and `κ` estimates the numerical condition number.
+The function outputs a named tuple with names (`u`, `v`, `w`, `Θ`, `κ`). The components `u`,`v`,`w` estimate the gcd and give the divisors. The value `Θ` estimates ``Θᵏ`` and `κ` estimates the numerical condition number.
 
 Example:
 
@@ -128,11 +138,11 @@ Note: Based on work by Andreas Varga
 """
 function ngcd(ps::Vector{T},
               qs::Vector{T};
-              scale::Bool=true,
-              atol = eps(real(T)),  
-              rtol = eps(real(T)),
-              satol = atol,
-              srtol = rtol,
+              scale::Bool=false, #norm(ps) > 1e6, #false,
+              atol = eps(real(T)),
+              rtol = Base.rtoldefault(real(T)),
+              satol = eps(real(T))^(5/6),
+              srtol = eps(real(T)),
               verbose=false
               ) where {T <: AbstractFloat}
     
@@ -144,8 +154,8 @@ function ngcd(ps::Vector{T},
     end
 
     if scale
-        ps ./= norm(ps)
-        qs ./= norm(qs)
+        ps = ps./norm(ps)
+        qs = qs./norm(qs)
     end
     
     # storage
@@ -170,15 +180,15 @@ function ngcd(ps::Vector{T},
 
         V = view(R, 1:nc, 1:nc)
         flag, σ, x = smallest_singular_value(V, satol *  sqrt(1 + m - j), srtol)
-
         verbose && println("------ degree $j ----- σ₁: $σ  --- $flag")
 
         if (flag == :iszero || flag == :ispossible)
-            u, v, w = initial_uvw(Val(flag), j, ps, qs, x)
-            flag, ρ₁, σ₂ = refine_agcd!(u,v,w, ps, qs, atol, rtol)
-
-            verbose && println("   --- Θᵏ: $ρ₁ --- $flag")
             
+            u, v, w = initial_uvw(Val(flag), j, ps, qs, x)
+            flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, ps, qs, atol, rtol)
+
+            verbose && println("   --- Θᵏ: $ρ₁ --- $flag (ρ=$(ρ))")
+#            error("")
             if flag == :convergence
                 return (u=u, v=v, w=w, Θ=ρ₁, κ=σ₂) # (u,v,w) verified
             end
@@ -196,8 +206,9 @@ function ngcd(ps::Vector{T},
     end
 
     # u is a constant
+    verbose && println("------ GCD is constant ------")    
     u, v, w = initial_uvw(Val(:constant), j, ps, qs, x)
-    flag, ρ₁, κ = refine_agcd!(u,v,w, ps, qs, atol, rtol)
+    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, ps, qs, atol, rtol)
     return (u=u, v=v, w=w, Θ=ρ₁, κ=κ)
     
 end
@@ -210,20 +221,28 @@ end
 # fix the degree, k
 function ngcd(ps::Vector{T},
               qs::Vector{T},
-              k::Int
-              ;
+              k::Int;
               kwargs...
               ) where {T <: AbstractFloat}
 
     m, n = _degree.((ps,qs))
 
     if m < n
-        out = ngcd(qs, ps, k, atol=atol, rtol=rtol)
+        out = ngcd(qs, ps, k, atol=Inf, rtol=Inf)
         return (u=out.u, v=out.w, w=out.v, Θ=out.Θ, κ=out.κ)
     end
 
-    u,v,w = initial_uvw(Val(:iszero), k, ps, qs, nothing)
-    flag, ρ₁, κ = refine_agcd!(u,v,w, ps, qs, Inf, Inf)
+    #    u,v,w = initial_uvw(Val(:iszero), k, ps, qs, nothing)
+    Sⱼ = [convmtx(ps, n-k+1) convmtx(qs, m-k+1)]
+    F = qr(Sⱼ)
+    flag, σ, x = smallest_singular_value(F.R, eps(T) *  sqrt(1 + m - k), eps(T))
+    if flag != :iszero
+        w, v = x[1:n-k+1], -x[n-k+2:end]
+        u  = [convmtx(v,k+1); convmtx(w, k+1)] \ [ps; qs]
+    else
+        u,v,w = initial_uvw(Val(flag), k, ps, qs, nothing)
+    end
+    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, ps, qs, Inf, Inf)
     return (u=u, v=v, w=w, Θ=ρ₁, κ=κ) 
 
 end
@@ -236,7 +255,7 @@ end
 ## -----
 
 # return guess at smallest singular value and right sinuglar value, x
-# for a right triangular matrix, V
+# for an upper triangular matrix, V
 function smallest_singular_value(V::AbstractArray{T,2},
                                  atol=eps(T),
                                  rtol=zero(T)) where {T}
@@ -249,12 +268,13 @@ function smallest_singular_value(V::AbstractArray{T,2},
 
     m,n = size(R)
 
-    # we are testing if ||Ax|| ≈ 0
+    # we are testing if ‖Ax‖ ≈ 0
     # If x is a perfect 0, but x is approximated by x' due to round off
-    # then ||A(x-x')|| <= ||A||⋅||x - x'|| so we use ||A|| as scale factor
+    # then ‖A(x-x')‖ <= ‖A‖⋅‖x - x'‖ so we use ‖A‖ as scale factor
     δ = max(atol,  norm(R,Inf) * rtol)
     
     x = ones(T, n)
+#    x = rand(T, n)
     y = zeros(T, m)
     σ₀ = σ₁ = Inf*one(real(T))
     steps, minᵢ = 1, 5
@@ -265,7 +285,7 @@ function smallest_singular_value(V::AbstractArray{T,2},
         x ./= norm(x,2)
         σ₁ = norm(R * x, 2)
 
-        if (steps <= 50) && (steps <= minᵢ || σ₁ <= 0.05*σ₀) # decreasing, keep going
+        if (steps <= 50) && (steps <= minᵢ || σ₁ < 0.05*σ₀) # decreasing, keep going
             σ₀ = σ₁
         else
             break
@@ -343,9 +363,14 @@ function initial_uvw(::Val{:iszero}, j, ps::Vector{T}, qs, x) where {T}
 
     F = qr(S)
     R = UpperTriangular(F.R)
-    x = ones(T, size(R,2))
-    x .= R \ (R' \ (x/norm(x)))
-    x ./= norm(x)
+
+    if iszero(det(R))
+        x = eigvals(R)[:,1]
+    else
+        x = ones(T, size(R,2))
+        x .= R \ (R' \ (x/norm(x)))
+        x ./= norm(x)
+    end
 
     w = x[1:n-j+1]
     v = -x[(n-j+2):end]
@@ -372,13 +397,13 @@ end
     
 ## attempt to refine u,v,w
 ## check that [u ⊗ v; u ⊗ w] ≈ [p; q]
-function refine_agcd!(u::Vector{T}, v, w, p, q, atol, rtol) where {T}
+function refine_uvw!(u::Vector{T}, v, w, p, q, atol, rtol) where {T}
     
     m, n, l =  _degree.((u, v, w))
 
     uv = u ⊗ v; uw = u ⊗ w
-    ρₒ, ρ₁ = one(T), residual_error(p,q,uv,uw)
-    
+    ρ₀, ρ₁ = one(T), residual_error(p,q,uv,uw)
+
     # storage
     A = zeros(T, JF_size(u, v, w)...)
     b = zeros(T, 1 + length(p) + length(q))
@@ -392,14 +417,8 @@ function refine_agcd!(u::Vector{T}, v, w, p, q, atol, rtol) where {T}
     JF!(A, h, u, v, w)
     Fmp!(b,  h'*u - β, p, q, uv, uw)
 
-    # sensitivity is Δu / Δp -> || J+ ||
-    # so we would use cond(A)/norm(A) * ||[p;q]|| as scale factor
-    # we estimate κ directly here
-    #λ = norm(A, Inf)
-    λ = norm((norm(p), norm(q))) / σ₂(A)
-    ρ = max(atol, rtol*λ) 
-    
-    while  true 
+    while ρ₁ > 0.0
+
         # update A, b, then solve A\b
         qrsolve!(Δf, A, b)
 
@@ -412,7 +431,8 @@ function refine_agcd!(u::Vector{T}, v, w, p, q, atol, rtol) where {T}
         ρ₀, ρ′ = ρ₁, residual_error(p, q, uv, uw)
 
         # don't worry about first few, but aftewards each step must be productive
-        if  (steps <= Maxᵢ) && (steps <= minᵢ || ρ′ < 0.05 * ρ₀)
+        # though we can have really bad first steps, which we cap
+        if  (steps <= Maxᵢ) && (steps <= minᵢ || ρ′ < 0.95 * ρ₀) && (  ρ′ < 100*ρ₁ )
             ρ₁ = ρ′
             u .-= Δu; v .-= Δv; w .-= Δw
             steps += 1
@@ -426,11 +446,18 @@ function refine_agcd!(u::Vector{T}, v, w, p, q, atol, rtol) where {T}
         
     end
 
+
+    # this is a heuristic
+    # sensitivity is Δu / Δp <= ‖ A+ ‖ = κ
+    # we use an estimate for ‖(p,q)‖ error times ‖A⁺‖⋅‖A‖ₒₒ
+    κ = 1/σ₂(A) # ≈ ‖A⁺‖
+    λ = norm((norm(p), norm(q))) * (m * n) * min(1, κ) * norm(A, Inf)
+    ρ = max(atol, rtol * λ)
+
     if ρ₁ <= ρ
-        κ = 1/σ₂(A)
-        return :convergence, ρ₁, κ
+        return :convergence, ρ₁, κ, ρ
     else
-        return :no_convergence, ρ₁, NaN
+        return :no_convergence, ρ₁, κ, ρ
     end
     
 end
@@ -438,7 +465,6 @@ end
 function qrsolve!(y::Vector{T}, A, b) where {T}
     y.= qr(A) \ b
 end
-
 
 # # Fast least-squares solver for full column rank Hessenberg-like matrices
 # # By Andreas Varga
@@ -500,25 +526,6 @@ function JF!(M, h,  u::Vector{T}, v, w) where {T}
     
     return nothing
 end
-# function JF!(M, h,  u::Vector{T}, v, w) where {T}
-#     m, k, j = _degree(u), _degree(v), _degree(w)
-#     n, l = m + k, m + j
-
-#     # JF_size should return these
-#     ai, aj = convmtx_size(v, m + 1)
-#     bi, bj = convmtx_size(u, k + 1)
-#     di, dj = convmtx_size(w, m + 1)
-#     fi, fj = convmtx_size(u, j + 1)
-#     ci, cj = ai, fj
-#     ei, ej = di, bj
-
-#     M[1,1:m+1] = h' 
-#     convmtx!(view(M, 1 .+ (1:ai), 1:aj),                     v, m + 1)
-#     convmtx!(view(M, 1 .+ (1:bi), aj .+ (1:bj)),             u, k + 1)
-#     convmtx!(view(M, (1 + ai) .+ (1:di), 1:dj),              w, m + 1)
-#     convmtx!(view(M, (1 + ci) .+ (1:fi), dj + ej .+ (1:fj)), u, j + 1)
-
-# end
 
 ## compute F(u,v,w) - [p, p'] = [u*v, u*w] - [p, p']
 function Fmp!(b, γ, p, q, uv, uw)
@@ -533,18 +540,6 @@ function Fmp!(b, γ, p, q, uv, uw)
     end
     return nothing
 end
-# function Fmp!(b, γ, p, q, uv, uw)
-#     b[1] = γ
-#     for i in 2:2+length(p)-1
-#         j = i - 1
-#         b[i] = uv[j] - p[j]
-#     end
-#     for i in 2+length(p):length(b)
-#         j = i - 1 - length(p)
-#         b[i] = uw[j] - q[j]
-#     end
-#     return nothing
-# end
 
 # norm( [u ⊗ v; u ⊗ w] .- [p; q], 2)
 function residual_error(p::Vector{T}, q, uv, uw) where {T}

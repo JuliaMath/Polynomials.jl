@@ -125,7 +125,7 @@ end
 
 Find the greatest common divisor.
 
-By default, uses the Euclidean division algorithm, which is susceptible to floating point issues.
+By default, uses the Euclidean division algorithm (`method=:euclidean`), which is susceptible to floating point issues.
 
 Passing `method=:noda_sasaki` uses scaling to circumvent some of these.
 
@@ -181,10 +181,10 @@ function  gcd_noda_sasaki(p::P, q::Q;
                                    P<: StandardBasisPolynomial{T},
                                    Q<: StandardBasisPolynomial{S},
                                    }
-    ⟒(P) == ⟒(Q) ||  return gcd_noda_sasaki(promote(p,q);  atol=atotl, rtol=rtol)
+    ⟒(P) == ⟒(Q) ||  return gcd_noda_sasaki(promote(p,q);  atol=atol, rtol=rtol)
     ## check symbol
     a, b = coeffs(p), coeffs(q)
-    as =  _gcd_noda_sasaki(a,b,atol=atol,  rtol=rtol)
+    as =  _gcd_noda_sasaki(a,b, atol=atol,  rtol=rtol)
 
     ⟒(P)(as, p.var)
 end

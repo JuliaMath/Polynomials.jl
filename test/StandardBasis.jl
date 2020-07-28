@@ -674,12 +674,7 @@ end
         @test degree(gcd(p1, P(0))) == degree(p1) # P(0) has the roots of p1
         @test degree(gcd(p1 + p2 * 170.10734737144486, p2)) == 0          # see, c.f., #122
 
-        ## Issue #240; add tolerance to gcd
-        a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
-        b = P([0.5410010714904849, 0.533604905984294]);
-        d = P([0.5490673726445683, 0.15991109487875477]);
-        @test Polynomials.isconstant(gcd(a*d,b*d))
-        @test !Polynomials.isconstant(gcd(a*d, b*d, atol=sqrt(eps())))
+    
         
         p1 = fromroots(P, [1.,2.,3.])
         p2 = fromroots(P, [1.,2.,6.])
@@ -692,6 +687,18 @@ end
     # issue 240
     P = Polynomial
 
+    a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
+    b = P([0.5410010714904849, 0.533604905984294]);
+    d = P([0.5490673726445683, 0.15991109487875477]);
+    @test degree(gcd(a*d,b*d)) == 0
+    @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
+    @test degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)    
+    @test degree(gcd(a*d,b*d, method=:numerical)) == degree(d)
+
+    l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
+    u,v,w = fromroots.(rand.((l,m,n)))
+    @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
+    
     # Example of Zeng
     x = variable(P{Float64})
     p = (x+10)*(x^9 + x^8/3 + 1)
@@ -723,19 +730,20 @@ end
     # Test 5 of Zeng
     x =  variable(P{Float64})
     for ms in ((2,1,1,0), (3,2,1,0), (4,3,2,1), (5,3,2,1), (9,6,4,2),
-               (20, 14, 10, 5), (80,60,40,20), (100,60,40,20))
+               (20, 14, 10, 5), (80,60,40,20), (100,60,40,20)
+               )
+        
         p = prod((x-i)^j for (i,j) in enumerate(ms))
         dp = derivative(p)
         @test degree(gcd(p,dp, method=:numerical)) == sum(max.(ms .- 1, 0))
     end
     
-    #
+    # fussy pair
     x =  variable(P{Float64})
-    for n in (10,20,50, 100)
+    for n in (2,5,10,20,50, 100)
         p = (x-1)^n * (x-2)^n * (x-3)
         q = (x-1) * (x-2) * (x-4)
-        @test degree(gcd(p,q, method=:numerical)) != 2
-        @test degree(Polynomials.ngcd′(p,q)) == 2
+        @test degree(gcd(p,q, method=:numerical)) == 2  
     end
     
     
