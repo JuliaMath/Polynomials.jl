@@ -173,6 +173,8 @@ References:
 [1] M.-T. Noda and T. Sasaki. Approximate GCD and its application to ill-conditioned  algebraic equations. J. Comput. Appl. Math., 38:335–351, 1991.
 
 Author: Andreas Varga
+
+Note: requires Julia `v1.2` or greater.
 """
 function  gcd_noda_sasaki(p::P, q::Q;
                           atol::Real=zero(real(promote_type(T,S))),

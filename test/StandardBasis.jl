@@ -692,7 +692,7 @@ end
     d = P([0.5490673726445683, 0.15991109487875477]);
     @test degree(gcd(a*d,b*d)) == 0
     @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
-    @test degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)    
+    VERSION >= v"1.2.0" &&  @test  degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
     @test degree(gcd(a*d,b*d, method=:numerical)) == degree(d)
 
     l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
@@ -705,7 +705,7 @@ end
     q = (x+10)*(x^9 + x^8/7 - 6//7)
 
     @test degree(gcd(p,q)) == 0
-    @test degree(gcd(p,q, method=:noda_sasaki)) == 1
+    VERSION >= v"1.2.0"  && (@test degree(gcd(p,q, method=:noda_sasaki)) == 1)
     @test degree(gcd(p,q, method=:numerical)) == 1
 
     # more bits don't help Euclidean
