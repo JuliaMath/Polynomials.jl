@@ -133,7 +133,7 @@ by Zhonggang Zeng;
 [url](http://homepages.neiu.edu/~zzeng/uvgcd.pdf);
 [doi](https://doi.org/10.1090/conm/556/11014)
 
-Note: Based on work by Andreas Varga
+Note: Based on work by Andreas Varga; Requires `VERSION >= v"1.2"`.
 
 """
 function ngcd(ps::Vector{T},
