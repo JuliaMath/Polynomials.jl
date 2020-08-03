@@ -2,6 +2,7 @@ module Polynomials
 
 using LinearAlgebra
 using Intervals
+using OffsetArrays
 
 include("abstract.jl")
 include("show.jl")

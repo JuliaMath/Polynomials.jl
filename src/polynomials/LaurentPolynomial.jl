@@ -5,7 +5,7 @@ export LaurentPolynomial
 
 A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of the form `a_{m}x^m + ... + a_{n}x^n` where `m,n` are  integers (not necessarily positive) with ` m <= n`.
 
-The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. Rhe range specified is of the  form  `m:n`,  if left  empty, `0:length(coeffs)-1` is  used (i.e.,  the coefficients refer  to the standard basis).
+The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. The range specified is of the  form  `m:n`,  if left  empty, `0:length(coeffs)-1` is  used (i.e.,  the coefficients refer  to the standard basis). Alternatively, the coefficients can be specified using an `OffsetVector` from the `OffsetArrays` package.
 
 Laurent polynomials and standard basis polynomials  promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`
 . 
@@ -94,6 +94,17 @@ end
 
 @register LaurentPolynomial
 
+# Add interface for OffsetArray
+function  LaurentPolynomial{T}(coeffs::OffsetArray{S, 1, Array{S,1}}, var::SymbolLike=:x) where {T, S}
+    m,n = axes(coeffs, 1)
+    LaurentPolynomial{T}(T.(coeffs.parent), m:n, Symbol(var))
+end
+function  LaurentPolynomial(coeffs::OffsetArray{S, 1, Array{S,1}}, var::SymbolLike=:x) where {S}
+    LaurentPolynomial{S}(coeffs, var)
+end
+
+
+
 function  LaurentPolynomial{T}(coeffs::AbstractVector{S},
                                rng::UnitRange{Int64}=0:length(coeffs)-1,
                                var::Symbol=:x) where {T <: Number, S <: Number}
@@ -109,11 +120,11 @@ function LaurentPolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where 
 end
 
 ## Alternate interface
-Polynomial(coeffs::AbstractVector{T}, rng::UnitRange, var::SymbolLike=:x) where {T <: Number} =
-    LaurentPolynomial{T}(coeffs, rng, Symbol(var))
+Polynomial(coeffs::OffsetArray{T,1,Array{T,1}}, var::SymbolLike=:x) where {T <: Number} =
+    LaurentPolynomial{T}(coeffs, var)
 
-Polynomial{T}(coeffs::AbstractVector{S}, rng::UnitRange, var::SymbolLike=:x) where {T <: Number, S <: Number} =
-    LaurentPolynomial{T}(T.(coeffs), rng, Symbol(var))
+Polynomial{T}(coeffs::OffsetArray{S,1,Array{S,1}}, var::SymbolLike=:x) where {T <: Number, S <: Number} =
+    LaurentPolynomial{T}(coeffs, var)
 
 ##
 ## conversion
@@ -268,6 +279,122 @@ end
 
 
 ##
+## ---- Conjugation has different defintions
+##
+
+"""
+    conj(p)
+
+This satisfies `conj(p(x)) = conj(p)(conj(x)) = p̄(conj(x))` or `p̄(x) = (conj ∘ p ∘ conj)(x)`
+
+Examples
+```jldoctest
+julia> z = variable(LaurentPolynomial, :z)
+LaurentPolynomial(z)
+
+julia> p = LaurentPolynomial([im, 1+im, 2 + im], -1:1, :z)
+LaurentPolynomial(im*z⁻¹ + (1 + 1im) + (2 + 1im)*z)
+
+julia> conj(p)(conj(z)) ≈ conj(p(z))
+true
+
+julia> conj(p)(z) ≈ (conj ∘ p ∘ conj)(z)
+true
+```
+"""
+function LinearAlgebra.conj(p::P) where {P <: LaurentPolynomial}
+    ps = coeffs(p)
+    m,n = extrema(p)
+    ⟒(P)(conj(ps),m:n, p.var)
+end
+
+
+"""
+    paraconj(p)
+
+[cf.](https://ccrma.stanford.edu/~jos/filters/Paraunitary_FiltersC_3.html)
+
+Call `p̂ = paraconj(p)` and `p̄` = conj(p)`, then this satisfies 
+`conj(p(z)) = p̂(1/conj(z))` or `p̂(z) = p̄(1/z) = (conj ∘ p ∘ conj ∘ inf)(z)`.
+
+Examples:
+
+```jldoctest
+julia> z = variable(LaurentPolynomial, :z)
+LaurentPolynomial(z)
+
+julia> h = LaurentPolynomial([1,1], -1:0, :z)
+LaurentPolynomial(z⁻¹ + 1)
+
+julia> Polynomials.paraconj(h)(z) ≈ 1 + z ≈ LaurentPolynomial([1,1], 0:1, :z)
+true
+
+julia> h = LaurentPolynomial([3,2im,1], -2:0, :z)
+LaurentPolynomial(3*z⁻² + 2im*z⁻¹ + 1)
+
+julia> Polynomials.paraconj(h)(z) ≈ 1 - 2im*z + 3z^2 ≈ LaurentPolynomial([1, -2im, 3], 0:2, :z)
+true
+
+julia> Polynomials.paraconj(h)(z) ≈ (conj ∘ h ∘ conj ∘ inv)(z)
+true
+"""
+function paraconj(p::LaurentPolynomial)
+    cs = p.coeffs
+    ds = adjoint.(cs)
+    m,n = extrema(p)
+    LaurentPolynomial(reverse(ds), -n:-m, p.var)
+end
+
+"""
+    cconj(p)
+
+Conjugation of a polynomial with respect to the imaginary axis.
+
+The `cconj` of a polynomial, `p̃`, conjugates the coefficients and applies `s -> -s`. That is `cconj(p)(s) = conj(p)(-s)`.
+
+This satisfies for *imaginary* `s`: `conj(p(s)) = p̃(s) = (conj ∘ p)(s) = cconj(p)(s) `
+
+[ref](https://github.com/hurak/PolynomialEquations.jl#symmetrix-conjugate-equation-continuous-time-case)
+
+Examples:
+```jldoctest
+julia> s = 2im
+0 + 2im
+
+julia> p = LaurentPolynomial([im,-1, -im, 1], 1:2, :s)
+LaurentPolynomial(im*s - s² - im*s³ + s⁴)
+
+julia> Polynomials.cconj(p)(s) ≈ conj(p(s)) 
+true
+
+julia> a = LaurentPolynomial([-0.12, -0.29, 1],:s)
+LaurentPolynomial(-0.12 - 0.29*s + 1.0*s²)
+
+julia> b = LaurentPolynomial([1.86, -0.34, -1.14, -0.21, 1.19, -1.12],:s)
+LaurentPolynomial(1.86 - 0.34*s - 1.14*s² - 0.21*s³ + 1.19*s⁴ - 1.12*s⁵)
+
+julia> x = LaurentPolynomial([-15.5, 50.0096551724139, 1.19], :s)
+LaurentPolynomial(-15.5 + 50.0096551724139*s + 1.19*s²)
+
+julia> Polynomials.cconj(a) * x + a * Polynomials.cconj(x) ≈ b + Polynomials.cconj(b)
+true
+```
+
+"""
+function cconj(p::LaurentPolynomial)
+    ps = conj.(coeffs(p))
+    m,n = extrema(p)
+    for i in m:n
+        if isodd(i)
+            ps[i+1-m] *= -1
+        end
+    end
+    LaurentPolynomial(ps, m:n, p.var)
+end
+
+
+
+##
 ## ----
 ##
 
@@ -279,10 +406,13 @@ function (p::LaurentPolynomial{T})(x::S) where {T,S}
     if m >= 0
         evalpoly(x, NTuple{n+1,T}(p[i] for i in 0:n))
     elseif n <= 0
-        evalpoly(inv(x), NTuple{m+1,T}(p[i] for i in 0:-1:m))
+        evalpoly(inv(x), NTuple{-m+1,T}(p[i] for i in 0:-1:m))
     else
         # eval pl(x) = a_mx^m + ...+ a_0 at 1/x; pr(x) = a_0 + a_1x + ... + a_nx^n  at  x; subtract a_0
-        evalpoly(inv(x), NTuple{-m+1,T}(p[i] for i in 0:-1:m)) + evalpoly(x, NTuple{n+1,T}(p[i] for i in 0:n)) - p[0]
+        l = evalpoly(inv(x), NTuple{-m+1,T}(p[i] for i in 0:-1:m))
+        r =  evalpoly(x, NTuple{n+1,T}(p[i] for i in 0:n))
+        mid = p[0]
+        l + r - mid
     end
 end
                  
