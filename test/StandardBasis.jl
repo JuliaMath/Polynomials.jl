@@ -685,34 +685,30 @@ end
 
 
     # issue 240
-    P = Polynomial
+    if VERSION >= v"1.2.0" # rank with keywords; require_one_based_indexing
+    
+        P = Polynomial
 
-    a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
-    b = P([0.5410010714904849, 0.533604905984294]);
-    d = P([0.5490673726445683, 0.15991109487875477]);
-    @test degree(gcd(a*d,b*d)) == 0
-    @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
-    if VERSION >= v"1.2.0"
+        a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
+        b = P([0.5410010714904849, 0.533604905984294]);
+        d = P([0.5490673726445683, 0.15991109487875477]);
+        @test degree(gcd(a*d,b*d)) == 0
+        @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
         @test  degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
         @test degree(gcd(a*d,b*d, method=:numerical)) == degree(d)
-    end
-
-    l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
-    u,v,w = fromroots.(rand.((l,m,n)))
-    @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
-    
-    # Example of Zeng
-    x = variable(P{Float64})
-    p = (x+10)*(x^9 + x^8/3 + 1)
-    q = (x+10)*(x^9 + x^8/7 - 6//7)
-
-    @test degree(gcd(p,q)) == 0
-    if VERSION >= v"1.2.0"
+        l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
+        u,v,w = fromroots.(rand.((l,m,n)))
+        @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
+        
+        # Example of Zeng
+        x = variable(P{Float64})
+        p = (x+10)*(x^9 + x^8/3 + 1)
+        q = (x+10)*(x^9 + x^8/7 - 6//7)
+        
+        @test degree(gcd(p,q)) == 0
         (@test degree(gcd(p,q, method=:noda_sasaki)) == 1)
         @test degree(gcd(p,q, method=:numerical)) == 1
-    end
 
-    if VERSION >= v"1.2.0"
         # more bits don't help Euclidean
         x = variable(P{BigFloat})
         p = (x+10)*(x^9 + x^8/3 + 1)
@@ -750,11 +746,8 @@ end
             q = (x-1) * (x-2) * (x-4)
             @test degree(gcd(p,q, method=:numerical)) == 2  
         end
-        
-    end 
-        
+    end
 end
-
 
 @testset "Showing" begin
 
