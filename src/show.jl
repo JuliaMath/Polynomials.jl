@@ -214,7 +214,7 @@ function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
 
     if hasreal && hasimag
         print(io,"(",a)
-        print(printsign(io,b,false,mimetype),imagsymbol,")")
+        print(io,printsign(io,b,false,mimetype),imagsymbol,")")
     elseif hasreal
         (j==0 || showone(T) || a != one(T)) && printcoefficient(io, a, j, mimetype)
     elseif hasimag
