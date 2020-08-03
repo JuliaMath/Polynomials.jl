@@ -598,6 +598,16 @@ end
         @test norm(P([1., 2.])) == norm([1., 2.])
         @test norm(P([1., 2.]), 1) == norm([1., 2.], 1)
     end
+
+    ## Issue #225 and different meanings for "conjugate"
+    P = LaurentPolynomial
+    p = P(rand(Complex{Float64}, 4), -1:2)
+    z = rand(Complex{Float64})
+    s = imag(z)*im
+    @test conj(p)(z) ≈ (conj ∘ p ∘ conj)(z)
+    @test Polynomials.paraconj(p)(z) ≈ (conj ∘ p ∘ conj ∘ inv)(z)
+    @test Polynomials.cconj(p)(s) ≈ (conj ∘ p)(s)
+    
 end
 
 @testset "Indexing" begin
@@ -674,12 +684,7 @@ end
         @test degree(gcd(p1, P(0))) == degree(p1) # P(0) has the roots of p1
         @test degree(gcd(p1 + p2 * 170.10734737144486, p2)) == 0          # see, c.f., #122
 
-        ## Issue #240; add tolerance to gcd
-        a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
-        b = P([0.5410010714904849, 0.533604905984294]);
-        d = P([0.5490673726445683, 0.15991109487875477]);
-        @test Polynomials.isconstant(gcd(a*d,b*d))
-        @test !Polynomials.isconstant(gcd(a*d, b*d, atol=sqrt(eps())))
+    
         
         p1 = fromroots(P, [1.,2.,3.])
         p2 = fromroots(P, [1.,2.,6.])
@@ -687,8 +692,72 @@ end
         @test 1. ∈ res
         @test 2. ∈ res
     end
-end
 
+
+    # issue 240
+    if VERSION >= v"1.2.0" # rank with keywords; require_one_based_indexing
+    
+        P = Polynomial
+
+        a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
+        b = P([0.5410010714904849, 0.533604905984294]);
+        d = P([0.5490673726445683, 0.15991109487875477]);
+        @test degree(gcd(a*d,b*d)) == 0
+        @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
+        @test  degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
+        @test degree(gcd(a*d,b*d, method=:numerical)) == degree(d)
+        l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
+        u,v,w = fromroots.(rand.((l,m,n)))
+        @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
+        
+        # Example of Zeng
+        x = variable(P{Float64})
+        p = (x+10)*(x^9 + x^8/3 + 1)
+        q = (x+10)*(x^9 + x^8/7 - 6//7)
+        
+        @test degree(gcd(p,q)) == 0
+        (@test degree(gcd(p,q, method=:noda_sasaki)) == 1)
+        @test degree(gcd(p,q, method=:numerical)) == 1
+
+        # more bits don't help Euclidean
+        x = variable(P{BigFloat})
+        p = (x+10)*(x^9 + x^8/3 + 1)
+        q = (x+10)*(x^9 + x^8/7 - 6//7)
+        @test degree(gcd(p,q)) == 0
+        
+        # Test 1 of Zeng
+        x =  variable(P{Float64})
+        alpha(j,n) = cos(j*pi/n)
+        beta(j,n) = sin(j*pi/n)
+        r1, r2 = 1/2, 3/2
+        U(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in 1:n)
+        V(n) = prod( (x-r2*alpha(j,n))^2 + r2^2*beta(j,n)^2 for j in 1:n)
+        W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
+        for n in 2:2:20
+            p = U(n) * V(n); q = U(n) * W(n)
+            @test degree(gcd(p,q, method=:numerical)) == degree(U(n))
+        end
+        
+        # Test 5 of Zeng
+        x =  variable(P{Float64})
+        for ms in ((2,1,1,0), (3,2,1,0), (4,3,2,1), (5,3,2,1), (9,6,4,2),
+                   (20, 14, 10, 5), (80,60,40,20), (100,60,40,20)
+                   )
+            
+            p = prod((x-i)^j for (i,j) in enumerate(ms))
+            dp = derivative(p)
+            @test degree(gcd(p,dp, method=:numerical)) == sum(max.(ms .- 1, 0))
+        end
+        
+        # fussy pair
+        x =  variable(P{Float64})
+        for n in (2,5,10,20,50, 100)
+            p = (x-1)^n * (x-2)^n * (x-3)
+            q = (x-1) * (x-2) * (x-4)
+            @test degree(gcd(p,q, method=:numerical)) == 2  
+        end
+    end
+end
 
 @testset "Showing" begin
 

@@ -536,11 +536,17 @@ Polynomial(4.0 - 6.0*x + 2.0*x^2)
 
 ```
 """
-function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S};
-                  atol::Real=zero(real(promote_type(T,S))),
-                  rtol::Real=Base.rtoldefault(real(promote_type(T,S)))
-                  ) where {T,S}
-    r₀, r₁ = promote(p1, p2)
+function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}; kwargs...) where {T,S}
+    gcd(promote(p1, p2)...; kwargs...)
+end
+
+function Base.gcd(p1::P, p2::Q;
+                  atol::Real=zero(real(T)),
+                  rtol::Real=Base.rtoldefault(real(T))
+                  ) where {T, P <: AbstractPolynomial{T}, Q <: AbstractPolynomial{T}}
+
+
+    r₀, r₁ = p1, p2
     iter = 1
     itermax = length(r₁)
 

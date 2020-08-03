@@ -2,6 +2,7 @@ module Polynomials
 
 using LinearAlgebra
 using Intervals
+using OffsetArrays
 
 include("abstract.jl")
 include("show.jl")
@@ -18,6 +19,7 @@ include("polynomials/Polynomial.jl")
 include("polynomials/ImmutablePolynomial.jl")
 include("polynomials/SparsePolynomial.jl")
 include("polynomials/LaurentPolynomial.jl")
+include("polynomials/ngcd.jl")
 
 include("polynomials/ChebyshevT.jl")
 
