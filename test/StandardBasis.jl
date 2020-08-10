@@ -14,7 +14,7 @@ function  upto_tz(as, bs)
 end
 
 upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
-    
+
 # compare upto trailing zeros infix operator
 ==ᵗ⁰(a,b) = upto_tz(a,b)
 ==ᵗᶻ(a,b) = upto_z(a,b)
@@ -22,11 +22,11 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
 
 @testset "Construction" for coeff in [
-    Int64[1, 1, 1, 1],
-    Float32[1, -4, 2],
-    ComplexF64[1 - 1im, 2 + 3im],
-    [3 // 4, -2 // 1, 1 // 1]
-]
+                                      Int64[1, 1, 1, 1],
+                                      Float32[1, -4, 2],
+                                      ComplexF64[1 - 1im, 2 + 3im],
+                                      [3 // 4, -2 // 1, 1 // 1]
+                                     ]
 
     for P in Ps
         p = P(coeff)
@@ -86,7 +86,7 @@ end
         # P(2) is  2 (not  2p₀)  connvert(Polynomial, P(s::Number)) = Polynomial(s)
         @test convert(Polynomial, P(2)) ≈ Polynomial(2)
         @test P(2)  ≈ 2*one(P)
-        
+
         # variable(), P() to generate `x` in given basis
         @test degree(variable(P)) == 1
         @test variable(P)(1) == 1
@@ -120,8 +120,8 @@ end
         p5 = P([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
         pN = P([276,3,87,15,24,0])
         pR = P([3 // 4, -2 // 1, 1 // 1])
-        
-    
+
+
         @test p3 == P([1,2,1])
         @test pN * 10 == P([2760, 30, 870, 150, 240])
         @test pN / 10.0 == P([27.6, 0.3, 8.7, 1.5, 2.4])
@@ -135,7 +135,7 @@ end
         @test p2^4 == p5
         @test pNULL^3 == pNULL
         @test pNULL * pNULL == pNULL
-        
+
         @test pNULL + 2 == p0 + 2 == 2 + p0 == P([2])
         @test p2 - 2 == -2 + p2 == P([-1,1])
         @test 2 - p2 == P([1,-1])
@@ -167,7 +167,7 @@ end
         p4 = p2 * p3
         pN = P([276,3,87,15,24,0])
         pR = P([3 // 4, -2 // 1, 1 // 1])
-        
+
         @test divrem(p4, p2) == (p3, zero(p3))
         @test p3 % p2 == p3
         @test all((map(abs, coeffs(p2 ÷ p3 - P([1 / 9,2 / 3])))) .< eps())
@@ -202,12 +202,12 @@ end
         @test_throws ErrorException pS1 * pX
         @test_throws ErrorException pS1 ÷ pX
         @test_throws ErrorException pS1 % pX
-        
+
         # Testing copying.
         pcpy1 = P([1,2,3,4,5], :y)
         pcpy2 = copy(pcpy1)
         @test pcpy1 == pcpy2
-        
+
         # Check for isequal
         p1 = P([1.0, -0.0, 5.0, Inf])
         p2 = P([1.0,  0.0, 5.0, Inf])
@@ -215,15 +215,15 @@ end
 
         P != SparsePolynomial && (@test p1 == p2 && !isequal(p1, p2))  # SparsePolynomial doesn't store -0.0,  0.0.
         @test p3 === p3 && p3 ≠ p3 && isequal(p3, p3)
-        
+
         p = fromroots(P, [1,2,3])
         q = fromroots(P, [1,2,3])
         @test hash(p) == hash(q)
-        
+
         p1s = P([1,2], :s)
         p1x = P([1,2], :x)
         p2s = P([1], :s)
-        
+
         @test p1s == p1s
         @test p1s ≠ p1x
         @test p1s ≠ p2s
@@ -231,14 +231,14 @@ end
         @test_throws ErrorException p1s ≈ p1x
         @test p1s ≉ p2s
         @test p1s ≈ P([1,2.], :s)
-        
+
         @test p2s ≈ 1.0 ≈ p2s
         @test p2s == 1.0 == p2s
         @test p2s ≠ 2.0 ≠ p2s
         @test p1s ≠ 2.0 ≠ p1s
-        
+
         @test nnz(map(P, sparse(1.0I, 5, 5))) == 5
-        
+
         @test P([0.5]) + 2 == P([2.5])
         @test 2 - P([0.5]) == P([1.5])
 
@@ -285,7 +285,7 @@ end
         y_fit = p.(xs)
         abs_error = abs.(y_fit .- ys)
         @test maximum(abs_error) <= 0.03
-        
+
         # Test weighted
         for W in [1, ones(size(xs)), diagm(0 => ones(size(xs)))]
             p = fit(P, xs, ys, 2, weights = W)
@@ -319,13 +319,13 @@ end
         pN = P([276,3,87,15,24,0])
         pR = P([3 // 4, -2 // 1, 1 // 1])
 
-        
+
         @test fromroots(P, Int[])(2.) == 1.
         @test pN(-.125) == 276.9609375
         @test pNULL(10) == 0
         @test p0(-10) == 0
         @test fromroots(P, [1 // 2, 3 // 2])(1 // 2) == 0 // 1
-        
+
         # Check for Inf/NaN operations
         p1 = P([Inf, Inf])
         p2 = P([0, Inf])
@@ -365,7 +365,7 @@ end
         x = [1 0; 0 1]
         y = p(x)
         @test y == x
-    
+
         # Issue #208 and  type of output
         p1=P([1//1])
         p2=P([0, 0.9])
@@ -374,7 +374,7 @@ end
         @test eltype(p3) == eltype(p2)
     end
 
-    
+
 end
 
 @testset "Conversion" begin
@@ -384,7 +384,7 @@ end
         @test P{Complex{Float64}} == typeof(1im - p)
         @test P{Complex{Float64}} == typeof(p * 1im)
     end
-    
+
     for P in (ImmutablePolynomial,)
         p = P([0,one(Float64)])
         N=2
@@ -413,30 +413,30 @@ end
         p5 = P([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
         pN = P([276,3,87,15,24,0])
         pR = P([3 // 4, -2 // 1, 1 // 1])
-        
+
         # From roots
         r = [2, 3]
         @test fromroots(r) == Polynomial([6, -5, 1])
         p = fromroots(P, r)
         @test p == P([6, -5, 1])
         @test sort(roots(p)) ≈ r
-        
+
         @test roots(p0) == roots(p1) == roots(pNULL) == []
         @test P == LaurentPolynomial ? roots(variable(P)) == [0.0] : roots(P([0,1,0])) == [0.0]
-        
+
         @test roots(p2) == [-1]
         a_roots = [c for c in coeffs(copy(pN))]
         @test all(map(abs, sort(roots(fromroots(a_roots))) - sort(a_roots)) .< 1e6)
         @test length(roots(p5)) == 4
         @test roots(pNULL) == []
         @test sort(roots(pR)) == [1 // 2, 3 // 2]
-        
+
         A = [1 0; 0 1]
         @test fromroots(A) == Polynomial(Float64[1, -2, 1])
         p = fromroots(P, A)
         @test p == P(Float64[1, -2, 1])
         @test roots(p) ≈ sort!(eigvals(A), rev = true)
-        
+
         x = variable()
         plarge = 8.362779449448982e41 - 2.510840694154672e57x + 4.2817430781178795e44x^2 - 1.6225927682921337e31x^3 + 1.0x^4  # #120
         @test length(roots(plarge)) == 4
@@ -464,40 +464,40 @@ end
         @test coeffs(der) ==ᵗ⁰ [2, 6, 12]
         int = integrate(der, 1)
         @test coeffs(int) ==ᵗ⁰ c
-        
+
 
         @test derivative(pR) == P([-2 // 1,2 // 1])
         @test derivative(p3) == P([2,2])
         @test derivative(p1) == derivative(p0) == derivative(pNULL) == pNULL
         @test_throws ErrorException derivative(pR, -1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
-        
+
         @test derivative(integrate(pN)) == convert(P{Float64}, pN)
         @test integrate(pNULL, 1) == convert(P{Float64}, p1)
         rc = Rational{Int64}[1,2,3]
         @test integrate(P(rc)) == P{eltype(rc)}([0, 1, 1, 1])
-    
+
 
         for i in 1:10
             p = P(rand(1:5, 6))
             @test degree(truncate(p - integrate(derivative(p)), atol=1e-13)) <= 0
             @test degree(truncate(p - derivative(integrate(p)), atol=1e-13)) <= 0
         end
-            
-        
-        
+
+
+
         # Handling of `NaN`s
         p     = P([NaN, 1, 5])
         pder  = derivative(p)
         pint  = integrate(p)
-        
+
         @test isnan(p(1)) # p(1) evaluates to NaN
         @test isequal(pder, P([NaN]))
         @test isequal(pint, P([NaN]))
-        
+
         pint  = integrate(p, 0.0im)
         @test isequal(pint, P([NaN]))
-        
+
         # Issue with overflow and polyder Issue #159
         @test derivative(P(BigInt[0, 1])^100, 100) == P(factorial(big(100)))
     end
@@ -548,15 +548,15 @@ end
         psum = p1 + p2 - p3
         @test degree(psum) == 1         # will have wrong degree
         @test degree(truncate(psum)) == 0 # the degree should be correct after truncation
-        
+
         @test truncate(P([2,1]), rtol = 1 / 2, atol = 0) == P([2])
         @test truncate(P([2,1]), rtol = 1, atol = 0)   == P([0])
         @test truncate(P([2,1]), rtol = 0, atol = 1)   == P([2])
-        
+
         pchop = P([1, 2, 3, 0, 0, 0])
         pchopped = chop(pchop)
         @test roots(pchop) == roots(pchopped)
-        
+
     end
 end
 
@@ -594,7 +594,7 @@ end
         P != ImmutablePolynomial && @test transpose!(p) == p
         @test adjoint(Polynomial(im)) == Polynomial(-im) # issue 215
         @test conj(Polynomial(im)) == Polynomial(-im) # issue 215
-        
+
         @test norm(P([1., 2.])) == norm([1., 2.])
         @test norm(P([1., 2.]), 1) == norm([1., 2.], 1)
     end
@@ -607,7 +607,7 @@ end
     @test conj(p)(z) ≈ (conj ∘ p ∘ conj)(z)
     @test Polynomials.paraconj(p)(z) ≈ (conj ∘ p ∘ conj ∘ inv)(z)
     @test Polynomials.cconj(p)(s) ≈ (conj ∘ p)(s)
-    
+
 end
 
 @testset "Indexing" begin
@@ -636,7 +636,7 @@ end
                 @test coeffs(p)[3:4] == [1, 2]
                 p[0:1] = 0
                 @test coeffs(p)[1:2] ==ᵗ⁰ [0, 0]
-            
+
                 p[:] = 1
                 @test coeffs(p) ==ᵗ⁰ ones(4)
             end
@@ -649,7 +649,7 @@ end
         for term in p1
             @test isa(term, P)
         end
-        
+
         @test eltype(p1) == Int
         for P in Ps 
             p1 = P([1,2,0,3])
@@ -660,7 +660,7 @@ end
 
         p1 = P([1,2,0,3])
         @test length(collect(p1)) == degree(p1) + 1
-        
+
         @test [p1[idx] for idx in eachindex(p1)] ==ᵗᶻ [1,2,0,3]
     end
 end
@@ -677,15 +677,15 @@ end
     for P in Ps
         p1 = P([2.,5.,1.])
         p2 = P([1.,2.,3.])
-        
+
         @test degree(gcd(p1, p2)) == 0          # no common roots
         @test degree(gcd(p1, P(5))) == 0          # ditto
         @test degree(gcd(p1, P(eps(0.)))) == 0          # ditto
         @test degree(gcd(p1, P(0))) == degree(p1) # P(0) has the roots of p1
         @test degree(gcd(p1 + p2 * 170.10734737144486, p2)) == 0          # see, c.f., #122
 
-    
-        
+
+
         p1 = fromroots(P, [1.,2.,3.])
         p2 = fromroots(P, [1.,2.,6.])
         res = roots(gcd(p1, p2))
@@ -696,7 +696,7 @@ end
 
     # issue 240
     if VERSION >= v"1.2.0" # rank with keywords; require_one_based_indexing
-    
+
         P = Polynomial
 
         a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
@@ -709,12 +709,12 @@ end
         l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
         u,v,w = fromroots.(rand.((l,m,n)))
         @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
-        
+
         # Example of Zeng
         x = variable(P{Float64})
         p = (x+10)*(x^9 + x^8/3 + 1)
         q = (x+10)*(x^9 + x^8/7 - 6//7)
-        
+
         @test degree(gcd(p,q)) == 0
         (@test degree(gcd(p,q, method=:noda_sasaki)) == 1)
         @test degree(gcd(p,q, method=:numerical)) == 1
@@ -724,7 +724,7 @@ end
         p = (x+10)*(x^9 + x^8/3 + 1)
         q = (x+10)*(x^9 + x^8/7 - 6//7)
         @test degree(gcd(p,q)) == 0
-        
+
         # Test 1 of Zeng
         x =  variable(P{Float64})
         alpha(j,n) = cos(j*pi/n)
@@ -737,18 +737,18 @@ end
             p = U(n) * V(n); q = U(n) * W(n)
             @test degree(gcd(p,q, method=:numerical)) == degree(U(n))
         end
-        
+
         # Test 5 of Zeng
         x =  variable(P{Float64})
         for ms in ((2,1,1,0), (3,2,1,0), (4,3,2,1), (5,3,2,1), (9,6,4,2),
                    (20, 14, 10, 5), (80,60,40,20), (100,60,40,20)
-                   )
-            
+                  )
+
             p = prod((x-i)^j for (i,j) in enumerate(ms))
             dp = derivative(p)
             @test degree(gcd(p,dp, method=:numerical)) == sum(max.(ms .- 1, 0))
         end
-        
+
         # fussy pair
         x =  variable(P{Float64})
         for n in (2,5,10,20,50, 100)
@@ -770,14 +770,14 @@ end
     for P in (Polynomial, ImmutablePolynomial)
         p = P([1, 2, 3])
         @test sprint(show, p) == "$P(1 + 2*x + 3*x^2)"
-        
+
         p = P([1.0, 2.0, 3.0])
         @test sprint(show, p) == "$P(1.0 + 2.0*x + 3.0*x^2)"
-        
+
         p = P([1 + 1im, -2im])
-        @test sprint(show, p) == "$P((1 + 1im) - 2im*x)"
-        
-                
+        @test sprint(show, p) == "$P(1 + im - 2im*x)"
+
+
         p = P([1,2,3,1])  # leading coefficient of 1
         @test repr(p) == "$P(1 + 2*x + 3*x^2 + x^3)"
         p = P([1.0, 2.0, 3.0, 1.0])
@@ -785,16 +785,18 @@ end
         p = P([1, im])
         @test repr(p) == "$P(1 + im*x)"
         p = P([1 + im, 1 - im, -1 + im, -1 - im])# minus signs
-        @test repr(p) == "$P((1 + 1im) + (1 - 1im)*x - (1 - 1im)*x^2 - (1 + 1im)*x^3)"
+        @test repr(p) == "$P(1 + im + (1 - im)x - (1 - im)x^2 - (1 + im)x^3)"
         p = P([1.0, 0 + NaN * im, NaN, Inf, 0 - Inf * im]) # handle NaN or Inf appropriately
         @test repr(p) == "$P(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
-        
+
         p = P([1,2,3])
-        
+
         @test repr("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
         p = P([1 // 2, 2 // 3, 1])
         @test repr("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
-        
+        p = P([complex(1,1),complex(0,1),complex(1,0),complex(1,1)])
+        @test repr("text/latex", p) == "\$1 + i + i\\cdot x + x^{2} + (1 + i)x^{3}\$"
+
         # customized printing with printpoly
         function printpoly_to_string(args...; kwargs...)
             buf = IOBuffer()
@@ -828,7 +830,7 @@ end
 end
 
 @testset "Promotion"  begin
-    
+
     # Test different types work together
     Ps = (Polynomial,  ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
     for P₁ in Ps
@@ -853,7 +855,7 @@ end
     for Ts in ((Int32, Int,  BigInt),
                (Int,  Rational{Int}, Float64),
                (Float32, Float64, BigFloat)
-               )
+              )
 
         n = length(Ts)
         for i in 1:n-1

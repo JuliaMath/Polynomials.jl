@@ -286,15 +286,16 @@ p = Poly([1.0, 2.0, 3.0, 1.0])
 p = Poly([1, im])
 @test repr(p) == "Poly(1 + im*x)"
 p = Poly([1+im, 1-im, -1+im, -1 - im])# minus signs
-@test repr(p) == "Poly((1 + 1im) + (1 - 1im)*x - (1 - 1im)*x^2 - (1 + 1im)*x^3)"
+@test repr(p) == "Poly(1 + im + (1 - im)x - (1 - im)x^2 - (1 + im)x^3)"
 p = Poly([1.0, 0 + NaN*im, NaN, Inf, 0 - Inf*im]) # handle NaN or Inf appropriately
 @test repr(p) == "Poly(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
 
 p = Poly([1,2,3])
-
 @test repr("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
 p = Poly([1//2, 2//3, 1])
 @test repr("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
+p = Poly([complex(1,1),complex(0,1),complex(1,0),complex(1,1)])
+@test repr("text/latex", p) == "\$1 + i + i\\cdot x + x^{2} + (1 + i)x^{3}\$"
 
 # customized printing with printpoly
 function printpoly_to_string(args...; kwargs...)

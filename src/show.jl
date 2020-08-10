@@ -159,6 +159,15 @@ function printproductsign(io::IO, pj::T, j, mimetype) where {T}
     (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
 end
 
+function printproductsign(io::IO, pj::T, j, mimetype) where {T<:Complex}
+    j == 0 && return
+    (a,b) = reim(pj)
+    !iszero(a) && !iszero(b) && return # parentheses inserted, no * needed
+    !iszero(a) && return printproductsign(io, a, j, mimetype)
+    print(io, showop(mimetype, "*"))
+end
+
+
 # show a single term
 # Other types can overload Polynomials.printcofficient with a mimetype
 # or Base.show_unquoted(io, pj, indent, prec)
@@ -210,7 +219,7 @@ function printcoefficient(io::IO, pj::S, j, mimetype) where {T,S <: Complex{T}}
     hasimag = !iszero(b) || isnan(b) || isinf(b)
 
     if hasreal && hasimag
-        print(io, "(")
+        iszero(j) || print(io, "(")
         print(io, a)
 
         # print b
@@ -232,7 +241,7 @@ function printcoefficient(io::IO, pj::S, j, mimetype) where {T,S <: Complex{T}}
         end
 
         print(io, imagsymbol(mimetype))
-        print(io, ")")
+        iszero(j) || print(io, ")")
 
     elseif hasreal
 
