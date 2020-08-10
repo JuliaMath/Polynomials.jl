@@ -807,7 +807,7 @@ end
         @test printpoly_to_string(P([1,2,3], "y"), descending_powers = true) == "3*y^2 + 2*y + 1"
         @test printpoly_to_string(P([2, 3, 1], :z), descending_powers = true, offset = -2) == "1 + 3*z^-1 + 2*z^-2"
         @test printpoly_to_string(P([-1, 0, 1], :z), offset = -1, descending_powers = true) == "z - z^-1"
-        @test printpoly_to_string(P([complex(1,1),complex(1,-1)]),MIME"text/latex"()) == "(1 + 1i) + (1 - 1i)\\cdot x"
+        @test printpoly_to_string(P([complex(1,1),complex(1,-1)]),MIME"text/latex"()) == "1 + i + (1 - i)x"
     end
 end
 
