@@ -203,24 +203,51 @@ function printcoefficient(io::IO, a::Rational{T}, j, mimetype::MIME"text/latex")
 end
 
 # print complex numbers with parentheses as needed
-function printcoefficient(io::IO, pj::Complex{T}, j, mimetype) where {T}
+function printcoefficient(io::IO, pj::S, j, mimetype) where {T,S <: Complex{T}}
 
-    hasreal = abs(real(pj)) > 0 || isnan(real(pj)) || isinf(real(pj))
-    hasimag = abs(imag(pj)) > 0 || isnan(imag(pj)) || isinf(imag(pj))
+    (a,b) = reim(pj)
+    hasreal = !iszero(a) || isnan(a) || isinf(a)
+    hasimag = !iszero(b) || isnan(b) || isinf(b)
 
     if hasreal && hasimag
-        Base.show_unquoted(io, pj, 0, Base.operator_precedence(:*))
+        print(io, "(")
+        print(io, a)
+
+        # print b
+        if isone(b) || isone(-b)
+            if hasneg(S) && b < 0
+                print(io, showop(mimetype, "-"))
+            else
+                print(io, showop(mimetype, "+"))
+            end
+        else
+            if hasneg(S) && b < 0
+                print(io, showop(mimetype, "-"))
+                (showone(S) || !isone(-b)) && print(io, -b)
+            else
+                print(io, showop(mimetype,"+"))
+                print(io, b)
+            end
+            (isnan(b) || isinf(b)) && print(io, showop(mimetype, "*"))
+        end
+
+        print(io, imagsymbol(mimetype))
+        print(io, ")")
+
     elseif hasreal
-        a = real(pj)
-        (j==0 || showone(T) || a != one(T)) && printcoefficient(io, a, j, mimetype)
+
+        (iszero(j) || showone(T) || isone(a)) && printcoefficient(io, a, j, mimetype)
+
     elseif hasimag
-        b = imag(pj)
-        (showone(T) || b != one(T)) && printcoefficient(io, b, j,  mimetype)
-        (isnan(imag(pj)) || isinf(imag(pj))) && print(io, showop(mimetype, "*"))
-        print(io, im)
-    else
-        return nothing
+
+        (showone(T) || !isone(b)) && printcoefficient(io, b, j, mimetype)
+        (isnan(b) || isinf(b)) && print(io, showop(mimetype, "*"))
+        print(io, imagsymbol(mimetype))
+
     end
+
+    return nothing
+
 end
 
 ## show exponent
@@ -252,3 +279,6 @@ function unicode_subscript(io, j)
         print(io, a[Int(i)-44])
     end
 end
+
+imagsymbol(::Any) = "im"
+imagsymbol(::MIME"text/latex") = "i"
