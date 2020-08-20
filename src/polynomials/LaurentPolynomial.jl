@@ -8,7 +8,7 @@ A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of t
 The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. The range specified is of the  form  `m:n`,  if left  empty, `0:length(coeffs)-1` is  used (i.e.,  the coefficients refer  to the standard basis). Alternatively, the coefficients can be specified using an `OffsetVector` from the `OffsetArrays` package.
 
 Laurent polynomials and standard basis polynomials  promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`
-. 
+.
 
 Integration will fail if there is a `x⁻¹` term in the polynomial.
 
@@ -203,7 +203,7 @@ function Base.setindex!(p::LaurentPolynomial{T}, value::Number, idx::Int) where 
     p.coeffs[i] = value
 
     return p
-    
+
 end
 
 Base.firstindex(p::LaurentPolynomial) = p.m[]
@@ -215,7 +215,7 @@ Base.eachindex(p::LaurentPolynomial) = range(p)
 function chop!(p::P;
                rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T, P <: LaurentPolynomial{T}}
-    
+
     m0,n0 = m,n = extrema(p)
     for k in n:-1:m
         if isapprox(p[k], zero(T); rtol = rtol, atol = atol)
@@ -246,7 +246,7 @@ end
 function truncate!(p::LaurentPolynomial{T};
                   rtol::Real = Base.rtoldefault(real(T)),
                   atol::Real = 0,) where {T}
-    
+
     max_coeff = maximum(abs, coeffs(p))
     thresh = max_coeff * rtol + atol
 
@@ -259,7 +259,7 @@ function truncate!(p::LaurentPolynomial{T};
     chop!(p)
 
     return p
-    
+
 end
 
 # use unicode exponents. XXX modify printexponent to always use these?
@@ -314,7 +314,7 @@ end
 
 [cf.](https://ccrma.stanford.edu/~jos/filters/Paraunitary_FiltersC_3.html)
 
-Call `p̂ = paraconj(p)` and `p̄` = conj(p)`, then this satisfies 
+Call `p̂ = paraconj(p)` and `p̄` = conj(p)`, then this satisfies
 `conj(p(z)) = p̂(1/conj(z))` or `p̂(z) = p̄(1/z) = (conj ∘ p ∘ conj ∘ inf)(z)`.
 
 Examples:
@@ -364,7 +364,7 @@ julia> s = 2im
 julia> p = LaurentPolynomial([im,-1, -im, 1], 1:2, :s)
 LaurentPolynomial(im*s - s² - im*s³ + s⁴)
 
-julia> Polynomials.cconj(p)(s) ≈ conj(p(s)) 
+julia> Polynomials.cconj(p)(s) ≈ conj(p(s))
 true
 
 julia> a = LaurentPolynomial([-0.12, -0.29, 1],:s)
@@ -415,8 +415,8 @@ function (p::LaurentPolynomial{T})(x::S) where {T,S}
         l + r - mid
     end
 end
-                 
-        
+
+
 
 # scalar operattoinis
 Base.:-(p::P) where {P <: LaurentPolynomial} = P(-coeffs(p), range(p), p.var)
@@ -447,7 +447,7 @@ function Base.:+(p1::P1, p2::P2) where {T,P1<:LaurentPolynomial{T}, S, P2<:Laure
     elseif isconstant(p2)
         p2 = P2(p2.coeffs, range(p2), p1.var)
     end
-    
+
     p1.var != p2.var && error("LaurentPolynomials must have same variable")
 
     R = promote_type(T,S)
@@ -465,7 +465,7 @@ function Base.:+(p1::P1, p2::P2) where {T,P1<:LaurentPolynomial{T}, S, P2<:Laure
     chop!(q)
 
     return q
-    
+
 end
 
 function Base.:*(p1::LaurentPolynomial{T}, p2::LaurentPolynomial{S}) where {T,S}
@@ -496,10 +496,33 @@ function Base.:*(p1::LaurentPolynomial{T}, p2::LaurentPolynomial{S}) where {T,S}
 end
 
 ##
+## roots
+##
+"""
+    roots(p)
+
+Compute the roots of the Laurent polynomial `p`.
+
+# Example
+
+```julia
+julia> p = LaurentPolynomial([24,10,-15,0,1],-2:1,:z)
+LaurentPolynomial(24*z⁻² + 10*z⁻¹ - 15 + z²)
+
+
+```
+"""
+function  roots(p::P; kwargs...)  where  {T, P <: LaurentPolynomial{T}}
+    c = coeffs(p)
+    a = Polynomial(c,p.var)
+    return roots(p; kwargs...)
+end
+
+##
 ## d/dx, ∫
 ##
 function derivative(p::P, order::Integer = 1) where {T, P<:LaurentPolynomial{T}}
-    
+
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
 
@@ -518,9 +541,9 @@ function derivative(p::P, order::Integer = 1) where {T, P<:LaurentPolynomial{T}}
             as[idx] = reduce(*, (k - order + 1):k, init = p[k])
         end
     end
-    
+
     chop!(LaurentPolynomial(as, m:n, p.var))
-    
+
 end
 
 
@@ -546,7 +569,7 @@ function integrate(p::P, k::S) where {T, P<: LaurentPolynomial{T}, S<:Number}
         m = 0
     end
     as = zeros(R,  length(m:n))
-    
+
     for k in eachindex(p)
         as[1 + k+1-m]  =  p[k]/(k+1)
     end
@@ -554,7 +577,7 @@ function integrate(p::P, k::S) where {T, P<: LaurentPolynomial{T}, S<:Number}
     as[1-m] = k
 
     return ⟒(P)(as, m:n, p.var)
-    
+
 end
 
 
@@ -568,7 +591,7 @@ function Base.gcd(p::LaurentPolynomial{T}, q::LaurentPolynomial{T}, args...; kwa
     degree(p) == 0 && return iszero(p) ? q : one(q)
     degree(q) == 0 && return iszero(q) ? p : one(p)
     check_same_variable(p,q) || throw(ArgumentError("p and q have different symbols"))
-    
+
     pp, qq = convert(Polynomial, p), convert(Polynomial, q)
     u = gcd(pp, qq, args..., kwargs...)
     return LaurentPolynomial(coeffs(u), p.var)
