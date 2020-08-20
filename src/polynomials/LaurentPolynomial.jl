@@ -509,7 +509,12 @@ Compute the roots of the Laurent polynomial `p`.
 julia> p = LaurentPolynomial([24,10,-15,0,1],-2:1,:z)
 LaurentPolynomial(24*z⁻² + 10*z⁻¹ - 15 + z²)
 
-
+julia> roots(a)
+4-element Array{Float64,1}:
+ -3.999999999999999
+ -0.9999999999999994
+  1.9999999999999998
+  2.9999999999999982
 ```
 """
 function  roots(p::P; kwargs...)  where  {T, P <: LaurentPolynomial{T}}
