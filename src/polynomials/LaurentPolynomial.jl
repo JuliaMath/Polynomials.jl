@@ -503,7 +503,7 @@ end
 
 Compute the roots of the Laurent polynomial `p`.
 
-The roots of a function (Laurent polynomial in this case) `a(z)` are the values of `z` for which the function vanishes. A Laurent polynomial ``a(z) = a_m z^m + a_{m+1} z^{m+1} + ... + a_{-1} z^{-1} + a_0 + a_1 z + ... + a_{n-1} z^{n-1} + a_n z^n`` can equivalently be viewed as a rational function with a multiple singularity (pole) at the origin. The roots are then the roots of the numerator polynomial. For example, ``a(z) = 1/z + 2 + z`` can be written as ``a(z) = (1+2z+z^2) / z`` and the roots of `a` are the roots of ``1+2z+z^2``. 
+The roots of a function (Laurent polynomial in this case) `a(z)` are the values of `z` for which the function vanishes. A Laurent polynomial ``a(z) = a_m z^m + a_{m+1} z^{m+1} + ... + a_{-1} z^{-1} + a_0 + a_1 z + ... + a_{n-1} z^{n-1} + a_n z^n`` can equivalently be viewed as a rational function with a multiple singularity (pole) at the origin. The roots are then the roots of the numerator polynomial. For example, ``a(z) = 1/z + 2 + z`` can be written as ``a(z) = (1+2z+z^2) / z`` and the roots of `a` are the roots of ``1+2z+z^2``.
 
 # Example
 
@@ -521,7 +521,11 @@ julia> roots(a)
 """
 function  roots(p::P; kwargs...)  where  {T, P <: LaurentPolynomial{T}}
     c = coeffs(p)
-    a = Polynomial(c,p.var)
+    r = range(p)
+    d = r[end]-min(0,r[1])+1    # Length of the coefficient vector, taking into consideration the case when the lower degree is strictly positive (like p=3z^2).
+    z = zeros(T,d)                # Reserves space for the coefficient vector.
+    z[max(0,r[1])+1:end] = c    # Leaves the coeffs of the lower powers as zeros.
+    a = Polynomial(z,p.var)     # The root is then the root of the numerator polynomial.
     return roots(a; kwargs...)
 end
 
