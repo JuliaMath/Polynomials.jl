@@ -520,7 +520,7 @@ julia> roots(a)
 function  roots(p::P; kwargs...)  where  {T, P <: LaurentPolynomial{T}}
     c = coeffs(p)
     a = Polynomial(c,p.var)
-    return roots(p; kwargs...)
+    return roots(a; kwargs...)
 end
 
 ##
