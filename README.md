@@ -18,7 +18,7 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 * `Polynomial` –⁠ standard basis polynomials, `a(x) = a₀ + a₁ x + a₂ x² + … + aₙ xⁿ`,  `n ∈ ℕ`
 * `ImmutablePolynomial` –⁠ standard basis polynomials backed by a [Tuple type](https://docs.julialang.org/en/v1/manual/functions/#Tuples-1) for faster evaluation of values
 * `SparsePolynomial` –⁠ standard basis polynomial backed by a [dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1) to hold  sparse high-degree  polynomials
-* `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), `a(x) = aₘ xᵐ + … + aₙ xⁿ` `m ≤ n`, `m,n ∈ ℤ` backed by an [offset array](); for example, if `m<0` and `n>0`, `a(x) = aₘ xᵐ + … + a₋₁ x⁻¹ + a₀ + a₁ x + … +  aₙ xⁿ`
+* `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), `a(x) = aₘ xᵐ + … + aₙ xⁿ` `m ≤ n`, `m,n ∈ ℤ` backed by an [offset array](https://github.com/JuliaArrays/OffsetArrays.jl); for example, if `m<0` and `n>0`, `a(x) = aₘ xᵐ + … + a₋₁ x⁻¹ + a₀ + a₁ x + … +  aₙ xⁿ`
 * `ChebyshevT` –⁠ [Chebyshev polynomials](https://en.wikipedia.org/wiki/Chebyshev_polynomials) of the first kind
 
 ## Usage
