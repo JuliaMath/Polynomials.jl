@@ -101,7 +101,7 @@ ERROR: Polynomials must have same variable.
 
 Integrate the polynomial `p` term by term, optionally adding a constant
 term `k`. The degree of the resulting polynomial is one higher than the
-degree of `p`.
+degree of `p` (for a nonzero polynomial).
 
 ```julia
 julia> integrate(Polynomial([1, 0, -1]))
