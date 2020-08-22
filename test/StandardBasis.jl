@@ -247,8 +247,8 @@ end
         @test (P([NaN]) ≈ NaN)                    == (false)
         @test (P([Inf]) ≈ P([Inf]))               == ([Inf] ≈ [Inf]) # true
         @test (P([Inf]) ≈ Inf)                    == (true)
-        @test (P([1,Inf]) ≈ P([0,Inf]))           == ([1,Inf] ≈ [0,Inf]) # false 
-        @test (P([1,NaN,Inf]) ≈ P([0,NaN, Inf]))  == ([1,NaN,Inf] ≈ [0,NaN, Inf]) #false  
+        @test (P([1,Inf]) ≈ P([0,Inf]))           == ([1,Inf] ≈ [0,Inf]) # false
+        @test (P([1,NaN,Inf]) ≈ P([0,NaN, Inf]))  == ([1,NaN,Inf] ≈ [0,NaN, Inf]) #false
         @test (P([eps(), eps()]) ≈ P([0,0]))      == ([eps(), eps()] ≈ [0,0]) # false
         @test (P([1,eps(), 1]) ≈ P([1,0,1]))      == ([1,eps(), 1] ≈ [1,0,1]) # true
         @test (P([1,2]) ≈ P([1,2,eps()]))         == ([1,2,0] ≈ [1,2,eps()])
@@ -431,6 +431,8 @@ end
         @test roots(pNULL) == []
         @test sort(roots(pR)) == [1 // 2, 3 // 2]
 
+        @test sort(roots(LaurentPolynomial([24,10,-15,0,1],-2:1,:z)))≈[-4.0,-1.0,2.0,3.0]
+
         A = [1 0; 0 1]
         @test fromroots(A) == Polynomial(Float64[1, -2, 1])
         p = fromroots(P, A)
@@ -511,7 +513,7 @@ end
         q   = [3, p1]
         if P !=  ImmutablePolynomial
             @test q isa Vector{typeof(p1)}
-            @test p isa Vector{typeof(p2)} 
+            @test p isa Vector{typeof(p2)}
         else
             @test q isa Vector{P{eltype(p1)}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
             @test p isa Vector{P{eltype(p2)}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
@@ -651,7 +653,7 @@ end
         end
 
         @test eltype(p1) == Int
-        for P in Ps 
+        for P in Ps
             p1 = P([1,2,0,3])
             @test eltype(collect(p1)) <: P{Int}
             @test eltype(collect(P{Float64}, p1)) <: P{Float64}
@@ -754,7 +756,7 @@ end
         for n in (2,5,10,20,50, 100)
             p = (x-1)^n * (x-2)^n * (x-3)
             q = (x-1) * (x-2) * (x-4)
-            @test degree(gcd(p,q, method=:numerical)) == 2  
+            @test degree(gcd(p,q, method=:numerical)) == 2
         end
     end
 end
@@ -889,6 +891,6 @@ end
             @test typeof(p₁) == P{T,5} # conversion works
             @test_throws InexactError  P{T}(rand(5))
         end
-    end        
+    end
 
 end
