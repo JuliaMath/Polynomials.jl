@@ -1,6 +1,6 @@
 # Polynomials.jl
 
-Basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate polynomials.
+Basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate [polynomials](https://en.wikipedia.org/wiki/Polynomial).
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMath.github.io/Polynomials.jl/stable)
 [![Build Status](https://travis-ci.org/JuliaMath/Polynomials.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Polynomials.jl)
@@ -10,22 +10,20 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 ## Installation
 
 ```julia
-(v1.4) pkg> add Polynomials
-
-julia> using Polynomials
+(v1.5) pkg> add Polynomials
 ```
+
+## Available Types of Polynomials
+
+* `Polynomial` –⁠ Standard basis polynomials, `a(x) = a₀ + a₁ x + a₂ x² + … + aₙ xⁿ`,  `n ∈ ℕ`
+* `ImmutablePolynomial` –⁠ Standard basis polynomials backed by a [Tuple type](https://docs.julialang.org/en/v1/manual/functions/#Tuples-1) for faster evaluation of values
+* `SparsePolynomial` –⁠ Standard basis polynomial backed by a [dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1) to hold  sparse high-degree  polynomials
+* `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), `a(x) = aₘ xᵐ + … + aₙ xⁿ` `m ≤ n`, `m,n ∈ ℤ` backed by an [offset array](). For example, if `m<0` and `n>0`, `a(x) = aₘ xᵐ + … + a₋₁ x⁻¹ + a₀ + a₁ x + … +  aₙ xⁿ`
+* `ChebyshevT` –⁠ [Chebyshev polynomials](https://en.wikipedia.org/wiki/Chebyshev_polynomials) of the first kind
 
 ## Usage
 
-#### Available Polynomials
-
-	* `Polynomial` - Standard basis polynomials, `a_0 + a_1⋅x + a_2⋅x^2 + ⋯ + a_n⋅xⁿ`,  `n ∈ ℕ`
-* `ImmutablePolynomial` - Standard basis polynomials backed by a tuple for faster evaluation of values
-* `SparsePolynomial` - Standard basis polynomial backed by a dictionary to hold  sparse high-degree  polynomials
-* `LaurentPolynomial` - Laurent polynomials, `a_m⋅x^m + ⋯ a_n⋅x^n` `m ≤ n`, `m,n ∈ ℤ` backed by an offset array
-* `ChebyshevT` - Chebyshev polynomials of the first kind
-
-#### Construction and Evaluation
+### Construction and Evaluation
 
 Construct a polynomial from its coefficients, lowest order first.
 
@@ -56,7 +54,7 @@ julia> p(0.1)
 0.99
 ```
 
-#### Arithmetic
+### Arithmetic
 
 The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.
 
@@ -95,7 +93,7 @@ julia> p + q
 ERROR: Polynomials must have same variable.
 ```
 
-#### Integrals and Derivatives
+### Integrals and Derivatives
 
 Integrate the polynomial `p` term by term, optionally adding constant
 term `k`. The degree of the resulting polynomial is one higher than the
@@ -117,7 +115,7 @@ julia> derivative(Polynomial([1, 3, -1]))
 Polynomial(3 - 2x)
 ```
 
-#### Root-finding
+### Root-finding
 
 
 Return the roots (zeros) of `p`, with multiplicity. The number of
@@ -141,7 +139,7 @@ julia> roots(Polynomial([0, 0, 1]))
  0.0
 ```
 
-#### Fitting arbitrary data
+### Fitting arbitrary data
 
 Fit a polynomial (of degree `deg` or less) to `x` and `y` using a least-squares approximation.
 
@@ -159,7 +157,7 @@ Visual example:
 
 ![fit example](https://user-images.githubusercontent.com/14099459/70382587-9e055500-1902-11ea-8952-3f03ae08b7dc.png)
 
-#### Other methods
+### Other methods
 
 Polynomial objects also have other methods:
 
