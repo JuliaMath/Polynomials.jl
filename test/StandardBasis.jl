@@ -431,7 +431,7 @@ end
         @test roots(pNULL) == []
         @test sort(roots(pR)) == [1 // 2, 3 // 2]
 
-        @test roots(LaurentPolynomial([24,10,-15,0,1],-2:1,:z))≈[-4,-1,2,3]
+        @test sort(roots(LaurentPolynomial([24,10,-15,0,1],-2:1,:z)))≈[-4.0,-1.0,2.0,3.0]
 
         A = [1 0; 0 1]
         @test fromroots(A) == Polynomial(Float64[1, -2, 1])
