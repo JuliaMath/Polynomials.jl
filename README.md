@@ -23,6 +23,10 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 
 ## Usage
 
+```julia
+julia> using Polynomials
+```
+
 ### Construction and Evaluation
 
 Construct a polynomial from an array (a vector) of its coefficients, lowest order first.
