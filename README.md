@@ -15,24 +15,24 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 
 ## Available Types of Polynomials
 
-* `Polynomial` –⁠ Standard basis polynomials, `a(x) = a₀ + a₁ x + a₂ x² + … + aₙ xⁿ`,  `n ∈ ℕ`
-* `ImmutablePolynomial` –⁠ Standard basis polynomials backed by a [Tuple type](https://docs.julialang.org/en/v1/manual/functions/#Tuples-1) for faster evaluation of values
-* `SparsePolynomial` –⁠ Standard basis polynomial backed by a [dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1) to hold  sparse high-degree  polynomials
-* `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), `a(x) = aₘ xᵐ + … + aₙ xⁿ` `m ≤ n`, `m,n ∈ ℤ` backed by an [offset array](). For example, if `m<0` and `n>0`, `a(x) = aₘ xᵐ + … + a₋₁ x⁻¹ + a₀ + a₁ x + … +  aₙ xⁿ`
+* `Polynomial` –⁠ standard basis polynomials, `a(x) = a₀ + a₁ x + a₂ x² + … + aₙ xⁿ`,  `n ∈ ℕ`
+* `ImmutablePolynomial` –⁠ standard basis polynomials backed by a [Tuple type](https://docs.julialang.org/en/v1/manual/functions/#Tuples-1) for faster evaluation of values
+* `SparsePolynomial` –⁠ standard basis polynomial backed by a [dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1) to hold  sparse high-degree  polynomials
+* `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), `a(x) = aₘ xᵐ + … + aₙ xⁿ` `m ≤ n`, `m,n ∈ ℤ` backed by an [offset array](); for example, if `m<0` and `n>0`, `a(x) = aₘ xᵐ + … + a₋₁ x⁻¹ + a₀ + a₁ x + … +  aₙ xⁿ`
 * `ChebyshevT` –⁠ [Chebyshev polynomials](https://en.wikipedia.org/wiki/Chebyshev_polynomials) of the first kind
 
 ## Usage
 
 ### Construction and Evaluation
 
-Construct a polynomial from its coefficients, lowest order first.
+Construct a polynomial from an array (a vector) of its coefficients, lowest order first.
 
 ```julia
 julia> Polynomial([1,0,3,4])
 Polynomial(1 + 3x^2 + 4x^3)
 ```
 
-An optional variable parameter can be added.
+Optionally, the variable of the polynomial can be specified.
 
 ```julia
 julia> Polynomial([1,2,3], :s)
@@ -84,7 +84,7 @@ julia> q ÷ p  # `div`, also `rem` and `divrem`
 Polynomial(0.25 - 0.5x)
 ```
 
-Note that operations involving polynomials with different variables will error.
+Operations involving polynomials with different variables will error.
 
 ```julia
 julia> p = Polynomial([1, 2, 3], :x)
@@ -95,7 +95,7 @@ ERROR: Polynomials must have same variable.
 
 ### Integrals and Derivatives
 
-Integrate the polynomial `p` term by term, optionally adding constant
+Integrate the polynomial `p` term by term, optionally adding a constant
 term `k`. The degree of the resulting polynomial is one higher than the
 degree of `p`.
 
@@ -119,8 +119,7 @@ Polynomial(3 - 2x)
 
 
 Return the roots (zeros) of `p`, with multiplicity. The number of
-roots returned is equal to the degree of `p`. By design, this is not type-stable,
-the returned roots may be real or complex.
+roots returned is equal to the degree of `p`. By design, this is not type-stable, the returned roots may be real or complex.
 
 ```julia
 julia> roots(Polynomial([1, 0, -1]))
