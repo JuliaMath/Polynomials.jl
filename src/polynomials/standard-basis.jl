@@ -2,7 +2,7 @@ abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
 
 
-function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} 
+function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T}
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
     if !(pj == one(T) && !(showone(T) || j == 0))
@@ -34,6 +34,9 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
         c[(i + 1)] = c[(i + 1)] - r[j] * c[i]
     end
     #return P(c, var)
+    if sort(r[imag(r).>0], lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y)) == sort(conj(r[imag(r).<0]), lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y))
+        c = real(c)             # if complex poles come in conjugate pairs, the coeffs are real
+    end
     return P(reverse(c), var)
 end
 
@@ -52,7 +55,7 @@ function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolyno
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
-    R = eltype(one(T)*1) 
+    R = eltype(one(T)*1)
     order == 0 && return p
     hasnan(p) && return ⟒(P){R}(R[NaN], p.var)
     order > length(p) && return zero(⟒(P){R},p.var)
@@ -87,14 +90,14 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
 
     check_same_variable(num, den) || error("Polynomials must have same variable")
     var = num.var
-    
-    
+
+
     n = degree(num)
     m = degree(den)
 
     m == -1 && throw(DivideError())
     if m == 0 && den[0] ≈ 0 throw(DivideError()) end
-    
+
     R = eltype(one(T)/one(S))
 
     deg = n - m + 1
@@ -117,7 +120,7 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
     resize!(r_coeff, min(length(r_coeff), m))
 
     return ⟒(P)(q_coeff, var), ⟒(P)(r_coeff, var)
-    
+
 end
 
 """
@@ -135,7 +138,7 @@ function Base.gcd(p1::P, p2::Q, args...;
                   method=:euclidean,
                   kwargs...
                   ) where {T, P <: StandardBasisPolynomial{T}, Q <: StandardBasisPolynomial{T}}
-    
+
     gcd(Val(method), p1, p2, args...; kwargs...)
 end
 
@@ -144,15 +147,15 @@ function Base.gcd(::Val{:euclidean},
                   atol=zero(real(T)),
                   rtol=Base.rtoldefault(real(T)),
                   kwargs...) where {T}
-    
-    
+
+
     iter = 1
     itermax = length(r₁)
-    
+
     while !iszero(r₁) && iter ≤ itermax
         _, rtemp = divrem(r₀, r₁)
         r₀ = r₁
-        r₁ = truncate(rtemp; atol=atol, rtol=rtol)  
+        r₁ = truncate(rtemp; atol=atol, rtol=rtol)
         iter += 1
     end
     return r₀
@@ -165,8 +168,8 @@ Base.gcd(::Val{:noda_sasaki}, p, q; kwargs...) = gcd_noda_sasaki(p,q; kwargs...)
      gcd_noda_sasaki(p,q; atol,  rtol)
 
 Greatest common divisor of two polynomials.
-Compute the greatest common divisor `d` of two polynomials `a` and `b` using 
-the Euclidian Algorithm with scaling as of [1]. 
+Compute the greatest common divisor `d` of two polynomials `a` and `b` using
+the Euclidian Algorithm with scaling as of [1].
 
 References:
 
@@ -196,7 +199,7 @@ function _gcd_noda_sasaki(a::Vector{T}, b::Vector{S};
               rtol::Real=Base.rtoldefault(real(promote_type(T,S)))
               ) where {T,S}
 
-    R = eltype(one(T)/one(S))    
+    R = eltype(one(T)/one(S))
 
     na1 = findlast(!iszero,a) # degree(a) + 1
     na1 === nothing && return(ones(R, 1))
@@ -205,17 +208,17 @@ function _gcd_noda_sasaki(a::Vector{T}, b::Vector{S};
     nb1 === nothing && return(ones(R, 1))
 
     a1 = R[a[i] for i in 1:na1]
-    b1 = R[b[i] for i in 1:nb1]    
+    b1 = R[b[i] for i in 1:nb1]
     a1 ./= norm(a1)
     b1 ./= norm(b1)
 
     tol = atol + rtol
 
-    # determine the degree of GCD as the nullity of the Sylvester matrix 
+    # determine the degree of GCD as the nullity of the Sylvester matrix
     # this computation can be replaced by simply setting nd = 1, in which case the Sylvester matrix is not formed
 
     nd = na1 + nb1 - 2 - rank([NGCD.convmtx(a1,nb1-1) NGCD.convmtx(b1,na1-1)], atol = tol) # julia 1.1
-    nd == 0 && (return [one(R)]) 
+    nd == 0 && (return [one(R)])
 
     sc = one(R)
     while na1 > nd
@@ -248,9 +251,9 @@ function companion(p::P) where {T, P <: StandardBasisPolynomial{T}}
     d < 1 && error("Series must have degree greater than 1")
     d == 1 && return diagm(0 => [-p[0] / p[1]])
 
-    
+
     R = eltype(one(T)/one(T))
-    
+
     comp = diagm(-1 => ones(R, d - 1))
     ani = 1 / p[end]
     for j in  0:(degree(p)-1)
@@ -261,7 +264,7 @@ end
 
 function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
 
-    R = eltype(one(T)/one(T))    
+    R = eltype(one(T)/one(T))
     d = degree(p)
     if d < 1
         return []
@@ -294,4 +297,3 @@ function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, n::Int
     end
     return A
 end
-
