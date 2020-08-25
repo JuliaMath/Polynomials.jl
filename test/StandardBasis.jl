@@ -442,6 +442,10 @@ end
         x = variable()
         plarge = 8.362779449448982e41 - 2.510840694154672e57x + 4.2817430781178795e44x^2 - 1.6225927682921337e31x^3 + 1.0x^4  # #120
         @test length(roots(plarge)) == 4
+
+        a = P([1,1,1])*P([1,0.5,1])*P([1,1])    # two complex conjugate pole pairs and one real pole
+        r = roots(a)
+        @test (fromroots(r) ≈ a) & isreal(coeffs(a))    # the coeff should be real
     end
 end
 
