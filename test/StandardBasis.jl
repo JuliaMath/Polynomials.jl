@@ -342,8 +342,10 @@ end
         # issue #209
         ps  = [P([0,1]), P([0,0,1])]
         @test Polynomials.evalpoly.(1/2, ps) ≈ [p(1/2)  for  p  in ps]
+
     end
 
+    
     # constant polynomials and type
     Ts = (Int, Float32, Float64, Complex{Int}, Complex{Float64})
     for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
@@ -374,7 +376,18 @@ end
         @test eltype(p3) == eltype(p2)
     end
 
-
+    # compensated_horner
+    # polynomial evaluation for polynomials with large condition numbers
+    for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
+        x = variable(P{Float64})
+        f(x) = (x - 1)^20
+        p = f(x)
+        e₁ = abs( (f(4/3) - p(4/3))/ p(4/3) )
+        e₂ = abs( (f(4/3) - Polynomials.compensated_horner(p, 4/3))/ p(4/3) )
+        @test cond(p, 4/3) > 1/eps()
+        @test e₁ > sqrt(eps())
+        @test e₂ <= 4eps()        
+    end
 end
 
 @testset "Conversion" begin

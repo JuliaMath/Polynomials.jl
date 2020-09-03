@@ -297,3 +297,91 @@ function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, n::Int
     end
     return A
 end
+
+
+## --------------------------------------------------
+"""
+    compensated_horner(p::P, x)
+    compensated_horner(ps, x)
+
+Evaluate `p(x)` using a compensation scheme of S. Graillat, Ph. Langlois, N. Louve [Compensated Horner Scheme](https://cadxfem.org/cao/Compensation-horner.pdf). Either a `Polynomial` `p` or it coefficients may be passed in.
+
+The Horner scheme has relative error given by
+
+`|(p(x) - p̂(x))/p(x)| ≤ α ⋅ u ⋅ cond(p, x)`, where `u` is the precision (`2⁻⁵³`).
+
+The compensated Horner scheme has relative error bounded by
+
+`|(p(x) - p̂(x))/p(x)| ≤  u +  β(n) ⋅ u² ⋅ cond(p, x)`.
+
+As noted, this reflects the accuracy of a backward stable computation performed in doubled working precision `u²`. (E.g., polynomial evaluation of a `Polynomial{Float64}` object through `compensated_horner` is as accurate as evaluation of a `Polynomial{Double64}` object (using the `DoubleFloat` package), but significantly faster.
+
+Pointed out in https://discourse.julialang.org/t/more-accurate-evalpoly/45932/5.
+"""
+function compensated_horner(p::P, x) where {T, P <: Polynomials.StandardBasisPolynomial{T}}
+    compensated_horner(coeffs(p), x)
+end
+
+# rexpressed from paper to compute horner_sum in same pass
+# sᵢ -- horner sum
+# c -- compensating term
+@inline function compensated_horner(ps, x) 
+    n, T = length(ps), eltype(ps)
+    aᵢ = ps[end]
+    sᵢ = aᵢ * _one(x)
+    c = zero(T) * _one(x)
+    for i in n-1:-1:1
+	aᵢ = ps[i]
+        pᵢ, πᵢ = two_product_fma(sᵢ, x)
+	sᵢ, σᵢ = two_sum(pᵢ, aᵢ)
+        c = fma(c, x, πᵢ + σᵢ)
+    end
+    sᵢ + c
+end
+
+function compensated_horner(ps::Tuple, x::S) where {S}
+    ps == () && return zero(S)
+    if @generated
+        n = length(ps.parameters)
+        sσᵢ =:(ps[end] * _one(x), zero(S))
+        c = :(zero(S) * _one(x))
+        for i in n-1:-1:1
+            pπᵢ = :(two_product_fma($sσᵢ[1], x))
+	    sσᵢ = :(two_sum($pπᵢ[1], ps[$i]))
+            Σ = :($pπᵢ[2] + $sσᵢ[2])
+            c = :(fma($c, x, $Σ))
+        end
+        s = :($sσᵢ[1] + $c)
+        s
+    else
+        compensated_horner(ps, x)
+    end
+end
+
+# error-free-transformations (EFT) of a∘b = x + y where x, y floating point, ∘ mathematical
+# operator (not ⊕ or ⊗)
+@inline function two_sum(a, b)
+    x = a + b
+    z = x - a
+    y = (a - (x-z)) + (b-z)
+    x, y
+end
+
+# return x, y, floats,  with x + y = a * b
+@inline function two_product_fma(a, b)
+    x = a * b
+    y = fma(a, b, -x)
+    x, y
+end
+
+
+# Condition number of a standard basis polynomial
+# rule of thumb: p̂ a compute value
+# |p(x) - p̃(x)|/|p(x)| ≤ α(n)⋅u ⋅ cond(p,x), where u = finite precision of compuation (2^-p)
+function LinearAlgebra.cond(p::P, x) where {P <: Polynomials.StandardBasisPolynomial}
+    p̃ = Polynomials.:⟒(P)(abs.(coeffs(p)), p.var)
+    p̃(abs(x))/ abs(p(x))
+end
+
+
+
