@@ -308,7 +308,7 @@ Evaluate `p(x)` using a compensation scheme of S. Graillat, Ph. Langlois, N. Lou
 
 The Horner scheme has relative error given by
 
-`|(p(x) - p̂(x))/p(x)| ≤ α ⋅ u ⋅ cond(p, x)`, where `u` is the precision (`2⁻⁵³`).
+`|(p(x) - p̂(x))/p(x)| ≤ α(n) ⋅ u ⋅ cond(p, x)`, where `u` is the precision (`2⁻⁵³ = eps()/2`)).
 
 The compensated Horner scheme has relative error bounded by
 

@@ -384,9 +384,12 @@ end
         p = f(x)
         e₁ = abs( (f(4/3) - p(4/3))/ p(4/3) )
         e₂ = abs( (f(4/3) - Polynomials.compensated_horner(p, 4/3))/ p(4/3) )
-        @test cond(p, 4/3) > 1/eps()
-        @test e₁ > sqrt(eps())
-        @test e₂ <= 4eps()        
+        λ = cond(p, 4/3)
+        u = eps()/2
+        @test λ > 1/u
+        @test e₁ <= 2 * 20 * u * λ
+        @test e₁ > u^(1/4)
+        @test e₂ <= u + u^2 * λ * 100
     end
 end
 
