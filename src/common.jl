@@ -15,7 +15,9 @@ export fromroots,
        fit,
        integrate,
        derivative,
-       variable
+       variable,
+       isintegerpoly,
+       asintegerpoly
 
 """
     fromroots(::AbstractVector{<:Number}; var=:x)
@@ -321,6 +323,10 @@ See also: [`isreal`](@ref)
     This could cause losing terms in `p`. This method is usually called on polynomials like `p = Polynomial([1, 2 + 0im, 3.0, 4.0 + 0.0im])` where you want to chop the imaginary parts of the coefficients of `p`.
 """
 Base.real(p::AbstractPolynomial) = as_(real, p)
+
+isintegerpoly(p::AbstractPolynomial) = is_(isinteger, p)
+asintegerpoly(p::AbstractPolynomial) = as_(x -> convert(Integer, x), p)
+
 """
     coeffs(::AbstractPolynomial)
 
