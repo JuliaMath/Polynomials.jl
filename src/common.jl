@@ -324,7 +324,21 @@ See also: [`isreal`](@ref)
 """
 Base.real(p::AbstractPolynomial) = as_(real, p)
 
+"""
+    isintegerpoly(p::AbstractPolynomial)
+
+Determine whether a polynomial is an integer polynomial, i.e., having only integers as coefficients.
+
+See also: [`asintegerpoly`](@ref)
+"""
 isintegerpoly(p::AbstractPolynomial) = is_(isinteger, p)
+"""
+    asintegerpoly(p::AbstractPolynomial)
+
+Construct an integer polynomial from the coefficients of `p`.
+
+See also: [`isintegerpoly`](@ref)
+"""
 asintegerpoly(p::AbstractPolynomial) = as_(x -> convert(Integer, x), p)
 
 """
