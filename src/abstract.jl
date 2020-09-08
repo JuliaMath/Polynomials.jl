@@ -18,10 +18,27 @@ abstract type AbstractPolynomial{T} end
 ⟒(P::Type{<:AbstractPolynomial}) = constructorof(P)
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
-is_(fn, p::AbstractPolynomial) = all(fn, coeffs(p))
-as_(fn, p::P) where {P<:AbstractPolynomial} = ⟒(P)(fn.(coeffs(p)), p.var)
+is_(fn, p::AbstractPolynomial) = all(fn, coeffs(p))  # Do not export
+as_(fn, p::P) where {P<:AbstractPolynomial} = ⟒(P)(fn.(coeffs(p)), p.var)  # Do not export
 
+"""
+    isreal(p::AbstractPolynomial)
+
+Determine whether a polynomial is a real polynomial, i.e., having only real numbers as coefficients.
+
+See also: [`real`](@ref)
+"""
 Base.isreal(p::AbstractPolynomial) = is_(isreal, p)
+"""
+    real(p::AbstractPolynomial)
+
+Construct a real polynomial from the real parts of the coefficients of `p`.
+
+See also: [`isreal`](@ref)
+
+!!! note
+    This could cause losing terms in `p`. This method is usually called on polynomials like `p = Polynomial([1, 2 + 0im, 3.0, 4.0 + 0.0im])` where you want to chop the imaginary parts of the coefficients of `p`.
+"""
 Base.real(p::AbstractPolynomial) = as_(real, p)
 
 """
