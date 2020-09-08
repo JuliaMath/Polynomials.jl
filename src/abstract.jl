@@ -22,7 +22,7 @@ is_(fn, p::AbstractPolynomial) = all(fn, coeffs(p))
 as_(fn, p::P) where {P<:AbstractPolynomial} = ⟒(P)(fn.(coeffs(p)), p.var)
 
 Base.isreal(p::AbstractPolynomial) = is_(isreal, p)
-Base.real(p::P) where {P<:AbstractPolynomial}  = as_(real, p)
+Base.real(p::AbstractPolynomial) = as_(real, p)
 
 """
     Polynomials.@register(name)
