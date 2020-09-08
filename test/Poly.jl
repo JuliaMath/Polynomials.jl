@@ -421,7 +421,26 @@ fit(Poly, xx,yy,2)
 ## Issue with overflow and polyder Issue #159
 @test !iszero(polyder(Poly(BigInt[0, 1])^100, 100))
 
+@testset "`isreal` and `real`" begin
+    x = Polynomial([1 // 2, 2 + 0im, 3.0, 4.0 + 0.0im])
+    y = Polynomial([1 // 2, 2 + 0im, 3.0, 4.0 + 0.1im])
+    @test isreal(x) === true
+    @test isequal(x, real(x)) === true
+    @test eltype(real(x)) === Float64
+    @test real(x) == Polynomial([1 // 2, 2, 3, 4.0])
+    @test isreal(y) === false
+    @test real(y) == real(x)
+end
 
+@testset "`isintegerpoly` and `asintegerpoly`" begin
+    x = Polynomial([1 // 1, Int8(2) + 0im, 3.0, Int16(4) + 0im])
+    y = Polynomial([1 // 2, Int8(2) + 0im, 3.0, Int16(4) + 0im])
+    @test isintegerpoly(x) === true
+    @test eltype(asintegerpoly(x)) === Int
+    @test asintegerpoly(x) == Polynomial([1, 2, 3, 4])
+    @test isintegerpoly(y) === false
+    @test_throws InexactError asintegerpoly(y)
+end
 
 
 
