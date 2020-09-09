@@ -16,7 +16,8 @@ export fromroots,
        integrate,
        derivative,
        variable,
-       isintegral
+       isintegral,
+       ismonic
 
 """
     fromroots(::AbstractVector{<:Number}; var=:x)
@@ -329,6 +330,13 @@ Base.real(p::AbstractPolynomial) = as_(real, p)
 Determine whether a polynomial is an integer polynomial, i.e., having only integers as coefficients.
 """
 isintegral(p::AbstractPolynomial) = is_(isinteger, p)
+
+"""
+    ismonic(p::AbstractPolynomial)
+
+Determine whether a polynomial is a monic polynomial, i.e., its leading coefficient is one.
+"""
+ismonic(p::AbstractPolynomial) = isone(coeffs(p)[end])
 
 """
     coeffs(::AbstractPolynomial)
