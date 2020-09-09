@@ -16,7 +16,7 @@ export fromroots,
        integrate,
        derivative,
        variable,
-       isintegerpoly
+       isintegral
 
 """
     fromroots(::AbstractVector{<:Number}; var=:x)
@@ -324,11 +324,11 @@ See also: [`isreal`](@ref)
 Base.real(p::AbstractPolynomial) = as_(real, p)
 
 """
-    isintegerpoly(p::AbstractPolynomial)
+    isintegral(p::AbstractPolynomial)
 
 Determine whether a polynomial is an integer polynomial, i.e., having only integers as coefficients.
 """
-isintegerpoly(p::AbstractPolynomial) = is_(isinteger, p)
+isintegral(p::AbstractPolynomial) = is_(isinteger, p)
 
 """
     coeffs(::AbstractPolynomial)
