@@ -432,14 +432,13 @@ fit(Poly, xx,yy,2)
     @test real(y) == real(x)
 end
 
-@testset "`isintegerpoly` and `asintegerpoly`" begin
+@testset "`isintegerpoly`" begin
     x = Polynomial([1 // 1, Int8(2) + 0im, 3.0, Int16(4) + 0im])
     y = Polynomial([1 // 2, Int8(2) + 0im, 3.0, Int16(4) + 0im])
     @test isintegerpoly(x) === true
-    @test eltype(asintegerpoly(x)) === Int
-    @test asintegerpoly(x) == Polynomial([1, 2, 3, 4])
     @test isintegerpoly(y) === false
-    @test_throws InexactError asintegerpoly(y)
+    @test convert(Polynomial{Int}, x) == Polynomial([1, 2, 3, 4])
+    @test_throws InexactError convert(Polynomial{Int}, y)
 end
 
 
