@@ -356,7 +356,7 @@ isintegral(p::AbstractPolynomial) = all(isinteger, p)
 
 Determine whether a polynomial is a monic polynomial, i.e., its leading coefficient is one.
 """
-ismonic(p::AbstractPolynomial) = isone(coeffs(p)[end])
+ismonic(p::AbstractPolynomial) = isone(p[end])
 
 """
     coeffs(::AbstractPolynomial)
