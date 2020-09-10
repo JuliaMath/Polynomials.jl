@@ -421,8 +421,50 @@ fit(Poly, xx,yy,2)
 ## Issue with overflow and polyder Issue #159
 @test !iszero(polyder(Poly(BigInt[0, 1])^100, 100))
 
+@testset "`all` and `any`" begin
+    @test all(x -> x > 1, Polynomial([2 // 1, 3, Int8(4), 5.0]))
+    @test any(x -> x > 1, Polynomial([2 // 1, 3, Int8(4), 5.0]))
+    @test any(isnan, Polynomial([2 // 1, NaN, Int8(4), 5.0]))
+    @test any(!isfinite, Polynomial([2 // 1, NaN, Int8(4), 5.0]))
+    @test any(isinf, Polynomial([2 // 1, Inf64, Int8(4), 5.0]))
+    @test any(iszero, Polynomial([1, 0, 2.0, 3 // 1]))
+end
 
+@testset "`map`" begin
+    @test map(sqrt, Polynomial([1, 2, 3, 4.0])) == Polynomial([√1, √2, √3, √4])
+    @test map(x -> x + 1, Polynomial([1, 2, 3, 4.0])) == Polynomial([2, 3, 4.0, 5 // 1])
+    @test map(zero, Polynomial([1, 2, 3, 4.0])) == Polynomial(0)
+    @test map(one, Polynomial([1, 2, 3, 4.0])) == Polynomial([1, 1, 1, 1])
+    @test map(float, Polynomial([1, 2, 3, 4])) == Polynomial([1.0, 2.0, 3.0, 4.0])
+end
 
+@testset "`isreal` and `real`" begin
+    x = Polynomial([1 // 2, 2 + 0im, 3.0, 4.0 + 0.0im])
+    y = Polynomial([1 // 2, 2 + 0im, 3.0, 4.0 + 0.1im])
+    @test isreal(x) === true
+    @test isequal(x, real(x)) === true
+    @test eltype(real(x)) === Float64
+    @test real(x) == Polynomial([1 // 2, 2, 3, 4.0])
+    @test isreal(y) === false
+    @test real(y) == real(x)
+end
+
+@testset "`isintegral`" begin
+    x = Polynomial([1 // 1, Int8(2) + 0im, 3.0, Int16(4) + 0im])
+    y = Polynomial([1 // 2, Int8(2) + 0im, 3.0, Int16(4) + 0im])
+    @test isintegral(x) === true
+    @test isintegral(y) === false
+    @test convert(Polynomial{Int}, x) == Polynomial([1, 2, 3, 4])
+    @test_throws InexactError convert(Polynomial{Int}, y)
+end
+
+@testset "`ismonic`" begin
+    @test !ismonic(Polynomial([1, 2, 3, 4]))
+    @test ismonic(Polynomial([2, 3, 4, 1 // 1]))
+    @test ismonic(Polynomial([2, 3, 4, 1.0]))
+    @test !ismonic(zero(Polynomial))
+    @test ismonic(one(Polynomial))
+end
 
 
 @testset "Pade" begin

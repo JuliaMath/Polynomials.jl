@@ -25,6 +25,10 @@ chop
 chop!
 truncate
 truncate!
+isreal
+real
+isintegral
+ismonic
 ```
 
 ## Arithmetic

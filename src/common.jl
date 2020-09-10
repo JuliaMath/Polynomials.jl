@@ -15,7 +15,9 @@ export fromroots,
        fit,
        integrate,
        derivative,
-       variable
+       variable,
+       isintegral,
+       ismonic
 
 """
     fromroots(::AbstractVector{<:Number}; var=:x)
@@ -297,6 +299,64 @@ function Base.iszero(p::AbstractPolynomial)
     end
     return all(iszero.(coeffs(p))) && p[0] == 0
 end
+
+# See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
+"""
+    all(pred, poly::AbstractPolynomial)
+
+Test whether all coefficients of an `AbstractPolynomial` satisfy predicate `pred`.
+
+You can implement `isreal`, etc., to a `Polynomial` by using `all`.
+"""
+Base.all(pred, poly::AbstractPolynomial) = all(pred, poly[:])
+"""
+    any(pred, poly::AbstractPolynomial)
+
+Test whether any coefficient of an `AbstractPolynomial` satisfies predicate `pred`.
+"""
+Base.any(pred, poly::AbstractPolynomial) = any(pred, poly[:])
+"""
+    map(fn, p::AbstractPolynomial)
+
+Transform coefficients of `p` by applying a function (or other callables) `fn` to each of them.
+
+You can implement `real`, etc., to a `Polynomial` by using `map`.
+"""
+Base.map(fn, p::P) where {P<:AbstractPolynomial} = ⟒(P)(map(fn, coeffs(p)), p.var)
+
+"""
+    isreal(p::AbstractPolynomial)
+
+Determine whether a polynomial is a real polynomial, i.e., having only real numbers as coefficients.
+
+See also: [`real`](@ref)
+"""
+Base.isreal(p::AbstractPolynomial) = all(isreal, p)
+"""
+    real(p::AbstractPolynomial)
+
+Construct a real polynomial from the real parts of the coefficients of `p`.
+
+See also: [`isreal`](@ref)
+
+!!! note
+    This could cause losing terms in `p`. This method is usually called on polynomials like `p = Polynomial([1, 2 + 0im, 3.0, 4.0 + 0.0im])` where you want to chop the imaginary parts of the coefficients of `p`.
+"""
+Base.real(p::AbstractPolynomial) = map(real, p)
+
+"""
+    isintegral(p::AbstractPolynomial)
+
+Determine whether a polynomial is an integer polynomial, i.e., having only integers as coefficients.
+"""
+isintegral(p::AbstractPolynomial) = all(isinteger, p)
+
+"""
+    ismonic(p::AbstractPolynomial)
+
+Determine whether a polynomial is a monic polynomial, i.e., its leading coefficient is one.
+"""
+ismonic(p::AbstractPolynomial) = isone(p[end])
 
 """
     coeffs(::AbstractPolynomial)
