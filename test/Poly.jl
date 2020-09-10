@@ -458,6 +458,13 @@ end
     @test_throws InexactError convert(Polynomial{Int}, y)
 end
 
+@testset "`ismonic`" begin
+    @test !ismonic(Polynomial([1, 2, 3, 4]))
+    @test ismonic(Polynomial([2, 3, 4, 1 // 1]))
+    @test ismonic(Polynomial([2, 3, 4, 1.0]))
+    @test !ismonic(zero(Polynomial))
+    @test ismonic(one(Polynomial))
+end
 
 
 @testset "Pade" begin
