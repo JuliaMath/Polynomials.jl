@@ -421,6 +421,23 @@ fit(Poly, xx,yy,2)
 ## Issue with overflow and polyder Issue #159
 @test !iszero(polyder(Poly(BigInt[0, 1])^100, 100))
 
+@testset "`all` and `any`" begin
+    @test all(x -> x > 1, Polynomial([2 // 1, 3, Int8(4), 5.0]))
+    @test any(x -> x > 1, Polynomial([2 // 1, 3, Int8(4), 5.0]))
+    @test any(isnan, Polynomial([2 // 1, NaN, Int8(4), 5.0]))
+    @test any(!isfinite, Polynomial([2 // 1, NaN, Int8(4), 5.0]))
+    @test any(isinf, Polynomial([2 // 1, Inf64, Int8(4), 5.0]))
+    @test any(iszero, Polynomial([1, 0, 2.0, 3 // 1]))
+end
+
+@testset "`map`" begin
+    @test map(sqrt, Polynomial([1, 2, 3, 4.0])) == Polynomial([√1, √2, √3, √4])
+    @test map(x -> x + 1, Polynomial([1, 2, 3, 4.0])) == Polynomial([2, 3, 4.0, 5 // 1])
+    @test map(zero, Polynomial([1, 2, 3, 4.0])) == Polynomial(0)
+    @test map(one, Polynomial([1, 2, 3, 4.0])) == Polynomial([1, 1, 1, 1])
+    @test map(float, Polynomial([1, 2, 3, 4])) == Polynomial([1.0, 2.0, 3.0, 4.0])
+end
+
 @testset "`isreal` and `real`" begin
     x = Polynomial([1 // 2, 2 + 0im, 3.0, 4.0 + 0.0im])
     y = Polynomial([1 // 2, 2 + 0im, 3.0, 4.0 + 0.1im])
