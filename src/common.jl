@@ -301,8 +301,9 @@ function Base.iszero(p::AbstractPolynomial)
 end
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
-is_(fn, p::AbstractPolynomial) = all(fn, coeffs(p))  # Do not export
-as_(fn, p::P) where {P<:AbstractPolynomial} = ⟒(P)(fn.(coeffs(p)), p.var)  # Do not export
+Base.all(pred, poly::AbstractPolynomial) = all(pred, poly[:])
+Base.any(pred, poly::AbstractPolynomial) = any(pred, poly[:])
+Base.map(fn, p::P) where {P<:AbstractPolynomial} = ⟒(P)(map(fn, coeffs(p)), p.var)
 
 """
     isreal(p::AbstractPolynomial)
