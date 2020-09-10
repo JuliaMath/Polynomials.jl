@@ -301,8 +301,27 @@ function Base.iszero(p::AbstractPolynomial)
 end
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
+"""
+    all(pred, poly::AbstractPolynomial)
+
+Test whether all coefficients of an `AbstractPolynomial` satisfy predicate `pred`.
+
+You can implement `isreal`, etc., to a `Polynomial` by using `all`.
+"""
 Base.all(pred, poly::AbstractPolynomial) = all(pred, poly[:])
+"""
+    any(pred, poly::AbstractPolynomial)
+
+Test whether any coefficient of an `AbstractPolynomial` satisfies predicate `pred`.
+"""
 Base.any(pred, poly::AbstractPolynomial) = any(pred, poly[:])
+"""
+    map(fn, p::AbstractPolynomial)
+
+Transform coefficients of `p` by applying a function (or other callables) `fn` to each of them.
+
+You can implement `real`, etc., to a `Polynomial` by using `map`.
+"""
 Base.map(fn, p::P) where {P<:AbstractPolynomial} = ⟒(P)(map(fn, coeffs(p)), p.var)
 
 """
