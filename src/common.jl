@@ -312,7 +312,7 @@ Determine whether a polynomial is a real polynomial, i.e., having only real numb
 
 See also: [`real`](@ref)
 """
-Base.isreal(p::AbstractPolynomial) = is_(isreal, p)
+Base.isreal(p::AbstractPolynomial) = all(isreal, p)
 """
     real(p::AbstractPolynomial)
 
@@ -323,14 +323,14 @@ See also: [`isreal`](@ref)
 !!! note
     This could cause losing terms in `p`. This method is usually called on polynomials like `p = Polynomial([1, 2 + 0im, 3.0, 4.0 + 0.0im])` where you want to chop the imaginary parts of the coefficients of `p`.
 """
-Base.real(p::AbstractPolynomial) = as_(real, p)
+Base.real(p::AbstractPolynomial) = map(real, p)
 
 """
     isintegral(p::AbstractPolynomial)
 
 Determine whether a polynomial is an integer polynomial, i.e., having only integers as coefficients.
 """
-isintegral(p::AbstractPolynomial) = is_(isinteger, p)
+isintegral(p::AbstractPolynomial) = all(isinteger, p)
 
 """
     ismonic(p::AbstractPolynomial)
