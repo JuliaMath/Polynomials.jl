@@ -30,7 +30,7 @@ struct ChebyshevT{T <: Number} <: AbstractPolynomial{T}
         length(coeffs) == 0 && return new{T}(zeros(T, 1), var)
         last_nz = findlast(!iszero, coeffs)
         last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T}(coeffs[1:last], var)
+        return new{T}(coeffs[firstindex(coeffs):last], var)
     end
 end
 

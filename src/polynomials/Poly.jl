@@ -29,7 +29,7 @@ struct Poly{T <: Number} <: Polynomials.StandardBasisPolynomial{T}
         # determine the last nonzero element and truncate a accordingly
             last_nz = findlast(!iszero, a)
             a_last = max(1, last_nz === nothing ? 0 : last_nz)
-            new{T}(a[1:a_last], Symbol(var))
+            new{T}(a[firstindex(a):a_last], Symbol(var))
         end
     end
 end

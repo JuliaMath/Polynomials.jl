@@ -51,7 +51,7 @@ struct ImmutablePolynomial{T <: Number,  N} <: StandardBasisPolynomial{T}
     function ImmutablePolynomial{T,N}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {T <: Number, N, S}
         M = findlast(!iszero, coeffs)
         M == N || throw(ArgumentError("Leading  term must  be  non-zero; length of coefficients must be N"))
-        cs = NTuple{N,T}(T(c) for c in coeffs[1:N])
+        cs = NTuple{N,T}(T(c) for c in coeffs[firstindex(coeffs):N])
         new{T,N}(cs, var)
     end
     function ImmutablePolynomial{T}(coeffs::NTuple{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
