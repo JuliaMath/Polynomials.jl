@@ -299,6 +299,32 @@ function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, n::Int
 end
 
 
+## as noted at https://github.com/jishnub/PolyFit.jl, using method from SpecialMatrices is faster
+function fit(P::Type{<:StandardBasisPolynomial},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             deg::Integer = length(x) - 1;
+             weights = nothing,
+             var = :x,) where {T}
+
+    if weights !== nothing
+        vand = vander(P, x, deg)        
+        coeffs = _wlstsq(vand, y, weights)
+    else
+        if deg == length(x) - 1
+            coeffs = Vector{T}(undef, length(x))
+            copyto!(coeffs, y)
+            dvand!(x, coeffs)
+        else
+            vand = vander(P, x, deg)        
+            coeffs = pinv(vand) * y
+        end
+    end
+    return P(T.(coeffs), var)
+end
+
+
+
 ## --------------------------------------------------
 """
     compensated_horner(p::P, x)
