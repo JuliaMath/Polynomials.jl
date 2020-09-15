@@ -92,6 +92,7 @@ function ImmutablePolynomial(coeffs::NTuple{M,T}, var::SymbolLike=:x) where {M, 
     ImmutablePolynomial{T,N}(cs, var)
 end
 
+
 # Convenience; pass tuple to Polynomial
 # Not documented, not sure this is a good idea as P(...)::P is not true...
 Polynomial(coeffs::NTuple{N,T}, var::SymbolLike = :x) where{N,T} =
@@ -110,7 +111,6 @@ Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p), p.var)
 
 # catch q == 0 case
-LinearAlgebra.norm(q::ImmutablePolynomial{T}, p::Real = 2) where {T} = degree(q) == -1 ? zero(T) : norm(coeffs(q), p)
 
 #  zero, one, variable
 function Base.zero(P::Type{<:ImmutablePolynomial},var::SymbolLike=:x)

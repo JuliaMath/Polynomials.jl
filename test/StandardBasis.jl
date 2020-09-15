@@ -155,6 +155,11 @@ end
         @test p+q == P([1+im, 2, 3])
         @test p*q == P(im*[1,2,3])
     end
+
+    # LaurentPolynomial has an inverse for monomials
+    x = variable(LaurentPolynomial)
+    @test Polynomials.isconstant(x * inv(x))
+    @test_throws ArgumentError inv(x + x^2)
 end
 
 @testset "Divrem" begin
