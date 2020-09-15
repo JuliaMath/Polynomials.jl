@@ -327,9 +327,7 @@ julia> conj(p)(z) ≈ (conj ∘ p ∘ conj)(z)
 true
 ```
 """
-function LinearAlgebra.conj(p::P) where {P <: LaurentPolynomial}
-    _convert(p, conj(coeffs(p)))
-end
+LinearAlgebra.conj(p::P) where {P <: LaurentPolynomial} = map(conj, p)
 
 
 """

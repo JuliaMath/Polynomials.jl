@@ -210,7 +210,7 @@ In-place version of [`chop`](@ref)
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-    isempty(p.coeffs) && return p
+    isempty(values(p)) && return p
     tol = norm(p) * rtol + atol
     for i = lastindex(p):-1:0
         val = p[i]
@@ -264,7 +264,7 @@ end
 
 Returns the complex conjugate of the polynomial
 """
-LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = _convert(p, conj(coeffs(p)))
+LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = map(conj, p)
 LinearAlgebra.adjoint(p::P) where {P <: AbstractPolynomial} = map(adjoint, p) 
 LinearAlgebra.transpose(p::AbstractPolynomial) = p
 LinearAlgebra.transpose!(p::AbstractPolynomial) = p
@@ -319,7 +319,7 @@ Base.any(pred, p::AbstractPolynomial) = any(pred, values(p))
 
 
 """
-    map(fn, p::AbstractPolynomial, args...v )
+    map(fn, p::AbstractPolynomial, args...)
 
 Transform coefficients of `p` by applying a function (or other callables) `fn` to each of them.
 
@@ -430,7 +430,8 @@ Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1
 Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
-Base.values(p::AbstractPolynomial) = coeffs(p)
+# like coeffs, though possibly only non-zero values (e.g. SparsePolynomial)
+Base.values(p::AbstractPolynomial) = coeffs(p) 
 
 # iteration
 # iteration occurs over the basis polynomials
