@@ -42,6 +42,10 @@ end
     p0 = ChebyshevT([0])
     @test iszero(p0)
     @test degree(p0) == -1
+
+    coeffs = OffsetVector([0, 0, 1], 0:2)
+    p = ChebyshevT(coeffs)
+    @test degree(p) == 2
 end
 
 @testset "Roots $i" for i in 1:5

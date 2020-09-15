@@ -4,6 +4,7 @@ using LinearAlgebra
 using Polynomials
 using SpecialFunctions
 using RecipesBase: apply_recipe
+using OffsetArrays
 
 import SparseArrays: sparse, nnz
 
