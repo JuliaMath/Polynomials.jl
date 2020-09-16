@@ -120,7 +120,7 @@ Returns the roots of the given polynomial. This is calculated via the eigenvalue
 
 !!! note
 
-        The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) provides an interface to FORTRAN code implementing an algorithm that can handle very large polynomials (it is  `O(n^2)` not `O(n^3)`. the [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package implements the algorithm in Julia, allowing the use of other  number types.
+        The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) provides an interface to FORTRAN code implementing an algorithm that can handle very large polynomials (it is  `O(n^2)` not `O(n^3)`. The [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package implements the algorithm in Julia, allowing the use of other  number types.
 
 """
 function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: Number}
@@ -210,8 +210,8 @@ In-place version of [`chop`](@ref)
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-    isempty(coeffs(p)) && return p
-    tol = norm(coeffs(p)) * rtol + atol
+    isempty(values(p)) && return p
+    tol = norm(p) * rtol + atol
     for i = lastindex(p):-1:0
         val = p[i]
         if abs(val) > tol #!isapprox(val, zero(T); rtol = rtol, atol = atol)
@@ -253,15 +253,19 @@ Linear Algebra =#
 
 Calculates the p-norm of the polynomial's coefficients
 """
-LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2) = norm(coeffs(q), p)
+function LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2)
+    vs = values(q)
+    isempty(vs) && return zero(q[0])
+    return norm(vs, p)
+end
 
 """
     conj(::AbstractPolynomial)
 
 Returns the complex conjugate of the polynomial
 """
-LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = ⟒(P)(conj(coeffs(p)), p.var)
-LinearAlgebra.adjoint(p::P) where {P <: AbstractPolynomial} = ⟒(P)(adjoint.(coeffs(p)), p.var)
+LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = map(conj, p)
+LinearAlgebra.adjoint(p::P) where {P <: AbstractPolynomial} = map(adjoint, p) 
 LinearAlgebra.transpose(p::AbstractPolynomial) = p
 LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 
@@ -293,12 +297,7 @@ Base.eltype(p::AbstractPolynomial{T}) where {T} = T
 Base.eltype(::Type{<:AbstractPolynomial}) = Float64
 Base.eltype(::Type{<:AbstractPolynomial{T}}) where {T} = T
 #Base.eltype(::Type{P}) where {P <: AbstractPolynomial} = P # changed  in v1.1.0
-function Base.iszero(p::AbstractPolynomial)
-    if length(p) == 0
-        return true
-    end
-    return all(iszero.(coeffs(p))) && p[0] == 0
-end
+Base.iszero(p::AbstractPolynomial) = all(iszero, p)
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
 """
@@ -308,21 +307,25 @@ Test whether all coefficients of an `AbstractPolynomial` satisfy predicate `pred
 
 You can implement `isreal`, etc., to a `Polynomial` by using `all`.
 """
-Base.all(pred, poly::AbstractPolynomial) = all(pred, poly[:])
+Base.all(pred, p::AbstractPolynomial) = all(pred, values(p))
 """
     any(pred, poly::AbstractPolynomial)
 
 Test whether any coefficient of an `AbstractPolynomial` satisfies predicate `pred`.
 """
-Base.any(pred, poly::AbstractPolynomial) = any(pred, poly[:])
+Base.any(pred, p::AbstractPolynomial) = any(pred, values(p))
+
+
+
+
 """
-    map(fn, p::AbstractPolynomial)
+    map(fn, p::AbstractPolynomial, args...)
 
 Transform coefficients of `p` by applying a function (or other callables) `fn` to each of them.
 
 You can implement `real`, etc., to a `Polynomial` by using `map`.
 """
-Base.map(fn, p::P) where {P<:AbstractPolynomial} = ⟒(P)(map(fn, coeffs(p)), p.var)
+Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial} = _convert(p, map(fn, coeffs(p), args...))
 
 """
     isreal(p::AbstractPolynomial)
@@ -371,7 +374,7 @@ coeffs(p::AbstractPolynomial) = p.coeffs
 Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
 has a nonzero coefficient. The degree of the zero polynomial is defined to be -1.
 """
-degree(p::AbstractPolynomial) = iszero(p) ? -1 : length(p) - 1
+degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p) 
 
 
 """
@@ -384,7 +387,7 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0
 
 
 
-hasnan(p::AbstractPolynomial) = any(isnan.(coeffs(p)))
+hasnan(p::AbstractPolynomial) = any(isnan, p)
 
 """
     domain(::Type{<:AbstractPolynomial})
@@ -427,6 +430,8 @@ Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1
 Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
+# like coeffs, though possibly only non-zero values (e.g. SparsePolynomial)
+Base.values(p::AbstractPolynomial) = coeffs(p) 
 
 # iteration
 # iteration occurs over the basis polynomials
@@ -472,7 +477,7 @@ Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
 
 #=
 identity =#
-Base.copy(p::P) where {P <: AbstractPolynomial} = P(copy(coeffs(p)), p.var)
+Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(coeffs(p)))
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 
 #=
@@ -540,20 +545,18 @@ basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial}
 
 #=
 arithmetic =#
-Base.:-(p::P) where {P <: AbstractPolynomial} = P(-coeffs(p), p.var)
+Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p)) 
 Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
 Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
 Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
 Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
 function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
-    T = promote_type(P, S)
-    return T(coeffs(p) .* c, p.var)
+    _convert(p, coeffs(p) .* c)
 end
 
 function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
-    R = promote_type(P, eltype(one(T) / one(S)))
-    return R(coeffs(p) ./ c, p.var)
+    _convert(p, coeffs(p) ./ c)
 end
 
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
@@ -644,7 +647,6 @@ function Base.isapprox(p1::AbstractPolynomial{T},
     
     p1, p2 = promote(p1, p2)
     check_same_variable(p1, p2)  || error("p1 and p2 must have same var")
-
     # copy over from abstractarray.jl
     Δ  = norm(p1-p2)
     if isfinite(Δ)
@@ -661,7 +663,7 @@ function Base.isapprox(p1::P,
                        n::S;
                        rtol::Real = (Base.rtoldefault(T, S, 0)),
                        atol::Real = 0,) where {T,S, P<:AbstractPolynomial{T}}
-    return isapprox(p1, ⟒(P){T}(n,p1.var))
+    return isapprox(p1, _convert(p1, [n])) 
 end
 
 Base.isapprox(n::S,

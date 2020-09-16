@@ -182,6 +182,13 @@ function (p::SparsePolynomial{T})(x::S) where {T,S}
     
 end
 
+#  map: over values -- not keys
+function Base.map(fn, p::P, args...) where {P <: SparsePolynomial}
+    ks, vs = keys(p.coeffs), values(p.coeffs)
+    vs′ = map(fn, vs, args...)
+    _convert(p, Dict(Pair.(ks, vs′)))
+end
+
 
    
 function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}

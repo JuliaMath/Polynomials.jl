@@ -24,6 +24,8 @@ isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 
 Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
 
+Base.values(p::StandardBasisPolynomial) = values(p.coeffs)
+
 variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = P([0, 1], var)
 
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
@@ -45,7 +47,7 @@ function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Numbe
     R = promote_type(T,S)
     as = R[c  for c in coeffs(p)]
     as[1] += c
-    ⟒(P)(as, p.var)
+    _convert(p, as)
 end
 
 
@@ -66,7 +68,7 @@ function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolyno
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
     end
-    return ⟒(P)(a2, p.var)
+    return _convert(p, a2)
 end
 
 
@@ -82,7 +84,7 @@ function integrate(p::P, k::S) where {T, P <: StandardBasisPolynomial{T}, S<:Num
     @inbounds for i in 1:n
         a2[i + 1] = p[i - 1] / i
     end
-    return ⟒(P)(a2, p.var)
+    return _convert(p, a2)
 end
 
 
@@ -119,7 +121,7 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
     end
     resize!(r_coeff, min(length(r_coeff), m))
 
-    return ⟒(P)(q_coeff, var), ⟒(P)(r_coeff, var)
+    return _convert(num, q_coeff), _convert(num, r_coeff)
 
 end
 
@@ -191,7 +193,7 @@ function  gcd_noda_sasaki(p::P, q::Q;
     a, b = coeffs(p), coeffs(q)
     as =  _gcd_noda_sasaki(a,b, atol=atol,  rtol=rtol)
 
-    ⟒(P)(as, p.var)
+    _convert(p, as)
 end
 
 function _gcd_noda_sasaki(a::Vector{T}, b::Vector{S};
@@ -304,7 +306,7 @@ end
     compensated_horner(p::P, x)
     compensated_horner(ps, x)
 
-Evaluate `p(x)` using a compensation scheme of S. Graillat, Ph. Langlois, N. Louve [Compensated Horner Scheme](https://cadxfem.org/cao/Compensation-horner.pdf). Either a `Polynomial` `p` or it coefficients may be passed in.
+Evaluate `p(x)` using a compensation scheme of S. Graillat, Ph. Langlois, N. Louve [Compensated Horner Scheme](https://cadxfem.org/cao/Compensation-horner.pdf). Either a `Polynomial` `p` or its coefficients may be passed in.
 
 The Horner scheme has relative error given by
 
@@ -379,7 +381,7 @@ end
 # rule of thumb: p̂ a compute value
 # |p(x) - p̃(x)|/|p(x)| ≤ α(n)⋅u ⋅ cond(p,x), where u = finite precision of compuation (2^-p)
 function LinearAlgebra.cond(p::P, x) where {P <: Polynomials.StandardBasisPolynomial}
-    p̃ = Polynomials.:⟒(P)(abs.(coeffs(p)), p.var)
+    p̃ = map(abs, p)
     p̃(abs(x))/ abs(p(x))
 end
 

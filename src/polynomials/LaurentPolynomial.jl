@@ -93,12 +93,12 @@ end
 @register LaurentPolynomial
 
 ## constructors
-function LaurentPolynomial{T}(coeffs::AbstractVector{S}, m::Int, var::Symbol=:x) where {
+function LaurentPolynomial{T}(coeffs::AbstractVector{S}, m::Int, var::SymbolLike=:x) where {
     T <: Number, S <: Number}
     LaurentPolynomial{T}(T.(coeffs), m, var)
 end
 
-function LaurentPolynomial{T}(coeffs::AbstractVector{S}, var::Symbol=:x) where {
+function LaurentPolynomial{T}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {
     T <: Number, S <: Number}
     LaurentPolynomial{T}(T.(coeffs), 0, var)
 end
@@ -114,7 +114,8 @@ end
 
 
 # Add interface for OffsetArray
-function  LaurentPolynomial{T}(coeffs::OffsetArray{S, 1, Array{S,1}}, var::SymbolLike=:x) where {T, S}
+function  LaurentPolynomial{T}(coeffs::OffsetArray{S, 1, Array{S,1}}, var::SymbolLike=:x) where {
+    T<:Number, S<:Number}
     m,n = axes(coeffs, 1)
     LaurentPolynomial{T}(T.(coeffs.parent), m:n, Symbol(var))
 end
@@ -177,7 +178,7 @@ function Base.range(p::LaurentPolynomial)
 end
 
 function Base.inv(p::LaurentPolynomial)
-    m,n =  degreerange(p)
+    m,n =  (extrema∘degreerange)(p)
     m != n && throw(ArgumentError("Only monomials can be inverted"))
     LaurentPolynomial([1/p for p in p.coeffs], -m, p.var)
 end
@@ -185,13 +186,11 @@ end
 ##
 ## changes to common.jl mostly as the range in the type is different
 ##
-Base.copy(p::P) where {P <: LaurentPolynomial} = P(copy(coeffs(p)), degreerange(p), p.var)
 Base.:(==)(p1::LaurentPolynomial, p2::LaurentPolynomial) =
     check_same_variable(p1, p2) && (degreerange(p1) == degreerange(p2)) && (coeffs(p1) == coeffs(p2))
 Base.hash(p::LaurentPolynomial, h::UInt) = hash(p.var, hash(degreerange(p), hash(coeffs(p), h)))
 
-degree(p::LaurentPolynomial) = p.n[]
-isconstant(p::LaurentPolynomial) = degreerange(p) == 0:0
+isconstant(p::LaurentPolynomial) = iszero(lastindex(p)) && iszero(firstindex(p)) 
 basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var::SymbolLike=:x) where{T} = LaurentPolynomial(ones(T,1), n:n, var)
 basis(P::Type{LaurentPolynomial}, n::Int, var::SymbolLike=:x) = LaurentPolynomial(ones(Float64, 1), n:n, var)
 
@@ -233,6 +232,8 @@ Base.firstindex(p::LaurentPolynomial) = p.m[]
 Base.lastindex(p::LaurentPolynomial) = p.n[]
 Base.eachindex(p::LaurentPolynomial) = degreerange(p)
 degreerange(p::LaurentPolynomial) = firstindex(p):lastindex(p)
+
+_convert(p::P, as) where {P <: LaurentPolynomial} = ⟒(P)(as, firstindex(p), p.var)
 
 ## chop/truncation
 # trim  from *both* ends
@@ -326,11 +327,7 @@ julia> conj(p)(z) ≈ (conj ∘ p ∘ conj)(z)
 true
 ```
 """
-function LinearAlgebra.conj(p::P) where {P <: LaurentPolynomial}
-    ps = coeffs(p)
-    m = firstindex(p)
-    ⟒(P)(conj(ps), m, p.var)
-end
+LinearAlgebra.conj(p::P) where {P <: LaurentPolynomial} = map(conj, p)
 
 
 """
@@ -443,23 +440,8 @@ end
 
 
 # scalar operattoinis
-Base.:-(p::P) where {P <: LaurentPolynomial} = P(-coeffs(p), firstindex(p), p.var)
-
-function Base.:+(p::LaurentPolynomial{T}, c::S) where {T, S <: Number}
-    q = LaurentPolynomial([c], 0, p.var)
-    p + q
-end
-
-function Base.:*(p::P, c::S) where {T,P <: LaurentPolynomial,  S <: Number}
-    as = c * copy(coeffs(p))
-    return ⟒(P)(as, firstindex(p), p.var)
-end
-
-
-function Base.:/(p::P, c::S) where {T,P <: LaurentPolynomial{T},S <: Number}
-    R = promote_type(P, eltype(one(T) / one(S)))
-    return R(coeffs(p) ./ c, firstindex(p), p.var)
-end
+# standard-basis defn. assumes basis 1, x, x², ...
+Base.:+(p::LaurentPolynomial{T}, c::S) where {T, S <: Number} = sum(promote(p,c))
 
 ##
 ## Poly + and  *
