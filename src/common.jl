@@ -477,7 +477,7 @@ Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
 
 #=
 identity =#
-Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(p.coeffs)) 
+Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(coeffs(p)))
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 
 #=
