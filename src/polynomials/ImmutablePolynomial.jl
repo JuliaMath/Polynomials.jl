@@ -152,6 +152,46 @@ for op in [:isequal, :(==)]
     end
 end
 
+
+LinearAlgebra.norm(q::ImmutablePolynomial{T, 0}, p::Real=2) where {T} = (zero(T))^(1/p)
+function LinearAlgebra.norm(q::ImmutablePolynomial{T, N}, p::Real=2) where {T, N}
+    if p == 1
+        if @generated
+            ex = :(abs(q.coeffs[1]))
+            for i in 2:N
+                qᵢ = :(q.coeffs[$i])
+                ex = :(abs($qᵢ) + $ex)
+            end
+            ex
+        else
+            norm(q.coeffs, 1)
+        end
+    elseif p == 2
+        if @generated
+            ex = :(abs2(q.coeffs[1]))
+            for i in 2:N
+                qᵢ = :(q.coeffs[$i])
+                ex = :(muladd($qᵢ,$qᵢ,$ex))
+            end
+            :(sqrt($ex))
+        else
+            LinearAlgebra.norm2(q.coeffs)
+        end
+    else
+        if @generated
+            ex = :(abs(q.coeffs[1]^p))
+            for i in 2:N
+                qᵢ = :(q.coeffs[$i])
+                ex = :(abs($qᵢ)^p + $ex)
+            end
+            ex = :(($ex)^(1/p))
+            ex
+        else
+            norm(q.coeffs, p)
+        end
+    end
+end
+
 ##
 ## Change ≈ to handle tuples for coefficients *and* get handling of Inf correct
 ## right now
