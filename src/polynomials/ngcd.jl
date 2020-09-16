@@ -4,15 +4,15 @@
 Find numerical GCD of polynomials `p` and `q`. Refer to [`NGCD.ngcd`](@ref) for details.
 
 
-In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call one step of the Euclidean gcd approahc, and then call `ngcd` with relaxed tolerances.
+In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call one step of the Euclidean gcd approach, and then call `ngcd` with relaxed tolerances.
 
 """
 function ngcd(p::P, q::Q, args...;kwargs...) where {T, S, P<:StandardBasisPolynomial{T}, Q <: StandardBasisPolynomial{S}}
 
-    degree(p) < 0 && return q
-    degree(p) == 0 && return one(q)
-    degree(q) < 0 && return p
-    degree(q) == 0 && return one(p)
+    degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
+    degree(p) == 0 && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
+    degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
+    degree(q) == 0 && return (u=one(p), v=p, w=q,       θ=NaN, κ=NaN)
     check_same_variable(p,q) || throw(ArgumentError("Mis-matched variables"))
 
     p′,q′ = promote(p,q)
@@ -24,7 +24,7 @@ function ngcd(p::P, q::Q, args...;kwargs...) where {T, S, P<:StandardBasisPolyno
     ps, qs = [p′[i] for i in eachindex(p′)], [q′[i] for i in eachindex(q′)] # need vectors, want copy
     u,v,w,Θ,κ = NGCD.ngcd(ps, qs, args...; kwargs...)
     P′ = ⟒(typeof(p′))
-    (u=P′(u, p.var), v=P′(v, p.var), w = P′(w, p.var), Θ=Θ, κ=κ)
+    (u=P′(u, p.var), v=P′(v, p.var), w = P′(w, p.var), θ=Θ, κ=κ)
     
 end
 
@@ -47,9 +47,9 @@ function ngcd′(p::P, q::P;
 
     # check if a=u (p,q) ≈ (aq,q)
     if isapprox(p, a*q, atol=atol, rtol=rtol)
-        return a
+        return (u=a, v=p, w=q, θ=NaN, κ=NaN)
     else
-        u,v,w,Θ, κ = ngcd(q, b; atol=100atol, rtol=100rtol, kwargs...)
+        ngcd(q, b; atol=100atol, rtol=100rtol, kwargs...)
     end
 end
 
@@ -143,7 +143,8 @@ function ngcd(ps::Vector{T},
               rtol = Base.rtoldefault(real(T)),
               satol = eps(real(T))^(5/6),
               srtol = eps(real(T)),
-              verbose=false
+              verbose=false,
+              minⱼ = -1
               ) where {T <: AbstractFloat}
     
     m, n = _degree.((ps, qs))
@@ -188,19 +189,25 @@ function ngcd(ps::Vector{T},
             flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, ps, qs, atol, rtol)
 
             verbose && println("   --- Θᵏ: $ρ₁ --- $flag (ρ=$(ρ))")
-#            error("")
+
             if flag == :convergence
                 return (u=u, v=v, w=w, Θ=ρ₁, κ=σ₂) # (u,v,w) verified
             end
-            
         end
         
         # reduce possible degree of u and try again with Sⱼ₋₁
+        # unless we hit specified minimum, in which case return it
+        if j == minⱼ
+            u, v, w = initial_uvw(Val(:ispossible), j, ps, qs, x)
+            flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, ps, qs, atol, rtol)
+            return (u=u, v=v, w=w, Θ=ρ₁, κ=σ₂)
+        end
+
         j -= 1
         nr += 1
         nc += 2
         nc > nr && break
-        
+
         extend_QR!(Q,R, nr, nc, A0) # before Q⋅R = Sⱼ, now Q⋅R = Sⱼ₋₁
 
     end
@@ -210,7 +217,7 @@ function ngcd(ps::Vector{T},
     u, v, w = initial_uvw(Val(:constant), j, ps, qs, x)
     flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, ps, qs, atol, rtol)
     return (u=u, v=v, w=w, Θ=ρ₁, κ=κ)
-    
+
 end
 
 function ngcd(ps::Vector{T}, qs::Vector{S}; kwargs...) where {T, S}
@@ -247,7 +254,7 @@ function ngcd(ps::Vector{T},
 
 end
 
-function(ps::Vector{T}, qs::Vector{S}, k::Int; kwargs...) where {T, S}
+function ngcd(ps::Vector{T}, qs::Vector{S}, k::Int; kwargs...) where {T, S}
     ps′,qs′ = promote(float.(ps), float(qs))
     ngcd(ps′, qs′, k; kwargs...)
 end
@@ -272,9 +279,8 @@ function smallest_singular_value(V::AbstractArray{T,2},
     # If x is a perfect 0, but x is approximated by x' due to round off
     # then ‖A(x-x')‖ <= ‖A‖⋅‖x - x'‖ so we use ‖A‖ as scale factor
     δ = max(atol,  norm(R,Inf) * rtol)
-    
+
     x = ones(T, n)
-#    x = rand(T, n)
     y = zeros(T, m)
     σ₀ = σ₁ = Inf*one(real(T))
     steps, minᵢ = 1, 5
@@ -463,7 +469,7 @@ function refine_uvw!(u::Vector{T}, v, w, p, q, atol, rtol) where {T}
 end
 
 function qrsolve!(y::Vector{T}, A, b) where {T}
-    y.= qr(A) \ b
+    y .= qr(A) \ b
 end
 
 # # Fast least-squares solver for full column rank Hessenberg-like matrices
@@ -619,3 +625,6 @@ end
 
 
 end
+
+
+

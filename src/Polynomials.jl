@@ -20,6 +20,7 @@ include("polynomials/ImmutablePolynomial.jl")
 include("polynomials/SparsePolynomial.jl")
 include("polynomials/LaurentPolynomial.jl")
 include("polynomials/ngcd.jl")
+include("polynomials/multroot.jl")
 
 include("polynomials/ChebyshevT.jl")
 

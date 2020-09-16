@@ -473,6 +473,30 @@ end
     end
 end
 
+@testset "multroot" begin
+    if VERSION >= v"1.2.0" # same restriction as ngcd
+        for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
+            rts = [1.0, sqrt(2), sqrt(3)]
+            ls = [2, 3, 4]
+            x = variable(P{Float64})
+            p = prod((x-z)^l for (z,l) in zip(rts, ls))
+            out = Polynomials.Multroot.multroot(p)
+            @test all(out.values .≈ rts)
+            @test all(out.multiplicities .≈ ls)
+            @test out.ϵ <= sqrt(eps())
+            @test out.κ * out.ϵ < sqrt(eps())  # small forward error
+            # one for which the multiplicities are not correctly identified
+            n = 4
+            q = p^n
+            out = Polynomials.Multroot.multroot(q)
+            @test out.κ * out.ϵ > sqrt(eps())  # large  forward error, l misidentified
+            # with right manifold it does yield a small forward error
+            zs′ = Polynomials.Multroot.pejorative_root(q, rts .+ 1e-4*rand(3), n*ls)
+            @test prod(Polynomials.Multroot.stats(q, zs′, n*ls))  < sqrt(eps())
+        end
+    end
+end
+
 @testset "Integrals and Derivatives" begin
     # Integrals derivatives
     for P in Ps
