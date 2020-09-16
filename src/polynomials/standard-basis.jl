@@ -328,13 +328,17 @@ function fit(P::Type{<:StandardBasisPolynomial},
              var = :x,) where {T}
 
     if deg == length(x) -1 && weights == nothing
-        coeffs = Vector{T}(undef, length(x))
-        copyto!(coeffs, y)
-        solve_vander!(coeffs, x)
-        return P(T.(coeffs), var)
+        _polynomial_fit(P, x, y; var=var)
     else
         _fit(P, x, y, deg; weights=weights, var=var)
     end
+end
+
+function _polynomial_fit(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, y; var=:x) where {T}
+    coeffs = Vector{T}(undef, length(x))
+    copyto!(coeffs, y)
+    solve_vander!(coeffs, x)
+    P(T.(coeffs), var)
 end
 
 
