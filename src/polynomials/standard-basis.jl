@@ -300,6 +300,26 @@ end
 
 
 ## as noted at https://github.com/jishnub/PolyFit.jl, using method from SpecialMatrices is faster
+## https://github.com/JuliaMatrices/SpecialMatrices.jl/blob/master/src/vandermonde.jl
+## This is Algorithm 2 of https://www.maths.manchester.ac.uk/~higham/narep/narep108.pdf
+## Solve V(αs)⋅x = y where V is (1+n) × (1+n) Vandermonde matrix (Vᵀ in the paper)
+function solve_vander!(ys, αs)
+    n = length(ys) - 1
+    for k in 0:n-1
+        for j in n:-1:k+1
+            ys[1+j] = (ys[1+j] - ys[1+j-1])/(αs[1+j] - αs[1+j-k-1])
+        end
+    end
+    for k in n-1:-1:0
+        for j in k:n-1
+            ys[1+j] = ys[1+j] - αs[1+k] * ys[1 + j + 1]
+        end
+    end
+
+    nothing
+end
+
+# intercept one (typical) case for a faster variant
 function fit(P::Type{<:StandardBasisPolynomial},
              x::AbstractVector{T},
              y::AbstractVector{T},
@@ -307,20 +327,14 @@ function fit(P::Type{<:StandardBasisPolynomial},
              weights = nothing,
              var = :x,) where {T}
 
-    if weights !== nothing
-        vand = vander(P, x, deg)        
-        coeffs = _wlstsq(vand, y, weights)
+    if deg == length(x) -1 && weights == nothing
+        coeffs = Vector{T}(undef, length(x))
+        copyto!(coeffs, y)
+        solve_vander!(coeffs, x)
+        return P(T.(coeffs), var)
     else
-        if deg == length(x) - 1
-            coeffs = Vector{T}(undef, length(x))
-            copyto!(coeffs, y)
-            dvand!(x, coeffs)
-        else
-            vand = vander(P, x, deg)        
-            coeffs = pinv(vand) * y
-        end
+        _fit(P, x, y, deg; weights=weights, var=var)
     end
-    return P(T.(coeffs), var)
 end
 
 

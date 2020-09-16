@@ -75,16 +75,9 @@ function fit(P::Type{<:AbstractPolynomial},
              x::AbstractVector{T},
              y::AbstractVector{T},
              deg::Integer = length(x) - 1;
-    weights = nothing,
-    var = :x,) where {T}
-    x = mapdomain(P, x)
-    vand = vander(P, x, deg)
-    if weights !== nothing
-        coeffs = _wlstsq(vand, y, weights)
-    else
-        coeffs = pinv(vand) * y
-    end
-    return P(T.(coeffs), var)
+             weights = nothing,
+             var = :x,) where {T}
+    _fit(P, x, y, deg, weights, var)
 end
 
 fit(P::Type{<:AbstractPolynomial},
@@ -107,6 +100,23 @@ fit(x::AbstractVector,
     deg::Integer = length(x) - 1;
     weights = nothing,
     var = :x,) = fit(Polynomial, x, y, deg; weights = weights, var = var)
+
+function _fit(P::Type{<:AbstractPolynomial},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             deg::Integer = length(x) - 1;
+             weights = nothing,
+             var = :x,) where {T}
+    x = mapdomain(P, x)
+    vand = vander(P, x, deg)
+    if weights !== nothing
+        coeffs = _wlstsq(vand, y, weights)
+    else
+        coeffs = pinv(vand) * y
+    end
+    return P(T.(coeffs), var)
+end
+
 
 # Weighted linear least squares
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, W*I(length(y)))
