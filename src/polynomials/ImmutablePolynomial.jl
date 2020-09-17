@@ -152,7 +152,7 @@ for op in [:isequal, :(==)]
     end
 end
 
-
+LinearAlgebra.norm(q::ImmutablePolynomial{T,0}, p::Real=2) where {T} = sqrt(zero(T))
 
 ##
 ## Change ≈ to handle tuples for coefficients *and* get handling of Inf correct

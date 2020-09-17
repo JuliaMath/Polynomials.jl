@@ -1,7 +1,7 @@
 export ValuesPolynomial
 
 """
-    ValuesPolynomial{T<:Number}(coeffs::AbstractVector{T}, var=:x)
+    ValuesPolynomial{T<:Number, N}(coeffs::AbstractVector{T}, var=:x)
 
 Construct an immutable (static) polynomial from its coefficients `a`,
 lowest order first, optionally in terms of the given variable `x`
@@ -17,9 +17,9 @@ operations involving two polynomials of different variables causes an
 error, though for `+` and `*` operations, constant polynomials are
 treated as having no variable. 
 
-As the coefficient size is a compile-time constant, immutable
-polynomials can take advantage of faster polynomial evaluation
-provided by `evalpoly` from Julia 1.4.
+As the coefficient size is a compile-time constant, several performance
+improvements are possible. For example, immutable polynomials can take advantage of 
+faster polynomial evaluation provided by `evalpoly` from Julia 1.4.
 
     # Examples
 
@@ -43,20 +43,21 @@ ValuesPolynomial(1.0)
 struct ValuesPolynomial{T <: Number,  N} <: StandardBasisPolynomial{T}
     coeffs::Values{N, T}
     var::Symbol
+    
     function ValuesPolynomial{T,N}(coeffs::Values{N,T}, var::SymbolLike=:x) where {T <: Number,N}
         N == 0 && return new{T,0}(coeffs, Symbol(var))
         iszero(coeffs[end]) &&  throw(ArgumentError("Leading  term must  be  non-zero"))
         new{T,N}(coeffs, Symbol(var))
     end
+
     function ValuesPolynomial{T,N}(coeffs::NTuple{N,T}, var::SymbolLike=:x) where {T <: Number, N}
         new{T, N}(Values{N,T}(coeffs), var)
     end
+
     function ValuesPolynomial{T,N}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {T <: Number, N, S}
-        M = findlast(!iszero, coeffs)
-        M == N || throw(ArgumentError("Leading  term must  be  non-zero; length of coefficients must be N"))
-        cs = NTuple{N,T}(T(c) for c in coeffs[1:N])
-        new{T,N}(cs, var)
+        new{T,N}(Values{N,T}(tuple(coeffs...)), var)
     end
+
     function ValuesPolynomial{T}(coeffs::Values{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
         N = findlast(!iszero, coeffs)
         if N == nothing
@@ -64,46 +65,50 @@ struct ValuesPolynomial{T <: Number,  N} <: StandardBasisPolynomial{T}
         else
             cs = NTuple{N,T}(coeffs[i] for  i in  1:N)
         end
-        new{T,N}(cs, var)
+        new{T,N}(Values(cs), var)
     end
-    function ValuesPolynomial{T}(coeffs::Vector{M}, var::SymbolLike=:x) where {T, M}
-        N = findlast(!iszero, coeffs)
-        if N == nothing
-            return zero(ValuesPolynomial{T}, var)
-        else
-            cs = NTuple{N,T}(coeffs[i] for  i in  1:N)
-        end
-        new{T,N}(cs, var)
+    
+    function ValuesPolynomial{T}(coeffs::NTuple{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
+        ValuesPolynomial{T}(Values(coeffs), var)
+    end
+
+    # entry point from abstract.jl; note Vector type
+    function ValuesPolynomial{T}(coeffs::Vector{T}, var::SymbolLike=:x) where {T}
+        M = length(coeffs)
+        ValuesPolynomial{T}(Values{M,T}(tuple(coeffs...)), var)
     end
     
 end
 
 @register ValuesPolynomial
 
-function ValuesPolynomial{T,N}(coeffs::Tuple, var)  where {T,N}
-    v = Values(T.(coeffs))
-    ValuesPolynomial{T,N}(v, var)
+# less specific than NTuple
+function ValuesPolynomial{T,N}(coeffs::Tuple, var::SymbolLike=:x)  where {T,N}
+    ValuesPolynomial{T,N}(T.(coeffs), var)
+end
+
+function ValuesPolynomial{T}(coeffs::Tuple, var::SymbolLike=:x)  where {T}
+    ValuesPolynomial{T}(T.(coeffs), var)
+end
+
+function ValuesPolynomial(coeffs::Tuple, var::SymbolLike=:x)
+    cs = NTuple(promote(coeffs...))
+    T = eltype(cs)
+    ValuesPolynomial{T}(cs, var)
 end
 
 
-function ValuesPolynomial(coeffs::Values{M,T}, var::SymbolLike=:x) where {M, T}
-    N = findlast(!iszero, coeffs)
-    if N == nothing
-        return zero(ValuesPolynomial, var) # no  type  passed in Values{M,T}
-    else
-        cs = NTuple{N,T}(T(c) for  c in  coeffs[1:N])
-        end
-    ValuesPolynomial{T,N}(cs, var)
-end
-function ValuesPolynomial(coeffs::NTuple{N,T}, var::SymbolLike=:x) where {N,T}
-    ValuesPolynomial{T,N}(Values(coeffs), var)
-end
+# function ValuesPolynomial(coeffs::Values{M,T}, var::SymbolLike=:x) where {M, T}
+#     ValuesPolynomial{T}(coeffs, var)
+# end
+
 
 
 # Convenience; pass tuple to Polynomial
 # Not documented, not sure this is a good idea as P(...)::P is not true...
 Polynomial(coeffs::Values{N,T}, var::SymbolLike = :x) where{N,T} =
     ValuesPolynomial(coeffs, var)
+
 function Polynomial{T}(coeffs::Values{N,S}, var::SymbolLike = :x) where{N,T,S}
     ValuesPolynomial{N,T}(T.(coeffs), var)
 end
@@ -120,18 +125,18 @@ Base.copy(p::P) where {P <: ValuesPolynomial} = P(coeffs(p), p.var)
 # catch q == 0 case
 
 #  zero, one, variable
-function Base.zero(P::Type{<:ValuesPolynomial},var::SymbolLike=:x)
+function Base.zero(P::Type{<:ValuesPolynomial}, var::SymbolLike=:x)
     R = eltype(P)
-    ValuesPolynomial{R,0}(NTuple{0,R}(),var)
+    ValuesPolynomial{R,0}(Values{0,R}(), var)
 end
 
-function  Base.one(P::Type{<:ValuesPolynomial},var::SymbolLike=:x)
+function  Base.one(P::Type{<:ValuesPolynomial}, var::SymbolLike=:x)
     R = eltype(P)
-    ValuesPolynomial{R,1}(NTuple{1,R}(1),var)
+    ValuesPolynomial{R,1}(Values{1,R}(1),var)
 end
-function variable(P::Type{<:ValuesPolynomial},var::SymbolLike=:x)
+function variable(P::Type{<:ValuesPolynomial}, var::SymbolLike=:x)
     R  = eltype(P)
-    ValuesPolynomial{R,2}(NTuple{2,R}((0,1)),var)
+    ValuesPolynomial{R,2}(Values{2,R}((0,1)),var)
 end
 
 # degree, isconstant
@@ -209,7 +214,7 @@ function Base.chop(p::ValuesPolynomial{T,N};
             return ValuesPolynomial{T,i}(cs[1:i], p.var)
         end
     end
-    zero(ValuesPolynomial{T})
+    zero(ValuesPolynomial{T}, p.var)
 end
 
 function Base.truncate(p::ValuesPolynomial{T,N};
@@ -220,15 +225,14 @@ function Base.truncate(p::ValuesPolynomial{T,N};
     cs = coeffs(q)
     thresh = maximum(abs,cs) * rtol + atol
     cs′ = map(c->abs(c) <= thresh ? zero(T) : c, cs)
-    M = findlast(!iszero, cs′)
-    ValuesPolynomial{T,M}(tuple(cs′...), p.var)
+    ValuesPolynomial{T}(tuple(cs′...), p.var)
 end
 
 # no in-place chop! and truncate!
 chop!(p::ValuesPolynomial; kwargs...) =  chop(p; kwargs...)
 truncate!(p::ValuesPolynomial; kwargs...) =  truncate(p; kwargs...)
 
-#LinearAlgebra.conj(p::P) where {P <: ValuesPolynomial} = P(conj([aᵢ for aᵢ in coeffs(p)]))
+LinearAlgebra.conj(p::P) where {P <: ValuesPolynomial} = P(conj([aᵢ for aᵢ in coeffs(p)]))
 
 
 ##
@@ -251,48 +255,58 @@ function Base.:+(p1::ValuesPolynomial{T,N}, p2::ValuesPolynomial{S,M}) where {T,
 
 
     if  N == M
-        cs = coeffs(p1) .+ coeffs(p2)
-        return ValuesPolynomial(cs, p1.var) # N  unknown, as leading terms can cancel
+        cs = NTuple{N,R}(p1[i] + p2[i] for i in 0:N-1)
+        ValuesPolynomial{R}(cs, p1.var)        
     elseif N < M
-        ⊕(p2,p1)
+        cs = (p2.coeffs.v) ⊕ (p1.coeffs.v)
+        ValuesPolynomial{R,M}(cs, p1.var)        
     else
-        ⊕(p1,p2)
+        cs = (p1.coeffs.v) ⊕ (p2.coeffs.v)
+        ValuesPolynomial{R,N}(cs, p1.var)                
     end
+
+    
 
 end
 
+
+function Base.:*(p1::ValuesPolynomial{T,N}, p2::ValuesPolynomial{S,M}) where {T,N,S,M}
+    isconstant(p1) && return p2 * p1[0] 
+    isconstant(p2) && return p1 * p2[0]
+    p1.var != p2.var && error("Polynomials must have same variable")
+    R = promote_type(S,T)
+    cs = (p1.coeffs.v) ⊗ (p2.coeffs.v)
+    ValuesPolynomial{R, N+M-1}(cs, p1.var)
+end
+
+# Padded vector sum of two tuples assuming N > M
 # assume N > M.
 # As N ≠ M, we are assured of size of output (max(N,M)), so we generate the function
-@generated function ⊕(p1::ValuesPolynomial{T,N}, p2::ValuesPolynomial{S,M}) where {T,N,S,M}
+@generated function ⊕(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+
     R = promote_type(T,S)
 
     exprs = Any[nothing for i = 1:N]
     for i in  1:M
-        exprs[i] = :(p1.coeffs[$i] + p2.coeffs[$i])
+        exprs[i] = :(p1[$i] + p2[$i])
     end
     for i in M+1:N
-        exprs[i] =:(p1.coeffs[$i])
+        exprs[i] =:(p1[$i])
     end
 
     return quote
         Base.@_inline_meta
-        ValuesPolynomial{$(R),$(N)}(tuple($(exprs...)), p1.var)
+        tuple($(exprs...))
     end
 
 end
 
 
 
-function Base.:*(p1::ValuesPolynomial, p2::ValuesPolynomial)
-    isconstant(p1) && return p2 * p1[0] 
-    isconstant(p2) && return p1 * p2[0]
-    p1.var != p2.var && error("Polynomials must have same variable")
-    p1 ⊗ p2
-end
-
 ## Static size of product makes generated functions  a good choice
 ## from https://github.com/tkoolen/StaticUnivariatePolynomials.jl/blob/master/src/monomial_basis.jl
-@generated function ⊗(p1::ValuesPolynomial{T,N}, p2::ValuesPolynomial{S,M}) where {T,N,S,M}
+## convolution of two tuples
+@generated function ⊗(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
     P = M + N - 1
     R = promote_type(T,S)
     exprs = Any[nothing for i = 1 : P]
@@ -300,16 +314,16 @@ end
         for j in 1 : M
             k = i + j - 1
             if exprs[k] === nothing
-                exprs[k] = :(p1.coeffs[$i] * p2.coeffs[$j])
+                exprs[k] = :(p1[$i] * p2[$j])
             else
-                exprs[k] = :(muladd(p1.coeffs[$i], p2.coeffs[$j], $(exprs[k])))
+                exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
             end
         end
     end
 
     return quote
         Base.@_inline_meta
-        ValuesPolynomial{$(R),$(max(0,P))}(tuple($(exprs...)), p1.var)
+        tuple($(exprs...))        
     end
 
 end
@@ -317,25 +331,25 @@ end
 # scalar ops
 function Base.:+(p::ValuesPolynomial{T,N}, c::S) where {T, N, S<:Number}
     R = promote_type(T,S)
-    iszero(c) && return ValuesPolynomial{R,N}(R.(p.coeffs), p.var)
-    N == 0 && return ValuesPolynomial{R,1}((R(c),), p.var)
-    N == 1 && return ValuesPolynomial(R[p[0]+c])
 
-    return p + ValuesPolynomial{R,1}(R[c],p.var)
-    
-    cs = NTuple{N,R}(iszero(i) ? p[i]+c : p[i] for i in 0:N-1)
-    return ValuesPolynomial{R,N}(cs, p.var)
+    iszero(c) && return ValuesPolynomial{R,N}(p.coeffs, p.var)
+    N == 0 && return ValuesPolynomial{R,1}((c,), p.var)
+    N == 1 && return ValuesPolynomial((p[0]+c,), p.var)
+
+    q = ValuesPolynomial{R,1}((c,), p.var)
+    return p + q
+
 end
 
 function Base.:*(p::ValuesPolynomial{T,N}, c::S) where {T, N, S <: Number}
     R = promote_type(T,S)
-    iszero(c)  && return zero(ValuesPolynomial{R})
+    iszero(c) && return zero(ValuesPolynomial{R}, p.var)
     ValuesPolynomial{R,N}(p.coeffs .* c, p.var)
 end
 
 function Base.:/(p::ValuesPolynomial{T,N}, c::S) where {T,N,S <: Number}
     R = eltype(one(T)/one(S))
-    isinf(c)  && return zero(ValuesPolynomial{R})
+    isinf(c)  && return zero(ValuesPolynomial{R}, p.var)
     ValuesPolynomial{R,N}(p.coeffs ./ c, p.var)
 end
 
