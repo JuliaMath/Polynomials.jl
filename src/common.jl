@@ -114,7 +114,8 @@ function _fit(P::Type{<:AbstractPolynomial},
     else
         coeffs = pinv(vand) * y
     end
-    return P(T.(coeffs), var)
+    R = float(T)
+    return P(R.(coeffs), var)
 end
 
 

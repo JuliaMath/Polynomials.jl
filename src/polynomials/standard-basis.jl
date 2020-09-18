@@ -337,10 +337,11 @@ function fit(P::Type{<:StandardBasisPolynomial},
 end
 
 function _polynomial_fit(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, y; var=:x) where {T}
-    coeffs = Vector{T}(undef, length(x))
+    R = float(T)
+    coeffs = Vector{R}(undef, length(x))
     copyto!(coeffs, y)
     solve_vander!(coeffs, x)
-    P(T.(coeffs), var)
+    P(R.(coeffs), var)
 end
 
 
