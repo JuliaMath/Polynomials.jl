@@ -51,46 +51,42 @@ struct ImmutablePolynomial{T <: Number,  N} <: StandardBasisPolynomial{T}
         new{T,N}(coeffs, Symbol(var))
     end
 
-    function ImmutablePolynomial{T,N}(coeffs::NTuple{N,T}, var::SymbolLike=:x) where {T <: Number, N}
-        new{T, N}(Values{N,T}(coeffs), var)
-    end
-
-    function ImmutablePolynomial{T,N}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {T <: Number, N, S}
-        new{T,N}(Values{N,T}(tuple(coeffs...)), var)
-    end
-
-    function ImmutablePolynomial{T}(coeffs::Values{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
-        N = findlast(!iszero, coeffs)
-        if N == nothing
-            return zero(ImmutablePolynomial{T}, var)
-        else
-            cs = NTuple{N,T}(coeffs[i] for  i in  1:N)
-        end
-        new{T,N}(Values(cs), var)
-    end
-    
-    function ImmutablePolynomial{T}(coeffs::NTuple{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
-        ImmutablePolynomial{T}(Values(coeffs), var)
-    end
-
-    # entry point from abstract.jl; note Vector type
-    function ImmutablePolynomial{T}(coeffs::Vector{T}, var::SymbolLike=:x) where {T}
-        M = length(coeffs)
-        ImmutablePolynomial{T}(Values{M,T}(tuple(coeffs...)), var)
-    end
     
 end
 
 @register ImmutablePolynomial
 
-# less specific than NTuple
+## Various interfaces
 function ImmutablePolynomial{T,N}(coeffs::Tuple, var::SymbolLike=:x)  where {T,N}
-    ImmutablePolynomial{T,N}(T.(coeffs), var)
+    ImmutablePolynomial{T,N}(Values{N,T}(T.(coeffs)), var)
+end
+
+function ImmutablePolynomial{T,N}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {T <: Number, N, S}
+    ImmutablePolynomial{T,N}(Values{N,T}(tuple(coeffs...)), var)
+end
+
+## --
+function ImmutablePolynomial{T}(coeffs::Values{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
+    N = findlast(!iszero, coeffs)
+    if N == nothing
+        return ImmutablePolynomial{T,0}((), var)
+    else
+        cs = NTuple{N,T}(coeffs[i] for  i in  1:N)
+    end
+    ImmutablePolynomial{T,N}(Values(cs), var)
 end
 
 function ImmutablePolynomial{T}(coeffs::Tuple, var::SymbolLike=:x)  where {T}
-    ImmutablePolynomial{T}(T.(coeffs), var)
+    ImmutablePolynomial{T}(Values(T.(coeffs)), var)
 end
+
+# entry point from abstract.jl; note Vector -- not AbstractVector -- type
+function ImmutablePolynomial{T}(coeffs::Vector{T}, var::SymbolLike=:x) where {T}
+    M = length(coeffs)
+    ImmutablePolynomial{T}(Values{M,T}(tuple(coeffs...)), var)
+end
+
+## --
 
 function ImmutablePolynomial(coeffs::Tuple, var::SymbolLike=:x)
     cs = NTuple(promote(coeffs...))
@@ -106,6 +102,7 @@ end
 
 
 
+
 # Convenience; pass tuple to Polynomial
 # Not documented, not sure this is a good idea as P(...)::P is not true...
 Polynomial(coeffs::NTuple{N,T}, var::SymbolLike = :x) where{N,T} =
@@ -118,26 +115,8 @@ end
 ##
 ## ----
 ##
-# overrides from common.jl due to  coeffs being non mutable, ...
-
+# overrides from common.jl due to  coeffs being non mutable, N in type parameters
 Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
-
-# catch q == 0 case
-
-#  zero, one, variable
-function Base.zero(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
-    R = eltype(P)
-    ImmutablePolynomial{R,0}(Values{0,R}(), var)
-end
-
-function  Base.one(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
-    R = eltype(P)
-    ImmutablePolynomial{R,1}(Values{1,R}(1),var)
-end
-function variable(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
-    R  = eltype(P)
-    ImmutablePolynomial{R,2}(Values{2,R}((0,1)),var)
-end
 
 # degree, isconstant
 degree(p::ImmutablePolynomial{T,N}) where {T,N} = N - 1
@@ -164,7 +143,7 @@ for op in [:isequal, :(==)]
     end
 end
 
-# common these call chop! and truncate!
+# in common.jl these call chop! and truncate!
 function Base.chop(p::ImmutablePolynomial{T,N};
               rtol::Real = Base.rtoldefault(real(T)),
               atol::Real = 0)  where {T,N}
