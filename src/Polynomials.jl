@@ -3,8 +3,6 @@ module Polynomials
 using LinearAlgebra
 using Intervals
 using OffsetArrays
-import AbstractTensors
-import AbstractTensors: Values, Variables
 
 include("abstract.jl")
 include("show.jl")

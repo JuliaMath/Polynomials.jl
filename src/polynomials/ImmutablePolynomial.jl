@@ -11,8 +11,6 @@ where `x` can be a character, symbol, or string.
 If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct
 this through `ImmutablePolynomial((a_0, a_1, ..., a_n))` (assuming
 `a_n ≠ 0`). As well, a vector or number can be used for construction.
-The `Values` type for `AbstractTensors` is used for backend storage, a
-wrapper for `NTuple`.
 
 
 The usual arithmetic operators are overloaded to work with polynomials
@@ -45,10 +43,10 @@ ImmutablePolynomial(1.0)
 
 """
 struct ImmutablePolynomial{T <: Number,  N} <: StandardBasisPolynomial{T}
-    coeffs::Values{N, T}
+    coeffs::NTuple{N, T}
     var::Symbol
     
-    function ImmutablePolynomial{T,N}(coeffs::Values{N,T}, var::SymbolLike=:x) where {T <: Number,N}
+    function ImmutablePolynomial{T,N}(coeffs::NTuple{N,T}, var::SymbolLike=:x) where {T <: Number,N}
         N == 0 && return new{T,0}(coeffs, Symbol(var))
         iszero(coeffs[end]) &&  throw(ArgumentError("Leading  term must  be  non-zero"))
         new{T,N}(coeffs, Symbol(var))
@@ -61,32 +59,32 @@ end
 
 ## Various interfaces
 function ImmutablePolynomial{T,N}(coeffs::Tuple, var::SymbolLike=:x)  where {T,N}
-    ImmutablePolynomial{T,N}(Values{N,T}(T.(coeffs)), var)
+    ImmutablePolynomial{T,N}(NTuple{N,T}(T.(coeffs)), var)
 end
 
 function ImmutablePolynomial{T,N}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {T <: Number, N, S}
-    ImmutablePolynomial{T,N}(Values{N,T}(tuple(coeffs...)), var)
+    ImmutablePolynomial{T,N}(NTuple{N,T}(tuple(coeffs...)), var)
 end
 
 ## --
-function ImmutablePolynomial{T}(coeffs::Values{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
+function ImmutablePolynomial{T}(coeffs::NTuple{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
     N = findlast(!iszero, coeffs)
     if N == nothing
         return zero(ImmutablePolynomial{T}, var)
     else
         cs = NTuple{N,T}(coeffs[i] for  i in  1:N)
+        return ImmutablePolynomial{T,N}(cs, var)
     end
-    ImmutablePolynomial{T,N}(Values(cs), var)
 end
 
 function ImmutablePolynomial{T}(coeffs::Tuple, var::SymbolLike=:x)  where {T}
-    ImmutablePolynomial{T}(Values(T.(coeffs)), var)
+    ImmutablePolynomial{T}(T.(coeffs), var)
 end
 
 # entry point from abstract.jl; note Vector -- not AbstractVector -- type
 function ImmutablePolynomial{T}(coeffs::Vector{T}, var::SymbolLike=:x) where {T}
     M = length(coeffs)
-    ImmutablePolynomial{T}(Values{M,T}(tuple(coeffs...)), var)
+    ImmutablePolynomial{T}(NTuple{M,T}(tuple(coeffs...)), var)
 end
 
 ## --
@@ -97,11 +95,11 @@ function ImmutablePolynomial(coeffs::Tuple, var::SymbolLike=:x)
     ImmutablePolynomial{T}(cs, var)
 end
 
-# need to catch map case wihch return Variables, not Values
-function ImmutablePolynomial(coeffs::Cs, var::SymbolLike=:x) where {
-    M, T, Cs <: Union{Values{M,T}, Variables{M,T}}}
-    ImmutablePolynomial{T}(Values(coeffs.v), var)
-end
+# # need to catch map case wihch return Variables, not Values
+# function ImmutablePolynomial(coeffs::Cs, var::SymbolLike=:x) where {
+#     M, T, Cs <: Union{Values{M,T}, Variables{M,T}}}
+#     ImmutablePolynomial{T}(Values(coeffs.v), var)
+# end
 
 
 
@@ -120,6 +118,8 @@ end
 ##
 # overrides from common.jl due to  coeffs being non mutable, N in type parameters
 Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
+
+Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p), p.var)
 
 ## defining these speeds things up
 function Base.zero(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
@@ -146,7 +146,7 @@ function Base.getindex(p::ImmutablePolynomial{T,N}, idx::Int) where {T <: Number
     return p.coeffs[idx + 1]
 end
 
-Base.setindex!(p::ImmutablePolynomial, val::Number,  idx::Int) = throw(ArgumentError("Values polynomials are immutable"))
+Base.setindex!(p::ImmutablePolynomial, val::Number,  idx::Int) = throw(ArgumentError("ImmutablePolynomials are immutable"))
 
 for op in [:isequal, :(==)]
     @eval function Base.$op(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) where {T,N,S,M}
@@ -194,7 +194,7 @@ truncate!(p::ImmutablePolynomial; kwargs...) =  truncate(p; kwargs...)
 ## --------------------
 ##
 
-(p::ImmutablePolynomial{T,N})(x::S) where {T,N,S} = evalpoly(x, p.coeffs.v)
+(p::ImmutablePolynomial{T,N})(x::S) where {T,N,S} = evalpoly(x, p.coeffs)
 
 
 function Base.:+(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) where {T,N,S,M}
@@ -213,10 +213,10 @@ function Base.:+(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) whe
         cs = NTuple{N,R}(p1[i] + p2[i] for i in 0:N-1)
         ImmutablePolynomial{R}(cs, p1.var)        
     elseif N < M
-        cs = (p2.coeffs.v) ⊕ (p1.coeffs.v)
+        cs = (p2.coeffs) ⊕ (p1.coeffs)
         ImmutablePolynomial{R,M}(cs, p1.var)        
     else
-        cs = (p1.coeffs.v) ⊕ (p2.coeffs.v)
+        cs = (p1.coeffs) ⊕ (p2.coeffs)
         ImmutablePolynomial{R,N}(cs, p1.var)                
     end
 
@@ -230,7 +230,7 @@ function Base.:*(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) whe
     isconstant(p2) && return p1 * p2[0]
     p1.var != p2.var && error("Polynomials must have same variable")
     R = promote_type(S,T)
-    cs = (p1.coeffs.v) ⊗ (p2.coeffs.v)
+    cs = (p1.coeffs) ⊗ (p2.coeffs)
     ImmutablePolynomial{R, N+M-1}(cs, p1.var)
 end
 
@@ -311,6 +311,57 @@ function Base.:/(p::ImmutablePolynomial{T,N}, c::S) where {T,N,S <: Number}
     ImmutablePolynomial{R,N}(p.coeffs ./ c, p.var)
 end
 
-Base.:-(p::ImmutablePolynomial{T,N}) where {T,N} = ImmutablePolynomial{T,N}(-p.coeffs, p.var)
+Base.:-(p::ImmutablePolynomial{T,N}) where {T,N} = ImmutablePolynomial{T,N}(.-p.coeffs, p.var)
 
 Base.to_power_type(p::ImmutablePolynomial{T,N}) where {T,N} = p
+
+
+## more performant versions borrowed from StaticArrays
+LinearAlgebra.norm(q::ImmutablePolynomial{T,0}) where {T} = zero(real(float(T)))
+LinearAlgebra.norm(q::ImmutablePolynomial) = _norm(q.coeffs)
+LinearAlgebra.norm(q::ImmutablePolynomial, p::Real) = _norm(q.coeffs, p)
+
+_norm_p0(x) = iszero(x) ? zero(x) : one(x)
+@generated function _norm(a::NTuple{N,T}) where {T, N}
+
+    expr = :(abs2(a[1]))
+    for j = 2:N
+        expr = :($expr + abs2(a[$j]))
+    end
+    
+    return quote
+        $(Expr(:meta, :inline))
+        @inbounds return sqrt($expr)
+    end
+    
+end
+
+@generated function _norm(a::NTuple{N,T}, p::Real) where {T, N}
+    expr = :(abs(a[1])^p)
+    for j = 2:N
+        expr = :($expr + abs(a[$j])^p)
+    end
+
+    expr_p1 = :(abs(a[1]))
+    for j = 2:N
+        expr_p1 = :($expr_p1 + abs(a[$j]))
+    end
+
+    return quote
+        $(Expr(:meta, :inline))
+        if p == Inf
+            return mapreduce(abs, max, a)
+        elseif p == 1
+            @inbounds return $expr_p1
+        elseif p == 2
+            return norm(a)
+        elseif p == 0
+            return mapreduce(_norm_p0, +, a)
+        else
+            @inbounds return ($expr)^(inv(p))
+        end
+    end
+
+end
+
+
