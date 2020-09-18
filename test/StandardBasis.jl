@@ -19,8 +19,8 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 ==ᵗ⁰(a,b) = upto_tz(a,b)
 ==ᵗᶻ(a,b) = upto_z(a,b)
 
-Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, ValuesPolynomial)
-isimmutable(p::P) where {P} = P <: ImmutablePolynomial || P <: ValuesPolynomial
+Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
+isimmutable(p::P) where {P} = P <: ImmutablePolynomial 
 @testset "Construction" for coeff in [
                                       Int64[1, 1, 1, 1],
                                       Float32[1, -4, 2],

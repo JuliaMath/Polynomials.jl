@@ -4,7 +4,7 @@ using LinearAlgebra
 using Intervals
 using OffsetArrays
 import AbstractTensors
-import AbstractTensors: Values
+import AbstractTensors: Values, Variables
 
 include("abstract.jl")
 include("show.jl")
@@ -19,7 +19,6 @@ include("common.jl")
 include("polynomials/standard-basis.jl")
 include("polynomials/Polynomial.jl")
 include("polynomials/ImmutablePolynomial.jl")
-include("polynomials/ValuesPolynomial.jl")
 include("polynomials/SparsePolynomial.jl")
 include("polynomials/LaurentPolynomial.jl")
 include("polynomials/ngcd.jl")
