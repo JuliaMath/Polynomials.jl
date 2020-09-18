@@ -3,24 +3,27 @@ export ImmutablePolynomial
 """
     ImmutablePolynomial{T<:Number, N}(coeffs::AbstractVector{T}, var=:x)
 
-Construct an immutable (static) polynomial from its coefficients `a`,
+Construct an immutable (static) polynomial from its coefficients 
+`a₀, a₁, …, aₙ`,
 lowest order first, optionally in terms of the given variable `x`
 where `x` can be a character, symbol, or string.
 
 If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct
 this through `ImmutablePolynomial((a_0, a_1, ..., a_n))` (assuming
 `a_n ≠ 0`). As well, a vector or number can be used for construction.
+The `Values` type for `AbstractTensors` is used for backend storage, a
+wrapper for `NTuple`.
+
 
 The usual arithmetic operators are overloaded to work with polynomials
 as well as with combinations of polynomials and scalars. However,
 operations involving two non-constant polynomials of different variables causes an
-error.
+error. Unlike other polynomials, `setindex!` is not defined for `ImmutablePolynomials`.
 
 As the coefficient size is a compile-time constant, several performance
 improvements are possible. For example, immutable polynomials can take advantage of 
 faster polynomial evaluation provided by `evalpoly` from Julia 1.4.
 
-The `Values` type for `AbstractTensors` is used for backend storage.
 
     # Examples
 
@@ -69,7 +72,7 @@ end
 function ImmutablePolynomial{T}(coeffs::Values{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
     N = findlast(!iszero, coeffs)
     if N == nothing
-        return ImmutablePolynomial{T,0}((), var)
+        return zero(ImmutablePolynomial{T}, var)
     else
         cs = NTuple{N,T}(coeffs[i] for  i in  1:N)
     end
@@ -118,8 +121,24 @@ end
 # overrides from common.jl due to  coeffs being non mutable, N in type parameters
 Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
 
+## defining these speeds things up
+function Base.zero(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
+    R = eltype(P)
+    ImmutablePolynomial{R,0}(NTuple{0,R}(),var)
+end
+
+function  Base.one(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
+    R = eltype(P)
+    ImmutablePolynomial{R,1}(NTuple{1,R}(1),var)
+end
+function variable(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
+    R  = eltype(P)
+    ImmutablePolynomial{R,2}(NTuple{2,R}((0,1)),var)
+end
+
+
 # degree, isconstant
-degree(p::ImmutablePolynomial{T,N}) where {T,N} = N - 1
+degree(p::ImmutablePolynomial{T,N}) where {T,N} = N - 1 # no trailing zeros
 isconstant(p::ImmutablePolynomial{T,N}) where {T,N}  = N <= 1
 
 function Base.getindex(p::ImmutablePolynomial{T,N}, idx::Int) where {T <: Number,N}
@@ -184,8 +203,8 @@ function Base.:+(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) whe
     iszero(N) && return ImmutablePolynomial{R}(coeffs(p2), p2.var)
     iszero(M) && return ImmutablePolynomial{R}(coeffs(p1), p1.var)
     
-    isconstant(p1) && p1.var != p2.var && return p2 + p1[0]*one(ImmutablePolynomial{T},p2.var)
-    isconstant(p2) && p1.var != p2.var && return p1 + p2[0]*one(ImmutablePolynomial{S},p1.var)
+    isconstant(p1) && p1.var != p2.var && return p2 + p1[0]*one(ImmutablePolynomial{R}, p2.var)
+    isconstant(p2) && p1.var != p2.var && return p1 + p2[0]*one(ImmutablePolynomial{R}, p1.var)
 
     p1.var != p2.var && error("Polynomials must have same variable")
 
@@ -272,6 +291,9 @@ function Base.:+(p::ImmutablePolynomial{T,N}, c::S) where {T, N, S<:Number}
     N == 0 && return ImmutablePolynomial{R,1}((c,), p.var)
     N == 1 && return ImmutablePolynomial((p[0]+c,), p.var)
 
+#    cs = NTuple{N,R}(iszero(i) ? p[i]+c : p[i] for i in 0:N-1)
+#    return ImmutablePolynomial{R,N}(cs, p.var)
+    
     q = ImmutablePolynomial{R,1}((c,), p.var)
     return p + q
 
