@@ -52,6 +52,10 @@ macro register(name)
             $poly{T}(coeffs, Symbol(var))
         $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S<:Number} =
             $poly(T.(x), Symbol(var))
+        function $poly(coeffs::G, var::SymbolLike=:x) where {G}
+            !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
+            $poly(collect(coeffs), var)
+        end
         $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
             n *  one($poly{T}, Symbol(var))
         $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S}, Symbol(var))

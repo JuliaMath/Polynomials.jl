@@ -266,8 +266,7 @@ Calculates the p-norm of the polynomial's coefficients
 """
 function LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2)
     vs = values(q)
-    isempty(vs) && return zero(q[0])
-    return norm(vs, p)
+    return norm(vs, p) # if vs=() must be handled in special type
 end
 
 """

@@ -20,6 +20,8 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 ==ᵗᶻ(a,b) = upto_z(a,b)
 
 Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
+isimmutable(p::P) where {P} = P <: ImmutablePolynomial
+isimmutable(::Type{<:ImmutablePolynomial}) = true
 
 @testset "Construction" for coeff in [
                                       Int64[1, 1, 1, 1],
@@ -55,7 +57,7 @@ end
 end
 
 @testset "Other Construction" begin
-    for P in (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
+    for P in Ps
 
         # Leading 0s
         p = P([1, 2, 0, 0])
@@ -403,19 +405,19 @@ end
 end
 
 @testset "Conversion" begin
-    for P in (Polynomial, SparsePolynomial, LaurentPolynomial)
-        p = P([0,one(Float64)])
-        @test P{Complex{Float64}} == typeof(p + 1im)
-        @test P{Complex{Float64}} == typeof(1im - p)
-        @test P{Complex{Float64}} == typeof(p * 1im)
-    end
-
-    for P in (ImmutablePolynomial,)
-        p = P([0,one(Float64)])
-        N=2
-        @test P{Complex{Float64},N} == typeof(p + 1im)
-        @test P{Complex{Float64},N} == typeof(1im - p)
-        @test P{Complex{Float64},N} == typeof(p * 1im)
+    for P in Ps
+        if !isimmutable(P)
+            p = P([0,one(Float64)])
+            @test P{Complex{Float64}} == typeof(p + 1im)
+            @test P{Complex{Float64}} == typeof(1im - p)
+            @test P{Complex{Float64}} == typeof(p * 1im)
+        else
+            p = P([0,one(Float64)])
+            N=2
+            @test P{Complex{Float64},N} == typeof(p + 1im)
+            @test P{Complex{Float64},N} == typeof(1im - p)
+            @test P{Complex{Float64},N} == typeof(p * 1im)
+        end
     end
 
     # unnecessary copy in convert #65
@@ -567,7 +569,7 @@ end
         p2  = P([3, 1.])
         p   = [p1, p2]
         q   = [3, p1]
-        if P !=  ImmutablePolynomial
+        if !isimmutable(p1)
             @test q isa Vector{typeof(p1)}
             @test p isa Vector{typeof(p2)}
         else
@@ -649,13 +651,14 @@ end
         p2 = conj(p)
         @test coeffs(p2) ==ᵗ⁰ [1 + 1im, 2 + 3im]
         @test transpose(p) == p
-        P != ImmutablePolynomial && @test transpose!(p) == p
+        !isimmutable(p) &&  @test transpose!(p) == p
         @test adjoint(Polynomial(im)) == Polynomial(-im) # issue 215
         @test conj(Polynomial(im)) == Polynomial(-im) # issue 215
 
         @test norm(P([1., 2.])) == norm([1., 2.])
         @test norm(P([1., 2.]), 1) == norm([1., 2.], 1)
     end
+
 
     ## Issue #225 and different meanings for "conjugate"
     P = LaurentPolynomial
@@ -678,7 +681,7 @@ end
         @test p[1:2] ==ᵗ⁰ [3, 5]
         @test p[:] ==ᵗ⁰ [-1, 3, 5, -2]
 
-        if P != ImmutablePolynomial
+        if !isimmutable(p)
             # setindex
             p1  = P([1,2,1])
             p1[5] = 1
@@ -891,7 +894,6 @@ end
 @testset "Promotion"  begin
 
     # Test different types work together
-    Ps = (Polynomial,  ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
     for P₁ in Ps
         for   P₂ in Ps
             p₁, p₂ = P₁(rand(1:5, 4)), P₂(rand(1:5, 5))
@@ -919,34 +921,35 @@ end
         n = length(Ts)
         for i in 1:n-1
             T1,T2 = Ts[i],Ts[i+1]
-            for P in (Polynomial, SparsePolynomial, LaurentPolynomial)
-                p = P{T2}(T1.(rand(1:3,3)))
-                @test typeof(p) == P{T2}
-            end
-            for P in (ImmutablePolynomial,)
-                N = 3
-                p = P{T2}(T1.(rand(1:3,N)))
-                @test typeof(p) == P{T2,N}
+            for P in Ps
+                if !isimmutable(P)
+                    p = P{T2}(T1.(rand(1:3,3)))
+                    @test typeof(p) == P{T2}
+                else
+                    N = 3
+                    p = P{T2}(T1.(rand(1:3,N)))
+                    @test typeof(p) == P{T2,N}
+                end
             end
 
         end
     end
 
     # test P{T}(...) is P{T}
-    for P in (Polynomial,   SparsePolynomial, LaurentPolynomial)
-        for  T in (Int32, Int64, BigInt)
-            p₁ =  P{T}(Float64.(rand(1:3,5)))
-            @test typeof(p₁) == P{T} # conversion works
-            @test_throws InexactError  P{T}(rand(5))
+    for P in Ps
+        if !isimmutable(P)
+            for  T in (Int32, Int64, BigInt)
+                p₁ =  P{T}(Float64.(rand(1:3,5)))
+                @test typeof(p₁) == P{T} # conversion works
+                @test_throws InexactError  P{T}(rand(5))
+            end
+        else
+            for  T in (Int32, Int64, BigInt)
+                N = 5
+                p₁ =  P{T}(Float64.(rand(1:3,5)))
+                @test typeof(p₁) == P{T,5} # conversion works
+                @test_throws InexactError  P{T}(rand(5))
+            end
         end
     end
-    for P in (ImmutablePolynomial,)
-        for  T in (Int32, Int64, BigInt)
-            N = 5
-            p₁ =  P{T}(Float64.(rand(1:3,5)))
-            @test typeof(p₁) == P{T,5} # conversion works
-            @test_throws InexactError  P{T}(rand(5))
-        end
-    end
-
 end
