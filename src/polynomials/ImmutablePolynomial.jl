@@ -81,10 +81,14 @@ function ImmutablePolynomial{T}(coeffs::Tuple, var::SymbolLike=:x)  where {T}
     ImmutablePolynomial{T}(T.(coeffs), var)
 end
 
-# entry point from abstract.jl; note Vector -- not AbstractVector -- type
-function ImmutablePolynomial{T}(coeffs::Vector{T}, var::SymbolLike=:x) where {T}
-    M = length(coeffs)
-    ImmutablePolynomial{T}(NTuple{M,T}(tuple(coeffs...)), var)
+# entry point from abstract.jl; note T <: Number
+function ImmutablePolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
+    cs = zeros(T, lastindex(coeffs))
+    for i in eachindex(coeffs)
+        cs[i] = coeffs[i]
+    end
+    M = length(cs)
+    ImmutablePolynomial{T}(NTuple{M,T}(tuple(cs...)), var)
 end
 
 ## --
