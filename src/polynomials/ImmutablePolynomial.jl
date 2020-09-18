@@ -317,11 +317,11 @@ Base.to_power_type(p::ImmutablePolynomial{T,N}) where {T,N} = p
 
 
 ## more performant versions borrowed from StaticArrays
+## https://github.com/JuliaArrays/StaticArrays.jl/blob/master/src/linalg.jl
 LinearAlgebra.norm(q::ImmutablePolynomial{T,0}) where {T} = zero(real(float(T)))
 LinearAlgebra.norm(q::ImmutablePolynomial) = _norm(q.coeffs)
 LinearAlgebra.norm(q::ImmutablePolynomial, p::Real) = _norm(q.coeffs, p)
 
-_norm_p0(x) = iszero(x) ? zero(x) : one(x)
 @generated function _norm(a::NTuple{N,T}) where {T, N}
 
     expr = :(abs2(a[1]))
@@ -336,6 +336,7 @@ _norm_p0(x) = iszero(x) ? zero(x) : one(x)
     
 end
 
+_norm_p0(x) = iszero(x) ? zero(x) : one(x)
 @generated function _norm(a::NTuple{N,T}, p::Real) where {T, N}
     expr = :(abs(a[1])^p)
     for j = 2:N
