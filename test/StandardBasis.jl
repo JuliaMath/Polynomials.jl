@@ -306,6 +306,10 @@ end
         # issue #214 --  should error
         @test_throws MethodError fit(Polynomial, rand(2,2), rand(2,2))
 
+        # issue #268 -- inexacterror
+        @test fit(P, 1:4, 1:4, var=:x) ≈ variable(P{Float64}, :x)
+        @test fit(P, 1:4, 1:4, 1, var=:x) ≈ variable(P{Float64}, :x)
+
     end
 
     # test default   (issue  #228)
