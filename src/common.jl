@@ -120,7 +120,7 @@ end
 
 
 # Weighted linear least squares
-_wlstsq(vand, y, W::Number) = _wlstsq(vand, y, W*I(length(y)))
+_wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
 _wlstsq(vand, y, W::AbstractVector) = _wlstsq(vand, y, Diagonal(W))
 _wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 
