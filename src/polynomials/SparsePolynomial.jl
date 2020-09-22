@@ -42,7 +42,7 @@ julia> p(1)
 struct SparsePolynomial{T <: Number} <: StandardBasisPolynomial{T}
     coeffs::Dict{Int, T}
     var::Symbol
-    function SparsePolynomial{T}(coeffs::Dict{Int, T}, var::Symbol) where {T <: Number}
+    function SparsePolynomial{T}(coeffs::Dict{Int, T}, var::SymbolLike) where {T <: Number}
 
         for (k,v)  in coeffs
             iszero(v) && pop!(coeffs,  k)
@@ -51,27 +51,33 @@ struct SparsePolynomial{T <: Number} <: StandardBasisPolynomial{T}
         new{T}(coeffs, var)
         
     end
-    function SparsePolynomial{T}(coeffs::AbstractVector{T}, var::Symbol) where {T <: Number}
-
-        D = Dict{Int,T}()
-        for (i,val) in enumerate(coeffs)
-            if !iszero(val)
-                D[i-1] = val
-            end
-        end
-        
-        return new{T}(D, var)
-        
-    end
 end
 
 @register SparsePolynomial
 
+function SparsePolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
+    D = Dict{Int,T}()
+    for (i,val) in enumerate(coeffs)
+        if !iszero(val)
+            D[i-1] = val
+        end
+    end
+    return SparsePolynomial{T}(D, var)
+end
+
 function SparsePolynomial(coeffs::Dict{Int, T}, var::SymbolLike=:x) where {T <: Number}
     SparsePolynomial{T}(coeffs, Symbol(var))
 end
-function SparsePolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
-    SparsePolynomial{T}(coeffs, Symbol(var))
+#function SparsePolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
+#    SparsePolynomial{T}(coeffs, Symbol(var))
+#end
+function SparsePolynomial{T}(coeffs::OffsetArray{T,1, Array{T, 1}}, var::SymbolLike=:x) where {T <: Number}
+    firstindex(coeffs) >= 0 || throw(ArgumentError("Use the `LaurentPolynomial` type for offset arrays with negative first index"))
+    D = Dict{Int, T}()
+    for i in eachindex(coeffs)
+        D[i] = coeffs[i]
+    end
+    SparsePolynomial{T}(D, var)
 end
 
 # Interface through `Polynomial`. As with ImmutablePolynomial, this may not be  good idea...

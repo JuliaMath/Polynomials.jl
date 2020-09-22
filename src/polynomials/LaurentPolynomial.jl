@@ -136,12 +136,6 @@ function LaurentPolynomial(coeffs::AbstractVector{T}, rng::UnitRange, var::Symbo
 end
 
 
-## Alternate interface for Polynomial
-Polynomial(coeffs::OffsetArray{T,1,Array{T,1}}, var::SymbolLike=:x) where {T <: Number} =
-    LaurentPolynomial{T}(coeffs, var)
-
-Polynomial{T}(coeffs::OffsetArray{S,1,Array{S,1}}, var::SymbolLike=:x) where {T <: Number, S <: Number} =
-    LaurentPolynomial{T}(coeffs, var)
 
 ##
 ## conversion

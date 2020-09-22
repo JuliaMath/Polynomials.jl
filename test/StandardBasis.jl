@@ -1,4 +1,5 @@
 using LinearAlgebra
+using OffsetArrays
 
 ## Test standard basis polynomials with (nearly) the same tests
 
@@ -42,7 +43,9 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         @test eltype(p) == eltype(coeff)
         @test all([-200, -0.3, 1, 48.2] .∈ domain(p))
     end
+
 end
+        
 
 @testset "Mapdomain" begin
     for P in Ps
