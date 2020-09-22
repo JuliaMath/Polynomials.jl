@@ -45,7 +45,7 @@ p5 = Poly([1,4,6,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0])
 pN = Poly([276,3,87,15,24,0])
 pR = Poly([3//4, -2//1, 1//1])
 X = Poly([0.0, 1.0])
-T = Int64
+T = Int
 # Poly{T}([zero(T), one(T)])
 # Poly{T}([zero(T), one(T)], :y)
 
@@ -227,7 +227,7 @@ p1  = Poly([1, 2])
 p2  = Poly([3, 1.])
 p   = [p1, p2]
 q   = [3, p1]
-@test isa(q,Vector{Poly{Int64}})
+@test isa(q,Vector{Poly{Int}})
 psum  = p .+ 3
 pprod = p .* 3
 pmin  = p .- 3
@@ -254,7 +254,7 @@ bs = [1, 1, 2]
 
 ## unnecessary copy in convert #65
 p1 = Poly([1,2])
-p2 = convert(Poly{Int64}, p1)
+p2 = convert(Poly{Int}, p1)
 p2[3] = 3
 @test p1[3] == 3
 
