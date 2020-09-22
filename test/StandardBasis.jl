@@ -665,7 +665,7 @@ end
 
     ## Issue #225 and different meanings for "conjugate"
     P = LaurentPolynomial
-    p = P(rand(Complex{Float64}, 4), -1:2)
+    p = P(rand(Complex{Float64}, 4), -1)
     z = rand(Complex{Float64})
     s = imag(z)*im
     @test conj(p)(z) ≈ (conj ∘ p ∘ conj)(z)
