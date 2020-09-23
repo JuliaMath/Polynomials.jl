@@ -60,7 +60,7 @@ end
     r = [1im, -1im]
     c = fromroots(ChebyshevT, r)
     @test c ≈ ChebyshevT([1.5 + 0im, 0 + 0im, 0.5 + 0im])
-    @test roots(c) ≈ r
+    @test all(any(aᵢ .≈ r) for aᵢ in roots(c))
 end
 
 @testset "Values" begin
