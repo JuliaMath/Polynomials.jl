@@ -109,6 +109,13 @@ end
         @test degree(Polynomials.basis(P,5)) == 5
         @test Polynomials.isconstant(P(1))
         @test !Polynomials.isconstant(variable(P))
+
+        # OffsetVector
+        as = ones(3:4) # offsetvector
+        bs = [0,0,0,1,1]
+        @test P(as) == P(bs)
+        @test P{Float64}(as) == P{Float64}(bs)
+
     end
 end
 
