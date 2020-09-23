@@ -68,8 +68,8 @@ LaurentPolynomial(3.0 + 2.0*x + 1.0*x²)
 struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
-    m::Base.RefValue{Int64}
-    n::Base.RefValue{Int64}
+    m::Base.RefValue{Int}
+    n::Base.RefValue{Int}
     function LaurentPolynomial{T}(coeffs::AbstractVector{T},
                                   m::Int,
                                   var::Symbol=:x) where {T <: Number}
@@ -119,7 +119,7 @@ end
 ## Alternate with range specified
 ## Deprecate
 function  LaurentPolynomial{T}(coeffs::AbstractVector{S},
-                               rng::UnitRange{Int64},
+                               rng::UnitRange{Int},
                                var::Symbol=:x) where {T <: Number, S <: Number}
     Base.depwarn("Using a range to indicate the offset is deprecated. Use just the lower value",
                  :LaurentPolynomial)
