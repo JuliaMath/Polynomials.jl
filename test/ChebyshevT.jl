@@ -42,6 +42,11 @@ end
     p0 = ChebyshevT([0])
     @test iszero(p0)
     @test degree(p0) == -1
+
+    as = ones(3:4) # offsetvector
+    bs = [0,0,0,1,1]
+    @test ChebyshevT(as) == ChebyshevT(bs)
+    @test ChebyshevT{Float64}(as) == ChebyshevT{Float64}(bs)
 end
 
 @testset "Roots $i" for i in 1:5

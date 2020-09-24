@@ -44,6 +44,22 @@ end
 
 @register Polynomial
 
+
+function Polynomial{T}(coeffs::OffsetArray{T,1,Array{T,1}}, var::SymbolLike=:x) where {T <: Number}
+    m = firstindex(coeffs)
+    if m < 0
+        ## depwarn
+        Base.depwarn("Use the `LaurentPolynomial` type for offset vectors with negative first index",
+                     :Polynomial)
+        LaurentPolynomial{T}(coeffs, var)
+    else
+        cs = zeros(T, 1 + lastindex(coeffs))
+        cs[1 .+ (firstindex(coeffs):lastindex(coeffs))] = coeffs.parent
+        Polynomial{T}(cs, var)
+    end
+end
+
+
 """
     (p::Polynomial)(x)
 

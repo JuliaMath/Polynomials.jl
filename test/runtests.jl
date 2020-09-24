@@ -6,6 +6,7 @@ using SpecialFunctions
 using RecipesBase: apply_recipe
 
 import SparseArrays: sparse, nnz
+using OffsetArrays
 
 @testset "Standard basis" begin include("StandardBasis.jl") end
 @testset "ChebyshevT" begin include("ChebyshevT.jl") end

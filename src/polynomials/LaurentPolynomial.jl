@@ -5,7 +5,7 @@ export LaurentPolynomial
 
 A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of the form `a_{m}x^m + ... + a_{n}x^n` where `m,n` are  integers (not necessarily positive) with ` m <= n`.
 
-The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. The range specified is of the  form  `m` (or `m:n`),  if left  empty, `m` is taken to be `0` (i.e.,  the coefficients refer  to the standard basis). Alternatively, the coefficients can be specified using an `OffsetVector` from the `OffsetArrays` package.
+The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. The range specified is of the  form  `m`,  if left  empty, `m` is taken to be `0` (i.e.,  the coefficients refer  to the standard basis). Alternatively, the coefficients can be specified using an `OffsetVector` from the `OffsetArrays` package.
 
 Laurent polynomials and standard basis polynomials  promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`
 .
@@ -98,50 +98,42 @@ function LaurentPolynomial{T}(coeffs::AbstractVector{S}, m::Int, var::SymbolLike
     LaurentPolynomial{T}(T.(coeffs), m, var)
 end
 
-function LaurentPolynomial{T}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {
-    T <: Number, S <: Number}
-    LaurentPolynomial{T}(T.(coeffs), 0, var)
+function LaurentPolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {
+    T <: Number}
+    LaurentPolynomial{T}(coeffs, 0, var)
 end
-    
+
+function  LaurentPolynomial{T}(coeffs::OffsetArray{T, 1, Array{T,1}}, var::SymbolLike=:x) where {
+    T<:Number}
+    m,n = axes(coeffs, 1)
+    LaurentPolynomial{T}(T.(coeffs.parent), m, Symbol(var))
+end
+
 function LaurentPolynomial(coeffs::AbstractVector{T}, m::Int, var::SymbolLike=:x) where {T <: Number}
     LaurentPolynomial{T}(coeffs, m, Symbol(var))
 end
 
-function LaurentPolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
-    LaurentPolynomial{T}(coeffs, 0, Symbol(var))
-end
 
-
-
-# Add interface for OffsetArray
-function  LaurentPolynomial{T}(coeffs::OffsetArray{S, 1, Array{S,1}}, var::SymbolLike=:x) where {
-    T<:Number, S<:Number}
-    m,n = axes(coeffs, 1)
-    LaurentPolynomial{T}(T.(coeffs.parent), m:n, Symbol(var))
-end
-function  LaurentPolynomial(coeffs::OffsetArray{S, 1, Array{S,1}}, var::SymbolLike=:x) where {S}
-    LaurentPolynomial{S}(coeffs, var)
-end
 
 
 ## Alternate with range specified
+## Deprecate
 function  LaurentPolynomial{T}(coeffs::AbstractVector{S},
                                rng::UnitRange{Int},
                                var::Symbol=:x) where {T <: Number, S <: Number}
+    Base.depwarn("Using a range to indicate the offset is deprecated. Use just the lower value",
+                 :LaurentPolynomial)
+    error("")
     LaurentPolynomial{T}(T.(coeffs), first(rng), var)
 end
 
 function LaurentPolynomial(coeffs::AbstractVector{T}, rng::UnitRange, var::SymbolLike=:x) where {T <: Number}
+    Base.depwarn("Using a range to indicate the offset is deprecated. Use just the lower value",
+                 :LaurentPolynomial)
     LaurentPolynomial{T}(coeffs, rng, Symbol(var))
 end
 
 
-## Alternate interface for Polynomial
-Polynomial(coeffs::OffsetArray{T,1,Array{T,1}}, var::SymbolLike=:x) where {T <: Number} =
-    LaurentPolynomial{T}(coeffs, var)
-
-Polynomial{T}(coeffs::OffsetArray{S,1,Array{S,1}}, var::SymbolLike=:x) where {T <: Number, S <: Number} =
-    LaurentPolynomial{T}(coeffs, var)
 
 ##
 ## conversion
@@ -191,10 +183,10 @@ Base.:(==)(p1::LaurentPolynomial, p2::LaurentPolynomial) =
 Base.hash(p::LaurentPolynomial, h::UInt) = hash(p.var, hash(degreerange(p), hash(coeffs(p), h)))
 
 isconstant(p::LaurentPolynomial) = iszero(lastindex(p)) && iszero(firstindex(p)) 
-basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var::SymbolLike=:x) where{T} = LaurentPolynomial(ones(T,1), n:n, var)
-basis(P::Type{LaurentPolynomial}, n::Int, var::SymbolLike=:x) = LaurentPolynomial(ones(Float64, 1), n:n, var)
+basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var::SymbolLike=:x) where{T} = LaurentPolynomial(ones(T,1), n, var)
+basis(P::Type{LaurentPolynomial}, n::Int, var::SymbolLike=:x) = LaurentPolynomial(ones(Float64, 1), n, var)
 
-Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  LaurentPolynomial{T}(zeros(T,1),  0:0, Symbol(var))
+Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  LaurentPolynomial{T}(zeros(T,1),  0, Symbol(var))
 Base.zero(::Type{LaurentPolynomial},  var=Symbollike=:x) =  zero(LaurentPolynomial{Float64}, var)
 Base.zero(p::P, var=Symbollike=:x) where {P  <: LaurentPolynomial} = zero(P, var)
 
@@ -545,7 +537,7 @@ function derivative(p::P, order::Integer = 1) where {T, P<:LaurentPolynomial{T}}
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
 
-    hasnan(p) && return ⟒(P)(T[NaN], 0:0, p.var)
+    hasnan(p) && return ⟒(P)(T[NaN], 0, p.var)
 
     m,n = (extrema ∘ degreerange)(p)
     m = m - order
@@ -604,7 +596,7 @@ function Base.gcd(p::LaurentPolynomial{T}, q::LaurentPolynomial{T}, args...; kwa
     mp, Mp = (extrema ∘ degreerange)(p)
     mq, Mq = (extrema ∘ degreerange)(q)
     if mp < 0 || mq < 0
-        throw(ArgumentError("GCD is not defined when there are `x⁻¹` terms"))
+        throw(ArgumentError("GCD is not defined when there are `x⁻ⁿ` terms"))
     end
 
     degree(p) == 0 && return iszero(p) ? q : one(q)

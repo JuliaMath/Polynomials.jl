@@ -26,7 +26,7 @@ ChebyshevT(1.0⋅T_0(x))
 struct ChebyshevT{T <: Number} <: AbstractPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
-    function ChebyshevT{T}(coeffs::AbstractVector{T}, var::Symbol) where {T <: Number}
+    function ChebyshevT{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
         length(coeffs) == 0 && return new{T}(zeros(T, 1), var)
         last_nz = findlast(!iszero, coeffs)
         last = max(1, last_nz === nothing ? 0 : last_nz)
@@ -35,6 +35,13 @@ struct ChebyshevT{T <: Number} <: AbstractPolynomial{T}
 end
 
 @register ChebyshevT
+
+function ChebyshevT{T}(coeffs::OffsetArray{T,1, Array{T, 1}}, var::SymbolLike=:x) where {T <: Number}
+    cs = zeros(T, 1 + lastindex(coeffs))
+    cs[1 .+ (firstindex(coeffs):lastindex(coeffs))] = coeffs.parent
+    ChebyshevT{T}(cs, var)
+end
+
 
 function Base.convert(P::Type{<:Polynomial}, ch::ChebyshevT)
     if length(ch) < 3
@@ -57,6 +64,7 @@ function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
     end
     return res
 end
+
 
 domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
 variable(P::Type{<:ChebyshevT}, var::SymbolLike=:x ) = P([0,1], var)

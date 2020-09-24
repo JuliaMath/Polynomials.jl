@@ -1,4 +1,5 @@
 using LinearAlgebra
+using OffsetArrays
 
 ## Test standard basis polynomials with (nearly) the same tests
 
@@ -42,7 +43,9 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         @test eltype(p) == eltype(coeff)
         @test all([-200, -0.3, 1, 48.2] .∈ domain(p))
     end
+
 end
+        
 
 @testset "Mapdomain" begin
     for P in Ps
@@ -106,6 +109,13 @@ end
         @test degree(Polynomials.basis(P,5)) == 5
         @test Polynomials.isconstant(P(1))
         @test !Polynomials.isconstant(variable(P))
+
+        # OffsetVector
+        as = ones(3:4) # offsetvector
+        bs = [0,0,0,1,1]
+        @test P(as) == P(bs)
+        @test P{Float64}(as) == P{Float64}(bs)
+
     end
 end
 
@@ -662,7 +672,7 @@ end
 
     ## Issue #225 and different meanings for "conjugate"
     P = LaurentPolynomial
-    p = P(rand(Complex{Float64}, 4), -1:2)
+    p = P(rand(Complex{Float64}, 4), -1)
     z = rand(Complex{Float64})
     s = imag(z)*im
     @test conj(p)(z) ≈ (conj ∘ p ∘ conj)(z)

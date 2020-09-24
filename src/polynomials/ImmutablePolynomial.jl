@@ -81,10 +81,16 @@ function ImmutablePolynomial{T}(coeffs::Tuple, var::SymbolLike=:x)  where {T}
     ImmutablePolynomial{T}(T.(coeffs), var)
 end
 
-# entry point from abstract.jl; note Vector -- not AbstractVector -- type
-function ImmutablePolynomial{T}(coeffs::Vector{T}, var::SymbolLike=:x) where {T}
+# entry point from abstract.jl; note T <: Number
+function ImmutablePolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
     M = length(coeffs)
     ImmutablePolynomial{T}(NTuple{M,T}(tuple(coeffs...)), var)
+end
+
+function ImmutablePolynomial{T}(coeffs::OffsetArray{T,1, Array{T, 1}}, var::SymbolLike=:x) where {T <: Number}
+    cs = zeros(T, 1 + lastindex(coeffs))
+    cs[1 .+ (firstindex(coeffs):lastindex(coeffs))] = coeffs.parent
+    ImmutablePolynomial{T}(cs, var)
 end
 
 ## --
@@ -95,21 +101,17 @@ function ImmutablePolynomial(coeffs::Tuple, var::SymbolLike=:x)
     ImmutablePolynomial{T}(cs, var)
 end
 
-# # need to catch map case wihch return Variables, not Values
-# function ImmutablePolynomial(coeffs::Cs, var::SymbolLike=:x) where {
-#     M, T, Cs <: Union{Values{M,T}, Variables{M,T}}}
-#     ImmutablePolynomial{T}(Values(coeffs.v), var)
-# end
-
-
-
-
 # Convenience; pass tuple to Polynomial
 # Not documented, not sure this is a good idea as P(...)::P is not true...
-Polynomial(coeffs::NTuple{N,T}, var::SymbolLike = :x) where{N,T} =
+# Deprecated
+function Polynomial(coeffs::NTuple{N,T}, var::SymbolLike = :x) where{N,T}
+    Base.depwarn("Use of `Polynomial(NTuple, var)` is deprecated. Use the `ImmutablePolynomial` constructor",
+                 :Polynomial)
     ImmutablePolynomial(coeffs, var)
-
+end
 function Polynomial{T}(coeffs::NTuple{N,S}, var::SymbolLike = :x) where{N,T,S}
+    Base.depwarn("Use of `Polynomial(NTuple, var)` is deprecated. Use the `ImmutablePolynomial` constructor",
+                 :Polynomial)
     ImmutablePolynomial{N,T}(T.(coeffs), var)
 end
 
@@ -208,7 +210,6 @@ function Base.:+(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) whe
 
     p1.var != p2.var && error("Polynomials must have same variable")
 
-
     if  N == M
         cs = NTuple{N,R}(p1[i] + p2[i] for i in 0:N-1)
         ImmutablePolynomial{R}(cs, p1.var)        
@@ -219,8 +220,6 @@ function Base.:+(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) whe
         cs = (p1.coeffs) ⊕ (p2.coeffs)
         ImmutablePolynomial{R,N}(cs, p1.var)                
     end
-
-    
 
 end
 
@@ -291,9 +290,6 @@ function Base.:+(p::ImmutablePolynomial{T,N}, c::S) where {T, N, S<:Number}
     N == 0 && return ImmutablePolynomial{R,1}((c,), p.var)
     N == 1 && return ImmutablePolynomial((p[0]+c,), p.var)
 
-#    cs = NTuple{N,R}(iszero(i) ? p[i]+c : p[i] for i in 0:N-1)
-#    return ImmutablePolynomial{R,N}(cs, p.var)
-    
     q = ImmutablePolynomial{R,1}((c,), p.var)
     return p + q
 
