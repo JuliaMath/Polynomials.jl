@@ -60,7 +60,7 @@ julia> p(0.1)
 
 ### Arithmetic
 
-The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.
+Methods are added to the usual arithmetic operators so that they work on polynomials, and combinations of polynomials and scalars.
 
 ```julia
 julia> p = Polynomial([1,2])
