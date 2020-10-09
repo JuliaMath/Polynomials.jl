@@ -34,13 +34,13 @@ end
 When degree(p) ≫ degree(q), this uses a early call to `divrem` to bring about commensurate degrees
 before calling `ngcd`.
 """
-function ngcd′(p::P, q::P;
+function ngcd′(p::StandardBasisPolynomial{T}, q::StandardBasisPolynomial{T};
                atol = eps(real(float(T))),
                rtol = atol, 
                satol= atol,
                srtol= rtol,
                kwargs...
-               ) where {T, P <: StandardBasisPolynomial{T}}
+               ) where {T}
 
 
     a, b = divrem(p,q)

@@ -565,7 +565,7 @@ function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) .* c)
 end
 
-function Base.:/(p::P, c::S) where {T,P <: AbstractPolynomial{T},S}
+function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) ./ c)
 end
 
@@ -613,10 +613,10 @@ function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}; kwargs..
     gcd(promote(p1, p2)...; kwargs...)
 end
 
-function Base.gcd(p1::P, p2::Q;
+function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{T};
                   atol::Real=zero(real(T)),
                   rtol::Real=Base.rtoldefault(real(T))
-                  ) where {T, P <: AbstractPolynomial{T}, Q <: AbstractPolynomial{T}}
+                  ) where {T}
 
 
     r₀, r₁ = p1, p2
@@ -669,10 +669,10 @@ function Base.isapprox(p1::AbstractPolynomial{T},
     end
 end
 
-function Base.isapprox(p1::P,
+function Base.isapprox(p1::AbstractPolynomial{T},
                        n::S;
                        rtol::Real = (Base.rtoldefault(T, S, 0)),
-                       atol::Real = 0,) where {T,S, P<:AbstractPolynomial{T}}
+                       atol::Real = 0,) where {T,S}
     return isapprox(p1, _convert(p1, [n])) 
 end
 

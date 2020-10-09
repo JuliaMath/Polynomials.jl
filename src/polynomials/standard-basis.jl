@@ -181,14 +181,11 @@ Author: Andreas Varga
 
 Note: requires Julia `v1.2` or greater.
 """
-function  gcd_noda_sasaki(p::P, q::Q;
+function  gcd_noda_sasaki(p::StandardBasisPolynomial{T}, q::StandardBasisPolynomial{S};
                           atol::Real=zero(real(promote_type(T,S))),
                           rtol::Real=Base.rtoldefault(real(promote_type(T,S)))
-                          ) where {T,S,
-                                   P<: StandardBasisPolynomial{T},
-                                   Q<: StandardBasisPolynomial{S},
-                                   }
-    ⟒(P) == ⟒(Q) ||  return gcd_noda_sasaki(promote(p,q);  atol=atol, rtol=rtol)
+                          ) where {T,S}
+    ⟒(typeof(p)) == ⟒(typeof(q)) ||  return gcd_noda_sasaki(promote(p,q);  atol=atol, rtol=rtol)
     ## check symbol
     a, b = coeffs(p), coeffs(q)
     as =  _gcd_noda_sasaki(a,b, atol=atol,  rtol=rtol)
