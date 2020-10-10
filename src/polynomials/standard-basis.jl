@@ -3,12 +3,19 @@ abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
 
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T}
+
     if iszero(pj) return false end
+
     pj = printsign(io, pj, first, mimetype)
-    if !(pj == one(T) && !(showone(T) || j == 0))
-        printcoefficient(io, pj, j, mimetype)
+
+    showcompact = get(io, :compact, false)
+
+    pⱼ = showcompact ? round(pj, digits=5) : pj
+    if !(pⱼ == one(T) && !(showone(T) || j == 0))
+            printcoefficient(io, pj, j, mimetype)
     end
-    printproductsign(io, pj, j, mimetype)
+
+    !showcompact && printproductsign(io, pj, j, mimetype)
     printexponent(io, var, j, mimetype)
     return true
 end

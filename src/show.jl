@@ -53,7 +53,7 @@ Base.show(io::IO, p::AbstractPolynomial) = show(io, MIME("text/plain"), p)
 
 function Base.show(io::IO, mimetype::MIME"text/plain", p::P) where {P<:AbstractPolynomial}
     print(io,"$(P.name)(")
-    printpoly(io, p, mimetype)
+    printpoly(IOContext(io, :compact=>get(io, :compact, false)), p, mimetype)
     print(io,")")
 end
 
@@ -245,10 +245,9 @@ function printcoefficient(io::IO, pj::S, j, mimetype) where {T,S <: Complex{T}}
 
     elseif hasreal
 
-        (iszero(j) || showone(T) || isone(a)) && printcoefficient(io, a, j, mimetype)
+        (iszero(j) || showone(T) || !isone(a)) && printcoefficient(io, a, j, mimetype)
 
     elseif hasimag
-
         (showone(T) || !isone(b)) && printcoefficient(io, b, j, mimetype)
         (isnan(b) || isinf(b)) && print(io, showop(mimetype, "*"))
         print(io, imagsymbol(mimetype))
