@@ -229,9 +229,9 @@ _convert(p::P, as) where {P <: LaurentPolynomial} = ⟒(P)(as, firstindex(p), p.
 
 ## chop/truncation
 # trim  from *both* ends
-function chop!(p::P;
+function chop!(p::LaurentPolynomial{T};
                rtol::Real = Base.rtoldefault(real(T)),
-               atol::Real = 0,) where {T, P <: LaurentPolynomial{T}}
+               atol::Real = 0,) where {T}
 
     m0,n0 = m,n = (extrema ∘ degreerange)(p)
     for k in n:-1:m
