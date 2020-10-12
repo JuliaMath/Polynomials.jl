@@ -72,17 +72,17 @@ end
 "Show different operations depending on mimetype. `l-` is leading minus sign."
 function showop(::MIME"text/plain", op)
     d = Dict("*" => "*", "+" => " + ", "-" => " - ", "l-" => "-")
-    d[op]
+    get(d, op, "")
 end
 
 function showop(::MIME"text/latex", op)
     d = Dict("*" => "\\cdot ", "+" => " + ", "-" => " - ", "l-" => "-")
-    d[op]
+    get(d, op, "")
 end
 
 function showop(::MIME"text/html", op)
     d = Dict("*" => "&#8729;", "+" => " &#43; ", "-" => " &#45; ", "l-" => "&#45;")
-    d[op]
+    get(d, op, "")
 end
 
 
@@ -154,9 +154,11 @@ function printsign(io::IO, pj::T, first, mimetype) where {T}
 end
 
 ## print * or cdot, ...
+## pass `:productsign => "" to IOContext have no sign
 function printproductsign(io::IO, pj::T, j, mimetype) where {T}
     j == 0 && return
-    (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
+    productsign = get(io, :productsign, showop(mimetype, "*"))
+    (showone(T) || pj != one(T)) &&  print(io, productsign)
 end
 
 function printproductsign(io::IO, pj::T, j, mimetype) where {T<:Complex}

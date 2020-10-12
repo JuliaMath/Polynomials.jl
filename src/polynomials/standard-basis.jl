@@ -8,14 +8,11 @@ function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, firs
 
     pj = printsign(io, pj, first, mimetype)
 
-    showcompact = get(io, :compact, false)
-
-    pⱼ = showcompact ? round(pj, digits=5) : pj
-    if !(pⱼ == one(T) && !(showone(T) || j == 0))
+    if !(pj == one(T) && !(showone(T) || j == 0))
             printcoefficient(io, pj, j, mimetype)
     end
 
-    !showcompact && printproductsign(io, pj, j, mimetype)
+    printproductsign(io, pj, j, mimetype)
     printexponent(io, var, j, mimetype)
     return true
 end
