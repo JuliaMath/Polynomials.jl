@@ -126,8 +126,8 @@ function printpoly(io::IO, p::P, mimetype=MIME"text/plain"();
     first = true
     printed_anything = false
     for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
-        ioc = IOContext(io, :compact=>get(io, compact, false),
-                        :multiplication_symbol => get(io, :multiplication_symbol, "*"))
+        ioc = IOContext(io, :compact=>get(io, :compact, compact),
+                        :multiplication_symbol => get(io, :multiplication_symbol, mulsymbol))
         printed = showterm(ioc, P, p[i], var, i+offset, first, mimetype)
         first &= !printed
         printed_anything |= printed

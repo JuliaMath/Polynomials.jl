@@ -883,6 +883,11 @@ end
     end
 
     ## closed issues
+    ## issue 275 with compact mult symbol
+    p = Polynomial([1.234567890, 2.34567890])
+    io=IOBuffer(); printpoly(io, p, compact=true); @test String(take!(io)) == "1.23457 + 2.34568*x"
+    io=IOBuffer(); printpoly(io, p, compact=true, mulsymbol=""); @test String(take!(io)) == "1.23457 + 2.34568x"
+    
     ## issue 278 with complex
     @test printpoly_to_string(Polynomial([1 + im, 1, 2, im, 2im, 1+im, 1-im])) == "1 + im + x + 2*x^2 + im*x^3 + 2im*x^4 + (1 + im)x^5 + (1 - im)x^6"
 

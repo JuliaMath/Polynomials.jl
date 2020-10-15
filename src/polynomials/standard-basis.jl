@@ -9,7 +9,7 @@ function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, firs
     pj = printsign(io, pj, first, mimetype)
 
     if !(pj == one(T) && !(showone(T) || j == 0))
-            printcoefficient(io, pj, j, mimetype)
+        printcoefficient(io, pj, j, mimetype)
     end
 
     printproductsign(io, pj, j, mimetype)
