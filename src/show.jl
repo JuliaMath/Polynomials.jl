@@ -53,7 +53,7 @@ Base.show(io::IO, p::AbstractPolynomial) = show(io, MIME("text/plain"), p)
 
 function Base.show(io::IO, mimetype::MIME"text/plain", p::P) where {P<:AbstractPolynomial}
     print(io,"$(P.name)(")
-    printpoly(IOContext(io, :compact=>get(io, :compact, false)), p, mimetype)
+    printpoly(io, p, mimetype)
     print(io,")")
 end
 
@@ -126,8 +126,10 @@ function printpoly(io::IO, p::P, mimetype=MIME"text/plain"();
     first = true
     printed_anything = false
     for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
-        ioc = IOContext(io, :compact=>get(io, :compact, compact),
-                        :multiplication_symbol => get(io, :multiplication_symbol, mulsymbol))
+        ioc = IOContext(io,
+                        :compact=>get(io, :compact, compact),
+                        :multiplication_symbol => get(io, :multiplication_symbol, mulsymbol)
+                        )
         printed = showterm(ioc, P, p[i], var, i+offset, first, mimetype)
         first &= !printed
         printed_anything |= printed
