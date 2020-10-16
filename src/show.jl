@@ -72,17 +72,17 @@ end
 "Show different operations depending on mimetype. `l-` is leading minus sign."
 function showop(::MIME"text/plain", op)
     d = Dict("*" => "*", "+" => " + ", "-" => " - ", "l-" => "-")
-    d[op]
+    get(d, op, "")
 end
 
 function showop(::MIME"text/latex", op)
     d = Dict("*" => "\\cdot ", "+" => " + ", "-" => " - ", "l-" => "-")
-    d[op]
+    get(d, op, "")
 end
 
 function showop(::MIME"text/html", op)
     d = Dict("*" => "&#8729;", "+" => " &#43; ", "-" => " &#45; ", "l-" => "&#45;")
-    d[op]
+    get(d, op, "")
 end
 
 
@@ -97,7 +97,8 @@ types "text/plain" (default), "text/latex", and "text/html" are supported. By
 default, the terms are in order of ascending powers, matching the order in
 `coeffs(p)`; specifying `descending_powers=true` reverses the order.
 `offset` allows for an integer number to be added to the exponent, just for printing.
-`var` allows for overriding the variable used for printing.
+`var` allows for overriding the variable used for printing. Setting multiplication symbol to `""`
+will avoid an operator being printed. Setting `compact=true` will use a compact style for floating point numbers.
 
 # Examples
 ```jldoctest show
@@ -119,11 +120,17 @@ julia> printpoly(stdout, Polynomial([-1, 0, 1], :z), offset=-1, descending_power
 x - x^-1
 ```
 """
-function printpoly(io::IO, p::P, mimetype=MIME"text/plain"(); descending_powers=false, offset::Int=0, var=p.var) where {T,P<:AbstractPolynomial{T}}
+function printpoly(io::IO, p::P, mimetype=MIME"text/plain"();
+                   descending_powers=false, offset::Int=0, var=p.var,
+                   compact=false, mulsymbol="*") where {T,P<:AbstractPolynomial{T}}
     first = true
     printed_anything = false
     for i in (descending_powers ? reverse(eachindex(p)) : eachindex(p))
-        printed = showterm(io, P, p[i], var, i+offset, first, mimetype)
+        ioc = IOContext(io,
+                        :compact=>get(io, :compact, compact),
+                        :multiplication_symbol => get(io, :multiplication_symbol, mulsymbol)
+                        )
+        printed = showterm(ioc, P, p[i], var, i+offset, first, mimetype)
         first &= !printed
         printed_anything |= printed
     end
@@ -154,9 +161,11 @@ function printsign(io::IO, pj::T, first, mimetype) where {T}
 end
 
 ## print * or cdot, ...
+## pass `:multiplication_symbol => "" to IOContext have no sign
 function printproductsign(io::IO, pj::T, j, mimetype) where {T}
     j == 0 && return
-    (showone(T) || pj != one(T)) &&  print(io, showop(mimetype, "*"))
+    multiplication_symbol = showop(mimetype, get(io, :multiplication_symbol,"*"))
+    (showone(T) || pj != one(T)) &&  print(io, multiplication_symbol)
 end
 
 function printproductsign(io::IO, pj::T, j, mimetype) where {T<:Complex}
@@ -245,10 +254,9 @@ function printcoefficient(io::IO, pj::S, j, mimetype) where {T,S <: Complex{T}}
 
     elseif hasreal
 
-        (iszero(j) || showone(T) || isone(a)) && printcoefficient(io, a, j, mimetype)
+        (iszero(j) || showone(T) || !isone(a)) && printcoefficient(io, a, j, mimetype)
 
     elseif hasimag
-
         (showone(T) || !isone(b)) && printcoefficient(io, b, j, mimetype)
         (isnan(b) || isinf(b)) && print(io, showop(mimetype, "*"))
         print(io, imagsymbol(mimetype))

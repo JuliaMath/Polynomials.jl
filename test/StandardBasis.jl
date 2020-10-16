@@ -832,6 +832,13 @@ end
 
 @testset "Showing" begin
 
+    # customized printing with printpoly
+    function printpoly_to_string(args...; kwargs...)
+        buf = IOBuffer()
+        printpoly(buf, args...; kwargs...)
+        return String(take!(buf))
+    end
+
     p = Polynomial{Rational}([1, 4])
     @test sprint(show, p) == "Polynomial(1//1 + 4//1*x)"
 
@@ -868,18 +875,22 @@ end
         p = P([complex(1,1),complex(0,1),complex(1,0),complex(1,1)])
         @test repr("text/latex", p) == "\$1 + i + i\\cdot x + x^{2} + (1 + i)x^{3}\$"
 
-        # customized printing with printpoly
-        function printpoly_to_string(args...; kwargs...)
-            buf = IOBuffer()
-            printpoly(buf, args...; kwargs...)
-            return String(take!(buf))
-        end
         @test printpoly_to_string(P([1,2,3], "y")) == "1 + 2*y + 3*y^2"
         @test printpoly_to_string(P([1,2,3], "y"), descending_powers = true) == "3*y^2 + 2*y + 1"
         @test printpoly_to_string(P([2, 3, 1], :z), descending_powers = true, offset = -2) == "1 + 3*z^-1 + 2*z^-2"
         @test printpoly_to_string(P([-1, 0, 1], :z), offset = -1, descending_powers = true) == "z - z^-1"
         @test printpoly_to_string(P([complex(1,1),complex(1,-1)]),MIME"text/latex"()) == "1 + i + (1 - i)x"
     end
+
+    ## closed issues
+    ## issue 275 with compact mult symbol
+    p = Polynomial([1.234567890, 2.34567890])
+    io=IOBuffer(); printpoly(io, p, compact=true); @test String(take!(io)) == "1.23457 + 2.34568*x"
+    io=IOBuffer(); printpoly(io, p, compact=true, mulsymbol=""); @test String(take!(io)) == "1.23457 + 2.34568x"
+    
+    ## issue 278 with complex
+    @test printpoly_to_string(Polynomial([1 + im, 1, 2, im, 2im, 1+im, 1-im])) == "1 + im + x + 2*x^2 + im*x^3 + 2im*x^4 + (1 + im)x^5 + (1 - im)x^6"
+
 end
 
 @testset "Plotting" begin
