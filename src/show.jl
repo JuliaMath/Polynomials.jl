@@ -67,6 +67,9 @@ function Base.show(io::IO, mimetype::MIME"text/html", p::AbstractPolynomial)
     printpoly(io, p, mimetype)
 end
 
+# print uses compact representation
+Base.print(io::IO, p::AbstractPolynomial) = printpoly(io, p, MIME("text/plain"), compact=true)
+
 #####
 
 "Show different operations depending on mimetype. `l-` is leading minus sign."
