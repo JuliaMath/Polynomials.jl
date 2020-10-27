@@ -270,7 +270,7 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
     R = eltype(one(T)/one(T))
     d = degree(p)
     if d < 1
-        return []
+        return R[]
     end
     d == 1 && return R[-p[0] / p[1]]
 

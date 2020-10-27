@@ -459,6 +459,7 @@ end
         @test sort(roots(p)) ≈ r
 
         @test roots(p0) == roots(p1) == roots(pNULL) == []
+        @test eltype(roots(p0)) == eltype(roots(p1)) == eltype(roots(pNULL)) == Float64
         @test P == LaurentPolynomial ? roots(variable(P)) == [0.0] : roots(P([0,1,0])) == [0.0]
 
         @test roots(p2) == [-1]
