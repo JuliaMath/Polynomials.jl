@@ -436,6 +436,9 @@ end
     p2[3] = 3
     @test p1[3] == 3
 
+    # issue #287
+    p = LaurentPolynomial([1], -5)
+    @test p ≈ convert(LaurentPolynomial{Float64}, p)
 end
 
 @testset "Roots" begin
