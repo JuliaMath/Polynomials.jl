@@ -152,6 +152,8 @@ function Base.convert(P::Type{<:Polynomial}, q::LaurentPolynomial)
     P([q[i] for i  in 0:n], q.var)
 end
 
+Base.convert(::Type{T}, p::LaurentPolynomial) where {T<:LaurentPolynomial} = T(p.coeffs, p.m[], p.var)
+
 function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {T, P <:LaurentPolynomial{T},S}
     d = degree(q)
     P([q[i] for i in 0:d], 0, q.var)
