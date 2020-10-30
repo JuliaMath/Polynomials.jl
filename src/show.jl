@@ -52,7 +52,7 @@ Common Printing
 Base.show(io::IO, p::AbstractPolynomial) = show(io, MIME("text/plain"), p)
 
 function Base.show(io::IO, mimetype::MIME"text/plain", p::P) where {P<:AbstractPolynomial}
-    print(io,"$(P.name)(")
+    print(io,"$(P.name.wrapper)(")
     printpoly(io, p, mimetype)
     print(io,")")
 end
