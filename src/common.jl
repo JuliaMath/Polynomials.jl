@@ -112,7 +112,7 @@ function _fit(P::Type{<:AbstractPolynomial},
     if weights !== nothing
         coeffs = _wlstsq(vand, y, weights)
     else
-        coeffs = pinv(vand) * y
+        coeffs = qr(vand) \ y
     end
     R = float(T)
     return P(R.(coeffs), var)
@@ -122,7 +122,7 @@ end
 # Weighted linear least squares
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
 _wlstsq(vand, y, W::AbstractVector) = _wlstsq(vand, y, Diagonal(W))
-_wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
+_wlstsq(vand, y, W::AbstractMatrix) = qr(vand' * W * vand) \ (vand' * W * y)
 
 """
     roots(::AbstractPolynomial; kwargs...)
