@@ -419,13 +419,13 @@ function (p::LaurentPolynomial{T})(x::S) where {T,S}
     m,n = (extrema ∘ degreerange)(p)
     m  == n == 0 && return p[0] * _one(S)
     if m >= 0
-        evalpoly(x, NTuple{n+1,T}(p[i] for i in 0:n))
+        evalpoly(x, ntuple(i -> p[i-1], n+1)) # NTuple{n+1}(p[i] for i in 0:n)
     elseif n <= 0
-        evalpoly(inv(x), NTuple{-m+1,T}(p[i] for i in 0:-1:m))
+        evalpoly(inv(x), ntuple(i -> p[-i+1], -m+1)) # NTuple{-m+1}(p[i] for i in 0:-1:m)
     else
         # eval pl(x) = a_mx^m + ...+ a_0 at 1/x; pr(x) = a_0 + a_1x + ... + a_nx^n  at  x; subtract a_0
-        l = evalpoly(inv(x), NTuple{-m+1,T}(p[i] for i in 0:-1:m))
-        r =  evalpoly(x, NTuple{n+1,T}(p[i] for i in 0:n))
+        l = evalpoly(inv(x),  ntuple(i -> p[-i+1], -m+1)) # NTuple{-m+1}(p[i] for i in 0:-1:m)
+        r =  evalpoly(x, ntuple(i -> p[i-1], n+1)) # NTuple{n+1}(p[i] for i in 0:n)
         mid = p[0]
         l + r - mid
     end
