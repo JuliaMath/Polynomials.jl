@@ -326,6 +326,16 @@ end
 
     # test default   (issue  #228)
     fit(1:3,  rand(3))
+
+    # weight test (PR #291)
+    # This should change with 2.0
+    # as for now we specify w^2.
+    x = range(0, pi, length=30)
+    y = sin.(x)
+    wts = 1 ./ sqrt.(1 .+ x)
+    # cs = numpy.polynomial.polynomial.polyfit(x, y, 4, w=wts)
+    cs = [0.0006441172319036863, 0.985961582190304, 0.04999233434370933, -0.23162369757680354, 0.036864056406570644]
+    @test maximum(abs, coeffs(fit(x, y, 4, weights=wts.^2)) - cs) <= sqrt(eps())
 end
 
 @testset "Values" begin

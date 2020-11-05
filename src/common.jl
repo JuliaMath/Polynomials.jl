@@ -69,7 +69,21 @@ fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} =
     fit(x, y, deg=length(x) - 1; [weights], var=:x)
     fit(::Type{<:AbstractPolynomial}, x, y, deg=length(x)-1; [weights], var=:x)
 
-Fit the given data as a polynomial type with the given degree. Uses linear least squares. When weights are given, as either a `Number`, `Vector` or `Matrix`, will use weighted linear least squares. The default polynomial type is [`Polynomial`](@ref). This will automatically scale your data to the [`domain`](@ref) of the polynomial type using [`mapdomain`](@ref)
+Fit the given data as a polynomial type with the given degree. Uses
+linear least squares to minimize the norm of `V⋅c - y`, where `V` is
+the Vandermonde matrix and `c` are the coefficients of the polynomial
+fit.
+
+This will automatically scale your data to the [`domain`](@ref) of the
+polynomial type using [`mapdomain`](@ref). The default polynomial type
+is [`Polynomial`](@ref).
+
+When weights are given, as either a `Number`, `Vector` or `Matrix`,
+this will use weighted linear least squares. That is, the norm of
+`W ⋅ (y - V ⋅ x)` is minimized. (As of now, the weights are specified 
+using their squares: for a number use `w^2`, for a vector `wᵢ^2`, and for a matrix
+ specify `W'*W`. This behavior may change in the future.)
+
 """
 function fit(P::Type{<:AbstractPolynomial},
              x::AbstractVector{T},
@@ -120,8 +134,12 @@ end
 
 
 # Weighted linear least squares
+# TODO: Breaking change for 2.0: use non-squared weights
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
-_wlstsq(vand, y, W::AbstractVector) = _wlstsq(vand, y, Diagonal(W))
+function _wlstsq(vand, y, w::AbstractVector)
+    W = Diagonal(sqrt.(w))
+    qr(W * vand) \ (W * y)
+end
 _wlstsq(vand, y, W::AbstractMatrix) = qr(vand' * W * vand) \ (vand' * W * y)
 
 """
