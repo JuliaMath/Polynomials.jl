@@ -330,7 +330,7 @@ end
     # weight test (PR #291)
     # This should change with 2.0
     # as for now we specify w^2.
-    x = range(0, pi, length=30)
+    x = range(0, stop=pi, length=30)
     y = sin.(x)
     wts = 1 ./ sqrt.(1 .+ x)
     # cs = numpy.polynomial.polynomial.polyfit(x, y, 4, w=wts)
