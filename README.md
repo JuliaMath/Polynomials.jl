@@ -33,27 +33,27 @@ Construct a polynomial from an array (a vector) of its coefficients, lowest orde
 
 ```julia
 julia> Polynomial([1,0,3,4])
-Polynomial(1 + 3x^2 + 4x^3)
+Polynomial(1 + 3*x^2 + 4*x^3)
 ```
 
 Optionally, the variable of the polynomial can be specified.
 
 ```julia
 julia> Polynomial([1,2,3], :s)
-Polynomial(1 + 2s + 3s^2)
+Polynomial(1 + 2*s + 3*s^2)
 ```
 
 Construct a polynomial from its roots.
 
 ```julia
 julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
-Polynomial(-6 + 11x - 6x^2 + x^3)
+Polynomial(-6 + 11*x - 6*x^2 + x^3)
 ```
 
 Evaluate the polynomial `p` at `x`.
 
 ```julia
-julia> p = Polynomial([1, 0, -1])
+julia> p = Polynomial([1, 0, -1]);
 julia> p(0.1)
 0.99
 ```
@@ -64,35 +64,44 @@ Methods are added to the usual arithmetic operators so that they work on polynom
 
 ```julia
 julia> p = Polynomial([1,2])
-Polynomial(1 + 2x)
+Polynomial(1 + 2*x)
+
+julia> q = Polynomial([1, 0, -1])
+Polynomial(1 - x^2)
+
+julia> p - q
+Polynomial(2*x + x^2)
+
+julia> p = Polynomial([1,2])
+Polynomial(1 + 2*x)
 
 julia> q = Polynomial([1, 0, -1])
 Polynomial(1 - x^2)
 
 julia> 2p
-Polynomial(2 + 4x)
+Polynomial(2 + 4*x)
 
 julia> 2+p
-Polynomial(3 + 2x)
+Polynomial(3 + 2*x)
 
 julia> p - q
-Poly(2x + x^2)
+Polynomial(2*x + x^2)
 
 julia> p * q
-Polynomial(1 + 2x - x^2 - 2x^3)
+Polynomial(1 + 2*x - x^2 - 2*x^3)
 
 julia> q / 2
-Polynomial(0.5 - 0.5x^2)
+Polynomial(0.5 - 0.5*x^2)
 
-julia> q ÷ p  # `div`, also `rem` and `divrem`
-Polynomial(0.25 - 0.5x)
+julia> q ÷ p # `div`, also `rem` and `divrem`
+Polynomial(0.25 - 0.5*x)
 ```
 
 Operations involving polynomials with different variables will error.
 
 ```julia
-julia> p = Polynomial([1, 2, 3], :x)
-julia> q = Polynomial([1, 2, 3], :s)
+julia> p = Polynomial([1, 2, 3], :x);
+julia> q = Polynomial([1, 2, 3], :s);
 julia> p + q
 ERROR: Polynomials must have same variable.
 ```
@@ -105,10 +114,10 @@ degree of `p` (for a nonzero polynomial).
 
 ```julia
 julia> integrate(Polynomial([1, 0, -1]))
-Polynomial(x - 0.3333333333333333x^3)
+Polynomial(1.0*x - 0.3333333333333333*x^3)
 
 julia> integrate(Polynomial([1, 0, -1]), 2)
-Polynomial(2.0 + x - 0.3333333333333333x^3)
+Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)
 ```
 
 Differentiate the polynomial `p` term by term. The degree of the
@@ -116,7 +125,7 @@ resulting polynomial is one lower than the degree of `p`.
 
 ```julia
 julia> derivative(Polynomial([1, 3, -1]))
-Polynomial(3 - 2x)
+Polynomial(3 - 2*x)
 ```
 
 ### Root-finding
