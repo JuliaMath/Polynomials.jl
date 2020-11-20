@@ -201,3 +201,13 @@ end
     @test q == [1]
     @test r == [0]
 end
+
+
+@testset "closed issues" begin
+
+    # issue #295
+    x = BigFloat[-2/3, -1/3, 1/3, 2/4]
+    y = BigFloat[1, 2, 3, 4]
+    fit(ChebyshevT, x, y, 1) 
+
+end
