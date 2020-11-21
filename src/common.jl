@@ -91,7 +91,7 @@ function fit(P::Type{<:AbstractPolynomial},
              deg::Integer = length(x) - 1;
              weights = nothing,
              var = :x,) where {T}
-    _fit(P, x, y, deg, weights, var)
+    _fit(P, x, y, deg; weights=weights, var=var)
 end
 
 fit(P::Type{<:AbstractPolynomial},
