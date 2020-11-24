@@ -1,5 +1,6 @@
 module Polynomials
 
+using GenericLinearAlgebra
 using LinearAlgebra
 using Intervals
 using OffsetArrays
