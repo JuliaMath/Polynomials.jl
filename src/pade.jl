@@ -91,6 +91,7 @@ Evaluate the Pade approximant at the given point.
 julia> using Polynomials, Polynomials.PolyCompat, SpecialFunctions
 
 
+
 julia> p = Polynomial(@.(1 // BigInt(gamma(1:17))));
 
 

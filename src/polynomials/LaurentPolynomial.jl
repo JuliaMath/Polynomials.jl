@@ -307,12 +307,15 @@ end
 This satisfies `conj(p(x)) = conj(p)(conj(x)) = p̄(conj(x))` or `p̄(x) = (conj ∘ p ∘ conj)(x)`
 
 Examples
+
 ```jldoctest laurent
+julia> using Polynomials;
+
 julia> z = variable(LaurentPolynomial, :z)
 LaurentPolynomial(z)
 
-julia> p = LaurentPolynomial([im, 1+im, 2 + im], -1:1, :z)
-LaurentPolynomial(im*z⁻¹ + (1 + 1im) + (2 + 1im)*z)
+julia> p = LaurentPolynomial([im, 1+im, 2 + im], -1, :z)
+LaurentPolynomial(im*z⁻¹ + 1 + im + (2 + im)z)
 
 julia> conj(p)(conj(z)) ≈ conj(p(z))
 true
@@ -335,6 +338,8 @@ Call `p̂ = paraconj(p)` and `p̄` = conj(p)`, then this satisfies
 Examples:
 
 ```jldoctest laurent
+julia> using Polynomials;
+
 julia> z = variable(LaurentPolynomial, :z)
 LaurentPolynomial(z)
 
@@ -373,10 +378,12 @@ This satisfies for *imaginary* `s`: `conj(p(s)) = p̃(s) = (conj ∘ p)(s) = cco
 
 Examples:
 ```jldoctest laurent
+julia> using Polynomials;
+
 julia> s = 2im
 0 + 2im
 
-julia> p = LaurentPolynomial([im,-1, -im, 1], 1:2, :s)
+julia> p = LaurentPolynomial([im,-1, -im, 1], 1, :s)
 LaurentPolynomial(im*s - s² - im*s³ + s⁴)
 
 julia> Polynomials.cconj(p)(s) ≈ conj(p(s))
@@ -508,6 +515,8 @@ The roots of a function (Laurent polynomial in this case) `a(z)` are the values 
 # Example
 
 ```julia
+julia> using Polynomials;
+
 julia> p = LaurentPolynomial([24,10,-15,0,1],-2:1,:z)
 LaurentPolynomial(24*z⁻² + 10*z⁻¹ - 15 + z²)
 
