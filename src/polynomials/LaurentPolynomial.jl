@@ -13,7 +13,7 @@ Laurent polynomials and standard basis polynomials  promote to  Laurent polynomi
 Integration will fail if there is a `x⁻¹` term in the polynomial.
 
 Example:
-```jldoctest
+```jldoctest laurent
 julia> using Polynomials
 
 julia> P = LaurentPolynomial
@@ -74,7 +74,7 @@ struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
                                   m::Int,
                                   var::Symbol=:x) where {T <: Number}
 
-        
+
         # trim zeros from front and back
         lnz = findlast(!iszero, coeffs)
         fnz = findfirst(!iszero, coeffs)
@@ -184,7 +184,7 @@ Base.:(==)(p1::LaurentPolynomial, p2::LaurentPolynomial) =
     check_same_variable(p1, p2) && (degreerange(p1) == degreerange(p2)) && (coeffs(p1) == coeffs(p2))
 Base.hash(p::LaurentPolynomial, h::UInt) = hash(p.var, hash(degreerange(p), hash(coeffs(p), h)))
 
-isconstant(p::LaurentPolynomial) = iszero(lastindex(p)) && iszero(firstindex(p)) 
+isconstant(p::LaurentPolynomial) = iszero(lastindex(p)) && iszero(firstindex(p))
 basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var::SymbolLike=:x) where{T} = LaurentPolynomial(ones(T,1), n, var)
 basis(P::Type{LaurentPolynomial}, n::Int, var::SymbolLike=:x) = LaurentPolynomial(ones(Float64, 1), n, var)
 
@@ -307,7 +307,7 @@ end
 This satisfies `conj(p(x)) = conj(p)(conj(x)) = p̄(conj(x))` or `p̄(x) = (conj ∘ p ∘ conj)(x)`
 
 Examples
-```jldoctest
+```jldoctest laurent
 julia> z = variable(LaurentPolynomial, :z)
 LaurentPolynomial(z)
 
@@ -334,7 +334,7 @@ Call `p̂ = paraconj(p)` and `p̄` = conj(p)`, then this satisfies
 
 Examples:
 
-```jldoctest
+```jldoctest laurent
 julia> z = variable(LaurentPolynomial, :z)
 LaurentPolynomial(z)
 
@@ -372,7 +372,7 @@ This satisfies for *imaginary* `s`: `conj(p(s)) = p̃(s) = (conj ∘ p)(s) = cco
 [ref](https://github.com/hurak/PolynomialEquations.jl#symmetrix-conjugate-equation-continuous-time-case)
 
 Examples:
-```jldoctest
+```jldoctest laurent
 julia> s = 2im
 0 + 2im
 
