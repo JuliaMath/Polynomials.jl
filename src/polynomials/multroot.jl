@@ -15,7 +15,7 @@ to identify roots of polynomials with suspected multiplicities over
 
 Example:
 
-```jldoctest
+```
 julia> using Polynomials
 
 julia> p = fromroots([sqrt(2), sqrt(2), sqrt(2), 1, 1])
@@ -30,7 +30,7 @@ julia> roots(p)
  1.4142350577588885 + 3.72273772278647e-5im
 
 julia> Polynomials.Multroot.multroot(p)
-(values = [0.9999999999999993, 1.4142135623730958], multiplicities = [2, 3], κ = 5.218455674370637, ϵ = 2.8736226244218195e-16)
+(values = [0.9999999999999993, 1.4142135623730958], multiplicities = [2, 3], κ = 5.218455674370636, ϵ = 2.8736226244218195e-16)
 ```
 
 The algorithm has two stages. First it uses `pejorative_manifold` to
@@ -60,7 +60,7 @@ multiplicity structure:
   recursively, this allows the residual tolerance to scale up to match
   increasing numeric errors.
 
-Returns a named tuple with 
+Returns a named tuple with
 
 * `values`: the identified roots
 * `multiplicities`: the corresponding multiplicities
@@ -78,15 +78,15 @@ is misidentified.
 """
 function multroot(p::Polynomials.StandardBasisPolynomial{T}; verbose=false,
                   kwargs...) where {T}
-    
+
     z, l = pejorative_manifold(p; kwargs...)
     z̃ = pejorative_root(p, z, l)
     κ, ϵ = stats(p, z̃, l)
-    
+
     verbose && show_stats(κ, ϵ)
 
     (values = z̃, multiplicities = l, κ = κ, ϵ = ϵ)
-    
+
 end
 
 # The multiplicity structure, `l`, gives rise to a pejorative manifold `Πₗ = {Gₗ(z) | z∈ Cᵐ}`.
@@ -99,11 +99,11 @@ function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T};
     u, v, w, θ′, κ = Polynomials.ngcd(p, derivative(p),
                                        atol=ρ*norm(p), satol = θ*norm(p),
                                        rtol = zT, srtol = zT)
-    
+
     zs = roots(v)
     nrts = length(zs)
     ls = ones(Int, nrts)
-    
+
     while !Polynomials.isconstant(u)
 
         normp = 1 + norm(u, 2)
@@ -127,7 +127,7 @@ function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T};
     zs, ls # estimate for roots, multiplicities
 
 end
-        
+
 """
     pejorative_root(p, zs, ls; kwargs...)
 
@@ -158,7 +158,7 @@ function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
 
     # storage
     a = p[2:end]./p[1]     # a ~ (p[n-1], p[n-2], ..., p[0])/p[n]
-    W = Diagonal([min(1, 1/abs(aᵢ)) for aᵢ in a]) 
+    W = Diagonal([min(1, 1/abs(aᵢ)) for aᵢ in a])
     J = zeros(S, m, n)
     G = zeros(S,  1 + m)
     Δₖ = zeros(S, n)
@@ -167,16 +167,16 @@ function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
     cvg = false
     δₖ₀ = -Inf
     for ctr in 1:maxsteps
-        
+
         evalJ!(J, zₖs, ls)
         evalG!(G, zₖs, ls)
-        
+
         Δₖ .= (W*J) \ (W*(view(G, 2:1+m) .- a)) # weighted least squares
 
         δₖ₁ = norm(Δₖ, 2)
         Δ = δₖ₀ - δₖ₁
 
-        if ctr > 10 && δₖ₁ >= δₖ₀ 
+        if ctr > 10 && δₖ₁ >= δₖ₀
             δₖ₀ < δₖ₁ && @warn "Increasing Δ, terminating search"
             cvg = true
             break
@@ -184,7 +184,7 @@ function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
 
         zₖs .-= Δₖ
 
-        if δₖ₁^2 <= (δₖ₀ - δₖ₁) * τ 
+        if δₖ₁^2 <= (δₖ₀ - δₖ₁) * τ
             cvg = true
             break
         end
@@ -192,12 +192,12 @@ function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
         δₖ₀ = δₖ₁
     end
     verbose && show_stats(stats(p, zₖs, ls)...)
-    
+
     if cvg
         return zₖs
     else
         @info ("""
-The multiplicity count may be in error: the initial guess for the roots failed 
+The multiplicity count may be in error: the initial guess for the roots failed
 to converge to a pejorative root.
 """)
         return(zₘs)
@@ -242,7 +242,7 @@ function evalJ!(J, zs::Vector{T}, ls::Vector) where {T}
         for (k, zₖ) in enumerate(zs)
             k == j && continue
             for i in n-1:-1:1
-                J[1+i,j] -= zₖ * J[i,j] 
+                J[1+i,j] -= zₖ * J[i,j]
             end
         end
     end
