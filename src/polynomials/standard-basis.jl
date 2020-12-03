@@ -291,7 +291,6 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
     L
 end
 
-
 function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     A = Matrix{T}(undef, length(x), n + 1)
     A[:, 1] .= one(T)
@@ -373,7 +372,7 @@ end
 # rexpressed from paper to compute horner_sum in same pass
 # sᵢ -- horner sum
 # c -- compensating term
-@inline function compensated_horner(ps, x) 
+@inline function compensated_horner(ps, x)
     n, T = length(ps), eltype(ps)
     aᵢ = ps[end]
     sᵢ = aᵢ * _one(x)
@@ -430,6 +429,3 @@ function LinearAlgebra.cond(p::P, x) where {P <: Polynomials.StandardBasisPolyno
     p̃ = map(abs, p)
     p̃(abs(x))/ abs(p(x))
 end
-
-
-
