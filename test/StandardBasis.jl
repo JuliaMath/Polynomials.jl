@@ -59,6 +59,20 @@ end
     end
 end
 
+# Custom offset vector type to test constructors
+struct ZVector{T,A<:AbstractVector{T}} <: AbstractVector{T}
+    x :: A
+    offset :: Int
+    function ZVector(x::AbstractVector)
+        offset = firstindex(x)
+        new{eltype(x),typeof(x)}(x, offset)
+    end
+end
+Base.parent(z::ZVector) = z.x
+Base.size(z::ZVector) = size(parent(z))
+Base.axes(z::ZVector) = (Base.IdentityUnitRange(0:size(z,1)-1),)
+Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
+
 @testset "Other Construction" begin
     for P in Ps
 
@@ -109,13 +123,24 @@ end
         @test degree(Polynomials.basis(P,5)) == 5
         @test Polynomials.isconstant(P(1))
         @test !Polynomials.isconstant(variable(P))
+    end
 
-        # OffsetVector
-        as = ones(3:4) # offsetvector
-        bs = [0,0,0,1,1]
-        @test P(as) == P(bs)
-        @test P{Float64}(as) == P{Float64}(bs)
+    @testset "OffsetVector" begin
+        as = ones(3:4)
+        bs = parent(as)
 
+        for P in Ps
+            @test P(as) == P(bs)
+            @test P{eltype(as)}(as) == P{eltype(as)}(bs)
+        end
+        
+        a = [1,1]
+        b = OffsetVector(a, axes(a))
+        c = ZVector(a)
+        d = ZVector(b)
+        for P in Ps
+            @test P(a) == P(b) == P(c) == P(d)
+        end
     end
 end
 

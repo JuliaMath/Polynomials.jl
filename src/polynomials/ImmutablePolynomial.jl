@@ -22,8 +22,11 @@ As the coefficient size is a compile-time constant, several performance
 improvements are possible. For example, immutable polynomials can take advantage of 
 faster polynomial evaluation provided by `evalpoly` from Julia 1.4.
 
+!!! note
+    `ImmutablePolynomial` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first 
+    index always corresponding to the constant term.
 
-    # Examples
+# Examples
 
 ```jldoctest
 julia> using  Polynomials
@@ -63,6 +66,9 @@ function ImmutablePolynomial{T,N}(coeffs::Tuple, var::SymbolLike=:x)  where {T,N
 end
 
 function ImmutablePolynomial{T,N}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {T <: Number, N, S}
+    if Base.has_offset_axes(coeffs)
+      @warn "ignoring the axis offset of the coefficient vector"
+    end
     ImmutablePolynomial{T,N}(NTuple{N,T}(tuple(coeffs...)), var)
 end
 
@@ -83,14 +89,11 @@ end
 
 # entry point from abstract.jl; note T <: Number
 function ImmutablePolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
+    if Base.has_offset_axes(coeffs)
+      @warn "ignoring the axes of the coefficient vector and treating it as a list"
+    end
     M = length(coeffs)
     ImmutablePolynomial{T}(NTuple{M,T}(tuple(coeffs...)), var)
-end
-
-function ImmutablePolynomial{T}(coeffs::OffsetArray{T,1, Array{T, 1}}, var::SymbolLike=:x) where {T <: Number}
-    cs = zeros(T, 1 + lastindex(coeffs))
-    cs[1 .+ (firstindex(coeffs):lastindex(coeffs))] = coeffs.parent
-    ImmutablePolynomial{T}(cs, var)
 end
 
 ## --
