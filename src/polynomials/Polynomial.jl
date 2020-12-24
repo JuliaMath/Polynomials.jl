@@ -141,9 +141,9 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
         end
         return Polynomial(c, p1.var)
     elseif n <= 0
-        return Polynomial(copy(p2.coeffs) * p1[0], p2.var)
+        return Polynomial(p2.coeffs * p1[0], p2.var)
     else
-        return Polynomial(copy(p1.coeffs) * p2[0], p1.var)
+        return Polynomial(p1.coeffs * p2[0], p1.var)
     end
 
 end
