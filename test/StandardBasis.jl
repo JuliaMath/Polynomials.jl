@@ -141,6 +141,8 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
         for P in Ps
             @test P(a) == P(b) == P(c) == P(d)
         end
+
+        @test ImmutablePolynomial{eltype(as), length(as)}(as) == ImmutablePolynomial(bs)
     end
 end
 
