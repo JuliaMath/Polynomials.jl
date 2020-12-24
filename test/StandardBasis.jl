@@ -70,7 +70,7 @@ struct ZVector{T,A<:AbstractVector{T}} <: AbstractVector{T}
 end
 Base.parent(z::ZVector) = z.x
 Base.size(z::ZVector) = size(parent(z))
-Base.axes(z::ZVector) = (Base.IdentityUnitRange(0:size(z,1)-1),)
+Base.axes(z::ZVector) = (OffsetArrays.IdentityUnitRange(0:size(z,1)-1),)
 Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
 
 @testset "Other Construction" begin
