@@ -1,14 +1,14 @@
 export   SparsePolynomial
 
 """
-    SparsePolynomial(coeffs::Dict, var)
+    SparsePolynomial(coeffs::Dict, [var = :x])
 
 Polynomials in the standard basis backed by a dictionary holding the
 non-zero coefficients. For polynomials of high degree, this might be
 advantageous. Addition and multiplication with constant polynomials
 are treated as having no symbol.
 
-Examples:
+# Examples:
 
 ```jldoctest
 julia> using Polynomials
@@ -42,37 +42,30 @@ julia> p(1)
 struct SparsePolynomial{T <: Number} <: StandardBasisPolynomial{T}
     coeffs::Dict{Int, T}
     var::Symbol
-    function SparsePolynomial{T}(coeffs::Dict{Int, T}, var::SymbolLike) where {T <: Number}
+    function SparsePolynomial{T}(coeffs::AbstractDict{Int, T}, var::SymbolLike) where {T <: Number}
+        c = Dict(coeffs)
         for (k,v)  in coeffs
-            iszero(v) && pop!(coeffs,  k)
+            iszero(v) && pop!(c,  k)
         end
-        new{T}(coeffs, var)
+        new{T}(c, Symbol(var))
     end
 end
 
 @register SparsePolynomial
 
 function SparsePolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
-    D = Dict{Int,T}()
-    for (i,val) in enumerate(coeffs)
-        if !iszero(val)
-            D[i-1] = val
-        end
+    firstindex(coeffs) >= 0 || throw(ArgumentError("Use the `LaurentPolynomial` type for arrays with a negative first index"))
+
+    if Base.has_offset_axes(coeffs)
+      @warn "ignoring the axis offset of the coefficient vector"
     end
-    return SparsePolynomial{T}(D, var)
+    c = OffsetArrays.no_offset_view(coeffs) # ensure 1-based indexing
+    p = Dict{Int,T}(i - 1 => v for (i,v) in pairs(c))
+    return SparsePolynomial{T}(p, var)
 end
 
-function SparsePolynomial{T}(coeffs::OffsetArray{T,1, Array{T, 1}}, var::SymbolLike=:x) where {T <: Number}
-    firstindex(coeffs) >= 0 || throw(ArgumentError("Use the `LaurentPolynomial` type for offset arrays with negative first index"))
-    D = Dict{Int, T}()
-    for i in eachindex(coeffs)
-        D[i] = coeffs[i]
-    end
-    SparsePolynomial{T}(D, var)
-end
-
-function SparsePolynomial(coeffs::Dict{Int, T}, var::SymbolLike=:x) where {T <: Number}
-    SparsePolynomial{T}(coeffs, Symbol(var))
+function SparsePolynomial(coeffs::AbstractDict{Int, T}, var::SymbolLike=:x) where {T <: Number}
+    SparsePolynomial{T}(coeffs, var)
 end
 
 

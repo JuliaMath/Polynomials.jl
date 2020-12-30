@@ -60,8 +60,9 @@ jobs:
             Pkg.instantiate()'
       - run: |
           julia --project=docs -e '
-            using Documenter: doctest
+            using Documenter: doctest, DocMeta
             using Polynomials
+            DocMeta.setdocmeta!(Polynomials, :DocTestSetup, :(using Polynomials); recursive = true)
             doctest(Polynomials)'
       - run: julia --project=docs docs/make.jl
         env:

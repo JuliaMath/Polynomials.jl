@@ -1,12 +1,16 @@
 export ChebyshevT
 
 """
-    ChebyshevT{<:Number}(coeffs::AbstractVector, var=:x)
+    ChebyshevT{<:Number}(coeffs::AbstractVector, [var = :x])
 
 Chebyshev polynomial of the first kind.
 
-Construct a polynomial from its coefficients `a`, lowest order first, optionally in
-terms of the given variable `x`. `x` can be a character, symbol, or string.
+Construct a polynomial from its coefficients `coeffs`, lowest order first, optionally in
+terms of the given variable `var`, which can be a character, symbol, or string.
+
+!!! note
+    `ChebyshevT` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first 
+    index always corresponding to the coefficient of `T_0(x)`.
 
 # Examples
 
@@ -28,20 +32,17 @@ struct ChebyshevT{T <: Number} <: AbstractPolynomial{T}
     var::Symbol
     function ChebyshevT{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
         length(coeffs) == 0 && return new{T}(zeros(T, 1), var)
-        last_nz = findlast(!iszero, coeffs)
+        if Base.has_offset_axes(coeffs)
+            @warn "ignoring the axis offset of the coefficient vector"
+        end
+        c = OffsetArrays.no_offset_view(coeffs)
+        last_nz = findlast(!iszero, c)
         last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T}(coeffs[1:last], var)
+        return new{T}(c[1:last], var)
     end
 end
 
 @register ChebyshevT
-
-function ChebyshevT{T}(coeffs::OffsetArray{T,1, Array{T, 1}}, var::SymbolLike=:x) where {T <: Number}
-    cs = zeros(T, 1 + lastindex(coeffs))
-    cs[1 .+ (firstindex(coeffs):lastindex(coeffs))] = coeffs.parent
-    ChebyshevT{T}(cs, var)
-end
-
 
 function Base.convert(P::Type{<:Polynomial}, ch::ChebyshevT)
     if length(ch) < 3
