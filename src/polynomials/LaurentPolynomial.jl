@@ -1,18 +1,25 @@
 export LaurentPolynomial
 
 """
-    LaurentPolynomial(coeffs, range, var)
+    LaurentPolynomial(coeffs::AbstractVector, [m::Integer = 0], [var = :x])
 
 A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of the form `a_{m}x^m + ... + a_{n}x^n` where `m,n` are  integers (not necessarily positive) with ` m <= n`.
 
-The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. The range specified is of the  form  `m`,  if left  empty, `m` is taken to be `0` (i.e.,  the coefficients refer  to the standard basis). Alternatively, the coefficients can be specified using an `OffsetVector` from the `OffsetArrays` package.
+The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. 
+The argument `m` represents the lowest exponent of the variable in the series, and is taken to be zero by default.
 
-Laurent polynomials and standard basis polynomials  promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`
+Laurent polynomials and standard basis polynomials promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`
 .
 
 Integration will fail if there is a `x⁻¹` term in the polynomial.
 
-Example:
+!!! note
+    `LaurentPolynomial` is not axis-aware by default, and it treats `coeffs` simply as a 
+    list of coefficients with the first index always corresponding to the constant term. 
+    In order to use the axis of `coeffs` as the exponents of the variable `var`, 
+    set `m` to `firstindex(coeff)` in the constructor.
+
+# Examples:
 ```jldoctest laurent
 julia> using Polynomials
 
@@ -74,19 +81,22 @@ struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
                                   m::Int,
                                   var::Symbol=:x) where {T <: Number}
 
-
+        if Base.has_offset_axes(coeffs)
+          @warn "ignoring the axis offset of the coefficient vector"
+        end
+        c = OffsetArrays.no_offset_view(coeffs) # ensure 1-based indexing
         # trim zeros from front and back
-        lnz = findlast(!iszero, coeffs)
-        fnz = findfirst(!iszero, coeffs)
-        (lnz == nothing || length(coeffs) == 0) && return new{T}(zeros(T,1), var, Ref(0), Ref(0))
-        coeffs =  coeffs[fnz:lnz]
+        lnz = findlast(!iszero, c)
+        fnz = findfirst(!iszero, c)
+        (lnz == nothing || length(c) == 0) && return new{T}(zeros(T,1), var, Ref(0), Ref(0))
+        c = c[fnz:lnz]
+        
         m = m + fnz - 1
         n = m + (lnz-fnz)
 
-        (n-m+1  == length(coeffs)) || throw(ArgumentError("Lengths do not match"))
+        (n-m+1  == length(c)) || throw(ArgumentError("Lengths do not match"))
 
-        new{T}(coeffs, var, Ref(m),  Ref(n))
-
+        new{T}(c, var, Ref(m),  Ref(n))
     end
 end
 
@@ -103,18 +113,9 @@ function LaurentPolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) whe
     LaurentPolynomial{T}(coeffs, 0, var)
 end
 
-function  LaurentPolynomial{T}(coeffs::OffsetArray{T, 1, Array{T,1}}, var::SymbolLike=:x) where {
-    T<:Number}
-    m,n = axes(coeffs, 1)
-    LaurentPolynomial{T}(T.(coeffs.parent), m, Symbol(var))
-end
-
 function LaurentPolynomial(coeffs::AbstractVector{T}, m::Int, var::SymbolLike=:x) where {T <: Number}
     LaurentPolynomial{T}(coeffs, m, Symbol(var))
 end
-
-
-
 
 ## Alternate with range specified
 ## Deprecate

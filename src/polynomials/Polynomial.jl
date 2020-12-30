@@ -1,10 +1,10 @@
 export Polynomial
 
 """
-    Polynomial{T<:Number}(coeffs::AbstractVector{T}, var=:x)
+    Polynomial{T<:Number}(coeffs::AbstractVector{T}, [var = :x])
 
-Construct a polynomial from its coefficients `a`, lowest order first, optionally in
-terms of the given variable `x`. `x` can be a character, symbol, or string.
+Construct a polynomial from its coefficients `coeffs`, lowest order first, optionally in
+terms of the given variable `var` which may be a character, symbol, or a string.
 
 If ``p = a_n x^n + \\ldots + a_2 x^2 + a_1 x + a_0``, we construct this through
 `Polynomial([a_0, a_1, ..., a_n])`.
@@ -13,13 +13,12 @@ The usual arithmetic operators are overloaded to work with polynomials as well a
 with combinations of polynomials and scalars. However, operations involving two
 polynomials of different variables causes an error except those involving a constant polynomial.
 
-# Examples
-```@meta
-DocTestSetup = quote
-    using Polynomials
-end
-```
+!!! note
+    `Polynomial` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first 
+    index always corresponding to the constant term. In order to use the axis of `coeffs` as exponents, 
+    consider using a [`LaurentPolynomial`](@ref) or possibly a [`SparsePolynomial`](@ref).
 
+# Examples
 ```jldoctest
 julia> Polynomial([1, 0, 3, 4])
 Polynomial(1 + 3*x^2 + 4*x^3)
@@ -34,48 +33,24 @@ Polynomial(1.0)
 struct Polynomial{T <: Number} <: StandardBasisPolynomial{T}
     coeffs::Vector{T}
     var::Symbol
-    function Polynomial{T}(coeffs::Vector{T}, var::Symbol) where {T <: Number}
+    function Polynomial{T}(coeffs::AbstractVector{T}, var::Symbol) where {T <: Number}
+        if Base.has_offset_axes(coeffs)
+          @warn "ignoring the axis offset of the coefficient vector"
+        end
         length(coeffs) == 0 && return new{T}(zeros(T, 1), var)
-        last_nz = findlast(!iszero, coeffs)
+        c = OffsetArrays.no_offset_view(coeffs) # ensure 1-based indexing
+        last_nz = findlast(!iszero, c)
         last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T}(coeffs[1:last], var)
+        return new{T}(c[1:last], var)
     end
 end
 
 @register Polynomial
 
-
-function Polynomial{T}(coeffs::OffsetArray{T,1,Array{T,1}}, var::SymbolLike=:x) where {T <: Number}
-    m = firstindex(coeffs)
-    if m < 0
-        ## depwarn
-        Base.depwarn("Use the `LaurentPolynomial` type for offset vectors with negative first index",
-                     :Polynomial)
-        LaurentPolynomial{T}(coeffs, var)
-    else
-        cs = zeros(T, 1 + lastindex(coeffs))
-        cs[1 .+ (firstindex(coeffs):lastindex(coeffs))] = coeffs.parent
-        Polynomial{T}(cs, var)
-    end
-end
-
-
 """
     (p::Polynomial)(x)
 
 Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division, as implemented in `evalpoly` of base `Julia`.
-
-```@meta
-DocTestSetup = quote
-    using Polynomials
-end
-```
-
-```@meta
-DocTestSetup = quote
-    using Polynomials
-end
-```
 
 # Examples
 ```jldoctest
@@ -99,29 +74,32 @@ julia> p.(0:3)
    
 function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
     n1, n2 = length(p1), length(p2)
-    R = promote_type(T,S)
     if n1 > 1 && n2 > 1
        p1.var != p2.var && error("Polynomials must have same variable")
+    end
+    R = promote_type(T,S)
+    c = zeros(R, max(n1, n2))
+    if n1 > 1 && n2 > 1
        if n1 >= n2
-          c = R.(copy(p1.coeffs))
-          for i = 1:n2
+          c .= p1.coeffs
+          for i = eachindex(p2.coeffs)
             c[i] += p2.coeffs[i]
           end
         else
-            c = R.(copy(p2.coeffs))
-            for i = 1:n1
+            c .= p2.coeffs
+            for i = eachindex(p1.coeffs)
               c[i] += p1.coeffs[i]
             end
         end
         return Polynomial(c, p1.var)
     elseif n1 <= 1
-       c = R.(copy(p2.coeffs))
-       c[1] += p1[0]
-       return Polynomial(c, p2.var)
+      c .= p2.coeffs
+      c[1] += p1[0]
+      return Polynomial(c, p2.var)
     else 
-       c = R.(copy(p1.coeffs))
-       c[1] += p2[0]
-       return Polynomial(c, p1.var)
+      c .= p1.coeffs
+      c[1] += p2[0]
+      return Polynomial(c, p1.var)
     end
 end
 
@@ -138,9 +116,9 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
         end
         return Polynomial(c, p1.var)
     elseif n <= 0
-        return Polynomial(copy(p2.coeffs) * p1[0], p2.var)
+        return Polynomial(p2.coeffs * p1[0], p2.var)
     else
-        return Polynomial(copy(p1.coeffs) * p2[0], p1.var)
+        return Polynomial(p1.coeffs * p2[0], p1.var)
     end
 
 end
