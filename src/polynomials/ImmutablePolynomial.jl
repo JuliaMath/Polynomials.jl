@@ -226,14 +226,19 @@ function Base.:+(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) whe
 
 end
 
-
+# not type stable!!!
 function Base.:*(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) where {T,N,S,M}
     isconstant(p1) && return p2 * p1[0] 
     isconstant(p2) && return p1 * p2[0]
     p1.var != p2.var && error("Polynomials must have same variable")
     R = promote_type(S,T)
     cs = (p1.coeffs) ⊗ (p2.coeffs)
-    ImmutablePolynomial{R, N+M-1}(cs, p1.var)
+    if !iszero(cs[end])
+        return ImmutablePolynomial{R, N+M-1}(cs, p1.var)
+    else
+        n = findlast(!iszero, cs)
+        return ImmutablePolynomial{R, n}(cs[1:n], p1.var)
+    end
 end
 
 # Padded vector sum of two tuples assuming N > M
