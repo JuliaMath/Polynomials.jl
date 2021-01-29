@@ -374,18 +374,18 @@ f(x) = 1/(1 + 25x^2)
 N = 80; xs = [cos(j*pi/N) for j in N:-1:0];
 p = fit(Polynomial, xs, f.(xs));
 q = fit(ArnoldiFit, xs, f.(xs));
-maximum(abs, p(x) - f(x) for x ∈ range(-1,1,length=500)) # 3.304586010148457e16
-maximum(abs, q(x) - f(x) for x ∈ range(-1,1,length=500)) # 1.1939520722092922e-7
+maximum(abs, p(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 3.304586010148457e16
+maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 1.1939520722092922e-7
 
 N = 250; xs = [cos(j*pi/N) for j in N:-1:0];
 p = fit(Polynomial, xs, f.(xs));
 q = fit(ArnoldiFit, xs, f.(xs));
-maximum(abs, p(x) - f(x) for x ∈ range(-1,1,length=500)) # 3.55318186254542e92
-maximum(abs, q(x) - f(x) for x ∈ range(-1,1,length=500)) # 8.881784197001252e-16
+maximum(abs, p(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 3.55318186254542e92
+maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 8.881784197001252e-16
 
 p = fit(Polynomial, xs, f.(xs), 10); # least-squares fit
 q = fit(ArnoldiFit, xs, f.(xs), 10);
-maximum(abs, q(x) - p(x) for x ∈ range(-1,1,length=500)) # 4.6775083806238626e-14
+maximum(abs, q(x) - p(x) for x ∈ range(-1,stop=1,length=500)) # 4.6775083806238626e-14
 Polynomials.norm(q-p, Inf) # 2.2168933355715126e-12 # promotes `q` to `Polynomial`
 ```
 
