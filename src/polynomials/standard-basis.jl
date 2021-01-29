@@ -394,7 +394,8 @@ function polyfitA(x, y, n=length(x)-1; var=:x)
     m = length(x)
     T = eltype(y)
     Q = ones(T, m, n+1)
-    H = UpperHessenberg(zeros(T, n+1, n))
+    #H = UpperHessenberg(zeros(T, n+1, n))
+    H = zeros(T, n+1, n)
 
     q = zeros(T, m)
 
