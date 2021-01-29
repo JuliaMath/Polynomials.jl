@@ -354,9 +354,9 @@ end
     f(x) = 1/(1 + 25x^2)
     N = 250; xs = [cos(j*pi/N) for j in N:-1:0];
     q = fit(ArnoldiFit, xs, f.(xs));
-    @test maximum(abs, q(x) - f(x) for x ∈ range(-1,1,length=500)) < 10eps()
+    @test maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) < 10eps()
     q = fit(ArnoldiFit, xs, f.(xs), 100);
-    @test maximum(abs, q(x) - f(x) for x ∈ range(-1,1,length=500)) < sqrt(eps())
+    @test maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) < sqrt(eps())
 
 
     # test default   (issue  #228)
