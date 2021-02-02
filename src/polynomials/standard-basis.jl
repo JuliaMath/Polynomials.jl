@@ -344,6 +344,113 @@ function _polynomial_fit(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T
     P(R.(coeffs), var)
 end
 
+## --------------------------------------------------
+## More accurate fitting for higher degree polynomials
+
+"""
+    polyfitA(x, y, n=length(x)-1; var=:x)
+    fit(ArnoldiFit, x, y, n=length(x)-1; var=:x)
+
+Fit a degree ``n`` or less polynomial through the points ``(x_i, y_i)`` using Arnoldi orthogonalization of the Vandermonde matrix.
+
+The use of a Vandermonde matrix to fit a polynomial to data is exponentially ill-conditioned for larger values of ``n``. The Arnoldi orthogonalization fixes this problem.
+
+# Returns
+
+Returns an instance of `ArnoldiFit`. This object can be used to evaluate the polynomial. To manipulate the polynomial, the object can be `convert`ed to other polynomial types, though there may be some loss in accuracy when doing polynomial evaluations afterwards for higher-degree polynomials.
+
+# Citations:
+
+The two main functions are translations from example code in:
+
+*VANDERMONDE WITH ARNOLDI*;
+PABLO D. BRUBECK, YUJI NAKATSUKASA, AND LLOYD N. TREFETHEN;
+[arXiv:1911.09988](https://people.maths.ox.ac.uk/trefethen/vander_revised.pdf)
+
+# Examples:
+
+```
+f(x) = 1/(1 + 25x^2)
+N = 80; xs = [cos(j*pi/N) for j in N:-1:0];
+p = fit(Polynomial, xs, f.(xs));
+q = fit(ArnoldiFit, xs, f.(xs));
+maximum(abs, p(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 3.304586010148457e16
+maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 1.1939520722092922e-7
+
+N = 250; xs = [cos(j*pi/N) for j in N:-1:0];
+p = fit(Polynomial, xs, f.(xs));
+q = fit(ArnoldiFit, xs, f.(xs));
+maximum(abs, p(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 3.55318186254542e92
+maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 8.881784197001252e-16
+
+p = fit(Polynomial, xs, f.(xs), 10); # least-squares fit
+q = fit(ArnoldiFit, xs, f.(xs), 10);
+maximum(abs, q(x) - p(x) for x ∈ range(-1,stop=1,length=500)) # 4.6775083806238626e-14
+Polynomials.norm(q-p, Inf) # 2.2168933355715126e-12 # promotes `q` to `Polynomial`
+```
+
+"""
+function polyfitA(x, y, n=length(x)-1; var=:x)
+    m = length(x)
+    T = eltype(y)
+    Q = ones(T, m, n+1)
+    #H = UpperHessenberg(zeros(T, n+1, n))
+    H = zeros(T, n+1, n)
+
+    q = zeros(T, m)
+
+    @inbounds for k = 1:n
+        q .= x .* Q[:,k]
+        for j in 1:k
+            λ = dot(Q[:,j], q)/m
+            H[j,k] = λ
+            q .-= λ * Q[:,j]
+        end
+        H[k+1,k] = norm(q)/sqrt(m)
+        Q[:,k+1] .= q/H[k+1,k]
+    end
+    d = Q \ y
+    ArnoldiFit(d, H, var)
+end
+
+function polyvalA(d, H::AbstractMatrix{S}, s::T) where {T, S}
+    R = promote_type(T,S)
+    n = length(d) - 1
+    W = ones(R, n+1)
+    @inbounds for k in 1:n
+        w = s .* W[k]
+        for j in 1:k
+            w -= H[j,k] * W[j]
+        end
+        W[k+1] = w/H[k+1,k]
+    end
+    sum(W[i]*d[i] for i in eachindex(d))
+end
+
+# Polynomial Interface
+"""
+    ArnoldiFit
+
+A polynomial type produced through fitting a degree ``n`` or less polynomial to data ``(x_1,y_1),…,(x_N, y_N), N ≥ n+1``, This uses Arnoldi orthogonalization to avoid the exponentially ill-conditioned Vandermonde polynomial. See [`Polynomials.polyfitA`](@ref) for details.
+"""
+struct ArnoldiFit{T, M<:AbstractArray{T,2}}  <: AbstractPolynomial{T}
+    coeffs::Vector{T}
+    H::M
+    var::Symbol
+end
+export ArnoldiFit
+@register ArnoldiFit
+domain(::Type{<:ArnoldiFit}) = Interval(-Inf, Inf)
+
+Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "ArnoldiFit of degree $(length(p.coeffs)-1)")
+
+(p::ArnoldiFit)(x) = polyvalA(p.coeffs, p.H, x)
+
+fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T} = polyfitA(x, y, deg; var=var)
+
+Base.convert(::Type{P}, p::ArnoldiFit) where {P <: AbstractPolynomial} = p(variable(P,p.var))
+
+
 
 
 ## --------------------------------------------------
@@ -365,7 +472,7 @@ As noted, this reflects the accuracy of a backward stable computation performed 
 
 Pointed out in https://discourse.julialang.org/t/more-accurate-evalpoly/45932/5.
 """
-function compensated_horner(p::P, x) where {T, P <: Polynomials.StandardBasisPolynomial{T}}
+function compensated_horner(p::P, x) where {T, P <: StandardBasisPolynomial{T}}
     compensated_horner(coeffs(p), x)
 end
 
@@ -425,7 +532,7 @@ end
 # Condition number of a standard basis polynomial
 # rule of thumb: p̂ a compute value
 # |p(x) - p̃(x)|/|p(x)| ≤ α(n)⋅u ⋅ cond(p,x), where u = finite precision of compuation (2^-p)
-function LinearAlgebra.cond(p::P, x) where {P <: Polynomials.StandardBasisPolynomial}
+function LinearAlgebra.cond(p::P, x) where {P <: StandardBasisPolynomial}
     p̃ = map(abs, p)
     p̃(abs(x))/ abs(p(x))
 end

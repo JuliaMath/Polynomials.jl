@@ -84,6 +84,8 @@ this will use weighted linear least squares. That is, the norm of
 using their squares: for a number use `w^2`, for a vector `wᵢ^2`, and for a matrix
  specify `W'*W`. This behavior may change in the future.)
 
+For fitting with a large degree, the Vandermonde matrix is exponentially ill-conditioned. The [`ArnoldiFit`](@ref) type introduces an Arnoldi orthogonalization that fixes this problem.
+
 """
 function fit(P::Type{<:AbstractPolynomial},
              x::AbstractVector{T},
