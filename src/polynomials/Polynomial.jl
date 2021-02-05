@@ -1,7 +1,7 @@
 export Polynomial
 
 """
-    Polynomial{T<:Number}(coeffs::AbstractVector{T}, [var = :x])
+    Polynomial{T<:Number, X}(coeffs::AbstractVector{T}, [var = :x])
 
 Construct a polynomial from its coefficients `coeffs`, lowest order first, optionally in
 terms of the given variable `var` which may be a character, symbol, or a string.
@@ -30,18 +30,17 @@ julia> one(Polynomial)
 Polynomial(1.0)
 ```
 """
-struct Polynomial{T <: Number} <: StandardBasisPolynomial{T}
+struct Polynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
-    var::Symbol
-    function Polynomial{T}(coeffs::AbstractVector{T}, var::Symbol) where {T <: Number}
+    function Polynomial{T, X}(coeffs::AbstractVector{T}) where {T <: Number, X}
         if Base.has_offset_axes(coeffs)
           @warn "ignoring the axis offset of the coefficient vector"
         end
-        length(coeffs) == 0 && return new{T}(zeros(T, 1), var)
+        length(coeffs) == 0 && return new{T,X}(zeros(T, 1))
         c = OffsetArrays.no_offset_view(coeffs) # ensure 1-based indexing
         last_nz = findlast(!iszero, c)
         last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T}(c[1:last], var)
+        return new{T, X}(c[1:last])
     end
 end
 
@@ -75,7 +74,7 @@ julia> p.(0:3)
 function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
     n1, n2 = length(p1), length(p2)
     if n1 > 1 && n2 > 1
-       p1.var != p2.var && error("Polynomials must have same variable")
+       var(p1) != var(p2) && error("Polynomials must have same variable")
     end
     R = promote_type(T,S)
     c = zeros(R, max(n1, n2))
@@ -91,15 +90,15 @@ function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
               c[i] += p1.coeffs[i]
             end
         end
-        return Polynomial(c, p1.var)
+        return Polynomial{R, var(p1)}(c)
     elseif n1 <= 1
       c .= p2.coeffs
       c[1] += p1[0]
-      return Polynomial(c, p2.var)
+      return Polynomial{R, var(p2)}(c)
     else 
       c .= p1.coeffs
       c[1] += p2[0]
-      return Polynomial(c, p1.var)
+      return Polynomial{R, var(p1)}(c)
     end
 end
 
@@ -108,17 +107,19 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
 
     n, m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
     if n > 0 && m > 0
-        p1.var != p2.var && error("Polynomials must have same variable")
+        var(p1) != var(p2) && error("Polynomials must have same variable")
         R = promote_type(T, S)
         c = zeros(R, m + n + 1)
         for i in 0:n, j in 0:m
             @inbounds c[i + j + 1] += p1[i] * p2[j]
         end
-        return Polynomial(c, p1.var)
+        return Polynomial{R, var(p1)}(c)
     elseif n <= 0
-        return Polynomial(p2.coeffs * p1[0], p2.var)
+        cs = p2.coeffs * p1[0]
+        return Polynomial{eltype(cs), var(p2)}(cs)
     else
-        return Polynomial(p1.coeffs * p2[0], p1.var)
+        cs = p1.coeffs * p2[0]
+        return Polynomial{eltype(cs), var(p1)}(cs)
     end
 
 end

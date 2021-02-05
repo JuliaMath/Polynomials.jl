@@ -275,7 +275,7 @@ end
 Check if either `p` or `q` is constant or if `p` and `q` share the same variable
 """
 check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial) =
-    (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || p.var ==  q.var
+    (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || var(p) ==  var(q)
 
 #=
 Linear Algebra =#
@@ -508,10 +508,18 @@ Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
 #=
 identity =#
 Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(coeffs(p)))
-Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
+Base.hash(p::AbstractPolynomial, h::UInt) = hash(var(p), hash(coeffs(p), h))
 
 #=
 zero, one, variable, basis =#
+
+var(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
+var(::Type{P}) where {P <: AbstractPolynomial} = :x
+var(p::AbstractPolynomial{T, X}) where {T, X} = X
+export var
+
+
+
 """
     zero(::Type{<:AbstractPolynomial})
     zero(::AbstractPolynomial)
@@ -519,7 +527,7 @@ zero, one, variable, basis =#
 Returns a representation of 0 as the given polynomial.
 """
 Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(zeros(eltype(P), 1), var)
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
+Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, var(p))
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
@@ -527,7 +535,7 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(ones(eltype(P),1), var)  # assumes  p₀ = 1
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
+Base.one(p::P) where {P <: AbstractPolynomial} = one(P, var(p))
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
@@ -536,7 +544,7 @@ Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
 """
     variable(var=:x)
     variable(::Type{<:AbstractPolynomial}, var=:x)
-    variable(p::AbstractPolynomial, var=p.var)
+    variable(p::AbstractPolynomial, var=var(p))
 
 Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
 
@@ -558,7 +566,7 @@ julia> roots((x - 3) * (x + 2))
 ```
 """
 variable(::Type{P}, var::SymbolLike = :x) where {P <: AbstractPolynomial} = MethodError()
-variable(p::AbstractPolynomial, var::SymbolLike = p.var) = variable(typeof(p), var)
+variable(p::AbstractPolynomial, var::SymbolLike = var(p)) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
 # basis

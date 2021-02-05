@@ -3,15 +3,14 @@ export AbstractPolynomial
 const SymbolLike = Union{AbstractString,Char,Symbol}
 
 """
-    AbstractPolynomial{T}
+    AbstractPolynomial{T, X}
 
 An abstract container for various polynomials. 
 
 # Properties
 - `coeffs` - The coefficients of the polynomial
-- `var` - The indeterminate of the polynomial
 """
-abstract type AbstractPolynomial{T} end
+abstract type AbstractPolynomial{T, X} end
 
 # We want  ⟒(P{α…,T}) = P{α…}; this default
 # works for most cases
@@ -19,7 +18,7 @@ abstract type AbstractPolynomial{T} end
 
 # convert `as` into polynomial of type P based on instance, inheriting variable
 # (and for LaurentPolynomial the offset)
-_convert(p::P, as) where {P <: AbstractPolynomial} = ⟒(P)(as, p.var)
+_convert(p::P, as) where {P <: AbstractPolynomial} = ⟒(P)(as, var(P))
 
 """
     Polynomials.@register(name)
@@ -42,20 +41,22 @@ macro register(name)
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.convert(P::Type{<:$poly}, p::$poly{T}) where {T} = P(coeffs(p), p.var)
-        Base.promote(p::P, q::Q) where {T, P <:$poly{T}, Q <: $poly{T}} = p,q
-        Base.promote_rule(::Type{<:$poly{T}}, ::Type{<:$poly{S}}) where {T,S} =
-            $poly{promote_type(T, S)}
-        Base.promote_rule(::Type{<:$poly{T}}, ::Type{S}) where {T,S<:Number} =
-            $poly{promote_type(T, S)}
+        Base.convert(P::Type{<:$poly}, p::$poly{T}) where {T} = P(coeffs(p), var(p))
+        Base.promote(p::P, q::Q) where {X, T, P <:$poly{T,X}, Q <: $poly{T,X}} = p,q
+        Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{<:$poly{S,X}}) where {T,S,X} =
+            $poly{promote_type(T, S,X)}
+        Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{S}) where {T,S<:Number,X} =
+            $poly{promote_type(T, S),X}
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =
-            $poly{T}(coeffs, Symbol(var))
+            $poly{T, Symbol(var)}(coeffs)
         $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S<:Number} =
             $poly(T.(x), Symbol(var))
         function $poly(coeffs::G, var::SymbolLike=:x) where {G}
             !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
             $poly(collect(coeffs), var)
         end
+        $poly{T,X}(n::S) where {X, T, S<:Number} =
+            n *  one($poly{T}, X)
         $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
             n *  one($poly{T}, Symbol(var))
         $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S}, Symbol(var))

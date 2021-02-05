@@ -93,7 +93,7 @@ end
 ###
 
 """
-    printpoly(io::IO, p::AbstractPolynomial, mimetype = MIME"text/plain"(); descending_powers=false, offset::Int=0, var=p.var, compact=false, mulsymbol="*")
+    printpoly(io::IO, p::AbstractPolynomial, mimetype = MIME"text/plain"(); descending_powers=false, offset::Int=0, var=var(p), compact=false, mulsymbol="*")
 
 Print a human-readable representation of the polynomial `p` to `io`. The MIME
 types "text/plain" (default), "text/latex", and "text/html" are supported. By
@@ -133,7 +133,7 @@ julia> printpoly(stdout, map(x -> round(x, digits=12), p))  # more control on ro
 ```
 """
 function printpoly(io::IO, p::P, mimetype=MIME"text/plain"();
-                   descending_powers=false, offset::Int=0, var=p.var,
+                   descending_powers=false, offset::Int=0, var=var(p),
                    compact=false, mulsymbol="*") where {T,P<:AbstractPolynomial{T}}
     first = true
     printed_anything = false

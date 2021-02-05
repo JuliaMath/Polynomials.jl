@@ -1,4 +1,4 @@
-abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
+abstract type StandardBasisPolynomial{T,X} <: AbstractPolynomial{T,X} end
 
 
 
@@ -26,7 +26,7 @@ mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 ## generic test if polynomial `p` is a constant
 isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 
-Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
+Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], var(q))
 
 Base.values(p::StandardBasisPolynomial) = values(p.coeffs)
 
@@ -63,10 +63,10 @@ function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolyno
     # Base.promote_op(*, Complex, Int)
     R = eltype(one(T)*1)
     order == 0 && return p
-    hasnan(p) && return ⟒(P){R}(R[NaN], p.var)
-    order > length(p) && return zero(⟒(P){R},p.var)
+    hasnan(p) && return ⟒(P){R}(R[NaN], var(p))
+    order > length(p) && return zero(⟒(P){R},var(p))
     d = degree(p)
-    d <= 0 && return zero(⟒(P){R},p.var)
+    d <= 0 && return zero(⟒(P){R},var(p))
     n = d + 1
     a2 = Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1
@@ -95,7 +95,7 @@ end
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
 
     check_same_variable(num, den) || error("Polynomials must have same variable")
-    var = num.var
+    var = var(num)
 
 
     n = degree(num)
@@ -284,7 +284,7 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
     k  == K && return zeros(R, k-1)
 
     # find eigenvalues of the  companion matrix
-    comp  = companion(⟒(P)(as[k:K], p.var))
+    comp  = companion(⟒(P)(as[k:K], var(p)))
     L = eigvals(comp; kwargs...)
     append!(L, zeros(eltype(L), k-1))
 
@@ -433,10 +433,9 @@ end
 
 A polynomial type produced through fitting a degree ``n`` or less polynomial to data ``(x_1,y_1),…,(x_N, y_N), N ≥ n+1``, This uses Arnoldi orthogonalization to avoid the exponentially ill-conditioned Vandermonde polynomial. See [`Polynomials.polyfitA`](@ref) for details.
 """
-struct ArnoldiFit{T, M<:AbstractArray{T,2}}  <: AbstractPolynomial{T}
+struct ArnoldiFit{T, M<:AbstractArray{T,2}, X}  <: AbstractPolynomial{T,X}
     coeffs::Vector{T}
     H::M
-    var::Symbol
 end
 export ArnoldiFit
 @register ArnoldiFit
@@ -448,7 +447,7 @@ Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "Arnold
 
 fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T} = polyfitA(x, y, deg; var=var)
 
-Base.convert(::Type{P}, p::ArnoldiFit) where {P <: AbstractPolynomial} = p(variable(P,p.var))
+Base.convert(::Type{P}, p::ArnoldiFit) where {P <: AbstractPolynomial} = p(variable(P,var(p)))
 
 
 
