@@ -3,14 +3,14 @@ export AbstractPolynomial
 const SymbolLike = Union{AbstractString,Char,Symbol}
 
 """
-    AbstractPolynomial{T, X}
+    AbstractPolynomial{T}
 
 An abstract container for various polynomials. 
 
 # Properties
 - `coeffs` - The coefficients of the polynomial
 """
-abstract type AbstractPolynomial{T, X} end
+abstract type AbstractPolynomial{T,X} end
 
 # We want  ⟒(P{α…,T}) = P{α…}; this default
 # works for most cases
@@ -18,7 +18,7 @@ abstract type AbstractPolynomial{T, X} end
 
 # convert `as` into polynomial of type P based on instance, inheriting variable
 # (and for LaurentPolynomial the offset)
-_convert(p::P, as) where {P <: AbstractPolynomial} = ⟒(P)(as, var(P))
+_convert(p::P, as) where {P <: AbstractPolynomial} = ⟒(P){eltype(as), var(P)}(as)  # ⟒(P)(as, var(P))
 
 """
     Polynomials.@register(name)
@@ -50,17 +50,18 @@ macro register(name)
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =
             $poly{T, Symbol(var)}(coeffs)
         $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S<:Number} =
-            $poly(T.(x), Symbol(var))
+            $poly{T,Symbol(var)}(T.(x))
         function $poly(coeffs::G, var::SymbolLike=:x) where {G}
             !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
-            $poly(collect(coeffs), var)
+            cs = collect(coeffs)
+            $poly{eltype(cs), Symbol(var)}(cs)
         end
-        $poly{T,X}(n::S) where {X, T, S<:Number} =
-            n *  one($poly{T}, X)
+        $poly{T,X}(n::S) where {T, X, S<:Number} =
+            n *  one($poly{T, X})
         $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
             n *  one($poly{T}, Symbol(var))
-        $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S}, Symbol(var))
-        $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T}, Symbol(var))
+        $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S, Symbol(var)})
+        $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T, Symbol(var)})
         $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
     end
 end

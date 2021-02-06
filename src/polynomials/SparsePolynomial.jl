@@ -1,7 +1,7 @@
 export   SparsePolynomial
 
 """
-    SparsePolynomial(coeffs::Dict, [var = :x])
+    SparsePolynomial{T, X}(coeffs::Dict, [var = :x])
 
 Polynomials in the standard basis backed by a dictionary holding the
 non-zero coefficients. For polynomials of high degree, this might be
@@ -39,21 +39,20 @@ julia> p(1)
 ```
 
 """
-struct SparsePolynomial{T <: Number} <: StandardBasisPolynomial{T}
+struct SparsePolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Dict{Int, T}
-    var::Symbol
-    function SparsePolynomial{T}(coeffs::AbstractDict{Int, T}, var::SymbolLike) where {T <: Number}
+    function SparsePolynomial{T, X}(coeffs::AbstractDict{Int, T}) where {T <: Number, X}
         c = Dict(coeffs)
         for (k,v)  in coeffs
             iszero(v) && pop!(c,  k)
         end
-        new{T}(c, Symbol(var))
+        new{T, X}(c)
     end
 end
 
 @register SparsePolynomial
 
-function SparsePolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
+function SparsePolynomial{T,X}(coeffs::AbstractVector{T}) where {T <: Number, X}
     firstindex(coeffs) >= 0 || throw(ArgumentError("Use the `LaurentPolynomial` type for arrays with a negative first index"))
 
     if Base.has_offset_axes(coeffs)
@@ -61,36 +60,23 @@ function SparsePolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) wher
     end
     c = OffsetArrays.no_offset_view(coeffs) # ensure 1-based indexing
     p = Dict{Int,T}(i - 1 => v for (i,v) in pairs(c))
-    return SparsePolynomial{T}(p, var)
+    return SparsePolynomial{T,X}(p)
 end
 
 function SparsePolynomial(coeffs::AbstractDict{Int, T}, var::SymbolLike=:x) where {T <: Number}
-    SparsePolynomial{T}(coeffs, var)
+    SparsePolynomial{T, Symbol(var)}(coeffs)
 end
 
 
-# Interface through `Polynomial`. As with ImmutablePolynomial, this may not be  good idea...
-# Deprecated
-function Polynomial{T}(coeffs::Dict{Int,T}, var::SymbolLike = :x) where {T}
-    Base.depwarn("Use of `Polynomial(Dict, var)` is deprecated. Use the `SparsePolynomial` constructor",
-            :Polynomial)
-    SparsePolynomial{T}(coeffs, var)
-end
-
-function Polynomial(coeffs::Dict{Int,T}, var::SymbolLike = :x) where {T}
-    Base.depwarn("Use of `Polynomial(Dict, var)` is deprecated. Use the `SparsePolynomial` constructor",
-                 :Polynomial)
-    SparsePolynomial{T}(coeffs, var)
-end
 
 # conversion
 function Base.convert(P::Type{<:Polynomial}, q::SparsePolynomial)
-    ⟒(P)(coeffs(q), q.var)
+    ⟒(P)(coeffs(q), var(q))
 end
 
 function Base.convert(P::Type{<:SparsePolynomial}, q::StandardBasisPolynomial{T}) where {T}
     R = promote(eltype(P), T)
-    ⟒(P){R}(coeffs(q), q.var)
+    ⟒(P){R}(coeffs(q), var(q))
 end
 
 ## changes to common
@@ -101,8 +87,11 @@ function isconstant(p::SparsePolynomial)
     return true
 end
 
-basis(P::Type{<:SparsePolynomial}, n::Int, var::SymbolLike=:x) =
-    SparsePolynomial(Dict(n=>one(eltype(one(P)))), var)
+function basis(P::Type{<:SparsePolynomial}, n::Int, var::SymbolLike=:x) 
+    T = eltype(P)
+    X = Symbol(var)
+    SparsePolynomial{T,X}(Dict(n=>one(T)))
+end
 
 # return coeffs as  a vector
 # use p.coeffs to get Dictionary
@@ -196,17 +185,15 @@ end
 
 
    
-function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
+function Base.:+(p1::SparsePolynomial{T,X}, p2::SparsePolynomial{S,Y}) where {T, X, S, Y}
 
     isconstant(p1) && return p2 + p1[0]
     isconstant(p2) && return p1 + p2[0]
 
-    p1.var != p2.var && error("SparsePolynomials must have same variable")
+    X != Y && error("SparsePolynomials must have same variable")
 
     R = promote_type(T,S)
-    P = SparsePolynomial
-
-    p = zero(P{R}, p1.var)
+    p = zero(SparsePolynomial{R,X})
 
     # this allocates in the union
 #    for i in union(eachindex(p1), eachindex(p2)) 
@@ -228,12 +215,12 @@ function Base.:+(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T, S}
 
 end
 
-function Base.:+(p::SparsePolynomial{T}, c::S) where {T, S <: Number}
+function Base.:+(p::SparsePolynomial{T,X}, c::S) where {T, X, S <: Number}
 
     R = promote_type(T,S)
     P = SparsePolynomial
     
-    q = zero(P{R}, p.var)
+    q = zero(P{R,X})
     for k in eachindex(p)
         @inbounds q[k] = R(p[k])
     end
@@ -242,16 +229,16 @@ function Base.:+(p::SparsePolynomial{T}, c::S) where {T, S <: Number}
     return q
 end
 
-function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
+function Base.:*(p1::SparsePolynomial{T,X}, p2::SparsePolynomial{S,Y}) where {T,X,S,Y}
 
     isconstant(p1) && return p2 * p1[0]
     isconstant(p2) && return p1 * p2[0]
-    p1.var != p2.var && error("SparsePolynomials must have same variable")
+    X != Y && error("SparsePolynomials must have same variable")
 
     R = promote_type(T,S)
     P = SparsePolynomial
     
-    p  = zero(P{R},  p1.var)
+    p  = zero(P{R, X})
     for i in eachindex(p1)
         p1ᵢ = p1[i]
         for j in eachindex(p2)
@@ -264,10 +251,10 @@ function Base.:*(p1::SparsePolynomial{T}, p2::SparsePolynomial{S}) where {T,S}
 end
 
 
-function Base.:*(p::P, c::S) where {T, P <: SparsePolynomial{T}, S <: Number}
+function Base.:*(p::P, c::S) where {T, X, P <: SparsePolynomial{T,X}, S <: Number}
 
     R = promote_type(T,S)
-    q  = zero(⟒(P){R},  p.var)
+    q  = zero(⟒(P){R,X})
     for k in eachindex(p)
         q[k] = p[k] * c
     end
@@ -277,19 +264,19 @@ end
 
 
 
-function derivative(p::SparsePolynomial{T}, order::Integer = 1) where {T}
+function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
     
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
 
     R = eltype(one(T)*1)
     P = SparsePolynomial
-    hasnan(p) && return P(Dict(0 => R(NaN)), p.var)
+    hasnan(p) && return P{R,X}(Dict(0 => R(NaN)))
 
     n = degree(p)
-    order > n && return zero(P{R}, p.var)
+    order > n && return zero(P{R,X})
 
-    dpn = zero(P{R}, p.var)
+    dpn = zero(P{R,X})
     @inbounds for k in eachindex(p)
         dpn[k-order] =  reduce(*, (k - order + 1):k, init = p[k])
     end
@@ -299,16 +286,16 @@ function derivative(p::SparsePolynomial{T}, order::Integer = 1) where {T}
 end
 
 
-function integrate(p::SparsePolynomial{T}, k::S) where {T, S<:Number}
+function integrate(p::SparsePolynomial{T,X}, k::S) where {T, X, S<:Number}
     
     R = eltype((one(T)+one(S))/1)
     P = SparsePolynomial
 
     if hasnan(p) || isnan(k)
-        return P(Dict(0 => NaN), p.var) # not R(NaN)!! don't like XXX
+        return P{R,X}(Dict(0 => R(NaN))) # not R(NaN)!! don't like XXX
     end
 
-    ∫p = P{R}(R(k), p.var)
+    ∫p = P{R,X}(R(k))
     for k in eachindex(p)
         ∫p[k + 1] = p[k] / (k+1)
     end

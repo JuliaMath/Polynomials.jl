@@ -1,7 +1,7 @@
 export LaurentPolynomial
 
 """
-    LaurentPolynomial(coeffs::AbstractVector, [m::Integer = 0], [var = :x])
+    LaurentPolynomial{T,X}(coeffs::AbstractVector, [m::Integer = 0], [var = :x])
 
 A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of the form `a_{m}x^m + ... + a_{n}x^n` where `m,n` are  integers (not necessarily positive) with ` m <= n`.
 
@@ -72,31 +72,32 @@ julia> x^degree(p) * p(x⁻¹) # reverses  coefficients
 LaurentPolynomial(3.0 + 2.0*x + 1.0*x²)
 ```
 """
-struct LaurentPolynomial{T <: Number} <: StandardBasisPolynomial{T}
+struct LaurentPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
-    var::Symbol
     m::Base.RefValue{Int}
     n::Base.RefValue{Int}
-    function LaurentPolynomial{T}(coeffs::AbstractVector{T},
-                                  m::Int,
-                                  var::Symbol=:x) where {T <: Number}
+    function LaurentPolynomial{T,X}(coeffs::AbstractVector{T},
+                                    m::Union{Int, Nothing}=nothing) where {T <: Number, X}
 
-        if Base.has_offset_axes(coeffs)
-          @warn "ignoring the axis offset of the coefficient vector"
-        end
-        c = OffsetArrays.no_offset_view(coeffs) # ensure 1-based indexing
-        # trim zeros from front and back
-        lnz = findlast(!iszero, c)
-        fnz = findfirst(!iszero, c)
-        (lnz == nothing || length(c) == 0) && return new{T}(zeros(T,1), var, Ref(0), Ref(0))
-        c = c[fnz:lnz]
+        fnz = findfirst(!iszero, coeffs)
+        fnz == nothing && return  new{T,X}(zeros(T,1), Ref(0), Ref(0))
+        lnz = findlast(!iszero, coeffs)
         
-        m = m + fnz - 1
-        n = m + (lnz-fnz)
+        if Base.has_offset_axes(coeffs)
+            # if present, use axes
+            cs = coeffs[fnz:lnz]
+            return new{T,X}(cs, Ref(fnz), Ref(lnz))
+        else
+            
+            c = coeffs[fnz:lnz]
 
-        (n-m+1  == length(c)) || throw(ArgumentError("Lengths do not match"))
+            m′ = fnz - 1 + (m == nothing ? 0 : m)
+            n = m′ + (lnz-fnz)
 
-        new{T}(c, var, Ref(m),  Ref(n))
+            (n- m′ + 1  == length(c)) || throw(ArgumentError("Lengths do not match"))
+
+            new{T,X}(c, Ref(m′),  Ref(n))
+        end
     end
 end
 
@@ -105,34 +106,18 @@ end
 ## constructors
 function LaurentPolynomial{T}(coeffs::AbstractVector{S}, m::Int, var::SymbolLike=:x) where {
     T <: Number, S <: Number}
-    LaurentPolynomial{T}(T.(coeffs), m, var)
+    LaurentPolynomial{T,Symbol(var)}(T.(coeffs), m)
 end
 
 function LaurentPolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {
     T <: Number}
-    LaurentPolynomial{T}(coeffs, 0, var)
+    LaurentPolynomial{T, Symbol(var)}(coeffs, 0)
 end
 
 function LaurentPolynomial(coeffs::AbstractVector{T}, m::Int, var::SymbolLike=:x) where {T <: Number}
-    LaurentPolynomial{T}(coeffs, m, Symbol(var))
+    LaurentPolynomial{T, Symbol(var)}(coeffs, m)
 end
 
-## Alternate with range specified
-## Deprecate
-function  LaurentPolynomial{T}(coeffs::AbstractVector{S},
-                               rng::UnitRange{Int},
-                               var::Symbol=:x) where {T <: Number, S <: Number}
-    Base.depwarn("Using a range to indicate the offset is deprecated. Use just the lower value",
-                 :LaurentPolynomial)
-    error("")
-    LaurentPolynomial{T}(T.(coeffs), first(rng), var)
-end
-
-function LaurentPolynomial(coeffs::AbstractVector{T}, rng::UnitRange, var::SymbolLike=:x) where {T <: Number}
-    Base.depwarn("Using a range to indicate the offset is deprecated. Use just the lower value",
-                 :LaurentPolynomial)
-    LaurentPolynomial{T}(coeffs, rng, Symbol(var))
-end
 
 
 
@@ -150,14 +135,14 @@ Base.promote_rule(::Type{Q},::Type{P}) where {T, P <: LaurentPolynomial{T}, S, Q
 function Base.convert(P::Type{<:Polynomial}, q::LaurentPolynomial)
     m,n = (extrema∘degreerange)(q)
     m < 0 && throw(ArgumentError("Can't convert a Laurent polynomial with m < 0"))
-    P([q[i] for i  in 0:n], q.var)
+    P([q[i] for i  in 0:n], var(q))
 end
 
-Base.convert(::Type{T}, p::LaurentPolynomial) where {T<:LaurentPolynomial} = T(p.coeffs, p.m[], p.var)
+Base.convert(::Type{T}, p::LaurentPolynomial) where {T<:LaurentPolynomial} = T(p.coeffs, p.m[], var(p))
 
 function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {T, P <:LaurentPolynomial{T},S}
     d = degree(q)
-    P([q[i] for i in 0:d], 0, q.var)
+    P([q[i] for i in 0:d], 0, var(q))
 end
 
 ##
@@ -172,10 +157,11 @@ function Base.range(p::LaurentPolynomial)
     p.m[]:p.n[]
 end
 
-function Base.inv(p::LaurentPolynomial)
+function Base.inv(p::LaurentPolynomial{T, X}) where {T, X}
     m,n =  (extrema∘degreerange)(p)
     m != n && throw(ArgumentError("Only monomials can be inverted"))
-    LaurentPolynomial([1/p for p in p.coeffs], -m, p.var)
+    cs = [1/p for p in p.coeffs]
+    LaurentPolynomial{eltype(cs), X}(cs, -m)
 end
 
 ##
@@ -183,14 +169,14 @@ end
 ##
 Base.:(==)(p1::LaurentPolynomial, p2::LaurentPolynomial) =
     check_same_variable(p1, p2) && (degreerange(p1) == degreerange(p2)) && (coeffs(p1) == coeffs(p2))
-Base.hash(p::LaurentPolynomial, h::UInt) = hash(p.var, hash(degreerange(p), hash(coeffs(p), h)))
+Base.hash(p::LaurentPolynomial, h::UInt) = hash(var(p), hash(degreerange(p), hash(coeffs(p), h)))
 
 isconstant(p::LaurentPolynomial) = iszero(lastindex(p)) && iszero(firstindex(p))
-basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var::SymbolLike=:x) where{T} = LaurentPolynomial(ones(T,1), n, var)
-basis(P::Type{LaurentPolynomial}, n::Int, var::SymbolLike=:x) = LaurentPolynomial(ones(Float64, 1), n, var)
+basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var::SymbolLike=:x) where{T} = LaurentPolynomial{T,Symbol(var)}(ones(T,1), n)
+basis(P::Type{LaurentPolynomial}, n::Int, var::SymbolLike=:x) = LaurentPolynomial{Float64, Symbol(var)}(ones(Float64, 1), n)
 
-Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  LaurentPolynomial{T}(zeros(T,1),  0, Symbol(var))
-Base.zero(::Type{LaurentPolynomial},  var=Symbollike=:x) =  zero(LaurentPolynomial{Float64}, var)
+Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  LaurentPolynomial{T,Symbol(var)}(zeros(T,1),  0)
+Base.zero(::Type{LaurentPolynomial},  var=Symbollike=:x) =  zero(LaurentPolynomial{Float64, Symbol(var)})
 Base.zero(p::P, var=Symbollike=:x) where {P  <: LaurentPolynomial} = zero(P, var)
 
 
@@ -228,7 +214,7 @@ Base.lastindex(p::LaurentPolynomial) = p.n[]
 Base.eachindex(p::LaurentPolynomial) = degreerange(p)
 degreerange(p::LaurentPolynomial) = firstindex(p):lastindex(p)
 
-_convert(p::P, as) where {P <: LaurentPolynomial} = ⟒(P)(as, firstindex(p), p.var)
+_convert(p::P, as) where {T,X,P <: LaurentPolynomial{T,X}} = ⟒(P)(as, firstindex(p), X)
 
 ## chop/truncation
 # trim  from *both* ends
@@ -363,7 +349,7 @@ function paraconj(p::LaurentPolynomial)
     cs = p.coeffs
     ds = adjoint.(cs)
     n = degree(p)
-    LaurentPolynomial(reverse(ds), -n, p.var)
+    LaurentPolynomial(reverse(ds), -n, var(p))
 end
 
 """
@@ -412,7 +398,7 @@ function cconj(p::LaurentPolynomial)
             ps[i+1-m] *= -1
         end
     end
-    LaurentPolynomial(ps, m, p.var)
+    LaurentPolynomial(ps, m, var(p))
 end
 
 
@@ -448,15 +434,19 @@ Base.:+(p::LaurentPolynomial{T}, c::S) where {T, S <: Number} = sum(promote(p,c)
 ##
 ## Poly + and  *
 ##
-function Base.:+(p1::P1, p2::P2) where {T,P1<:LaurentPolynomial{T}, S, P2<:LaurentPolynomial{S}}
+function Base.:+(p1::P1, p2::P2) where {T,X,P1<:LaurentPolynomial{T,X}, S,Y, P2<:LaurentPolynomial{S,Y}}
 
     if isconstant(p1)
-        p1 = P1(p1.coeffs, firstindex(p1), p2.var)
+        i₁ = firstindex(p1)
+        p2[i₁] += p1[i₁]
+        return p2
     elseif isconstant(p2)
-        p2 = P2(p2.coeffs, firstindex(p2), p1.var)
+        i₂ = firstindex(p2)
+        p1[i₂] += p2[i₂]
+        return p1
     end
 
-    p1.var != p2.var && error("LaurentPolynomials must have same variable")
+    X != Y && error("LaurentPolynomials must have same variable")
 
     R = promote_type(T,S)
 
@@ -469,19 +459,19 @@ function Base.:+(p1::P1, p2::P2) where {T,P1<:LaurentPolynomial{T}, S, P2<:Laure
         as[1 + i-m] = p1[i] + p2[i]
     end
 
-    q = LaurentPolynomial{R}(as, m, p1.var)
+    q = LaurentPolynomial{R,X}(as, m)
     chop!(q)
 
     return q
 
 end
 
-function Base.:*(p1::LaurentPolynomial{T}, p2::LaurentPolynomial{S}) where {T,S}
+function Base.:*(p1::LaurentPolynomial{T,X}, p2::LaurentPolynomial{S,Y}) where {T,X,S,Y}
 
     isconstant(p1) && return p2 * p1[0]
     isconstant(p2) && return p1 * p2[0]
 
-    p1.var != p2.var && error("LaurentPolynomials must have same variable")
+    X != Y && error("LaurentPolynomials must have same variable")
 
     R = promote_type(T,S)
 
@@ -497,7 +487,7 @@ function Base.:*(p1::LaurentPolynomial{T}, p2::LaurentPolynomial{S}) where {T,S}
         end
     end
 
-    p = LaurentPolynomial(as, m, p1.var)
+    p = LaurentPolynomial{R,X}(as, m)
     chop!(p)
 
     return p
@@ -529,7 +519,7 @@ julia> roots(a)
   2.9999999999999982
 ```
 """
-function  roots(p::P; kwargs...)  where  {T, P <: LaurentPolynomial{T}}
+function  roots(p::P; kwargs...)  where  {T, X, P <: LaurentPolynomial{T, X}}
     c = coeffs(p)
     r = degreerange(p)
     d = r[end] - min(0, r[1]) + 1    # Length of the coefficient vector, taking into consideration
@@ -537,19 +527,19 @@ function  roots(p::P; kwargs...)  where  {T, P <: LaurentPolynomial{T}}
                                      # (like p=3z^2).
     z = zeros(T, d)                  # Reserves space for the coefficient vector.
     z[max(0, r[1]) + 1:end] = c      # Leaves the coeffs of the lower powers as zeros.
-    a = Polynomial(z, p.var)         # The root is then the root of the numerator polynomial.
+    a = Polynomial{T,X}(z)           # The root is then the root of the numerator polynomial.
     return roots(a; kwargs...)
 end
 
 ##
 ## d/dx, ∫
 ##
-function derivative(p::P, order::Integer = 1) where {T, P<:LaurentPolynomial{T}}
+function derivative(p::P, order::Integer = 1) where {T, X, P<:LaurentPolynomial{T,X}}
 
     order < 0 && error("Order of derivative must be non-negative")
     order == 0 && return p
 
-    hasnan(p) && return ⟒(P)(T[NaN], 0, p.var)
+    hasnan(p) && return ⟒(P)(T[NaN], 0, X)
 
     m,n = (extrema ∘ degreerange)(p)
     m = m - order
@@ -565,18 +555,18 @@ function derivative(p::P, order::Integer = 1) where {T, P<:LaurentPolynomial{T}}
         end
     end
 
-    chop!(LaurentPolynomial(as, m, p.var))
+    chop!(LaurentPolynomial{T,X}(as, m))
 
 end
 
 
-function integrate(p::P, k::S) where {T, P<: LaurentPolynomial{T}, S<:Number}
+function integrate(p::P, k::S) where {T, X, P<: LaurentPolynomial{T, X}, S<:Number}
 
     !iszero(p[-1])  && throw(ArgumentError("Can't integrate Laurent  polynomial with  `x⁻¹` term"))
     R = eltype((one(T)+one(S))/1)
 
     if hasnan(p) || isnan(k)
-        return P([NaN], 0, p.var) # not R(NaN)!! don't like XXX
+        return P([NaN], 0, X) # not R(NaN)!! don't like XXX
     end
 
 
@@ -599,12 +589,12 @@ function integrate(p::P, k::S) where {T, P<: LaurentPolynomial{T}, S<:Number}
 
     as[1-m] = k
 
-    return ⟒(P)(as, m, p.var)
+    return ⟒(P){R,X}(as, m)
 
 end
 
 
-function Base.gcd(p::LaurentPolynomial{T}, q::LaurentPolynomial{T}, args...; kwargs...) where {T}
+function Base.gcd(p::LaurentPolynomial{T,X}, q::LaurentPolynomial{T,Y}, args...; kwargs...) where {T,X,Y}
     mp, Mp = (extrema ∘ degreerange)(p)
     mq, Mq = (extrema ∘ degreerange)(q)
     if mp < 0 || mq < 0
@@ -617,5 +607,5 @@ function Base.gcd(p::LaurentPolynomial{T}, q::LaurentPolynomial{T}, args...; kwa
 
     pp, qq = convert(Polynomial, p), convert(Polynomial, q)
     u = gcd(pp, qq, args..., kwargs...)
-    return LaurentPolynomial(coeffs(u), p.var)
+    return LaurentPolynomial(coeffs(u), X)
 end

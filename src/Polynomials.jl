@@ -17,11 +17,11 @@ include("common.jl")
 # Polynomials
 include("polynomials/standard-basis.jl")
 include("polynomials/Polynomial.jl")
-#include("polynomials/ImmutablePolynomial.jl")
-#include("polynomials/SparsePolynomial.jl")
-#include("polynomials/LaurentPolynomial.jl")
-#include("polynomials/ngcd.jl")
-#include("polynomials/multroot.jl")
+include("polynomials/ImmutablePolynomial.jl")
+include("polynomials/SparsePolynomial.jl")
+include("polynomials/LaurentPolynomial.jl")
+include("polynomials/ngcd.jl")
+include("polynomials/multroot.jl")
 
 #include("polynomials/ChebyshevT.jl")
 

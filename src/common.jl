@@ -527,6 +527,7 @@ export var
 Returns a representation of 0 as the given polynomial.
 """
 Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(zeros(eltype(P), 1), var)
+Base.zero(::Type{P}) where {T, X, P<:AbstractPolynomial{T,X}} = ⟒(P){T,X}(zeros(T,1))
 Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, var(p))
 """
     one(::Type{<:AbstractPolynomial})
@@ -535,6 +536,7 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, var(p))
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(ones(eltype(P),1), var)  # assumes  p₀ = 1
+Base.one(::Type{P}) where {T, X, P<:AbstractPolynomial{T,X}} = ⟒(P){T,X}(ones(T,1))
 Base.one(p::P) where {P <: AbstractPolynomial} = one(P, var(p))
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
@@ -567,6 +569,7 @@ julia> roots((x - 3) * (x + 2))
 """
 variable(::Type{P}, var::SymbolLike = :x) where {P <: AbstractPolynomial} = MethodError()
 variable(p::AbstractPolynomial, var::SymbolLike = var(p)) = variable(typeof(p), var)
+variable(::Type{P}) where {T,X, P <: AbstractPolynomial{T,X}} = variable(P, X)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
 # basis
@@ -577,8 +580,14 @@ variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
     zs = zeros(Int, k+1)
     zs[end] = 1
-    ⟒(P){eltype(P)}(zs, var)
+    ⟒(P){eltype(P), _var}(zs)
 end
+function basis(::Type{P}, k::Int) where {T, X, P<:AbstractPolynomial{T,X}}
+    zs = zeros(Int, k+1)
+    zs[end] = 1
+    ⟒(P){eltype(P), X}(zs)
+end
+    
 basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
 
 #=
