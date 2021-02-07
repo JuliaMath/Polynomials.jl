@@ -219,14 +219,12 @@ function Base.:+(p::SparsePolynomial{T,X}, c::S) where {T, X, S <: Number}
 
     R = promote_type(T,S)
     P = SparsePolynomial
-    
-    q = zero(P{R,X})
-    for k in eachindex(p)
-        @inbounds q[k] = R(p[k])
-    end
-    q[0] = q[0] + c
 
-    return q
+    D = Dict{Int, R}(kv for kv ∈ p.coeffs)
+    D[0] = get(D,0,zero(R)) + c
+
+    return SparsePolynomial{R,X}(D)
+    
 end
 
 function Base.:*(p1::SparsePolynomial{T,X}, p2::SparsePolynomial{S,Y}) where {T,X,S,Y}

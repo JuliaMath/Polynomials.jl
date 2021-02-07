@@ -35,7 +35,7 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         p = P(coeff)
         @test coeffs(p) ==ᵗ⁰ coeff
         @test degree(p) == length(coeff) - 1
-        @test p.var == :x
+        @test Polynomials.var(p) == :x
         P == Polynomial && @test length(p) == length(coeff)
         P == Polynomial && @test size(p) == size(coeff)
         P == Polynomial && @test size(p, 1) == size(coeff, 1)
@@ -129,8 +129,12 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
         as = ones(3:4)
         bs = parent(as)
 
+        # LaurentPolynomial accepts OffsetArrays; others do not and throw an ArgumentError
+        @test LaurentPolynomial(as) == LaurentPolynomial(bs, 3)
+
         for P in Ps
-            @test P(as) == P(bs)
+            P == LaurentPolynomial && continue
+            @test_throws ArgumentError P(as) 
             @test P{eltype(as)}(as) == P{eltype(as)}(bs)
         end
         
@@ -139,6 +143,7 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
         c = ZVector(a)
         d = ZVector(b)
         for P in Ps
+            if P == LaurentPolynomial && continue
             @test P(a) == P(b) == P(c) == P(d)
         end
 
@@ -460,18 +465,20 @@ end
 end
 
 @testset "Conversion" begin
+
+    X = :x
     for P in Ps
         if !isimmutable(P)
             p = P([0,one(Float64)])
-            @test P{Complex{Float64}} == typeof(p + 1im)
-            @test P{Complex{Float64}} == typeof(1im - p)
-            @test P{Complex{Float64}} == typeof(p * 1im)
+            @test P{Complex{Float64},X} == typeof(p + 1im)
+            @test P{Complex{Float64},X} == typeof(1im - p)
+            @test P{Complex{Float64},X} == typeof(p * 1im)
         else
             p = P([0,one(Float64)])
             N=2
-            @test P{Complex{Float64},N} == typeof(p + 1im)
-            @test P{Complex{Float64},N} == typeof(1im - p)
-            @test P{Complex{Float64},N} == typeof(p * 1im)
+            @test P{Complex{Float64},X,N} == typeof(p + 1im)
+            @test P{Complex{Float64},X,N} == typeof(1im - p)
+            @test P{Complex{Float64},X,N} == typeof(p * 1im)
         end
     end
 
@@ -994,11 +1001,11 @@ end
             for P in Ps
                 if !isimmutable(P)
                     p = P{T2}(T1.(rand(1:3,3)))
-                    @test typeof(p) == P{T2}
+                    @test typeof(p) == P{T2, :x}
                 else
                     N = 3
                     p = P{T2}(T1.(rand(1:3,N)))
-                    @test typeof(p) == P{T2,N}
+                    @test typeof(p) == P{T2,:x, N}
                 end
             end
 
@@ -1010,14 +1017,14 @@ end
         if !isimmutable(P)
             for  T in (Int32, Int64, BigInt)
                 p₁ =  P{T}(Float64.(rand(1:3,5)))
-                @test typeof(p₁) == P{T} # conversion works
+                @test typeof(p₁) == P{T,:x} # conversion works
                 @test_throws InexactError  P{T}(rand(5))
             end
         else
             for  T in (Int32, Int64, BigInt)
                 N = 5
                 p₁ =  P{T}(Float64.(rand(1:3,5)))
-                @test typeof(p₁) == P{T,5} # conversion works
+                @test typeof(p₁) == P{T,:x,5} # conversion works
                 @test_throws InexactError  P{T}(rand(5))
             end
         end

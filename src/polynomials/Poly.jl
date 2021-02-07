@@ -18,7 +18,7 @@ This type provides support for `poly`, `polyval`, `polyder`, and
 base. Call `using Polynomials.PolyCompat` to enable this module.
 
 """
-struct Poly{T <: Number} <: Polynomials.StandardBasisPolynomial{T}
+struct Poly{T <: Number,X} <: Polynomials.StandardBasisPolynomial{T,X}
     coeffs::Vector{T}
     var::Symbol
     function Poly(a::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {T <: Number}

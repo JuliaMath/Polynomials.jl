@@ -23,7 +23,7 @@ include("polynomials/LaurentPolynomial.jl")
 include("polynomials/ngcd.jl")
 include("polynomials/multroot.jl")
 
-#include("polynomials/ChebyshevT.jl")
+include("polynomials/ChebyshevT.jl")
 
 # compat; opt-in with `using Polynomials.PolyCompat`
 #include("polynomials/Poly.jl")

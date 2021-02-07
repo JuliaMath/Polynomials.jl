@@ -57,9 +57,18 @@ end
 @register ImmutablePolynomial
 
 ## Various interfaces
-function ImmutablePolynomial{T,X}(coeffs::AbstractVector)  where {T,X}
+function ImmutablePolynomial{T,X}(coeffs::AbstractVector{S})  where {T,X,S}
+    R = promote_type(T,S)
+    
+    if Base.has_offset_axes(coeffs)
+        throw(ArgumentError("The `ImmutablePolynomial` constructor does not accept `OffsetArrays`. Try `LaurentPolynomial`."))
+
+        @warn "ignoring the axis offset of the coefficient vector"
+    end
+    #c = OffsetArrays.no_offset_view(coeffs)
     N = findlast(!iszero, coeffs)
-    ImmutablePolynomial{T, X, N}(NTuple{N,T}(coeffs[i] for i in 1:N))
+    N == nothing && return zero(ImmutablePolynomial{R,X})
+    ImmutablePolynomial{T, X, N}(NTuple{N,T}(cᵢ for cᵢ ∈ coeffs))
 end
 
 
@@ -107,18 +116,18 @@ Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p), var(p))
 
 ## defining these speeds things up
-function Base.zero(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
+function Base.zero(P::Type{<:ImmutablePolynomial}, var::SymbolLike=var(P))
     R = eltype(P)
     ImmutablePolynomial{R,Symbol(var),0}(NTuple{0,R}())
 end
 
-function  Base.one(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
+function  Base.one(P::Type{<:ImmutablePolynomial}, var::SymbolLike=var(P))
     R = eltype(P)
-    ImmutablePolynomial{R,Symbol(var),1}(NTuple{1,R}(1))
+    ImmutablePolynomial{R,Symbol(var),1}(NTuple{1,R}(one(R)))
 end
-function variable(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
+function variable(P::Type{<:ImmutablePolynomial}, var::SymbolLike=var(p))
     R  = eltype(P)
-    ImmutablePolynomial{R,Symbol(var),2}(NTuple{2,R}((0,1)))
+    ImmutablePolynomial{R,Symbol(var),2}(NTuple{2,R}((zero(R), one(R))))
 end
 
 
@@ -217,7 +226,7 @@ function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,Y,M})
         return ImmutablePolynomial{R, X, N+M-1}(cs)
     else
         n = findlast(!iszero, cs)
-        return ImmutablePolynomial{R, X, n}(cs[1:n])
+        return ImmutablePolynomial{R, X, n}(NTuple{n,R}(cs[i] for i ∈ 1:n))
     end
 end
 

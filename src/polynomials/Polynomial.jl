@@ -34,13 +34,12 @@ struct Polynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
     function Polynomial{T, X}(coeffs::AbstractVector{T}) where {T <: Number, X}
         if Base.has_offset_axes(coeffs)
-          @warn "ignoring the axis offset of the coefficient vector"
+            throw(ArgumentError("The `Polynomial` constructor does not accept `OffsetArrays`. Try `LaurentPolynomial`."))
         end
         length(coeffs) == 0 && return new{T,X}(zeros(T, 1))
-        c = OffsetArrays.no_offset_view(coeffs) # ensure 1-based indexing
-        last_nz = findlast(!iszero, c)
+        last_nz = findlast(!iszero, coeffs)
         last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T, X}(c[1:last])
+        return new{T, X}(coeffs[1:last])
     end
 end
 
