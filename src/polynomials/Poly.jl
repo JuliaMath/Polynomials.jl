@@ -44,6 +44,20 @@ Base.convert(P::Type{<:Poly}, p::Poly{T,X}) where {T<:Number,X} = Polynomials.co
 Base.eltype(P::Type{<:Poly{T,X}}) where {T, X} = P
 _eltype(::Type{<:Poly{T}}) where  {T} = T
 _eltype(::Type{Poly}) =  Float64
+
+# when interating over poly return monomials
+function Base.iterate(p::Poly, state=nothing)
+    i = 0
+    state == nothing && return (p[i]*one(p), i)
+    j = degree(p)
+    s = state + 1
+    i <= state < j && return (p[s]*Polynomials.basis(p,s), s)
+    return nothing
+end
+Base.collect(p::Poly) = [pᵢ for pᵢ ∈ p]
+
+
+
 Base.zero(P::Type{<:Poly},var=:x) = Poly(zeros(_eltype(P),0), var)
 Base.one(P::Type{<:Poly},var=:x) = Poly(ones(_eltype(P),1), var)
 function Polynomials.basis(P::Type{<:Poly}, k::Int, _var::Polynomials.SymbolLike=:x; var=_var) 

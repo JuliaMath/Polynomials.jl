@@ -28,7 +28,7 @@ isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 
 Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], indeterminate(q))
 
-Base.values(p::StandardBasisPolynomial) = values(p.coeffs)
+#Base.values(p::StandardBasisPolynomial) = values(p.coeffs)
 
 variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = P([0, 1], var)
 

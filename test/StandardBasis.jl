@@ -780,15 +780,15 @@ end
 
         p1 = P([1,2,0,3])
         for term in p1
-            @test isa(term, P)
+            @test isa(term, eltype(p1))
         end
 
         @test eltype(p1) == Int
         for P in Ps
             p1 = P([1,2,0,3])
-            @test eltype(collect(p1)) <: P{Int}
-            @test eltype(collect(P{Float64}, p1)) <: P{Float64}
-            @test_throws InexactError collect(P{Int}, P([1.2]))
+            @test eltype(collect(p1)) <: Int
+            @test eltype(collect(Float64, p1)) <: Float64
+            @test_throws InexactError collect(Int, P([1.2]))
         end
 
         p1 = P([1,2,0,3])
@@ -797,6 +797,37 @@ end
         @test [p1[idx] for idx in eachindex(p1)] ==ᵗᶻ [1,2,0,3]
     end
 end
+
+@testset "Iteration" begin
+    p, ip, lp, sp = ps = (Polynomial([1,2,0,4]), ImmutablePolynomial((1,2,0,4)),
+                          LaurentPolynomial([1,2,0,4], -2), SparsePolynomial(Dict(0=>1, 1=>2, 3=>4)))
+    for pp ∈ ps
+        # iteration
+        @test all(collect(pp) .== coeffs(pp))
+
+        # keys, values, pairs
+        ks, vs, kvs = keys(pp), values(pp), pairs(pp)
+        if !isa(pp, SparsePolynomial)
+            @test first(ks) == firstindex(pp)
+            @test first(vs) == pp[first(ks)]
+            @test length(vs) == length(coeffs(pp))
+            @test first(kvs) == (first(ks) => first(vs))
+        else
+            @test first(sort(collect(ks))) == firstindex(pp)
+            @test length(vs) == length(pp.coeffs)
+        end
+
+        ## monomials
+        if !isa(pp, SparsePolynomial)
+            i = firstindex(pp)
+            @test first(Polynomials.monomials(pp)) == pp[i] * Polynomials.basis(pp,i)
+        else
+            @test first(Polynomials.monomials(pp)) ∈ [pp[i] * Polynomials.basis(pp,i) for i ∈ keys(pp)]
+        end
+    end
+
+end
+
 
 @testset "Copying" begin
     for P in Ps

@@ -286,6 +286,7 @@ Calculates the p-norm of the polynomial's coefficients
 """
 function LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2)
     vs = values(q)
+    isempty(vs) && return zero(eltype(q))
     return norm(vs, p) # if vs=() must be handled in special type
 end
 
@@ -460,18 +461,6 @@ Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1
 Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
-# like coeffs, though possibly only non-zero values (e.g. SparsePolynomial)
-Base.values(p::AbstractPolynomial) = coeffs(p) 
-
-# iteration
-# iteration occurs over the basis polynomials
-Base.iterate(p::AbstractPolynomial) = (p[0] * one(typeof(p)), 1)
-function Base.iterate(p::AbstractPolynomial, state)
-    state <= length(p) - 1 ? (p[state] * basis(p, state), state + 1) : nothing
-end
-
-
-Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
@@ -504,6 +493,80 @@ Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) =
     setindex!(p, value, eachindex(p))
 Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
     [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
+
+#=
+Iteration =#
+## XXX breaking change in v2.0.0
+#
+# we want to keep iteration close to iteration over the coefficients as a vector:
+# `iterate` iterates over coefficients, includes 0s
+# `collect(T, p)` yields coefficients of `p` converted to type `T`
+# `keys(p)` an iterator spanning `firstindex` to `lastindex` which *may* skip 0 terms (SparsePolynomial)
+#    and *may* not be in order (SparsePolynomial)
+# `values(p)` `pᵢ` for each `i` in `keys(p)`
+# `pairs(p)`: `i => pᵢ` possibly skipping over values of `i` with `pᵢ == 0` (SparsePolynomial)
+#    and possibly non ordered (SparsePolynomial)
+# `monomials(p)`: iterates over pᵢ ⋅ basis(p, i) i  ∈ keys(p)
+function Base.iterate(p::AbstractPolynomial, state=nothing)
+    i = firstindex(p)
+    if state == nothing
+        return (p[i], i)
+    else
+        j = lastindex(p)
+        if i <= state < j
+            return (p[state+1], state+1)
+        end
+        return nothing
+    end
+end
+
+# pairs map i -> aᵢ *possibly* skipping over ai == 0
+# cf. abstractdict.jl
+struct PolynomialKeys{P}
+    p::P
+end
+struct PolynomialValues{P}
+    p::P
+end
+Base.keys(p::AbstractPolynomial) =  PolynomialKeys(p)
+Base.values(p::AbstractPolynomial) =  PolynomialValues(p)
+Base.length(p::PolynomialValues) = length(p.p.coeffs)
+Base.length(p::PolynomialKeys) = length(p.p.coeffs)
+function Base.iterate(v::PolynomialKeys, state=nothing)
+    i = firstindex(v.p)
+    state==nothing && return (i, i)
+    j = lastindex(v.p)
+    i <= state < j && return (state+1, state+1)
+    return nothing
+end
+
+function Base.iterate(v::PolynomialValues, state=nothing)
+    i = firstindex(v.p)
+    state==nothing && return (v.p[i], i)
+    j = lastindex(v.p)
+    i <= state < j && return (v.p[state+1], state+1)
+    return nothing
+end
+
+
+# iterate over monomials of the polynomial
+struct Monomials{P}
+    p::P
+end
+"""
+    monomials(p::AbstractPolynomial)
+
+Returns an iterator over the terms, `pᵢ⋅basis(p,i)`, of the polynomial for each `i` in `keys(p)`.
+"""
+monomials(p) = Monomials(p)
+function Base.iterate(v::Monomials, state...)
+    y = iterate(pairs(v.p), state...)
+    y == nothing && return nothing
+    kv, s = y
+    return (kv[2]*basis(v.p, kv[1]), s)
+end
+Base.length(v::Monomials) = length(keys(v.p))
+
 
 #=
 identity =#

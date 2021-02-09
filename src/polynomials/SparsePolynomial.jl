@@ -135,6 +135,20 @@ Base.firstindex(p::SparsePolynomial) = sort(collect(keys(p.coeffs)), by=x->x[1])
 Base.lastindex(p::SparsePolynomial) = sort(collect(keys(p.coeffs)), by=x->x[1])[end]
 Base.eachindex(p::SparsePolynomial) = sort(collect(keys(p.coeffs)), by=x->x[1])
 
+# pairs iterates only over non-zero
+# inherits order for underlying dictionary
+function Base.iterate(v::PolynomialKeys{SparsePolynomial{T,X}}, state...) where {T,X}
+    y = iterate(v.p.coeffs, state...)
+    y == nothing && return nothing
+    return (y[1][1], y[2])
+end
+function Base.iterate(v::PolynomialValues{SparsePolynomial{T,X}}, state...) where {T,X}
+    y = iterate(v.p.coeffs, state...)
+    y == nothing && return nothing
+    return (y[1][2], y[2])
+end
+
+
 # only from tail
 function chop!(p::SparsePolynomial{T};
                rtol::Real = Base.rtoldefault(real(T)),
