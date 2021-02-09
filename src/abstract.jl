@@ -18,7 +18,7 @@ abstract type AbstractPolynomial{T,X} end
 
 # convert `as` into polynomial of type P based on instance, inheriting variable
 # (and for LaurentPolynomial the offset)
-_convert(p::P, as) where {P <: AbstractPolynomial} = ⟒(P)(as, indeterminate(P)) 
+_convert(p::P, as) where {P <: AbstractPolynomial} = ⟒(P)(as, indeterminate(P))
 
 """
     Polynomials.@register(name)

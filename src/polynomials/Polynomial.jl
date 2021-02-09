@@ -71,6 +71,20 @@ julia> p.(0:3)
 (p::Polynomial{T})(x::S) where {T,S} = evalpoly(x, coeffs(p))
 
 
+# scalar _,* faster  than standard-basis/common versions
+function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}
+     R = promote_type(T, S)
+     as = convert(Vector{R}, copy(coeffs(p)))
+     as[1] += c
+     return Polynomial{R, X}(as)
+end
+
+function Base.:*(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Number}
+    as = [aᵢ * c for aᵢ ∈ coeffs(p)]
+    Polynomial{promote_type(T,S),X}(as)
+end
+
+
    
 function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
     n1, n2 = length(p1), length(p2)
