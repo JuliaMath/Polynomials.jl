@@ -35,7 +35,7 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         p = P(coeff)
         @test coeffs(p) ==ᵗ⁰ coeff
         @test degree(p) == length(coeff) - 1
-        @test Polynomials.var(p) == :x
+        @test Polynomials.indeterminate(p) == :x
         P == Polynomial && @test length(p) == length(coeff)
         P == Polynomial && @test size(p) == size(coeff)
         P == Polynomial && @test size(p, 1) == size(coeff, 1)
@@ -124,31 +124,37 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
         @test Polynomials.isconstant(P(1))
         @test !Polynomials.isconstant(variable(P))
     end
+end
 
-    @testset "OffsetVector" begin
-        as = ones(3:4)
-        bs = parent(as)
-
-        # LaurentPolynomial accepts OffsetArrays; others do not and throw an ArgumentError
-        @test LaurentPolynomial(as) == LaurentPolynomial(bs, 3)
-
-        for P in Ps
-            P == LaurentPolynomial && continue
-            @test_throws ArgumentError P(as) 
-            @test P{eltype(as)}(as) == P{eltype(as)}(bs)
-        end
+@testset "OffsetVector" begin
+    as = ones(3:4)
+    bs = parent(as)
+    
+    # LaurentPolynomial accepts OffsetArrays; others do not and throw an ArgumentError
+    @test LaurentPolynomial(as) == LaurentPolynomial(bs, 3)
+    
+    for P in Ps
+        P == LaurentPolynomial && continue
+        @test P(as) == P(bs)
+        @test P{eltype(as)}(as) == P{eltype(as)}(bs)
+#        P == LaurentPolynomial && continue # XXX move to this
+#        @test_throws ArgumentError P(as) 
+#        @test P{eltype(as)}(as) == P{eltype(as)}(bs)
+    end
         
-        a = [1,1]
-        b = OffsetVector(a, axes(a))
-        c = ZVector(a)
-        d = ZVector(b)
-        for P in Ps
-            if P == LaurentPolynomial && continue
+    a = [1,1]
+    b = OffsetVector(a, axes(a))
+    c = ZVector(a)
+    d = ZVector(b)
+    for P in Ps
+        if P == LaurentPolynomial && continue
             @test P(a) == P(b) == P(c) == P(d)
         end
-
-        @test ImmutablePolynomial{eltype(as), length(as)}(as) == ImmutablePolynomial(bs)
+        
     end
+
+    @test ImmutablePolynomial{eltype(as)}(as) == ImmutablePolynomial(bs)
+    
 end
 
 
@@ -639,8 +645,8 @@ end
             @test q isa Vector{typeof(p1)}
             @test p isa Vector{typeof(p2)}
         else
-            @test q isa Vector{P{eltype(p1)}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
-            @test p isa Vector{P{eltype(p2)}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
+            @test q isa Vector{P{eltype(p1),:x}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
+            @test p isa Vector{P{eltype(p2),:x}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
         end
 
 

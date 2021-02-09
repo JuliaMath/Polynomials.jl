@@ -75,7 +75,7 @@ sprint(show, pNULL)
 @test pNULL^3 == pNULL
 @test pNULL*pNULL == pNULL
 
-@test map(degree, [pNULL,p0,p1,p2,p3,p4,p5,pN,pR,p1000]) == [-1,-1,0,1,2,3,4,4,2,999]
+@test map(degree, (pNULL,p0,p1,p2,p3,p4,p5,pN,pR,p1000)) == (-1,-1,0,1,2,3,4,4,2,999)
 
 @test polyval(poly(Int[]), 2.) == 1.
 @test polyval(pN, -.125) == 276.9609375
@@ -227,13 +227,13 @@ p1  = Poly([1, 2])
 p2  = Poly([3, 1.])
 p   = [p1, p2]
 q   = [3, p1]
-@test isa(q,Vector{Poly{Int}})
+@test isa(q,Vector{Poly{Int,:x}})
 psum  = p .+ 3
 pprod = p .* 3
 pmin  = p .- 3
-@test isa(psum, Vector{Poly{Float64}})
-@test isa(pprod,Vector{Poly{Float64}})
-@test isa(pmin, Vector{Poly{Float64}})
+@test isa(psum, Vector{Poly{Float64,:x}})
+@test isa(pprod,Vector{Poly{Float64,:x}})
+@test isa(pmin, Vector{Poly{Float64,:x}})
 
 ## getindex with ranges #43
 p1 = Poly([4,5,6])
@@ -344,9 +344,9 @@ pint  = polyint(p, Complex(0.))
 
 ## proper conversions in arithmetic with different element-types #94
 p = Poly([0,one(Float64)])
-@test Poly{Complex{Float64}} == typeof(p+1im)
-@test Poly{Complex{Float64}} == typeof(1im-p)
-@test Poly{Complex{Float64}} == typeof(p*1im)
+@test Poly{Complex{Float64},:x} == typeof(p+1im)
+@test Poly{Complex{Float64},:x} == typeof(1im-p)
+@test Poly{Complex{Float64},:x} == typeof(p*1im)
 
 ## comparison between `Number`s and `Poly`s
 p1s = Poly([1,2], :s)
@@ -391,8 +391,8 @@ end
 # was to direct `collect{T}(p::Poly{T})` to `collect(Poly{T}, p)`.
 
 @test eltype(p1) == Int
-@test eltype(collect(p1)) == Poly{Int}
-@test eltype(collect(Poly{Float64}, p1)) == Poly{Float64}
+@test eltype(collect(p1)) == Poly{Int,:x}
+@test eltype(collect(Poly{Float64,:x}, p1)) == Poly{Float64,:x}
 @test_throws InexactError collect(Poly{Int}, Poly([1.2]))
 
 @test length(collect(p1)) == degree(p1)+1
@@ -450,8 +450,8 @@ end
 end
 
 @testset "`isintegral`" begin
-    x = Polynomial([1 // 1, Int8(2) + 0im, 3.0, Int16(4) + 0im])
-    y = Polynomial([1 // 2, Int8(2) + 0im, 3.0, Int16(4) + 0im])
+    x = Poly([1 // 1, Int8(2) + 0im, 3.0, Int16(4) + 0im])
+    y = Poly([1 // 2, Int8(2) + 0im, 3.0, Int16(4) + 0im])
     @test isintegral(x) === true
     @test isintegral(y) === false
     @test convert(Polynomial{Int}, x) == Polynomial([1, 2, 3, 4])

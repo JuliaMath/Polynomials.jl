@@ -18,7 +18,7 @@ abstract type AbstractPolynomial{T,X} end
 
 # convert `as` into polynomial of type P based on instance, inheriting variable
 # (and for LaurentPolynomial the offset)
-_convert(p::P, as) where {P <: AbstractPolynomial} = ⟒(P){eltype(as), var(P)}(as)  # ⟒(P)(as, var(P))
+_convert(p::P, as) where {P <: AbstractPolynomial} = ⟒(P)(as, indeterminate(P)) 
 
 """
     Polynomials.@register(name)
@@ -41,10 +41,9 @@ macro register(name)
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.convert(P::Type{<:$poly}, p::$poly{T}) where {T} = P(coeffs(p), var(p))
+        Base.convert(P::Type{<:$poly}, p::$poly{T}) where {T} = constructorof(P){eltype(P), indeterminate(P,p)}(coeffs(p))
         Base.promote(p::P, q::Q) where {X, T, P <:$poly{T,X}, Q <: $poly{T,X}} = p,q
-        Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{<:$poly{S,X}}) where {T,S,X} =
-            $poly{promote_type(T, S,X)}
+        Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{<:$poly{S,X}}) where {T,S,X} =  $poly{promote_type(T, S),X}
         Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{S}) where {T,S<:Number,X} =
             $poly{promote_type(T, S),X}
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =

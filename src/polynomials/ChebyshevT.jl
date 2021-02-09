@@ -29,15 +29,17 @@ ChebyshevT(1.0⋅T_0(x))
 """
 struct ChebyshevT{T <: Number, X} <: AbstractPolynomial{T, X}
     coeffs::Vector{T}
-    function ChebyshevT{T, X}(coeffs::AbstractVector{T}) where {T <: Number,X}
+    function ChebyshevT{T, X}(coeffs::AbstractVector{S}) where {T <: Number,X, S}
         length(coeffs) == 0 && return new{T,X}(zeros(T, 1))
         if Base.has_offset_axes(coeffs)
+            # throw(ArgumentError("The `ChebyshevT` constructor does not accept `OffsetArrays`. Try `LaurentPolynomial`."))
+            
             @warn "ignoring the axis offset of the coefficient vector"
+            coeffs = OffsetArrays.no_offset_view(coeffs) 
         end
-        c = OffsetArrays.no_offset_view(coeffs)
-        last_nz = findlast(!iszero, c)
+        last_nz = findlast(!iszero, coeffs)
         last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T,X}(c[1:last])
+        return new{T,X}(convert(Vector{T}, coeffs[1:last]))
     end
 end
 
@@ -45,13 +47,13 @@ end
 
 function Base.convert(P::Type{<:Polynomial}, ch::ChebyshevT)
     if length(ch) < 3
-        return P(ch.coeffs, var(ch))
+        return P(ch.coeffs, indeterminate(ch))
     end
-    c0 = P(ch[end - 1], var(ch))
-    c1 = P(ch[end], var(ch))
+    c0 = P(ch[end - 1], indeterminate(ch))
+    c1 = P(ch[end], indeterminate(ch))
     @inbounds for i in degree(ch):-1:2
         tmp = c0
-        c0 = P(ch[i - 2], var(ch)) - c1
+        c0 = P(ch[i - 2], indeterminate(ch)) - c1
         c1 = tmp + c1 * variable(P) * 2
     end
     return c0 + c1 * variable(P)
@@ -135,7 +137,7 @@ function integrate(p::ChebyshevT{T}, C::S) where {T,S <: Number}
         a2[i] -= p[i] / (2 * (i - 1))
     end
     a2[1] += R(C) - ChebyshevT(a2)(0)
-    return ChebyshevT(a2, var(p))
+    return ChebyshevT(a2, indeterminate(p))
 end
 
 
@@ -143,7 +145,7 @@ function derivative(p::ChebyshevT{T}, order::Integer = 1) where {T}
     order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
     R  = eltype(one(T)/1)
     order == 0 && return convert(ChebyshevT{R}, p)
-    hasnan(p) && return ChebyshevT(R[NaN], var(p))
+    hasnan(p) && return ChebyshevT(R[NaN], indeterminate(p))
     order > length(p) && return zero(ChebyshevT{R})
 
 
@@ -160,7 +162,7 @@ function derivative(p::ChebyshevT{T}, order::Integer = 1) where {T}
     end
     der[1] = q[1]
 
-    pp = ChebyshevT(der, var(p))
+    pp = ChebyshevT(der, indeterminate(p))
     return order > 1 ?  derivative(pp, order - 1) : pp
 
 end

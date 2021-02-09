@@ -76,26 +76,24 @@ struct LaurentPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
     m::Base.RefValue{Int}
     n::Base.RefValue{Int}
-    function LaurentPolynomial{T,X}(coeffs::AbstractVector{T},
-                                    m::Union{Int, Nothing}=nothing) where {T <: Number, X}
+    function LaurentPolynomial{T,X}(coeffs::AbstractVector{S},
+                                    m::Union{Int, Nothing}=nothing) where {T <: Number, X, S}
 
         fnz = findfirst(!iszero, coeffs)
         fnz == nothing && return  new{T,X}(zeros(T,1), Ref(0), Ref(0))
         lnz = findlast(!iszero, coeffs)
-        
         if Base.has_offset_axes(coeffs)
             # if present, use axes
-            cs = coeffs[fnz:lnz]
+            cs = convert(Vector{T}, coeffs[fnz:lnz])
             return new{T,X}(cs, Ref(fnz), Ref(lnz))
         else
             
-            c = coeffs[fnz:lnz]
+            c = convert(Vector{T}, coeffs[fnz:lnz])
 
             m′ = fnz - 1 + (m == nothing ? 0 : m)
             n = m′ + (lnz-fnz)
 
-            (n- m′ + 1  == length(c)) || throw(ArgumentError("Lengths do not match"))
-
+            (n - m′ + 1  == length(c)) || throw(ArgumentError("Lengths do not match"))
             new{T,X}(c, Ref(m′),  Ref(n))
         end
     end
@@ -126,23 +124,30 @@ end
 ##
 
 # LaurentPolynomial is a wider collection than other standard basis polynomials.
-Base.promote_rule(::Type{P},::Type{Q}) where {T, P <: LaurentPolynomial{T}, S, Q <: StandardBasisPolynomial{S}} =
-    LaurentPolynomial{promote_type(T, S)}
+Base.promote_rule(::Type{P},::Type{Q}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: StandardBasisPolynomial{S, X}} = LaurentPolynomial{promote_type(T, S), X}
 
-Base.promote_rule(::Type{Q},::Type{P}) where {T, P <: LaurentPolynomial{T}, S, Q <: StandardBasisPolynomial{S}} =
-    LaurentPolynomial{promote_type(T, S)}
+Base.promote_rule(::Type{Q},::Type{P}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: StandardBasisPolynomial{S,X}} =
+    LaurentPolynomial{promote_type(T, S),X}
 
 function Base.convert(P::Type{<:Polynomial}, q::LaurentPolynomial)
     m,n = (extrema∘degreerange)(q)
     m < 0 && throw(ArgumentError("Can't convert a Laurent polynomial with m < 0"))
-    P([q[i] for i  in 0:n], var(q))
+    P([q[i] for i  in 0:n], indeterminate(q))
 end
 
-Base.convert(::Type{T}, p::LaurentPolynomial) where {T<:LaurentPolynomial} = T(p.coeffs, p.m[], var(p))
+# save variable if specified in P
+Base.convert(::Type{P}, p::LaurentPolynomial) where {T, X, P<:LaurentPolynomial{T,X}} = P(p.coeffs, p.m[])
+function Base.convert(::Type{P}, p::LaurentPolynomial) where {P<:LaurentPolynomial}
+    T = eltype(P)
+    v′ = _indeterminate(P)
+    X = v′ == nothing ? indeterminate(p) : v′
+    ⟒(P){T, X}(convert(Vector{T},p.coeffs), p.m[])
+end
 
 function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {T, P <:LaurentPolynomial{T},S}
-    d = degree(q)
-    P([q[i] for i in 0:d], 0, var(q))
+    v′ = _indeterminate(P)
+    X = v′ == nothing ? indeterminate(q) : v′
+    ⟒(P){T,X}([q[i] for i in 0:degree(q)], 0)
 end
 
 ##
@@ -168,8 +173,8 @@ end
 ## changes to common.jl mostly as the range in the type is different
 ##
 Base.:(==)(p1::LaurentPolynomial, p2::LaurentPolynomial) =
-    check_same_variable(p1, p2) && (degreerange(p1) == degreerange(p2)) && (coeffs(p1) == coeffs(p2))
-Base.hash(p::LaurentPolynomial, h::UInt) = hash(var(p), hash(degreerange(p), hash(coeffs(p), h)))
+    check_same_variable(p1, p2) && (degreerange(chop!(p1)) == degreerange(chop!(p2))) && (coeffs(p1) == coeffs(p2))
+Base.hash(p::LaurentPolynomial, h::UInt) = hash(indeterminate(p), hash(degreerange(p), hash(coeffs(p), h)))
 
 isconstant(p::LaurentPolynomial) = iszero(lastindex(p)) && iszero(firstindex(p))
 basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var::SymbolLike=:x) where{T} = LaurentPolynomial{T,Symbol(var)}(ones(T,1), n)
@@ -238,10 +243,10 @@ function chop!(p::LaurentPolynomial{T};
         end
     end
 
-    cs = coeffs(p)
+    cs = copy(coeffs(p))
     rng = m-m0+1:n-m0+1
     resize!(p.coeffs, length(rng))
-    p.coeffs[:] = coeffs(p)[rng]
+    p.coeffs[:] = cs[rng]
     isempty(p.coeffs) && push!(p.coeffs,zero(T))
     p.m[], p.n[] = m, max(m,n)
 
@@ -349,7 +354,7 @@ function paraconj(p::LaurentPolynomial)
     cs = p.coeffs
     ds = adjoint.(cs)
     n = degree(p)
-    LaurentPolynomial(reverse(ds), -n, var(p))
+    LaurentPolynomial(reverse(ds), -n, indeterminate(p))
 end
 
 """
@@ -398,7 +403,7 @@ function cconj(p::LaurentPolynomial)
             ps[i+1-m] *= -1
         end
     end
-    LaurentPolynomial(ps, m, var(p))
+    LaurentPolynomial(ps, m, indeterminate(p))
 end
 
 
@@ -436,19 +441,24 @@ Base.:+(p::LaurentPolynomial{T}, c::S) where {T, S <: Number} = sum(promote(p,c)
 ##
 function Base.:+(p1::P1, p2::P2) where {T,X,P1<:LaurentPolynomial{T,X}, S,Y, P2<:LaurentPolynomial{S,Y}}
 
+    R = promote_type(T,S)
+    
     if isconstant(p1)
         i₁ = firstindex(p1)
-        p2[i₁] += p1[i₁]
-        return p2
+        q2 = LaurentPolynomial{R,Y}(p2.coeffs, p2.m[])
+        q2[i₁] += p1[i₁]
+        chop!(q2)
+        return q2
     elseif isconstant(p2)
         i₂ = firstindex(p2)
-        p1[i₂] += p2[i₂]
-        return p1
+        q1 = LaurentPolynomial{R,X}(p1.coeffs, p1.m[])        
+        q1[i₂] += p2[i₂]
+        chop!(q1)
+        return q1
     end
 
     X != Y && error("LaurentPolynomials must have same variable")
 
-    R = promote_type(T,S)
 
     m1,n1 = (extrema ∘ degreerange)(p1)
     m2,n2 = (extrema ∘ degreerange)(p2)
@@ -564,9 +574,10 @@ function integrate(p::P, k::S) where {T, X, P<: LaurentPolynomial{T, X}, S<:Numb
 
     !iszero(p[-1])  && throw(ArgumentError("Can't integrate Laurent  polynomial with  `x⁻¹` term"))
     R = eltype((one(T)+one(S))/1)
-
+    Q = ⟒(P){R, X}
+    
     if hasnan(p) || isnan(k)
-        return P([NaN], 0, X) # not R(NaN)!! don't like XXX
+        return P([NaN], 0) # not Q([NaN])!! don't like XXX
     end
 
 
@@ -589,7 +600,7 @@ function integrate(p::P, k::S) where {T, X, P<: LaurentPolynomial{T, X}, S<:Numb
 
     as[1-m] = k
 
-    return ⟒(P){R,X}(as, m)
+    return Q(as, m)
 
 end
 

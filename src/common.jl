@@ -275,7 +275,7 @@ end
 Check if either `p` or `q` is constant or if `p` and `q` share the same variable
 """
 check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial) =
-    (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || var(p) ==  var(q)
+    (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || indeterminate(p) ==  indeterminate(q)
 
 #=
 Linear Algebra =#
@@ -508,16 +508,20 @@ Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
 #=
 identity =#
 Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(coeffs(p)))
-Base.hash(p::AbstractPolynomial, h::UInt) = hash(var(p), hash(coeffs(p), h))
+Base.hash(p::AbstractPolynomial, h::UInt) = hash(indeterminate(p), hash(coeffs(p), h))
 
 #=
 zero, one, variable, basis =#
 
-var(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
-var(::Type{P}) where {P <: AbstractPolynomial} = :x
-var(p::AbstractPolynomial{T, X}) where {T, X} = X
-export var
-
+# get symbol of polynomial. (e.g. `:x` from 1x^2 + 2x^3...
+_indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T, X}} = X
+_indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
+indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
+indeterminate(::Type{P}) where {P <: AbstractPolynomial} = :x
+indeterminate(p::AbstractPolynomial{T, X}) where {T, X} = X
+function indeterminate(PP::Type{P}, p::AbstractPolynomial) where {P <: AbstractPolynomial}
+    X = _indeterminate(PP) == nothing ? indeterminate(p) :  _indeterminate(PP)
+end
 
 
 """
@@ -528,16 +532,16 @@ Returns a representation of 0 as the given polynomial.
 """
 Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(zeros(eltype(P), 1), var)
 Base.zero(::Type{P}) where {T, X, P<:AbstractPolynomial{T,X}} = ⟒(P){T,X}(zeros(T,1))
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, var(p))
+Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, indeterminate(p))
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(ones(eltype(P),1), var)  # assumes  p₀ = 1
+Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P){eltype(P), Symbol(var)}(ones(eltype(P),1))  # assumes  p₀ = 1
 Base.one(::Type{P}) where {T, X, P<:AbstractPolynomial{T,X}} = ⟒(P){T,X}(ones(T,1))
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P, var(p))
+Base.one(p::P) where {P <: AbstractPolynomial} = one(P, indeterminate(p))
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
@@ -546,7 +550,7 @@ Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
 """
     variable(var=:x)
     variable(::Type{<:AbstractPolynomial}, var=:x)
-    variable(p::AbstractPolynomial, var=var(p))
+    variable(p::AbstractPolynomial, var=indeterminate(p))
 
 Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
 
@@ -568,7 +572,7 @@ julia> roots((x - 3) * (x + 2))
 ```
 """
 variable(::Type{P}, var::SymbolLike = :x) where {P <: AbstractPolynomial} = MethodError()
-variable(p::AbstractPolynomial, var::SymbolLike = var(p)) = variable(typeof(p), var)
+variable(p::AbstractPolynomial, var::SymbolLike = indeterminate(p)) = variable(typeof(p), var)
 variable(::Type{P}) where {T,X, P <: AbstractPolynomial{T,X}} = variable(P, X)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
@@ -687,12 +691,11 @@ Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && p[0] == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
-function Base.isapprox(p1::AbstractPolynomial{T},
-    p2::AbstractPolynomial{S};
+function Base.isapprox(p1::AbstractPolynomial{T,X},
+    p2::AbstractPolynomial{S,Y};
     rtol::Real = (Base.rtoldefault(T, S, 0)),
-                       atol::Real = 0,) where {T,S}
-    
-    p1, p2 = promote(p1, p2)
+                       atol::Real = 0,) where {T,X,S,Y}
+#    p1, p2 = promote(p1, p2)
     check_same_variable(p1, p2)  || error("p1 and p2 must have same var")
     # copy over from abstractarray.jl
     Δ  = norm(p1-p2)

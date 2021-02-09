@@ -26,7 +26,7 @@ mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 ## generic test if polynomial `p` is a constant
 isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 
-Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], var(q))
+Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], indeterminate(q))
 
 Base.values(p::StandardBasisPolynomial) = values(p.coeffs)
 
@@ -55,32 +55,35 @@ function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Numbe
 end
 
 
-function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolynomial{T}}
+function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPolynomial{T, X}}
     order < 0 && error("Order of derivative must be non-negative")
 
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
     R = eltype(one(T)*1)
+    Q = ⟒(P){R,X}
+    
     order == 0 && return p
-    hasnan(p) && return ⟒(P){R}(R[NaN], var(p))
-    order > length(p) && return zero(⟒(P){R},var(p))
+    hasnan(p) && return Q(R[NaN])
+    order > length(p) && return zero(Q)
     d = degree(p)
-    d <= 0 && return zero(⟒(P){R},var(p))
+    d <= 0 && return zero(Q)
     n = d + 1
     a2 = Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
     end
-    return _convert(p, a2)
+    Q(a2)
 end
 
 
-function integrate(p::P, k::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
+function integrate(p::P, k::S) where {T, X, P <: StandardBasisPolynomial{T, X}, S<:Number}
 
     R = eltype((one(T)+one(S))/1)
+    Q = ⟒(P){R,X}    
     if hasnan(p) || isnan(k)
-        return ⟒(P)([NaN])
+        return ⟒(P){T,X}([NaN]) # XXX
     end
     n = length(p)
     a2 = Vector{R}(undef, n + 1)
@@ -88,14 +91,14 @@ function integrate(p::P, k::S) where {T, P <: StandardBasisPolynomial{T}, S<:Num
     @inbounds for i in 1:n
         a2[i + 1] = p[i - 1] / i
     end
-    return _convert(p, a2)
+    return Q(a2)
 end
 
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
 
     check_same_variable(num, den) || error("Polynomials must have same variable")
-    var = var(num)
+    X = indeterminate(num)
 
 
     n = degree(num)
@@ -109,7 +112,7 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
     deg = n - m + 1
 
     if deg ≤ 0
-        return zero(P, var), num
+        return zero(P), num
     end
 
     q_coeff = zeros(R, deg)
@@ -284,7 +287,7 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
     k  == K && return zeros(R, k-1)
 
     # find eigenvalues of the  companion matrix
-    comp  = companion(⟒(P)(as[k:K], var(p)))
+    comp  = companion(⟒(P)(as[k:K], indeterminate(p)))
     L = eigvals(comp; kwargs...)
     append!(L, zeros(eltype(L), k-1))
 
@@ -410,7 +413,7 @@ function polyfitA(x, y, n=length(x)-1; var=:x)
         Q[:,k+1] .= q/H[k+1,k]
     end
     d = Q \ y
-    ArnoldiFit(d, H, var)
+    ArnoldiFit{eltype(d),typeof(H),Symbol(var)}(d, H)
 end
 
 function polyvalA(d, H::AbstractMatrix{S}, s::T) where {T, S}
@@ -447,7 +450,7 @@ Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "Arnold
 
 fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T} = polyfitA(x, y, deg; var=var)
 
-Base.convert(::Type{P}, p::ArnoldiFit) where {P <: AbstractPolynomial} = p(variable(P,var(p)))
+Base.convert(::Type{P}, p::ArnoldiFit) where {P <: AbstractPolynomial} = p(variable(P,indeterminate(p)))
 
 
 

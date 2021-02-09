@@ -32,14 +32,16 @@ Polynomial(1.0)
 """
 struct Polynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
-    function Polynomial{T, X}(coeffs::AbstractVector{T}) where {T <: Number, X}
+    function Polynomial{T, X}(coeffs::AbstractVector{S}) where {T <: Number, X, S}
         if Base.has_offset_axes(coeffs)
-            throw(ArgumentError("The `Polynomial` constructor does not accept `OffsetArrays`. Try `LaurentPolynomial`."))
+            #throw(ArgumentError("The `Polynomial` constructor does not accept `OffsetArrays`. Try `LaurentPolynomial`."))
+            @warn "ignoring the axis offset of the coefficient vector"
+            coeffs = OffsetArrays.no_offset_view(coeffs) 
         end
         length(coeffs) == 0 && return new{T,X}(zeros(T, 1))
         last_nz = findlast(!iszero, coeffs)
         last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T, X}(coeffs[1:last])
+        return new{T, X}(convert(Vector{T}, coeffs[1:last]))
     end
 end
 
@@ -73,7 +75,7 @@ julia> p.(0:3)
 function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
     n1, n2 = length(p1), length(p2)
     if n1 > 1 && n2 > 1
-       var(p1) != var(p2) && error("Polynomials must have same variable")
+       indeterminate(p1) != indeterminate(p2) && error("Polynomials must have same variable")
     end
     R = promote_type(T,S)
     c = zeros(R, max(n1, n2))
@@ -89,15 +91,15 @@ function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
               c[i] += p1.coeffs[i]
             end
         end
-        return Polynomial{R, var(p1)}(c)
+        return Polynomial{R, indeterminate(p1)}(c)
     elseif n1 <= 1
       c .= p2.coeffs
       c[1] += p1[0]
-      return Polynomial{R, var(p2)}(c)
+      return Polynomial{R, indeterminate(p2)}(c)
     else 
       c .= p1.coeffs
       c[1] += p2[0]
-      return Polynomial{R, var(p1)}(c)
+      return Polynomial{R, indeterminate(p1)}(c)
     end
 end
 
@@ -106,19 +108,19 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
 
     n, m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
     if n > 0 && m > 0
-        var(p1) != var(p2) && error("Polynomials must have same variable")
+        indeterminate(p1) != indeterminate(p2) && error("Polynomials must have same variable")
         R = promote_type(T, S)
         c = zeros(R, m + n + 1)
         for i in 0:n, j in 0:m
             @inbounds c[i + j + 1] += p1[i] * p2[j]
         end
-        return Polynomial{R, var(p1)}(c)
+        return Polynomial{R, indeterminate(p1)}(c)
     elseif n <= 0
         cs = p2.coeffs * p1[0]
-        return Polynomial{eltype(cs), var(p2)}(cs)
+        return Polynomial{eltype(cs), indeterminate(p2)}(cs)
     else
         cs = p1.coeffs * p2[0]
-        return Polynomial{eltype(cs), var(p1)}(cs)
+        return Polynomial{eltype(cs), indeterminate(p1)}(cs)
     end
 
 end

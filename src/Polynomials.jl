@@ -26,6 +26,6 @@ include("polynomials/multroot.jl")
 include("polynomials/ChebyshevT.jl")
 
 # compat; opt-in with `using Polynomials.PolyCompat`
-#include("polynomials/Poly.jl")
+include("polynomials/Poly.jl")
 
 end # module

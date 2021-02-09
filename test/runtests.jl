@@ -10,4 +10,4 @@ using OffsetArrays
 
 @testset "Standard basis" begin include("StandardBasis.jl") end
 @testset "ChebyshevT" begin include("ChebyshevT.jl") end
-#@testset "Poly, Pade (compatability)" begin include("Poly.jl") end
+@testset "Poly, Pade (compatability)" begin include("Poly.jl") end
