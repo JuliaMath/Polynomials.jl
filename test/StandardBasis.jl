@@ -627,8 +627,9 @@ end
         @test isequal(pder, P([NaN]))
         @test isequal(pint, P([NaN]))
 
-        pint  = integrate(p, 0.0im)
-        @test isequal(pint, P([NaN]))
+        c = 0.0im
+        pint  = integrate(p, c)
+        @test isequal(pint, P{promote_type(eltype(p), typeof(c)), :x}([NaN]))
 
         # Issue with overflow and polyder Issue #159
         @test derivative(P(BigInt[0, 1])^100, 100) == P(factorial(big(100)))

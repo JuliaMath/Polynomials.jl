@@ -577,7 +577,7 @@ function integrate(p::P, k::S) where {T, X, P<: LaurentPolynomial{T, X}, S<:Numb
     Q = ⟒(P){R, X}
     
     if hasnan(p) || isnan(k)
-        return P([NaN], 0) # not Q([NaN])!! don't like XXX
+        return Q([NaN],0)
     end
 
 

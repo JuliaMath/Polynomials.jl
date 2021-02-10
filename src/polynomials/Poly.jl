@@ -114,6 +114,22 @@ function Base.getproperty(p::Poly, nm::Symbol)
     return getfield(p, nm)
 end
 
+function Polynomials.integrate(p::P, k::S) where {T, X, P <: Poly{T, X}, S<:Number}
+
+    R = eltype((one(T)+one(S))/1)
+    Q = Poly{R,X}
+    if hasnan(p) || isnan(k)
+        return P([NaN]) # keep for Poly, not Q
+    end
+    n = length(p)
+    a2 = Vector{R}(undef, n + 1)
+    a2[1] = k
+    @inbounds for i in 1:n
+        a2[i + 1] = p[i - 1] / i
+    end
+    return Q(a2)
+end
+
 polyint(p::Poly, C = 0) = integrate(p, C)
 polyint(p::Poly, a, b) = integrate(p, a, b)
 polyint(p::AbstractPolynomial, args...)  = error("`polyint` is a legacy name for use with `Poly` objects only. Use `integrate(p,...)`.")

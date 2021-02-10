@@ -82,9 +82,11 @@ function integrate(p::P, k::S) where {T, X, P <: StandardBasisPolynomial{T, X}, 
 
     R = eltype((one(T)+one(S))/1)
     Q = ⟒(P){R,X}    
+
     if hasnan(p) || isnan(k)
-        return ⟒(P){T,X}([NaN]) # XXX
+        return Q([NaN])
     end
+
     n = length(p)
     a2 = Vector{R}(undef, n + 1)
     a2[1] = k

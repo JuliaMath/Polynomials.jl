@@ -119,14 +119,15 @@ function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {
     return A
 end
 
-function integrate(p::ChebyshevT{T}, C::S) where {T,S <: Number}
+function integrate(p::ChebyshevT{T,X}, C::S) where {T,X,S <: Number}
     R = promote_type(eltype(one(T) / 1), S)
+    Q = ChebyshevT{R,X}
     if hasnan(p) || isnan(C)
-        return ChebyshevT([NaN])
+        return Q([NaN])
     end
     n = length(p)
     if n == 1
-        return ChebyshevT{R}([C, p[0]])
+        return Q([C, p[0]])
     end
     a2 = Vector{R}(undef, n + 1)
     a2[1] = zero(R)
@@ -137,7 +138,7 @@ function integrate(p::ChebyshevT{T}, C::S) where {T,S <: Number}
         a2[i] -= p[i] / (2 * (i - 1))
     end
     a2[1] += R(C) - ChebyshevT(a2)(0)
-    return ChebyshevT(a2, indeterminate(p))
+    return Q(a2)
 end
 
 

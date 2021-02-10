@@ -313,14 +313,14 @@ function integrate(p::P, k::S) where {T, X, P<:SparsePolynomial{T,X}, S<:Number}
     Q = SparsePolynomial{R,X}
 
     if hasnan(p) || isnan(k)
-        return P(Dict(0 => NaN)) # not Q(NaN)!! don't like XXX
+        return Q(Dict(0 => NaN))
     end
 
     ∫p = Q(R(k))
     for k in eachindex(p)
         ∫p[k + 1] = p[k] / (k+1)
     end
-    
+
     return ∫p
-    
+
 end
