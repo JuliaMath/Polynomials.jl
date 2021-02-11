@@ -130,16 +130,18 @@ end
     as = ones(3:4)
     bs = parent(as)
     
-    # LaurentPolynomial accepts OffsetArrays; others do not and throw an ArgumentError
-    @test LaurentPolynomial(as) == LaurentPolynomial(bs, 3)
     
     for P in Ps
-        P == LaurentPolynomial && continue
-        @test P(as) == P(bs)
-        @test P{eltype(as)}(as) == P{eltype(as)}(bs)
-#        P == LaurentPolynomial && continue # XXX move to this
-#        @test_throws ArgumentError P(as) 
-#        @test P{eltype(as)}(as) == P{eltype(as)}(bs)
+        # LaurentPolynomial accepts OffsetArrays; others throw warning
+        if P == LaurentPolynomial
+            @test LaurentPolynomial(as) == LaurentPolynomial(bs, 3)
+        else
+            @test P(as) == P(bs)
+            @test P{eltype(as)}(as) == P{eltype(as)}(bs)
+            # (Or throw an error?)
+            # @test_throws ArgumentError P(as) 
+            # @test P{eltype(as)}(as) == P{eltype(as)}(bs)
+        end
     end
         
     a = [1,1]
@@ -152,9 +154,6 @@ end
         end
         
     end
-
-    @test ImmutablePolynomial{eltype(as)}(as) == ImmutablePolynomial(bs)
-    
 end
 
 
