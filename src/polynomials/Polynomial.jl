@@ -34,14 +34,16 @@ struct Polynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
     function Polynomial{T, X}(coeffs::AbstractVector{S}) where {T <: Number, X, S}
         if Base.has_offset_axes(coeffs)
-            #throw(ArgumentError("The `Polynomial` constructor does not accept `OffsetArrays`. Try `LaurentPolynomial`."))
             @warn "ignoring the axis offset of the coefficient vector"
-            coeffs = OffsetArrays.no_offset_view(coeffs) 
         end
-        length(coeffs) == 0 && return new{T,X}(zeros(T, 1))
-        last_nz = findlast(!iszero, coeffs)
-        last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T, X}(convert(Vector{T}, coeffs[1:last]))
+        N = findlast(!iszero, coeffs)
+        isnothing(N) && return new{T,X}(zeros(T,1))
+        cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
+        new{T,X}(cs)
+    end
+    # non-copying alternative assuming !iszero(coeffs[end])
+    function Polynomial{T, X}(checked::Val{false}, coeffs::AbstractVector{T}) where {T <: Number, X}
+        new{T, X}(coeffs)
     end
 end
 
@@ -73,68 +75,64 @@ julia> p.(0:3)
 
 # scalar _,* faster  than standard-basis/common versions
 function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}
-     R = promote_type(T, S)
-     as = convert(Vector{R}, copy(coeffs(p)))
-     as[1] += c
-     return Polynomial{R, X}(as)
+    R = promote_type(T, S)
+    Q = Polynomial{R,X}
+    as = convert(Vector{R}, copy(coeffs(p)))
+    as[1] += c
+    iszero(as[end]) ? Q(as) : Q(Val(false), as)
 end
 
 function Base.:*(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Number}
-    as = [aᵢ * c for aᵢ ∈ coeffs(p)]
-    Polynomial{promote_type(T,S),X}(as)
+    R = promote_type(T,S)
+    Q = Polynomial{R, X}
+    as = R[aᵢ * c for aᵢ ∈ coeffs(p)]
+    iszero(as[end]) ? Q(as) : Q(Val(false), as)
 end
 
-
-   
 function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
+    isconstant(p1) && return p2 + p1[0]
+    isconstant(p2) && return p1 + p2[0]
+    X, Y = indeterminate(p1), indeterminate(p2)
+    X != Y && error("Polynomials must have same variable")
     n1, n2 = length(p1), length(p2)
-    if n1 > 1 && n2 > 1
-       indeterminate(p1) != indeterminate(p2) && error("Polynomials must have same variable")
-    end
     R = promote_type(T,S)
+
     c = zeros(R, max(n1, n2))
-    if n1 > 1 && n2 > 1
-       if n1 >= n2
-          c .= p1.coeffs
-          for i = eachindex(p2.coeffs)
+    if n1 >= n2
+        c .= p1.coeffs
+        for i in eachindex(p2.coeffs)
             c[i] += p2.coeffs[i]
-          end
-        else
-            c .= p2.coeffs
-            for i = eachindex(p1.coeffs)
-              c[i] += p1.coeffs[i]
-            end
         end
-        return Polynomial{R, indeterminate(p1)}(c)
-    elseif n1 <= 1
-      c .= p2.coeffs
-      c[1] += p1[0]
-      return Polynomial{R, indeterminate(p2)}(c)
-    else 
-      c .= p1.coeffs
-      c[1] += p2[0]
-      return Polynomial{R, indeterminate(p1)}(c)
+    else
+        c .= p2.coeffs
+        for i in eachindex(p1.coeffs)
+            c[i] += p1.coeffs[i]
+            end
     end
+
+    Q = Polynomial{R,X}
+    return iszero(c[end]) ? Q(c) : Q(Val(false), c)
+
 end
 
 
 function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
 
     n, m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
+    X, Y = indeterminate(p1), indeterminate(p2)
+    R = promote_type(T, S)
     if n > 0 && m > 0
-        indeterminate(p1) != indeterminate(p2) && error("Polynomials must have same variable")
-        R = promote_type(T, S)
+        X != Y && error("Polynomials must have same variable")
         c = zeros(R, m + n + 1)
         for i in 0:n, j in 0:m
             @inbounds c[i + j + 1] += p1[i] * p2[j]
         end
-        return Polynomial{R, indeterminate(p1)}(c)
+        Q = Polynomial{R,X}
+        return iszero(c[end]) ? Q(c) : Q(Val(false), c)
     elseif n <= 0
-        cs = p2.coeffs * p1[0]
-        return Polynomial{eltype(cs), indeterminate(p2)}(cs)
+        return Polynomial{R, Y}(p2.coeffs * p1[0])
     else
-        cs = p1.coeffs * p2[0]
-        return Polynomial{eltype(cs), indeterminate(p1)}(cs)
+        return Polynomial{R, X}(p1.coeffs * p2[0])
     end
 
 end

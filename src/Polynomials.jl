@@ -3,7 +3,6 @@ module Polynomials
 #  using GenericLinearAlgebra ## remove for now. cf: https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl/pull/71#issuecomment-743928205
 using LinearAlgebra
 using Intervals
-using OffsetArrays
 
 include("abstract.jl")
 include("show.jl")

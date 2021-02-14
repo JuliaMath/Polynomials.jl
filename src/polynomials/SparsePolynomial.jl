@@ -48,6 +48,9 @@ struct SparsePolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
         end
         new{T, X}(c)
     end
+    function SparsePolynomial{T,X}(checked::Val{false}, coeffs::AbstractDict{Int, T}) where {T <: Number, X}
+        new{T,X}(convert(Dict{Int,S}, coeffs))
+    end
 end
 
 @register SparsePolynomial
@@ -61,17 +64,13 @@ function SparsePolynomial(coeffs::AbstractDict{Int, T}, var::SymbolLike=:x) wher
 end
 
 function SparsePolynomial{T,X}(coeffs::AbstractVector{S}) where {T <: Number, X, S}
-    firstindex(coeffs) >= 0 || throw(ArgumentError("Use the `LaurentPolynomial` type for arrays with a negative first index"))
 
     if Base.has_offset_axes(coeffs)
-        # throw(ArgumentError("The `SparsePolynomial` constructor does not accept `OffsetArrays`. Try `LaurentPolynomial`."))
-
         @warn "ignoring the axis offset of the coefficient vector"
-        coeffs = OffsetArrays.no_offset_view(coeffs) 
     end
 
-    c = OffsetArrays.no_offset_view(coeffs) # ensure 1-based indexing
-    p = Dict{Int,T}(i - 1 => v for (i,v) in pairs(c))
+    offset = firstindex(coeffs)
+    p = Dict{Int,T}(k - offset => v for (k,v) ∈ pairs(coeffs))
     return SparsePolynomial{T,X}(p)
 end
 

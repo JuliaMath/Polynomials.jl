@@ -63,20 +63,19 @@ function ImmutablePolynomial{T,X}(coeffs::AbstractVector{S})  where {T,X,S}
     R = promote_type(T,S)
     
     if Base.has_offset_axes(coeffs)
-        # throw(ArgumentError("The `ImmutablePolynomial` constructor does not accept `OffsetArrays`. Try `LaurentPolynomial`."))
         @warn "ignoring the axis offset of the coefficient vector"
-        coeffs = OffsetArrays.no_offset_view(coeffs) 
     end
-    #c = OffsetArrays.no_offset_view(coeffs)
     N = findlast(!iszero, coeffs)
-    N == nothing && return zero(ImmutablePolynomial{R,X})
-    ImmutablePolynomial{T, X, N}(NTuple{N,T}(cᵢ for cᵢ ∈ coeffs))
+    isnothing(N) && return ImmutablePolynomial{R,X,0}(())
+    N′ = N + 1 - firstindex(coeffs)
+    cs = NTuple{N′,T}(coeffs[i] for i ∈ firstindex(coeffs):N)
+    ImmutablePolynomial{T, X, N′}(cs)
 end
 
 ## -- Tuple arguments
 function ImmutablePolynomial{T,X}(coeffs::Tuple)  where {T,X}
     N = findlast(!iszero, coeffs)
-    N == nothing && return zero(ImmutablePolynomial{T,X})
+    isnothing(N) && return zero(ImmutablePolynomial{T,X})
     ImmutablePolynomial{T,X,N}(NTuple{N,T}(coeffs[i] for i in 1:N))
 end
 
@@ -276,14 +275,15 @@ end
 
 function Base.:*(p::ImmutablePolynomial{T,X,N}, c::S) where {T, X,N, S <: Number}
     R = eltype(one(T)*one(S))
-    iszero(c) && return zero(ImmutablePolynomial{R,X})
+    iszero(p[end]*c) && return ImmutablePolynomial{R,X}(p.coeffs .* c)
     ImmutablePolynomial{R,X,N}(p.coeffs .* c)
 end
 
 function Base.:/(p::ImmutablePolynomial{T,X,N}, c::S) where {T,X,N,S <: Number}
     R = eltype(one(T)/one(S))
-    isinf(c)  && return zero(ImmutablePolynomial{R,X})
-    ImmutablePolynomial{R,X,N}(p.coeffs ./ c)
+    cs = p.coeffs ./ c
+    iszero(cs[end])  && return ImmutablePolynomial{R,X}(cs)
+    ImmutablePolynomial{R,X,N}(cs)
 end
 
 Base.:-(p::ImmutablePolynomial{T,X,N}) where {T,X,N} = ImmutablePolynomial{T,X,N}(.-p.coeffs)

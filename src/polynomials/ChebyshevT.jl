@@ -30,16 +30,15 @@ ChebyshevT(1.0⋅T_0(x))
 struct ChebyshevT{T <: Number, X} <: AbstractPolynomial{T, X}
     coeffs::Vector{T}
     function ChebyshevT{T, X}(coeffs::AbstractVector{S}) where {T <: Number,X, S}
-        length(coeffs) == 0 && return new{T,X}(zeros(T, 1))
+
         if Base.has_offset_axes(coeffs)
-            # throw(ArgumentError("The `ChebyshevT` constructor does not accept `OffsetArrays`. Try `LaurentPolynomial`."))
-            
             @warn "ignoring the axis offset of the coefficient vector"
-            coeffs = OffsetArrays.no_offset_view(coeffs) 
         end
-        last_nz = findlast(!iszero, coeffs)
-        last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T,X}(convert(Vector{T}, coeffs[1:last]))
+
+        N = findlast(!iszero, coeffs)
+        isnothing(N) && return new{T,X}(zeros(T,1))
+        cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
+        new{T,X}(cs)
     end
 end
 
