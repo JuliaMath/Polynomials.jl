@@ -457,7 +457,7 @@ function Base.:+(p1::P1, p2::P2) where {T,X,P1<:LaurentPolynomial{T,X}, S,Y, P2<
         return q1
     end
 
-    X != Y && error("LaurentPolynomials must have same variable")
+    X != Y && throw(ArgumentError("LaurentPolynomials must have same variable"))
 
 
     m1,n1 = (extrema ∘ degreerange)(p1)
@@ -481,7 +481,7 @@ function Base.:*(p1::LaurentPolynomial{T,X}, p2::LaurentPolynomial{S,Y}) where {
     isconstant(p1) && return p2 * p1[0]
     isconstant(p2) && return p1 * p2[0]
 
-    X != Y && error("LaurentPolynomials must have same variable")
+    X != Y && throw(ArgumentError("LaurentPolynomials must have same variable"))
 
     R = promote_type(T,S)
 
@@ -546,7 +546,7 @@ end
 ##
 function derivative(p::P, order::Integer = 1) where {T, X, P<:LaurentPolynomial{T,X}}
 
-    order < 0 && error("Order of derivative must be non-negative")
+    order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
     order == 0 && return p
 
     hasnan(p) && return ⟒(P)(T[NaN], 0, X)

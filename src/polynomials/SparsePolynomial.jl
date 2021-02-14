@@ -212,7 +212,7 @@ function Base.:+(p1::SparsePolynomial{T,X}, p2::SparsePolynomial{S,Y}) where {T,
     isconstant(p1) && return p2 + p1[0]
     isconstant(p2) && return p1 + p2[0]
 
-    X != Y && error("SparsePolynomials must have same variable")
+    X != Y && throw(ArgumentError("SparsePolynomials must have same variable"))
 
     R = promote_type(T,S)
     p = zero(SparsePolynomial{R,X})
@@ -253,7 +253,7 @@ function Base.:*(p1::SparsePolynomial{T,X}, p2::SparsePolynomial{S,Y}) where {T,
 
     isconstant(p1) && return p2 * p1[0]
     isconstant(p2) && return p1 * p2[0]
-    X != Y && error("SparsePolynomials must have same variable")
+    X != Y && throw(ArgumentError("SparsePolynomials must have same variable"))
 
     R = promote_type(T,S)
     P = SparsePolynomial
@@ -286,7 +286,7 @@ end
 
 function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
     
-    order < 0 && error("Order of derivative must be non-negative")
+    order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
     order == 0 && return p
 
     R = eltype(one(T)*1)

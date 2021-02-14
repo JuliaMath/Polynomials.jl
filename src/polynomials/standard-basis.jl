@@ -56,7 +56,7 @@ end
 
 
 function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPolynomial{T, X}}
-    order < 0 && error("Order of derivative must be non-negative")
+    order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
 
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
@@ -99,7 +99,7 @@ end
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
 
-    check_same_variable(num, den) || error("Polynomials must have same variable")
+    check_same_variable(num, den) || throw(ArgumentError("Polynomials must have same variable"))
     X = indeterminate(num)
 
 
@@ -256,7 +256,7 @@ Base.gcd(::Val{:numerical}, p, q, args...; kwargs...) = ngcd(p,q, args...; kwarg
 
 function companion(p::P) where {T, P <: StandardBasisPolynomial{T}}
     d = length(p) - 1
-    d < 1 && error("Series must have degree greater than 1")
+    d < 1 && throw(ArgumentError("Series must have degree greater than 1"))
     d == 1 && return diagm(0 => [-p[0] / p[1]])
 
 

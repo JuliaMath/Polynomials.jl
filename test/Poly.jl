@@ -88,7 +88,7 @@ sprint(show, pNULL)
 @test polyder(pR) == Poly([-2//1,2//1])
 @test polyder(p3) == Poly([2,2])
 @test polyder(p1) == polyder(p0) == polyder(pNULL) == pNULL
-@test_throws ErrorException polyder(pR, -1)
+@test_throws ArgumentError polyder(pR, -1)
 @test polyint(pNULL,1) == p1
 @test polyint(Poly(Rational[1,2,3])) == Poly(Rational[0, 1, 1, 1])
 @test polyint(p2, 0, 2) == 4.0
@@ -148,8 +148,8 @@ pS3 = Poly([1, 2, 3, 4, 5], :s)
 @test_throws ErrorException pS1 + pX
 @test_throws ErrorException pS1 - pX
 @test_throws ErrorException pS1 * pX
-@test_throws ErrorException pS1 ÷ pX
-@test_throws ErrorException pS1 % pX
+@test_throws ArgumentError pS1 ÷ pX
+@test_throws ArgumentError pS1 % pX
 
 #Testing copying.
 pcpy1 = Poly([1,2,3,4,5], :y)
@@ -357,7 +357,7 @@ p2s = Poly([1], :s)
 @test p1s ≠ p1x
 @test p1s ≠ p2s
 
-@test_throws ErrorException p1s ≈ p1x
+@test_throws ArgumentError p1s ≈ p1x
 @test p1s ≉ p2s
 @test p1s ≈ Poly([1,2.], :s)
 

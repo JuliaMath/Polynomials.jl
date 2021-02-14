@@ -94,7 +94,7 @@ julia> c.(-1:0.5:1)
 ```
 """
 function (ch::ChebyshevT{T})(x::S) where {T,S}
-    x ∉ domain(ch) && error("$x outside of domain")
+    x ∉ domain(ch) && throw(ArgumentError("$x outside of domain"))
     R = promote_type(T, S)
     length(ch) == 0 && return zero(R)
     length(ch) == 1 && return R(ch[0])
@@ -169,7 +169,7 @@ end
 
 function companion(p::ChebyshevT{T}) where T
     d = length(p) - 1
-    d < 1 && error("Series must have degree greater than 1")
+    d < 1 && throw(ArgumentError("Series must have degree greater than 1"))
     d == 1 && return diagm(0 => [-p[0] / p[1]])
     R = eltype(one(T) / one(T))
 
@@ -185,7 +185,7 @@ end
 
 function Base.:+(p1::ChebyshevT{T,X}, p2::ChebyshevT{S,Y}) where {T,X,S,Y}
     X′ = isconstant(p2) ? X : Y
-    (!isconstant(p1) && !isconstant(p2)) && X != Y && error("Polynomials must have same variable")
+    (!isconstant(p1) && !isconstant(p2)) && X != Y && throw(ArgumentError("Polynomials must have same variable"))
     n = max(length(p1), length(p2))
     R =  promote_type(T,S)
     c = R[p1[i] + p2[i] for i = 0:n]
@@ -195,7 +195,7 @@ end
 
 function Base.:*(p1::ChebyshevT{T,X}, p2::ChebyshevT{S,Y}) where {T,X,S,Y}
     X′ = isconstant(p2) ? X : Y
-    (!isconstant(p1) && !isconstant(p2)) &&     X != Y && error("Polynomials must have same variable")
+    (!isconstant(p1) && !isconstant(p2)) &&     X != Y && throw(ArgumentError("Polynomials must have same variable"))
     z1 = _c_to_z(p1.coeffs)
     z2 = _c_to_z(p2.coeffs)
     prod = fastconv(z1, z2)
@@ -205,7 +205,7 @@ function Base.:*(p1::ChebyshevT{T,X}, p2::ChebyshevT{S,Y}) where {T,X,S,Y}
 end
 
 function Base.divrem(num::ChebyshevT{T,X}, den::ChebyshevT{S,Y}) where {T,X,S,Y}
-    X != Y && error("Polynomials must have same variable")
+    X != Y && throw(ArgumentError("Polynomials must have same variable"))
     n = length(num) - 1
     m = length(den) - 1
 

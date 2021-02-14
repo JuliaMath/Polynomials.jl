@@ -251,11 +251,11 @@ end
         @test pX != pS1
         @test pS1 == pS2
         @test pS1 == pS3
-        @test_throws ErrorException pS1 + pX
-        @test_throws ErrorException pS1 - pX
-        @test_throws ErrorException pS1 * pX
-        @test_throws ErrorException pS1 ÷ pX
-        @test_throws ErrorException pS1 % pX
+        @test_throws ArgumentError pS1 + pX
+        @test_throws ArgumentError pS1 - pX
+        @test_throws ArgumentError pS1 * pX
+        @test_throws ArgumentError pS1 ÷ pX
+        @test_throws ArgumentError pS1 % pX
 
         # Testing copying.
         pcpy1 = P([1,2,3,4,5], :y)
@@ -282,7 +282,7 @@ end
         @test p1s ≠ p1x
         @test p1s ≠ p2s
 
-        @test_throws ErrorException p1s ≈ p1x
+        @test_throws ArgumentError p1s ≈ p1x
         @test p1s ≉ p2s
         @test p1s ≈ P([1,2.], :s)
 
@@ -320,7 +320,7 @@ end
         @test zero(P, :x) ≈ zero(P, :y)
         @test one(P, :x) ≈ one(P, :y)
         @test (variable(P, :x) ≈ variable(P, :x))
-        @test_throws ErrorException variable(P, :x) ≈ variable(P, :y)
+        @test_throws ArgumentError variable(P, :x) ≈ variable(P, :y)
 
     end
 end
@@ -600,7 +600,7 @@ end
         @test derivative(pR) == P([-2 // 1,2 // 1])
         @test derivative(p3) == P([2,2])
         @test derivative(p1) == derivative(p0) == derivative(pNULL) == pNULL
-        @test_throws ErrorException derivative(pR, -1)
+        @test_throws ArgumentError derivative(pR, -1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
 
         @test derivative(integrate(pN)) == convert(P{Float64}, pN)

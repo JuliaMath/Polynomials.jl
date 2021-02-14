@@ -181,7 +181,7 @@ function Base.:+(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,Y,M})
     if X != Y
         isconstant(p1) && return ImmutablePolynomial{T,Y,1}(p1.coeffs) + p2 
         isconstant(p2) && return p1 + ImmutablePolynomial{S,X,1}(p2.coeffs)
-        error("Polynomials must have same variable")
+        throw(ArgumentError("Polynomials must have same variable"))
     end
 
     if  N == M
@@ -200,7 +200,7 @@ end
 function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,Y,M}) where {T,X,N,S,Y,M}
     isconstant(p1) && return p2 * p1[0] 
     isconstant(p2) && return p1 * p2[0]
-    X != Y && error("Polynomials must have same variable")
+    X != Y && throw(ArgumentError("Polynomials must have same variable"))
     R = promote_type(S,T)
     cs = (p1.coeffs) ⊗ (p2.coeffs)
     if !iszero(cs[end])

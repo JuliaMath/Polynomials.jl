@@ -759,7 +759,7 @@ function Base.isapprox(p1::AbstractPolynomial{T,X},
     rtol::Real = (Base.rtoldefault(T, S, 0)),
                        atol::Real = 0,) where {T,X,S,Y}
 #    p1, p2 = promote(p1, p2)
-    check_same_variable(p1, p2)  || error("p1 and p2 must have same var")
+    check_same_variable(p1, p2)  || throw(ArgumentError("p1 and p2 must have same var"))
     # copy over from abstractarray.jl
     Δ  = norm(p1-p2)
     if isfinite(Δ)
