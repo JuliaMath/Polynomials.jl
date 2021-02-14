@@ -73,7 +73,7 @@ julia> p.(0:3)
 (p::Polynomial{T})(x::S) where {T,S} = evalpoly(x, coeffs(p))
 
 
-# scalar _,* faster  than standard-basis/common versions
+# scalar +,* faster  than standard-basis/common versions
 function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}
     R = promote_type(T, S)
     Q = Polynomial{R,X}
@@ -107,7 +107,7 @@ function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
         c .= p2.coeffs
         for i in eachindex(p1.coeffs)
             c[i] += p1.coeffs[i]
-            end
+        end
     end
 
     Q = Polynomial{R,X}

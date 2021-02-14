@@ -103,7 +103,7 @@ end
 
 # return coeffs as  a vector
 # use p.coeffs to get Dictionary
-function  coeffs(p::SparsePolynomial{T})  where {T}
+function coeffs(p::SparsePolynomial{T})  where {T}
 
     n = degree(p)
     cs = zeros(T, n+1)

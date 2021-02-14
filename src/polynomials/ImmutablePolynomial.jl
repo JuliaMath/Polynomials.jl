@@ -162,8 +162,8 @@ function Base.truncate(p::ImmutablePolynomial{T,X,N};
 end
 
 # no in-place chop! and truncate!
-chop!(p::ImmutablePolynomial; kwargs...) =  chop(p; kwargs...)
-truncate!(p::ImmutablePolynomial; kwargs...) =  truncate(p; kwargs...)
+chop!(p::ImmutablePolynomial; kwargs...) =  throw(MethodError("No `chop!` for the `ImmutablePolynomial` type. Use `chop`?")) 
+truncate!(p::ImmutablePolynomial; kwargs...) =  throw(MethodError("No `truncate!` for the `ImmutablePolynomial` type. Use `trunctate`?")) 
 
 ##
 ## --------------------
@@ -197,7 +197,6 @@ function Base.:+(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,Y,M})
 
 end
 
-# not type stable!!!
 function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,Y,M}) where {T,X,N,S,Y,M}
     isconstant(p1) && return p2 * p1[0] 
     isconstant(p2) && return p1 * p2[0]
