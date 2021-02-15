@@ -66,7 +66,7 @@ function ImmutablePolynomial{T,X}(coeffs::AbstractVector{S})  where {T,X,S}
         @warn "ignoring the axis offset of the coefficient vector"
     end
     N = findlast(!iszero, coeffs)
-    N = nothing && return ImmutablePolynomial{R,X,0}(())
+    N == nothing && return ImmutablePolynomial{R,X,0}(())
     N′ = N + 1 - firstindex(coeffs)
     cs = NTuple{N′,T}(coeffs[i] for i ∈ firstindex(coeffs):N)
     ImmutablePolynomial{T, X, N′}(cs)
