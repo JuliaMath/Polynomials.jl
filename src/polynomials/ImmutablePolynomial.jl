@@ -66,7 +66,7 @@ function ImmutablePolynomial{T,X}(coeffs::AbstractVector{S})  where {T,X,S}
         @warn "ignoring the axis offset of the coefficient vector"
     end
     N = findlast(!iszero, coeffs)
-    isnothing(N) && return ImmutablePolynomial{R,X,0}(())
+    N = nothing && return ImmutablePolynomial{R,X,0}(())
     N′ = N + 1 - firstindex(coeffs)
     cs = NTuple{N′,T}(coeffs[i] for i ∈ firstindex(coeffs):N)
     ImmutablePolynomial{T, X, N′}(cs)
@@ -75,7 +75,7 @@ end
 ## -- Tuple arguments
 function ImmutablePolynomial{T,X}(coeffs::Tuple)  where {T,X}
     N = findlast(!iszero, coeffs)
-    isnothing(N) && return zero(ImmutablePolynomial{T,X})
+    N == nothing && return zero(ImmutablePolynomial{T,X})
     ImmutablePolynomial{T,X,N}(NTuple{N,T}(coeffs[i] for i in 1:N))
 end
 
@@ -200,7 +200,7 @@ end
 function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,Y,M}) where {T,X,N,S,Y,M}
     isconstant(p1) && return p2 * p1[0] 
     isconstant(p2) && return p1 * p2[0]
-    X != Y && throw(ArgumentError("Polynomials must have same variable"))
+    assert_same_variable(p1, p2)
     R = promote_type(S,T)
     cs = (p1.coeffs) ⊗ (p2.coeffs)
     if !iszero(cs[end])

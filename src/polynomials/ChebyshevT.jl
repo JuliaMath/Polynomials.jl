@@ -36,7 +36,7 @@ struct ChebyshevT{T <: Number, X} <: AbstractPolynomial{T, X}
         end
 
         N = findlast(!iszero, coeffs)
-        isnothing(N) && return new{T,X}(zeros(T,1))
+        N == nothing && return new{T,X}(zeros(T,1))
         cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
         new{T,X}(cs)
     end
@@ -185,7 +185,7 @@ end
 
 function Base.:+(p1::ChebyshevT{T,X}, p2::ChebyshevT{S,Y}) where {T,X,S,Y}
     X′ = isconstant(p2) ? X : Y
-    (!isconstant(p1) && !isconstant(p2)) && X != Y && throw(ArgumentError("Polynomials must have same variable"))
+    assert_same_variable(p1, p2)
     n = max(length(p1), length(p2))
     R =  promote_type(T,S)
     c = R[p1[i] + p2[i] for i = 0:n]
@@ -195,7 +195,7 @@ end
 
 function Base.:*(p1::ChebyshevT{T,X}, p2::ChebyshevT{S,Y}) where {T,X,S,Y}
     X′ = isconstant(p2) ? X : Y
-    (!isconstant(p1) && !isconstant(p2)) &&     X != Y && throw(ArgumentError("Polynomials must have same variable"))
+    assert_same_variable(p1, p2)
     z1 = _c_to_z(p1.coeffs)
     z2 = _c_to_z(p2.coeffs)
     prod = fastconv(z1, z2)
@@ -205,7 +205,7 @@ function Base.:*(p1::ChebyshevT{T,X}, p2::ChebyshevT{S,Y}) where {T,X,S,Y}
 end
 
 function Base.divrem(num::ChebyshevT{T,X}, den::ChebyshevT{S,Y}) where {T,X,S,Y}
-    X != Y && throw(ArgumentError("Polynomials must have same variable"))
+    assert_same_variable(num, den)
     n = length(num) - 1
     m = length(den) - 1
 

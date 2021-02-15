@@ -212,7 +212,7 @@ function Base.:+(p1::SparsePolynomial{T,X}, p2::SparsePolynomial{S,Y}) where {T,
     isconstant(p1) && return p2 + p1[0]
     isconstant(p2) && return p1 + p2[0]
 
-    X != Y && throw(ArgumentError("SparsePolynomials must have same variable"))
+    assert_same_variable(p1, p2)
 
     R = promote_type(T,S)
     p = zero(SparsePolynomial{R,X})
@@ -253,7 +253,7 @@ function Base.:*(p1::SparsePolynomial{T,X}, p2::SparsePolynomial{S,Y}) where {T,
 
     isconstant(p1) && return p2 * p1[0]
     isconstant(p2) && return p1 * p2[0]
-    X != Y && throw(ArgumentError("SparsePolynomials must have same variable"))
+    assert_same_variable(p1, p2)
 
     R = promote_type(T,S)
     P = SparsePolynomial

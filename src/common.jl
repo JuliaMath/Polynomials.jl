@@ -277,6 +277,10 @@ Check if either `p` or `q` is constant or if `p` and `q` share the same variable
 check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial) =
     (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || indeterminate(p) ==  indeterminate(q)
 
+function assert_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
+    check_same_variable(p,q) || throw(ArgumentError("Polynomials have different indeterminates"))
+end
+
 #=
 Linear Algebra =#
 """

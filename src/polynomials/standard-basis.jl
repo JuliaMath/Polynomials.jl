@@ -99,7 +99,7 @@ end
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
 
-    check_same_variable(num, den) || throw(ArgumentError("Polynomials must have same variable"))
+    assert_same_variable(num, den) 
     X = indeterminate(num)
 
 

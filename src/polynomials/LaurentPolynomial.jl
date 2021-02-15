@@ -457,8 +457,7 @@ function Base.:+(p1::P1, p2::P2) where {T,X,P1<:LaurentPolynomial{T,X}, S,Y, P2<
         return q1
     end
 
-    X != Y && throw(ArgumentError("LaurentPolynomials must have same variable"))
-
+    assert_same_variable(p1, p2)
 
     m1,n1 = (extrema ∘ degreerange)(p1)
     m2,n2 = (extrema ∘ degreerange)(p2)
@@ -481,7 +480,7 @@ function Base.:*(p1::LaurentPolynomial{T,X}, p2::LaurentPolynomial{S,Y}) where {
     isconstant(p1) && return p2 * p1[0]
     isconstant(p2) && return p1 * p2[0]
 
-    X != Y && throw(ArgumentError("LaurentPolynomials must have same variable"))
+    assert_same_variable(p1, p2)
 
     R = promote_type(T,S)
 
@@ -614,7 +613,7 @@ function Base.gcd(p::LaurentPolynomial{T,X}, q::LaurentPolynomial{T,Y}, args...;
 
     degree(p) == 0 && return iszero(p) ? q : one(q)
     degree(q) == 0 && return iszero(q) ? p : one(p)
-    check_same_variable(p,q) || throw(ArgumentError("p and q have different symbols"))
+    assert_same_variable(p,q) 
 
     pp, qq = convert(Polynomial, p), convert(Polynomial, q)
     u = gcd(pp, qq, args..., kwargs...)

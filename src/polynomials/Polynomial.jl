@@ -37,7 +37,7 @@ struct Polynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
             @warn "ignoring the axis offset of the coefficient vector"
         end
         N = findlast(!iszero, coeffs)
-        isnothing(N) && return new{T,X}(zeros(T,1))
+        N == nothing && return new{T,X}(zeros(T,1))
         cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
         new{T,X}(cs)
     end
@@ -92,8 +92,9 @@ end
 function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
     isconstant(p1) && return p2 + p1[0]
     isconstant(p2) && return p1 + p2[0]
-    X, Y = indeterminate(p1), indeterminate(p2)
-    X != Y && throw(ArgumentError("Polynomials must have same variable"))
+    assert_same_variable(p1, p2)
+    X = indeterminate(p1)
+    
     n1, n2 = length(p1), length(p2)
     R = promote_type(T,S)
 
@@ -122,7 +123,7 @@ function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
     X, Y = indeterminate(p1), indeterminate(p2)
     R = promote_type(T, S)
     if n > 0 && m > 0
-        X != Y && throw(ArgumentError("Polynomials must have same variable"))
+        assert_same_variable(p1, p2)
         c = zeros(R, m + n + 1)
         for i in 0:n, j in 0:m
             @inbounds c[i + j + 1] += p1[i] * p2[j]

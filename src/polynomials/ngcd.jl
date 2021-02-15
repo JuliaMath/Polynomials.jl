@@ -13,7 +13,7 @@ function ngcd(p::P, q::Q, args...;kwargs...) where {T, S, P<:StandardBasisPolyno
     degree(p) == 0 && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
     degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
     degree(q) == 0 && return (u=one(p), v=p, w=q,       θ=NaN, κ=NaN)
-    check_same_variable(p,q) || throw(ArgumentError("Mis-matched variables"))
+    assert_same_variable(p,q) 
 
     p′,q′ = promote(p,q)
     
