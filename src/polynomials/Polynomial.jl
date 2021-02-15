@@ -20,6 +20,8 @@ polynomials of different variables causes an error except those involving a cons
 
 # Examples
 ```jldoctest
+julia> using Polynomials
+
 julia> Polynomial([1, 0, 3, 4])
 Polynomial(1 + 3*x^2 + 4*x^3)
 
@@ -56,6 +58,8 @@ Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Ho
 
 # Examples
 ```jldoctest
+julia> using Polynomials
+
 julia> p = Polynomial([1, 0, 3])
 Polynomial(1 + 3*x^2)
 
