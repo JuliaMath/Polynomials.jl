@@ -62,6 +62,7 @@ macro register(name)
         $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S, Symbol(var)})
         $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T, Symbol(var)})
         $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
+        _indeterminate(::Type{P}) where {T,X,P<:$poly{T,X}} = X
     end
 end
 
@@ -79,14 +80,17 @@ macro registerN(name, params...)
             $poly{$(αs...),promote_type(T,S),X}
 
         function $poly{$(αs...),T}(x::AbstractVector{S}, var::SymbolLike = :x) where {$(αs...),T,S}
-            $poly{$(αs...),T}(T.(x), Symbol(var))
+            $poly{$(αs...),T, Symbol(var)}(T.(x))
         end
         $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
             $poly{$(αs...),T,Symbol(var)}(coeffs)
-        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = n*one($poly{$(αs...),T}, Symbol(var))
+
+        $poly{$(αs...),T,X}(n::Number) where {$(αs...),T,X} = n*one($poly{$(αs...),T,X})
+        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = n*one($poly{$(αs...),T,Symbol(var)})
         $poly{$(αs...)}(n::Number, var::SymbolLike = :x) where {$(αs...)} = n*one($poly{$(αs...)}, Symbol(var))
         $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T}, Symbol(var))
         $poly{$(αs...)}(var::SymbolLike=:x) where {$(αs...)} = variable($poly{$(αs...)}, Symbol(var))
+        _indeterminate(::Type{P}) where {$(αs...),T,X,P<:$poly{$(αs...),T,X}} = X
     end
 end
 

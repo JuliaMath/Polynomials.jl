@@ -241,7 +241,7 @@ In-place version of [`chop`](@ref)
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-    isempty(values(p)) && return p
+    isempty(coeffs(p)) && return p
     tol = norm(p) * rtol + atol
     for i = lastindex(p):-1:0
         val = p[i]
@@ -581,11 +581,14 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(indeterminate(p), hash(coeffs(p
 zero, one, variable, basis =#
 
 # get symbol of polynomial. (e.g. `:x` from 1x^2 + 2x^3...
-_indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T, X}} = X
+#_indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T, X}} = X
 _indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
-indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
-indeterminate(::Type{P}) where {P <: AbstractPolynomial} = :x
-indeterminate(p::AbstractPolynomial{T, X}) where {T, X} = X
+_indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
+function indeterminate(::Type{P}) where {P <: AbstractPolynomial}
+    X = _indeterminate(P)
+    X == nothing ? :x : X
+end
+indeterminate(p::P) where {P <: AbstractPolynomial} = _indeterminate(P)
 function indeterminate(PP::Type{P}, p::AbstractPolynomial) where {P <: AbstractPolynomial}
     X = _indeterminate(PP) == nothing ? indeterminate(p) :  _indeterminate(PP)
 end
@@ -734,7 +737,7 @@ function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{T};
     while !iszero(r₁) && iter ≤ itermax
         _, rtemp = divrem(r₀, r₁)
         r₀ = r₁
-        r₁ = truncate(rtemp; atol=atol, rtol=rtol)  
+        r₁ = truncate(rtemp; atol=atol, rtol=rtol)
         iter += 1
     end
     return r₀

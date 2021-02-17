@@ -30,7 +30,7 @@ Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = i
 
 #Base.values(p::StandardBasisPolynomial) = values(p.coeffs)
 
-variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = P([0, 1], var)
+variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = ⟒(P){eltype(P),Symbol(var)}([0, 1])
 
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
