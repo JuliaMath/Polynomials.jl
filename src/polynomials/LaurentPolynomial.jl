@@ -304,7 +304,7 @@ Examples
 julia> using Polynomials;
 
 julia> z = variable(LaurentPolynomial, :z)
-LaurentPolynomial(z)
+LaurentPolynomial(1.0*z)
 
 julia> p = LaurentPolynomial([im, 1+im, 2 + im], -1, :z)
 LaurentPolynomial(im*z⁻¹ + 1 + im + (2 + im)z)

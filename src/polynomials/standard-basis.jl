@@ -26,11 +26,19 @@ mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 ## generic test if polynomial `p` is a constant
 isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 
-Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], indeterminate(q))
+function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial)
+    if isa(q, P)
+        return q
+    else
+        T = _eltype(P,q)
+        X = indeterminate(P,q)
+        return ⟒(P){T,X}([q[i] for i in 0:degree(q)])
+    end
+end
 
-#Base.values(p::StandardBasisPolynomial) = values(p.coeffs)
-
-variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = ⟒(P){eltype(P),Symbol(var)}([0, 1])
+function variable(::Type{P}, var::SymbolLike) where {P <: StandardBasisPolynomial}
+    ⟒(P){eltype(P), indeterminate(P,Symbol(var))}([0, 1])
+end
 
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)

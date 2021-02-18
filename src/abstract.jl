@@ -62,7 +62,6 @@ macro register(name)
         $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S, Symbol(var)})
         $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T, Symbol(var)})
         $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
-        _indeterminate(::Type{P}) where {T,X,P<:$poly{T,X}} = X
     end
 end
 
@@ -90,7 +89,6 @@ macro registerN(name, params...)
         $poly{$(αs...)}(n::Number, var::SymbolLike = :x) where {$(αs...)} = n*one($poly{$(αs...)}, Symbol(var))
         $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T}, Symbol(var))
         $poly{$(αs...)}(var::SymbolLike=:x) where {$(αs...)} = variable($poly{$(αs...)}, Symbol(var))
-        _indeterminate(::Type{P}) where {$(αs...),T,X,P<:$poly{$(αs...),T,X}} = X
     end
 end
 

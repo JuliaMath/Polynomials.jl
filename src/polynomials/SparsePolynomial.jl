@@ -83,8 +83,8 @@ function Base.convert(P::Type{<:Polynomial}, q::SparsePolynomial)
 end
 
 function Base.convert(P::Type{<:SparsePolynomial}, q::StandardBasisPolynomial{T}) where {T}
-    R = promote(eltype(P), T)
-    ⟒(P){R}(coeffs(q), indeterminate(q))
+    R = promote_type(eltype(P), T)
+    ⟒(P){R,indeterminate(P,q)}(coeffs(q))
 end
 
 ## changes to common

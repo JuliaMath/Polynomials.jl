@@ -45,30 +45,33 @@ end
 @register ChebyshevT
 
 function Base.convert(P::Type{<:Polynomial}, ch::ChebyshevT)
+    T = eltype(P)
+    X = indeterminate(P,ch)
+    Q = ⟒(P){T,X}
+
     if length(ch) < 3
-        return P(ch.coeffs, indeterminate(ch))
+        return Q(ch.coeffs)
     end
-    c0 = P(ch[end - 1], indeterminate(ch))
-    c1 = P(ch[end], indeterminate(ch))
+
+    c0 = Q(ch[end - 1])
+    c1 = Q(ch[end])
+    x = variable(Q)
     @inbounds for i in degree(ch):-1:2
         tmp = c0
-        c0 = P(ch[i - 2], indeterminate(ch)) - c1
-        c1 = tmp + c1 * variable(P) * 2
+        c0 = Q(ch[i - 2]) - c1
+        c1 = tmp + c1 * x * 2
     end
-    return c0 + c1 * variable(P)
+    return c0 + c1 * x
 end
-
-function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
-    res = zero(C)
-    @inbounds for i in degree(p):-1:0
-        res = variable(C) * res + p[i]
-    end
-    return res
-end
+Base.convert(C::Type{<:ChebyshevT}, p::Polynomial) = p(variable(C))
 
 
 domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
-variable(P::Type{<:ChebyshevT}, var::SymbolLike=:x ) = P([0,1], var)
+function variable(P::Type{<:ChebyshevT}, var::SymbolLike)
+    X′ = _indeterminate(P)
+    X = X′ == nothing ? Symbol(var) : X′
+    ⟒(P){eltype(P), X}([0, 1])
+end
 """
     (::ChebyshevT)(x)
 

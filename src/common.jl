@@ -331,7 +331,13 @@ Base.eltype(p::AbstractPolynomial{T}) where {T} = T
 # in  analogy  with  polynomial as a Vector{T} with different operations defined.
 Base.eltype(::Type{<:AbstractPolynomial}) = Float64
 Base.eltype(::Type{<:AbstractPolynomial{T}}) where {T} = T
-#Base.eltype(::Type{P}) where {P <: AbstractPolynomial} = P # changed  in v1.1.0
+_eltype(::Type{<:AbstractPolynomial}) = nothing
+_eltype(::Type{<:AbstractPolynomial{T}}) where {T} = T
+function _eltype(P::Type{<:AbstractPolynomial}, p::AbstractPolynomial)
+    T′ = _eltype(P)
+    T = T′ == nothing ? eltype(p) : T′
+    T
+end
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
@@ -592,6 +598,10 @@ indeterminate(p::P) where {P <: AbstractPolynomial} = _indeterminate(P)
 function indeterminate(PP::Type{P}, p::AbstractPolynomial) where {P <: AbstractPolynomial}
     X = _indeterminate(PP) == nothing ? indeterminate(p) :  _indeterminate(PP)
 end
+function indeterminate(PP::Type{P}, x::Symbol) where {P <: AbstractPolynomial}
+    X = _indeterminate(PP) == nothing ? x :  _indeterminate(PP)
+end
+
 
 
 """
