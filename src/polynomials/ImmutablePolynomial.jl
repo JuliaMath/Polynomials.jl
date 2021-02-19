@@ -265,7 +265,7 @@ function Base.:+(p::ImmutablePolynomial{T,X,N}, c::S) where {T, X, N, S<:Number}
     R = promote_type(T,S)
 
     iszero(c) && return ImmutablePolynomial{R,X,N}(convert(NTuple{N,R},p.coeffs))
-    N == 0 && return ImmutablePolynomial{R,X,1}((c,))
+    N == 0 && return ImmutablePolynomial{R,X,1}(NTuple{1,R}(c))
     N == 1 && return ImmutablePolynomial((p[0]+c,), X)
     q = p + ImmutablePolynomial{S,X,1}((c,))
     return q

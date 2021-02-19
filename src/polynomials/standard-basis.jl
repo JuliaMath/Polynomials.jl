@@ -1,7 +1,5 @@
 abstract type StandardBasisPolynomial{T,X} <: AbstractPolynomial{T,X} end
 
-
-
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T}
 
     if iszero(pj) return false end
@@ -85,25 +83,22 @@ function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPol
     Q(a2)
 end
 
-
-function integrate(p::P, k::S) where {T, X, P <: StandardBasisPolynomial{T, X}, S<:Number}
-
-    R = eltype((one(T)+one(S))/1)
+function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
+    R = eltype(one(T)/1)
     Q = ⟒(P){R,X}    
 
-    if hasnan(p) || isnan(k)
+    if hasnan(p)
         return Q([NaN])
     end
 
     n = length(p)
     a2 = Vector{R}(undef, n + 1)
-    a2[1] = k
+    a2[1] = zero(R)
     @inbounds for i in 1:n
         a2[i + 1] = p[i - 1] / i
     end
     return Q(a2)
 end
-
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
 

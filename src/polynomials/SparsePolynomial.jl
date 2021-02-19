@@ -306,16 +306,16 @@ function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
 end
 
 
-function integrate(p::P, k::S) where {T, X, P<:SparsePolynomial{T,X}, S<:Number}
+function integrate(p::P) where {T, X, P<:SparsePolynomial{T,X}}
     
-    R = eltype((one(T)+one(S))/1)
+    R = eltype(one(T)/1)
     Q = SparsePolynomial{R,X}
 
-    if hasnan(p) || isnan(k)
+    if hasnan(p)
         return Q(Dict(0 => NaN))
     end
 
-    ∫p = Q(R(k))
+    ∫p = zero(Q)
     for k in eachindex(p)
         ∫p[k + 1] = p[k] / (k+1)
     end
@@ -323,3 +323,4 @@ function integrate(p::P, k::S) where {T, X, P<:SparsePolynomial{T,X}, S<:Number}
     return ∫p
 
 end
+

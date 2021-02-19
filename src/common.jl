@@ -182,11 +182,22 @@ Calculate the psuedo-Vandermonde matrix of the given polynomial type with the gi
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 """
-    integrate(::AbstractPolynomial, C=0)
+    integrate(p::AbstractPolynomial)
 
-Returns the indefinite integral of the polynomial with constant `C`.
+Return an antiderivative for `p`
 """
-integrate(p::AbstractPolynomial, C::Number = 0) = integrate(p, C)
+integrate(P::AbstractPolynomial) = throw(MethodError("`integrate` not implemented for polynomials of type $P"))
+
+"""
+    integrate(::AbstractPolynomial, C)
+
+Returns the indefinite integral of the polynomial with constant `C` when expressed in the standard basis.
+"""
+function integrate(p::P, C) where {P <: AbstractPolynomial}
+    ∫p = integrate(p)
+    isnan(C) && return ⟒(P){eltype(∫p+C), indeterminate(∫p)}([C])
+    ∫p + (-∫p(0) + C)
+end
 
 """
     integrate(::AbstractPolynomial, a, b)

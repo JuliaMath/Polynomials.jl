@@ -433,8 +433,13 @@ end
 
 
 # scalar operattoinis
-# standard-basis defn. assumes basis 1, x, x², ...
-Base.:+(p::LaurentPolynomial{T}, c::S) where {T, S <: Number} = sum(promote(p,c))
+# needed as standard-basis defn. assumes basis 1, x, x², ...
+function Base.:+(p::LaurentPolynomial{T,X}, c::S) where {T, X, S <: Number}
+    R = promote_type(T,S)
+    q = LaurentPolynomial{R,X}(p.coeffs, firstindex(p))
+    q[0] += c
+    q
+end
 
 ##
 ## Poly + and  *
@@ -569,13 +574,13 @@ function derivative(p::P, order::Integer = 1) where {T, X, P<:LaurentPolynomial{
 end
 
 
-function integrate(p::P, k::S) where {T, X, P<: LaurentPolynomial{T, X}, S<:Number}
+function integrate(p::P) where {T, X, P<: LaurentPolynomial{T, X}}
 
     !iszero(p[-1])  && throw(ArgumentError("Can't integrate Laurent  polynomial with  `x⁻¹` term"))
-    R = eltype((one(T)+one(S))/1)
+    R = eltype(one(T)/1)
     Q = ⟒(P){R, X}
     
-    if hasnan(p) || isnan(k)
+    if hasnan(p)
         return Q([NaN],0)
     end
 
@@ -597,12 +602,9 @@ function integrate(p::P, k::S) where {T, X, P<: LaurentPolynomial{T, X}, S<:Numb
         as[1 + k+1-m]  =  p[k]/(k+1)
     end
 
-    as[1-m] = k
-
     return Q(as, m)
 
 end
-
 
 function Base.gcd(p::LaurentPolynomial{T,X}, q::LaurentPolynomial{T,Y}, args...; kwargs...) where {T,X,Y}
     mp, Mp = (extrema ∘ degreerange)(p)
@@ -613,7 +615,7 @@ function Base.gcd(p::LaurentPolynomial{T,X}, q::LaurentPolynomial{T,Y}, args...;
 
     degree(p) == 0 && return iszero(p) ? q : one(q)
     degree(q) == 0 && return iszero(q) ? p : one(p)
-    assert_same_variable(p,q) 
+    assert_same_variable(p,q)
 
     pp, qq = convert(Polynomial, p), convert(Polynomial, q)
     u = gcd(pp, qq, args..., kwargs...)
