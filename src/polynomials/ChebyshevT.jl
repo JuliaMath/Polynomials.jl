@@ -109,6 +109,8 @@ function (ch::ChebyshevT{T})(x::S) where {T,S}
     return R(c0 + c1 * x)
 end
 
+constantterm(p::ChebyshevT) = p[0]
+
 function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     A = Matrix{T}(undef, length(x), n + 1)
     A[:, 1] .= one(T)
@@ -186,24 +188,32 @@ function companion(p::ChebyshevT{T}) where T
     return R.(comp)
 end
 
-function Base.:+(p1::ChebyshevT{T,X}, p2::ChebyshevT{S,Y}) where {T,X,S,Y}
-    X′ = isconstant(p2) ? X : Y
-    assert_same_variable(p1, p2)
+# scalar +
+function Base.:+(p::ChebyshevT{T,X}, c::S) where {T,X, S<:Number}
+    R = promote_type(T,S)
+    cs = collect(R, values(p))
+    cs[1] += c
+    ChebyshevT{T,X}(cs)
+end
+function Base.:+(p::P, c::T) where {T,X,P<:ChebyshevT{T,X}}
+    cs = collect(T, values(p))
+    cs[1] += c
+    P(cs)
+end
+
+function Base.:+(p1::ChebyshevT{T,X}, p2::ChebyshevT{T,X}) where {T,X}
     n = max(length(p1), length(p2))
-    R =  promote_type(T,S)
-    c = R[p1[i] + p2[i] for i = 0:n]
-    return ChebyshevT{R,X′}(c)
+    c = T[p1[i] + p2[i] for i = 0:n]
+    return ChebyshevT{T,X}(c)
 end
 
 
-function Base.:*(p1::ChebyshevT{T,X}, p2::ChebyshevT{S,Y}) where {T,X,S,Y}
-    X′ = isconstant(p2) ? X : Y
-    assert_same_variable(p1, p2)
+function Base.:*(p1::ChebyshevT{T,X}, p2::ChebyshevT{T,X}) where {T,X}
     z1 = _c_to_z(p1.coeffs)
     z2 = _c_to_z(p2.coeffs)
     prod = fastconv(z1, z2)
     cs = _z_to_c(prod)
-    ret = ChebyshevT{eltype(cs),X′}(cs)
+    ret = ChebyshevT(cs,X)
     return truncate!(ret)
 end
 

@@ -217,7 +217,7 @@ Returns the indefinite integral of the polynomial with constant `C` when express
 function integrate(p::P, C) where {P <: AbstractPolynomial}
     ∫p = integrate(p)
     isnan(C) && return ⟒(P){eltype(∫p+C), indeterminate(∫p)}([C])
-    ∫p + (-∫p(0) + C)
+    ∫p + (C - constantterm(∫p))
 end
 
 """
@@ -457,7 +457,8 @@ Is the polynomial  `p` a constant.
 """
 isconstant(p::AbstractPolynomial) = degree(p) <= 0
 
-
+# specialize this to p[0] when basis vector is 1
+constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
 
 
 hasnan(p::AbstractPolynomial) = any(isnan, p)
@@ -714,6 +715,13 @@ Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
 Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
 Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
+# scalar operations
+# no generic +, as polynomial addition falls back to this
+#function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
+#    p1, p2 = promote(p, n)
+#    return p1 + p2
+#end
+
 function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) .* c)
 end
@@ -724,17 +732,19 @@ end
 
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
-function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
-    p1, p2 = promote(p, n)
-    return p1 + p2
-end
 
 function Base.:+(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+    isconstant(p1) && return constantterm(p1) + p2
+    isconstant(p2) && return p1 + constantterm(p2)
+    check_same_variable(p1, p2) || throw(ArgumentError("polynomials have different indeterminates"))
     p1, p2 = promote(p1, p2)
     return p1 + p2
 end
 
 function Base.:*(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+    isconstant(p1) && return constantterm(p1) * p2
+    isconstant(p2) && return p1 * constantterm(p2)
+    check_same_variable(p1, p2) || throw(ArgumentError("polynomials have different indeterminates"))    
     p1, p2 = promote(p1, p2)
     return p1 * p2
 end

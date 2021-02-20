@@ -444,56 +444,32 @@ end
 ##
 ## Poly + and  *
 ##
-function Base.:+(p1::P1, p2::P2) where {T,X,P1<:LaurentPolynomial{T,X}, S,Y, P2<:LaurentPolynomial{S,Y}}
+function Base.:+(p1::P, p2::P) where {T,X,P<:LaurentPolynomial{T,X}}
 
-    R = promote_type(T,S)
-    
-    if isconstant(p1)
-        i₁ = firstindex(p1)
-        q2 = LaurentPolynomial{R,Y}(p2.coeffs, p2.m[])
-        q2[i₁] += p1[i₁]
-        chop!(q2)
-        return q2
-    elseif isconstant(p2)
-        i₂ = firstindex(p2)
-        q1 = LaurentPolynomial{R,X}(p1.coeffs, p1.m[])        
-        q1[i₂] += p2[i₂]
-        chop!(q1)
-        return q1
-    end
-
-    assert_same_variable(p1, p2)
 
     m1,n1 = (extrema ∘ degreerange)(p1)
     m2,n2 = (extrema ∘ degreerange)(p2)
     m,n = min(m1,m2), max(n1, n2)
 
-    as = zeros(R, length(m:n))
+    as = zeros(T, length(m:n))
     for i in m:n
         as[1 + i-m] = p1[i] + p2[i]
     end
 
-    q = LaurentPolynomial{R,X}(as, m)
+    q = P(as, m)
     chop!(q)
 
     return q
 
 end
 
-function Base.:*(p1::LaurentPolynomial{T,X}, p2::LaurentPolynomial{S,Y}) where {T,X,S,Y}
-
-    isconstant(p1) && return p2 * p1[0]
-    isconstant(p2) && return p1 * p2[0]
-
-    assert_same_variable(p1, p2)
-
-    R = promote_type(T,S)
+function Base.:*(p1::P, p2::P) where {T,X,P<:LaurentPolynomial{T,X}}
 
     m1,n1 = (extrema ∘ degreerange)(p1)
     m2,n2 = (extrema ∘ degreerange)(p2)
     m,n = m1 + m2, n1+n2
 
-    as = zeros(R, length(m:n))
+    as = zeros(T, length(m:n))
     for i in eachindex(p1)
         p1ᵢ = p1[i]
         for j in eachindex(p2)
@@ -501,7 +477,7 @@ function Base.:*(p1::LaurentPolynomial{T,X}, p2::LaurentPolynomial{S,Y}) where {
         end
     end
 
-    p = LaurentPolynomial{R,X}(as, m)
+    p = P(as, m)
     chop!(p)
 
     return p

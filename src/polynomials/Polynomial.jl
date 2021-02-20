@@ -93,51 +93,37 @@ function Base.:*(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Number}
     iszero(as[end]) ? Q(as) : Q(Val(false), as)
 end
 
-function Base.:+(p1::Polynomial{T}, p2::Polynomial{S}) where {T, S}
-    isconstant(p1) && return p2 + p1[0]
-    isconstant(p2) && return p1 + p2[0]
-    assert_same_variable(p1, p2)
-    X = indeterminate(p1)
-    
+function Base.:+(p1::P, p2::P) where {T,X, P<:Polynomial{T,X}}
     n1, n2 = length(p1), length(p2)
-    R = promote_type(T,S)
-
-    c = zeros(R, max(n1, n2))
-    if n1 >= n2
-        c .= p1.coeffs
-        for i in eachindex(p2.coeffs)
-            c[i] += p2.coeffs[i]
+    if n1 > n2
+        cs = copy(p1.coeffs)
+        for (i,v) ∈ pairs(p2)
+            cs[i+1] += v
         end
+        pq = P(Val(false), cs)
+    elseif n1 < n2
+        cs = copy(p2.coeffs)
+        for (i,v) ∈ pairs(p1)
+            cs[i+1] += v
+        end
+        pq = P(Val(false),cs)
     else
-        c .= p2.coeffs
-        for i in eachindex(p1.coeffs)
-            c[i] += p1.coeffs[i]
-        end
+        cs = [p1.coeffs[i] + p2.coeffs[i] for i ∈ 1:n1]
+        pq = iszero(cs[end]) ? P(cs) : P(Val(false), cs)
     end
 
-    Q = Polynomial{R,X}
-    return iszero(c[end]) ? Q(c) : Q(Val(false), c)
+    return pq
 
 end
 
-
-function Base.:*(p1::Polynomial{T}, p2::Polynomial{S}) where {T,S}
+function Base.:*(p1::P, p2::P) where {T,X, P<:Polynomial{T,X}}
 
     n, m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
-    X, Y = indeterminate(p1), indeterminate(p2)
-    R = promote_type(T, S)
-    if n > 0 && m > 0
-        assert_same_variable(p1, p2)
-        c = zeros(R, m + n + 1)
-        for i in 0:n, j in 0:m
-            @inbounds c[i + j + 1] += p1[i] * p2[j]
-        end
-        Q = Polynomial{R,X}
-        return iszero(c[end]) ? Q(c) : Q(Val(false), c)
-    elseif n <= 0
-        return Polynomial{R, Y}(p2.coeffs * p1[0])
-    else
-        return Polynomial{R, X}(p1.coeffs * p2[0])
+    c = zeros(T, m + n + 1)
+    for i in 0:n, j in 0:m
+        @inbounds c[i + j + 1] += p1[i] * p2[j]
     end
+
+    return iszero(c[end]) ? P(c) : P(Val(false), c)
 
 end

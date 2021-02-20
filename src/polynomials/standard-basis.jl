@@ -17,6 +17,7 @@ end
 
 # allows  broadcast  issue #209
 evalpoly(x, p::StandardBasisPolynomial) = p(x)
+constantterm(p::StandardBasisPolynomial) = p.coeffs[1]
 
 domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x

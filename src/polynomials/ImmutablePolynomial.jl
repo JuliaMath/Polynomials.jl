@@ -172,51 +172,36 @@ truncate!(p::ImmutablePolynomial; kwargs...) =  throw(MethodError("No `truncate!
 (p::ImmutablePolynomial{T,X,N})(x::S) where {T,X,N,S} = evalpoly(x, p.coeffs)
 
 
-function Base.:+(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,Y,M}) where {T,X,N,S,Y,M}
-
-    R = promote_type(S,T)
-    iszero(N) && return ImmutablePolynomial{R,Y}(coeffs(p2))
-    iszero(M) && return ImmutablePolynomial{R,X}(coeffs(p1))
-
-    if X != Y
-        isconstant(p1) && return ImmutablePolynomial{T,Y,1}(p1.coeffs) + p2 
-        isconstant(p2) && return p1 + ImmutablePolynomial{S,X,1}(p2.coeffs)
-        throw(ArgumentError("Polynomials must have same variable"))
-    end
+function Base.:+(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{T,X,M}) where {T,X,N,M}
 
     if  N == M
-        cs = NTuple{N,R}(p1[i] + p2[i] for i in 0:N-1)
-        ImmutablePolynomial{R,X}(cs)        
+        cs = NTuple{N,T}(p1[i] + p2[i] for i in 0:N-1)
+        ImmutablePolynomial{T,X}(cs)        
     elseif N < M
         cs = (p2.coeffs) ⊕ (p1.coeffs)
-        ImmutablePolynomial{R,X,M}(convert(NTuple{M,R}, cs))
+        ImmutablePolynomial{T,X,M}(convert(NTuple{M,T}, cs))
     else
         cs = (p1.coeffs) ⊕ (p2.coeffs)
-        ImmutablePolynomial{R,X,N}(convert(NTuple{N,R}, cs))
+        ImmutablePolynomial{T,X,N}(convert(NTuple{N,T}, cs))
     end
 
 end
 
-function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,Y,M}) where {T,X,N,S,Y,M}
-    isconstant(p1) && return p2 * p1[0] 
-    isconstant(p2) && return p1 * p2[0]
-    assert_same_variable(p1, p2)
-    R = promote_type(S,T)
+function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{T,X,M}) where {T,X,N,M}
     cs = (p1.coeffs) ⊗ (p2.coeffs)
     if !iszero(cs[end])
-        return ImmutablePolynomial{R, X, N+M-1}(cs)
+        return ImmutablePolynomial{T, X, N+M-1}(cs)
     else
         n = findlast(!iszero, cs)
-        return ImmutablePolynomial{R, X, n}(NTuple{n,R}(cs[i] for i ∈ 1:n))
+        return ImmutablePolynomial{T, X, n}(NTuple{n,T}(cs[i] for i ∈ 1:n))
     end
 end
+
 
 # Padded vector sum of two tuples assuming N > M
 # assume N > M.
 # As N ≠ M, we are assured of size of output (max(N,M)), so we generate the function
 @generated function ⊕(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
-
-    R = promote_type(T,S)
 
     exprs = Any[nothing for i = 1:N]
     for i in  1:M
@@ -240,7 +225,6 @@ end
 ## convolution of two tuples
 @generated function ⊗(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
     P = M + N - 1
-    R = promote_type(T,S)
     exprs = Any[nothing for i = 1 : P]
     for i in 1 : N
         for j in 1 : M
@@ -267,7 +251,8 @@ function Base.:+(p::ImmutablePolynomial{T,X,N}, c::S) where {T, X, N, S<:Number}
     iszero(c) && return ImmutablePolynomial{R,X,N}(convert(NTuple{N,R},p.coeffs))
     N == 0 && return ImmutablePolynomial{R,X,1}(NTuple{1,R}(c))
     N == 1 && return ImmutablePolynomial((p[0]+c,), X)
-    q = p + ImmutablePolynomial{S,X,1}((c,))
+    cs = NTuple{N,R}(i == 1 ? p.coeffs[i] + c : p.coeffs[i] for i ∈ 1:N)
+    q = ImmutablePolynomial{R,X,N}(cs)
     return q
     
 end
