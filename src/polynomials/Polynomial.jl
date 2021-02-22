@@ -93,29 +93,25 @@ function Base.:*(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Number}
     iszero(as[end]) ? Q(as) : Q(Val(false), as)
 end
 
-function Base.:+(p1::P, p2::P) where {T,X, P<:Polynomial{T,X}}
+# implement, as not copying speeds up multiplication by a factor of 2 or so
+# over the default
+function Base.:+(p1::P1, p2::P2) where {T,X, P1<:Polynomial{T,X},
+                                        S,   P2<:Polynomial{S,X}}
     n1, n2 = length(p1), length(p2)
-    if n1 > n2
-        cs = copy(p1.coeffs)
-        for (i,v) ∈ pairs(p2)
-            cs[i+1] += v
-        end
-        pq = P(Val(false), cs)
-    elseif n1 < n2
-        cs = copy(p2.coeffs) # repeat; a bit faster than returning p2 + p1
-        for (i,v) ∈ pairs(p1)
-            cs[i+1] += v
-        end
-        pq = P(Val(false),cs)
+    R = promote_type(T,S)
+    Q = Polynomial{R,X}
+    if n1 == n2
+        cs = ⊕(P1, p1.coeffs, p2.coeffs)
+        return iszero(cs[end]) ? Q(cs) : Q(Val(false), cs)
+    elseif n1 > n2
+        cs = ⊕(P1, p1.coeffs, p2.coeffs)
     else
-        cs = [p1.coeffs[i] + p2.coeffs[i] for i ∈ 1:n1]
-        pq = iszero(cs[end]) ? P(cs) : P(Val(false), cs)
+        cs = ⊕(P1, p2.coeffs, p1.coeffs)
     end
 
-    return pq
-
+    Q(Val(false), cs)
 end
-
+        
 function Base.:*(p1::P, p2::P) where {T,X, P<:Polynomial{T,X}}
 
     c = fastconv(p1.coeffs, p2.coeffs)

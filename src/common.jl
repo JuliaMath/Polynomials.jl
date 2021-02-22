@@ -520,7 +520,7 @@ Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
     idx < firstindex(p) && throw(BoundsError(p, idx))
-    idx ≥ lastindex(p) && return zero(T)
+    idx > lastindex(p) && return zero(T)
     return p.coeffs[idx-firstindex(p)+1]
 #    return coeffs(p)[idx + 1]
 end
@@ -739,12 +739,12 @@ Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
 
-## fallback addition
-## These are pretty slow and not the most flexible, as a vector storage is assumed in p+q
+## addition
+## Fall back addition. 
 ## Subtypes will likely want to implement both:
-## +(p::P,c::Number) and +(p::P, q::P) where {T,X,P<:SubtypePolynomial{T,X}}
+## +(p::P,c::Number) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
 
-# scalar
+# polynomial + scalar
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
 
 function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
@@ -753,28 +753,84 @@ function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
     q + R(c)
 end
 
-# polynomial
+# polynomial + polynomial
 function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: AbstractPolynomial{S,Y}}
+
     isconstant(p) && return constantterm(p) + q
     isconstant(q) && return p + constantterm(q)
     assert_same_variable(X,Y)
+    
     sum(promote(p,q))
+
 end
 
-## only works for types where storage is Vector: `[a₀, a₁, …, aₙ]`.
+# Works when p,q of same type. For Immutable, must remove N,M bit; 
 function Base.:+(p::P, q::P) where {T,X,P<:AbstractPolynomial{T,X}}
-    isa(p.coeffs, Vector{T}) || throw(MethodError("No default addition is defined"))
-    n1, n2 = length(p), length(q)
-    n1 < n2 && return q + p
-    cs = zeros(T, n1)
-    for i in 1:n2
-        cs[i] = p.coeffs[i] + q.coeffs[i]
-    end
-    for i in (n2+1):n1
-        cs[i] = p.coeffs[i]
-    end
-    return ⟒(P){T,X}(cs)
+    
+#    isconstant(p) && return constantterm(p) + q
+#    isconstant(q) && return p + constantterm(q)
+
+    cs = degree(p) >= degree(q)  ? ⊕(P, p.coeffs, q.coeffs) : ⊕(P, q.coeffs, p.coeffs)
+    return P(cs)
 end
+
+# add assuming n1 >= n2
+function ⊕(P::Type{<:AbstractPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
+    n1, n2 = length(p), length(q)
+    R = promote_type(T,S)
+
+    cs = collect(R,p)
+    for i in 1:n2
+        cs[i] += q[i]
+    end
+    return cs
+end
+
+# Padded vector sum of two tuples assuming N > M
+# assume N ≥ M.
+@generated function ⊕(P::Type{<:AbstractPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+
+    exprs = Any[nothing for i = 1:N]
+    for i in  1:M
+        exprs[i] = :(p1[$i] + p2[$i])
+    end
+    for i in M+1:N
+        exprs[i] =:(p1[$i])
+    end
+
+    return quote
+        Base.@_inline_meta
+        tuple($(exprs...))
+    end
+
+end
+
+function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) where {T,S}
+
+    R = promote_type(T,S)
+    p = Dict{Int, R}()
+                     
+
+    # this allocates in the union
+#    for i in union(eachindex(p1), eachindex(p2)) 
+#        p[i] = p1[i] + p2[i]
+#    end
+
+    # this seems faster
+    for i in keys(p1) #eachindex(p1)
+        @inbounds p[i] = p1[i] + get(p2,i,zero(R))
+    end
+    for i in keys(p2) #eachindex(p2)
+        if iszero(get(p,i,zero(R)))
+            @inbounds p[i] = get(p1,i,zero(R)) + p2[i]
+        end
+    end
+
+    return  p
+
+end
+
+## -- multiplication
 
 ## scalar *, /
 function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}

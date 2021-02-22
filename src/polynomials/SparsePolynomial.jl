@@ -49,7 +49,7 @@ struct SparsePolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
         new{T, X}(c)
     end
     function SparsePolynomial{T,X}(checked::Val{false}, coeffs::AbstractDict{Int, T}) where {T <: Number, X}
-        new{T,X}(copy(coeffs))
+        new{T,X}(coeffs)
     end
 end
 
@@ -205,30 +205,40 @@ function Base.map(fn, p::P, args...) where {P <: SparsePolynomial}
     _convert(p, Dict(Pair.(ks, vs′)))
 end
 
+# Implement over fallback. A bit faster for T != S
+function Base.:+(p1::P1, p2::P2) where {T,X, P1<:SparsePolynomial{T,X},
+                                        S,   P2<:SparsePolynomial{S,X}}
 
-   
-function Base.:+(p1::P, p2::P) where {T, X, P<:SparsePolynomial{T,X}}
-
-    p = zero(P)
-
-    # this allocates in the union
-#    for i in union(eachindex(p1), eachindex(p2)) 
-#        p[i] = p1[i] + p2[i]
-#    end
-
-    # this seems faster
-    for i in keys(p1) #eachindex(p1)
-        @inbounds p[i] = p1[i] + p2[i]
-    end
-    for i in keys(p2) #eachindex(p2)
-        if iszero(p[i])
-            @inbounds p[i] = p1[i] + p2[i]
-        end
-    end
-
-    return  p
-
+    R = promote_type(T,S)
+    Q = SparsePolynomial{R,X}
+    
+    d1, d2 = degree(p1), degree(p2)
+    cs = d1 > d2 ? ⊕(P1, p1.coeffs, p2.coeffs) : ⊕(P1, p2.coeffs, p1.coeffs)
+    return d1 != d2 ? Q(Val(false), cs) : Q(cs)
 end
+
+# function Base.:+(p1::P, p2::P) where {T, X, P<:SparsePolynomial{T,X}}
+
+#     p = zero(P)
+
+#     # this allocates in the union
+# #    for i in union(eachindex(p1), eachindex(p2)) 
+# #        p[i] = p1[i] + p2[i]
+# #    end
+
+#     # this seems faster
+#     for i in keys(p1) #eachindex(p1)
+#         @inbounds p[i] = p1[i] + p2[i]
+#     end
+#     for i in keys(p2) #eachindex(p2)
+#         if iszero(p[i])
+#             @inbounds p[i] = p1[i] + p2[i]
+#         end
+#     end
+
+#     return  p
+
+# end
 
 
 function Base.:+(p::SparsePolynomial{T,X}, c::S) where {T, X, S <: Number}

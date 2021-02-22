@@ -171,17 +171,26 @@ truncate!(p::ImmutablePolynomial; kwargs...) =  throw(MethodError("No `truncate!
 
 (p::ImmutablePolynomial{T,X,N})(x::S) where {T,X,N,S} = evalpoly(x, p.coeffs)
 
-function Base.:+(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{T,X,M}) where {T,X,N,M}
+function Base.:+(p1::P, p2::Q) where {T,X,N,P<:ImmutablePolynomial{T,X,N},
+                                      S,  M,Q<:ImmutablePolynomial{S,X,M}}
 
+    R = promote_type(T,S)
     if  N == M
-        cs = (p1.coeffs) ⊕ (p2.coeffs) #NTuple{N,T}(p1[i] + p2[i] for i in 0:N-1)
-        ImmutablePolynomial{T,X}(cs)        
+        cs = ⊕(P, p1.coeffs, p2.coeffs)
+        return ImmutablePolynomial{R,X}(R.(cs))
+        #cs = (p1.coeffs) ⊕ (p2.coeffs) #NTuple{N,T}(p1[i] + p2[i] for i in 0:N-1)
+        #ImmutablePolynomial{T,X}(cs)        
     elseif N < M
-        cs = (p2.coeffs) ⊕ (p1.coeffs)
-        ImmutablePolynomial{T,X,M}(convert(NTuple{M,T}, cs))
+        cs = ⊕(P, p2.coeffs, p1.coeffs)
+        return ImmutablePolynomial{R,X,M}(R.(cs))
+        
+        #cs = (p2.coeffs) ⊕ (p1.coeffs)
+        #ImmutablePolynomial{T,X,M}(convert(NTuple{M,T}, cs))
     else
-        cs = (p1.coeffs) ⊕ (p2.coeffs)
-        ImmutablePolynomial{T,X,N}(convert(NTuple{N,T}, cs))
+        cs = ⊕(P, p1.coeffs, p2.coeffs)
+        return ImmutablePolynomial{R,X,N}(R.(cs))
+        #cs = (p1.coeffs) ⊕ (p2.coeffs)
+        #ImmutablePolynomial{T,X,N}(convert(NTuple{N,T}, cs))
     end
 
 end
