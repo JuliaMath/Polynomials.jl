@@ -451,6 +451,9 @@ end
 ##
 function Base.:+(p1::P, p2::P) where {T,X,P<:LaurentPolynomial{T,X}}
 
+    isconstant(p1) && return constantterm(p1) + p2
+    isconstant(p2) && return p1 + constantterm(p2)
+
 
     m1,n1 = (extrema ∘ degreerange)(p1)
     m2,n2 = (extrema ∘ degreerange)(p2)

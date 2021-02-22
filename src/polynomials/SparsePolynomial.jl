@@ -205,42 +205,8 @@ function Base.map(fn, p::P, args...) where {P <: SparsePolynomial}
     _convert(p, Dict(Pair.(ks, vs′)))
 end
 
-# Implement over fallback. A bit faster for T != S
-function Base.:+(p1::P1, p2::P2) where {T,X, P1<:SparsePolynomial{T,X},
-                                        S,   P2<:SparsePolynomial{S,X}}
 
-    R = promote_type(T,S)
-    Q = SparsePolynomial{R,X}
-    
-    d1, d2 = degree(p1), degree(p2)
-    cs = d1 > d2 ? ⊕(P1, p1.coeffs, p2.coeffs) : ⊕(P1, p2.coeffs, p1.coeffs)
-    return d1 != d2 ? Q(Val(false), cs) : Q(cs)
-end
-
-# function Base.:+(p1::P, p2::P) where {T, X, P<:SparsePolynomial{T,X}}
-
-#     p = zero(P)
-
-#     # this allocates in the union
-# #    for i in union(eachindex(p1), eachindex(p2)) 
-# #        p[i] = p1[i] + p2[i]
-# #    end
-
-#     # this seems faster
-#     for i in keys(p1) #eachindex(p1)
-#         @inbounds p[i] = p1[i] + p2[i]
-#     end
-#     for i in keys(p2) #eachindex(p2)
-#         if iszero(p[i])
-#             @inbounds p[i] = p1[i] + p2[i]
-#         end
-#     end
-
-#     return  p
-
-# end
-
-
+## Addition
 function Base.:+(p::SparsePolynomial{T,X}, c::S) where {T, X, S <: Number}
 
     R = promote_type(T,S)
@@ -253,36 +219,44 @@ function Base.:+(p::SparsePolynomial{T,X}, c::S) where {T, X, S <: Number}
     end
     @inbounds D[0] = get(D,0,zero(R)) + c
     iszero(D[0]) && pop!(D,0)
-    return P(Val(false),D)
+
+    return P(Val(false), D)
     
 end
 
-function Base.:*(p1::P, p2::P) where {T,X,P<:SparsePolynomial{T,X}}
+# Implement over fallback. A bit faster for T != S
+function Base.:+(p1::P1, p2::P2) where {T,X, P1<:SparsePolynomial{T,X},
+                                        S,   P2<:SparsePolynomial{S,X}}
+
+    R = promote_type(T,S)
+    Q = SparsePolynomial{R,X}
     
-    p  = zero(P)
-    for i in keys(p1) #eachindex(p1)
-        p1ᵢ = p1[i]
-        for j in keys(p2) #eachindex(p2)
-            @inbounds p[i+j] = muladd(p1ᵢ, p2[j], p[i+j])
-        end
-    end
-    
-    return p
+    d1, d2 = degree(p1), degree(p2)
+    cs = d1 > d2 ? ⊕(P1, p1.coeffs, p2.coeffs) : ⊕(P1, p2.coeffs, p1.coeffs)
+
+    return d1 != d2 ? Q(Val(false), cs) : Q(cs)
     
 end
 
-
+## Multiplication
 function Base.:*(p::P, c::S) where {T, X, P <: SparsePolynomial{T,X}, S <: Number}
 
     R = promote_type(T,S)
-    q  = zero(⟒(P){R,X})
-    for k in eachindex(p)
-        q[k] = p[k] * c
+    Q = ⟒(P){R,X}
+    
+    q  = zero(Q)
+    for (k,pₖ) ∈ pairs(p)
+        q[k] = pₖ * c
     end
     
     return q
 end
 
+function Base.:*(p::P, q::Q) where {T,X,P<:SparsePolynomial{T,X},
+                                    S,  Q<:SparsePolynomial{S,X}}
+    R = promote_type(T,S)
+    SparsePolynomial{R,X}(⊗(P, p.coeffs, q.coeffs))
+end
 
 
 function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}

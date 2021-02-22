@@ -36,6 +36,50 @@ function variable(::Type{P}, var::SymbolLike) where {P <: StandardBasisPolynomia
     ⟒(P){eltype(P), indeterminate(P,Symbol(var))}([0, 1])
 end
 
+## multiplication algorithms for computing p * q.
+## put here, not with type defintion, in case reuse is possible
+function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
+    R = promote_type(T,S)
+    fastconv(convert(Vector{R}, p), convert(Vector{R},q))
+end
+
+## Static size of product makes generated functions  a good choice
+## from https://github.com/tkoolen/StaticUnivariatePolynomials.jl/blob/master/src/monomial_basis.jl
+## convolution of two tuples
+@generated function ⊗(::Type{<:StandardBasisPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+    P = M + N - 1
+    exprs = Any[nothing for i = 1 : P]
+    for i in 1 : N
+        for j in 1 : M
+            k = i + j - 1
+            if exprs[k] === nothing
+                exprs[k] = :(p1[$i] * p2[$j])
+            else
+                exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
+            end
+        end
+    end
+
+    return quote
+        Base.@_inline_meta
+        tuple($(exprs...))        
+    end
+
+end
+
+function ⊗(P::Type{<:StandardBasisPolynomial}, p::Dict{Int,T}, q::Dict{Int,S}) where {T,S}
+    R = promote_type(T,S)
+    c = Dict{Int,R}()
+    for (i,pᵢ) ∈ pairs(p)
+        for (j,qⱼ) ∈ pairs(q)
+            cᵢⱼ = get(c, i+j, zero(R))
+            @inbounds c[i+j] = muladd(pᵢ, qⱼ, cᵢⱼ)
+        end
+    end
+    c
+end
+
+## ---
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)

@@ -112,10 +112,8 @@ function Base.:+(p1::P1, p2::P2) where {T,X, P1<:Polynomial{T,X},
     Q(Val(false), cs)
 end
         
-function Base.:*(p1::P, p2::P) where {T,X, P<:Polynomial{T,X}}
-
-    c = fastconv(p1.coeffs, p2.coeffs)
+function Base.:*(p::P, q::P) where {T,X, P<:Polynomial{T,X}}
+    c = fastconv(p.coeffs, q.coeffs)
     return iszero(c[end]) ? P(c) : P(Val(false), c)
-
 end
 

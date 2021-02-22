@@ -743,6 +743,7 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 ## Fall back addition. 
 ## Subtypes will likely want to implement both:
 ## +(p::P,c::Number) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
+## though the default for poly+poly isn't terrible
 
 # polynomial + scalar
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
@@ -764,30 +765,31 @@ function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: A
 
 end
 
-# Works when p,q of same type. For Immutable, must remove N,M bit; 
+# Works when p,q of same type.
+# For Immutable, must remove N,M bit;
+# for others, can widen to Type{T,X}, Type{S,X} to avoid a promotion
 function Base.:+(p::P, q::P) where {T,X,P<:AbstractPolynomial{T,X}}
-    
-#    isconstant(p) && return constantterm(p) + q
-#    isconstant(q) && return p + constantterm(q)
-
     cs = degree(p) >= degree(q)  ? ⊕(P, p.coeffs, q.coeffs) : ⊕(P, q.coeffs, p.coeffs)
     return P(cs)
 end
 
-# add assuming n1 >= n2
-function ⊕(P::Type{<:AbstractPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
-    n1, n2 = length(p), length(q)
+# addition of polynomials is just vector space addition, so can be done regardless
+# of basis, as long as the same. These ⊕ methods try to find a performant means to add
+# to sets of coefficients based on the storage type. These assume n1 >= n2
+function ⊕(P::Type{<:AbstractPolynomial}, p1::Vector{T}, p2::Vector{S}) where {T,S}
+
+    n1, n2 = length(p1), length(p2)
     R = promote_type(T,S)
 
-    cs = collect(R,p)
+    cs = collect(R,p1)
     for i in 1:n2
-        cs[i] += q[i]
+        cs[i] += p2[i]
     end
+    
     return cs
 end
 
-# Padded vector sum of two tuples assuming N > M
-# assume N ≥ M.
+# Padded vector sum of two tuples assuming N ≥ M
 @generated function ⊕(P::Type{<:AbstractPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
 
     exprs = Any[nothing for i = 1:N]
@@ -805,6 +807,7 @@ end
 
 end
 
+# addition when a dictionary is used for storage
 function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) where {T,S}
 
     R = promote_type(T,S)
@@ -816,16 +819,15 @@ function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) wh
 #        p[i] = p1[i] + p2[i]
 #    end
 
-    # this seems faster
-    for i in keys(p1) #eachindex(p1)
-        @inbounds p[i] = p1[i] + get(p2,i,zero(R))
+    for (i,pi) ∈ pairs(p1)
+        @inbounds p[i] = pi + get(p2, i, zero(R))
     end
-    for i in keys(p2) #eachindex(p2)
+    for (i,pi) ∈ pairs(p2)
         if iszero(get(p,i,zero(R)))
-            @inbounds p[i] = get(p1,i,zero(R)) + p2[i]
+            @inbounds p[i] = get(p1, i, zero(R)) + pi
         end
     end
-
+    
     return  p
 
 end
@@ -842,6 +844,7 @@ function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
 end
 
 ## polynomial p*q
+## Polynomial multiplication formula depend on the particular basis used. The subtype must implement
 function Base.:*(p1::P, p2::O) where {T,X,P <: AbstractPolynomial{T,X},S,Y,O <: AbstractPolynomial{S,Y}}
     isconstant(p1) && return constantterm(p1) * p2
     isconstant(p2) && return p1 * constantterm(p2)
