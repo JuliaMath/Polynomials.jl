@@ -17,13 +17,10 @@ end
 
 # allows  broadcast  issue #209
 evalpoly(x, p::StandardBasisPolynomial) = p(x)
-constantterm(p::StandardBasisPolynomial) = p.coeffs[1]
+constantterm(p::StandardBasisPolynomial) = p[0]
 
 domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
-
-## generic test if polynomial `p` is a constant
-isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
 
 function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial)
     if isa(q, P)
@@ -54,14 +51,6 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
 end
 
 
-function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
-    R = promote_type(T,S)
-    as = R[c  for c in coeffs(p)]
-    as[1] += c
-    _convert(p, as)
-end
-
-
 function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPolynomial{T, X}}
     order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
 
@@ -88,17 +77,17 @@ function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
     R = eltype(one(T)/1)
     Q = ⟒(P){R,X}    
 
-    if hasnan(p)
-        return Q([NaN])
-    end
+    hasnan(p) && return Q([NaN])
+    iszero(p) && return zero(Q)
 
     n = length(p)
-    a2 = Vector{R}(undef, n + 1)
-    a2[1] = zero(R)
-    @inbounds for i in 1:n
-        a2[i + 1] = p[i - 1] / i
+    as = Vector{R}(undef, n + 1)
+    as[1] = zero(R)
+    for (i, pᵢ) ∈ pairs(p)
+        i′ = i + 1
+        @inbounds as[i′+1] = pᵢ/i′
     end
-    return Q(a2)
+    return Q(as)
 end
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}

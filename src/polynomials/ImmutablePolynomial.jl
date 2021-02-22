@@ -97,10 +97,10 @@ Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p))
 
 ## defining these speeds things up
-function Base.zero(P::Type{<:ImmutablePolynomial}, var::SymbolLike=indeterminate(P))
-    R = eltype(P)
-    ImmutablePolynomial{R,Symbol(var),0}(NTuple{0,R}())
-end
+#function Base.zero(P::Type{<:ImmutablePolynomial})#, var::SymbolLike=indeterminate(P))
+#    R = eltype(P)
+#    ImmutablePolynomial{R,Symbol(var),0}(NTuple{0,R}())
+#end
 
 function  Base.one(P::Type{<:ImmutablePolynomial}, var::SymbolLike=indeterminate(P))
     R = eltype(P)
@@ -171,11 +171,10 @@ truncate!(p::ImmutablePolynomial; kwargs...) =  throw(MethodError("No `truncate!
 
 (p::ImmutablePolynomial{T,X,N})(x::S) where {T,X,N,S} = evalpoly(x, p.coeffs)
 
-
 function Base.:+(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{T,X,M}) where {T,X,N,M}
 
     if  N == M
-        cs = NTuple{N,T}(p1[i] + p2[i] for i in 0:N-1)
+        cs = (p1.coeffs) ⊕ (p2.coeffs) #NTuple{N,T}(p1[i] + p2[i] for i in 0:N-1)
         ImmutablePolynomial{T,X}(cs)        
     elseif N < M
         cs = (p2.coeffs) ⊕ (p1.coeffs)
@@ -187,13 +186,18 @@ function Base.:+(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{T,X,M})
 
 end
 
-function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{T,X,M}) where {T,X,N,M}
+function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,X,M}) where {T,S,X,N,M}
+    R = promote_type(T,S)
+    Q = ImmutablePolynomial{R,X}
+
+    (iszero(N) || iszero(M)) && return zero(Q)
+
     cs = (p1.coeffs) ⊗ (p2.coeffs)
     if !iszero(cs[end])
-        return ImmutablePolynomial{T, X, N+M-1}(cs)
+        return Q{N+M-1}(cs)
     else
         n = findlast(!iszero, cs)
-        return ImmutablePolynomial{T, X, n}(NTuple{n,T}(cs[i] for i ∈ 1:n))
+        return Q{n}(NTuple{n,T}(cs[i] for i ∈ 1:n))
     end
 end
 
@@ -251,8 +255,10 @@ function Base.:+(p::ImmutablePolynomial{T,X,N}, c::S) where {T, X, N, S<:Number}
     iszero(c) && return ImmutablePolynomial{R,X,N}(convert(NTuple{N,R},p.coeffs))
     N == 0 && return ImmutablePolynomial{R,X,1}(NTuple{1,R}(c))
     N == 1 && return ImmutablePolynomial((p[0]+c,), X)
-    cs = NTuple{N,R}(i == 1 ? p.coeffs[i] + c : p.coeffs[i] for i ∈ 1:N)
+
+    cs = convert(NTuple{N,R},p.coeffs) ⊕ NTuple{1,R}(c)
     q = ImmutablePolynomial{R,X,N}(cs)
+
     return q
     
 end

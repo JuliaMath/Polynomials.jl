@@ -51,6 +51,7 @@ end
 
 @register Polynomial
 
+
 """
     (p::Polynomial)(x)
 
@@ -76,8 +77,7 @@ julia> p.(0:3)
 """
 (p::Polynomial{T})(x::S) where {T,S} = evalpoly(x, coeffs(p))
 
-
-# scalar +,* faster  than standard-basis/common versions
+# scalar +,* faster  than standard-basis/common versions as it avoids a copy
 function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}
     R = promote_type(T, S)
     Q = Polynomial{R,X}
@@ -102,7 +102,7 @@ function Base.:+(p1::P, p2::P) where {T,X, P<:Polynomial{T,X}}
         end
         pq = P(Val(false), cs)
     elseif n1 < n2
-        cs = copy(p2.coeffs)
+        cs = copy(p2.coeffs) # repeat; a bit faster than returning p2 + p1
         for (i,v) ∈ pairs(p1)
             cs[i+1] += v
         end
@@ -118,12 +118,8 @@ end
 
 function Base.:*(p1::P, p2::P) where {T,X, P<:Polynomial{T,X}}
 
-    n, m = length(p1)-1, length(p2)-1 # not degree, so pNULL works
-    c = zeros(T, m + n + 1)
-    for i in 0:n, j in 0:m
-        @inbounds c[i + j + 1] += p1[i] * p2[j]
-    end
-
+    c = fastconv(p1.coeffs, p2.coeffs)
     return iszero(c[end]) ? P(c) : P(Val(false), c)
 
 end
+

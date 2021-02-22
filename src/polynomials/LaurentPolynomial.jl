@@ -153,14 +153,14 @@ end
 ##
 ## generic functions
 ##
-function Base.extrema(p::LaurentPolynomial)
-    Base.depwarn("`extrema(::LaurentPolynomial)` is deprecated. Use `(firstindex(p), lastindex(p))`", :extrema)
-    (p.m[], p.n[])
-end
-function Base.range(p::LaurentPolynomial)
-    Base.depwarn("`range(::LaurentPolynomial)` is deprecated. Use `firstindex(p):lastindex(p)`", :range)
-    p.m[]:p.n[]
-end
+# function Base.extrema(p::LaurentPolynomial)
+#     Base.depwarn("`extrema(::LaurentPolynomial)` is deprecated. Use `(firstindex(p), lastindex(p))`", :extrema)
+#     (p.m[], p.n[])
+# end
+# function Base.range(p::LaurentPolynomial)
+#     Base.depwarn("`range(::LaurentPolynomial)` is deprecated. Use `firstindex(p):lastindex(p)`", :range)
+#     p.m[]:p.n[]
+# end
 
 function Base.inv(p::LaurentPolynomial{T, X}) where {T, X}
     m,n =  (extrema∘degreerange)(p)
@@ -184,14 +184,19 @@ Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  Laurent
 Base.zero(::Type{LaurentPolynomial},  var=Symbollike=:x) =  zero(LaurentPolynomial{Float64, Symbol(var)})
 Base.zero(p::P, var=Symbollike=:x) where {P  <: LaurentPolynomial} = zero(P, var)
 
-
-# get/set index. Work with  offset
-function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T <: Number}
-    m,n = (extrema ∘ degreerange)(p)
-    i = idx - m + 1
-    (i < 1 || i > (n-m+1))  && return zero(T)
-    p.coeffs[i]
+function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T}
+    m,M = firstindex(p), lastindex(p)
+    m <= idx <= M || return zero(T)
+    p.coeffs[idx-m+1]
 end
+
+# # get/set index. Work with  offset
+# function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T <: Number}
+#     m,n = (extrema ∘ degreerange)(p)
+#     i = idx - m + 1
+#     (i < 1 || i > (n-m+1))  && return zero(T)
+#     p.coeffs[i]
+# end
 
 # extend if out of bounds
 function Base.setindex!(p::LaurentPolynomial{T}, value::Number, idx::Int) where {T}
@@ -432,7 +437,7 @@ end
 
 
 
-# scalar operattoinis
+# scalar operations
 # needed as standard-basis defn. assumes basis 1, x, x², ...
 function Base.:+(p::LaurentPolynomial{T,X}, c::S) where {T, X, S <: Number}
     R = promote_type(T,S)

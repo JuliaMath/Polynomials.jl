@@ -49,7 +49,7 @@ struct SparsePolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
         new{T, X}(c)
     end
     function SparsePolynomial{T,X}(checked::Val{false}, coeffs::AbstractDict{Int, T}) where {T <: Number, X}
-        new{T,X}(convert(Dict{Int,S}, coeffs))
+        new{T,X}(copy(coeffs))
     end
 end
 
@@ -209,7 +209,7 @@ end
    
 function Base.:+(p1::P, p2::P) where {T, X, P<:SparsePolynomial{T,X}}
 
-    p = zero(SparsePolynomial{T,X})
+    p = zero(P)
 
     # this allocates in the union
 #    for i in union(eachindex(p1), eachindex(p2)) 
@@ -217,38 +217,42 @@ function Base.:+(p1::P, p2::P) where {T, X, P<:SparsePolynomial{T,X}}
 #    end
 
     # this seems faster
-    for i in eachindex(p1)
-        p[i] = p1[i] + p2[i]
+    for i in keys(p1) #eachindex(p1)
+        @inbounds p[i] = p1[i] + p2[i]
     end
-    for i in eachindex(p2)
+    for i in keys(p2) #eachindex(p2)
         if iszero(p[i])
             @inbounds p[i] = p1[i] + p2[i]
         end
     end
-    
 
     return  p
 
 end
 
+
 function Base.:+(p::SparsePolynomial{T,X}, c::S) where {T, X, S <: Number}
 
     R = promote_type(T,S)
-    P = SparsePolynomial
+    P = SparsePolynomial{R,X}
 
-    D = Dict{Int, R}(kv for kv ∈ p.coeffs)
-    D[0] = get(D,0,zero(R)) + c
-
-    return SparsePolynomial{R,X}(D)
+    #D = Dict{Int, R}(kv for kv ∈ p.coeffs)
+    D = Dict{Int, R}()
+    for (k,v) ∈ pairs(p)
+        @inbounds D[k] = v
+    end
+    @inbounds D[0] = get(D,0,zero(R)) + c
+    iszero(D[0]) && pop!(D,0)
+    return P(Val(false),D)
     
 end
 
 function Base.:*(p1::P, p2::P) where {T,X,P<:SparsePolynomial{T,X}}
     
     p  = zero(P)
-    for i in eachindex(p1)
+    for i in keys(p1) #eachindex(p1)
         p1ᵢ = p1[i]
-        for j in eachindex(p2)
+        for j in keys(p2) #eachindex(p2)
             @inbounds p[i+j] = muladd(p1ᵢ, p2[j], p[i+j])
         end
     end

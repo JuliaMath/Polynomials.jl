@@ -313,6 +313,10 @@ function assert_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
     check_same_variable(p,q) || throw(ArgumentError("Polynomials have different indeterminates"))
 end
 
+function assert_same_variable(X::Symbol, Y::Symbol)
+    X == Y ||  throw(ArgumentError("Polynomials have different indeterminates"))
+end
+
 #=
 Linear Algebra =#
 """
@@ -441,6 +445,20 @@ Return the coefficient vector `[a_0, a_1, ..., a_n]` of a polynomial.
 """
 coeffs(p::AbstractPolynomial) = p.coeffs
 
+
+
+# specialize this to p[0] when basis vector is 1
+"""
+    constantterm(p::AbstractPolynomial)
+
+return `p(0)`, the constant term in the standard basis
+"""
+constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
+
+
+hasnan(p::AbstractPolynomial) = any(isnan, p)
+
+
 """
     degree(::AbstractPolynomial)
 
@@ -456,12 +474,6 @@ degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p)
 Is the polynomial  `p` a constant.
 """
 isconstant(p::AbstractPolynomial) = degree(p) <= 0
-
-# specialize this to p[0] when basis vector is 1
-constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
-
-
-hasnan(p::AbstractPolynomial) = any(isnan, p)
 
 """
     domain(::Type{<:AbstractPolynomial})
@@ -507,9 +519,10 @@ Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
-    idx < 0 && throw(BoundsError(p, idx))
-    idx ≥ length(p) && return zero(T)
-    return coeffs(p)[idx + 1]
+    idx < firstindex(p) && throw(BoundsError(p, idx))
+    idx ≥ lastindex(p) && return zero(T)
+    return p.coeffs[idx-firstindex(p)+1]
+#    return coeffs(p)[idx + 1]
 end
 Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
 Base.getindex(p::AbstractPolynomial, indices) = [getindex(p, i) for i in indices]
@@ -616,9 +629,6 @@ identity =#
 Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(coeffs(p)))
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(indeterminate(p), hash(coeffs(p), h))
 
-#=
-zero, one, variable, basis =#
-
 # get symbol of polynomial. (e.g. `:x` from 1x^2 + 2x^3...
 #_indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T, X}} = X
 _indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
@@ -634,6 +644,9 @@ end
 function indeterminate(PP::Type{P}, x::Symbol) where {P <: AbstractPolynomial}
     X = _indeterminate(PP) == nothing ? x :  _indeterminate(PP)
 end
+
+#=
+zero, one, variable, basis =#
 
 
 
@@ -716,12 +729,54 @@ Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
 Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
 # scalar operations
-# no generic +, as polynomial addition falls back to this
+# no generic p+c, as polynomial addition falls back to scalar ops
 #function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
 #    p1, p2 = promote(p, n)
 #    return p1 + p2
 #end
 
+
+Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
+
+
+## fallback addition
+## These are pretty slow and not the most flexible, as a vector storage is assumed in p+q
+## Subtypes will likely want to implement both:
+## +(p::P,c::Number) and +(p::P, q::P) where {T,X,P<:SubtypePolynomial{T,X}}
+
+# scalar
+Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
+
+function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
+    R = promote_type(T,S)
+    q = convert(⟒(P){R,X}, p)
+    q + R(c)
+end
+
+# polynomial
+function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: AbstractPolynomial{S,Y}}
+    isconstant(p) && return constantterm(p) + q
+    isconstant(q) && return p + constantterm(q)
+    assert_same_variable(X,Y)
+    sum(promote(p,q))
+end
+
+## only works for types where storage is Vector: `[a₀, a₁, …, aₙ]`.
+function Base.:+(p::P, q::P) where {T,X,P<:AbstractPolynomial{T,X}}
+    isa(p.coeffs, Vector{T}) || throw(MethodError("No default addition is defined"))
+    n1, n2 = length(p), length(q)
+    n1 < n2 && return q + p
+    cs = zeros(T, n1)
+    for i in 1:n2
+        cs[i] = p.coeffs[i] + q.coeffs[i]
+    end
+    for i in (n2+1):n1
+        cs[i] = p.coeffs[i]
+    end
+    return ⟒(P){T,X}(cs)
+end
+
+## scalar *, /
 function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) .* c)
 end
@@ -730,24 +785,15 @@ function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) ./ c)
 end
 
-Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
-
-
-function Base.:+(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    isconstant(p1) && return constantterm(p1) + p2
-    isconstant(p2) && return p1 + constantterm(p2)
-    check_same_variable(p1, p2) || throw(ArgumentError("polynomials have different indeterminates"))
-    p1, p2 = promote(p1, p2)
-    return p1 + p2
-end
-
-function Base.:*(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+## polynomial p*q
+function Base.:*(p1::P, p2::O) where {T,X,P <: AbstractPolynomial{T,X},S,Y,O <: AbstractPolynomial{S,Y}}
     isconstant(p1) && return constantterm(p1) * p2
     isconstant(p2) && return p1 * constantterm(p2)
-    check_same_variable(p1, p2) || throw(ArgumentError("polynomials have different indeterminates"))    
+    assert_same_variable(X, Y)
     p1, p2 = promote(p1, p2)
     return p1 * p2
 end
+
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
@@ -817,8 +863,7 @@ function Base.isapprox(p1::AbstractPolynomial{T,X},
     p2::AbstractPolynomial{S,Y};
     rtol::Real = (Base.rtoldefault(T, S, 0)),
                        atol::Real = 0,) where {T,X,S,Y}
-#    p1, p2 = promote(p1, p2)
-    check_same_variable(p1, p2)  || throw(ArgumentError("p1 and p2 must have same var"))
+    assert_same_variable(p1, p2)
     # copy over from abstractarray.jl
     Δ  = norm(p1-p2)
     if isfinite(Δ)
