@@ -199,7 +199,7 @@ julia> derivative(p1)
 ChebyshevT(2.0⋅T_0(x) + 12.0⋅T_1(x))
 
 julia> integrate(p2)
-ChebyshevT(0.25⋅T_0(x) - 1.0⋅T_1(x) + 0.25⋅T_2(x) + 0.3333333333333333⋅T_3(x))
+ChebyshevT(- 1.0⋅T_1(x) + 0.25⋅T_2(x) + 0.3333333333333333⋅T_3(x))
 
 julia> convert(Polynomial, p1)
 Polynomial(-2.0 + 2.0*x + 6.0*x^2)
