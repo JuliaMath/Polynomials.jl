@@ -224,7 +224,7 @@ function Base.:+(p::SparsePolynomial{T,X}, c::S) where {T, X, S <: Number}
     
 end
 
-# Implement over fallback. A bit faster for T != S
+# Implement over fallback. A bit faster as it covers T != S
 function Base.:+(p1::P1, p2::P2) where {T,X, P1<:SparsePolynomial{T,X},
                                         S,   P2<:SparsePolynomial{S,X}}
 

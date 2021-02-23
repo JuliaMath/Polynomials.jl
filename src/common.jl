@@ -749,18 +749,18 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
 
 function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
+
     R = promote_type(T,S)
     q = convert(⟒(P){R,X}, p)
     q + R(c)
 end
 
-# polynomial + polynomial
+# polynomial + polynomial when different types
 function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: AbstractPolynomial{S,Y}}
 
     isconstant(p) && return constantterm(p) + q
     isconstant(q) && return p + constantterm(q)
     assert_same_variable(X,Y)
-    
     sum(promote(p,q))
 
 end
