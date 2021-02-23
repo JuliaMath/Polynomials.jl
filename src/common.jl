@@ -704,8 +704,6 @@ variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
 # basis
 # var is a positional argument, not a keyword; can't deprecate so we do `_var; var=_var`
-#@deprecate basis(p::P, k::Int; var=:x)  where {P<:AbstractPolynomial}  basis(p, k, var)
-#@deprecate basis(::Type{P}, k::Int; var=:x) where {P <: AbstractPolynomial} basis(P, k,var)
 # return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
 function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
     zs = zeros(Int, k+1)

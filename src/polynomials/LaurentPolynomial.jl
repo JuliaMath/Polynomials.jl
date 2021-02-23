@@ -153,14 +153,6 @@ end
 ##
 ## generic functions
 ##
-# function Base.extrema(p::LaurentPolynomial)
-#     Base.depwarn("`extrema(::LaurentPolynomial)` is deprecated. Use `(firstindex(p), lastindex(p))`", :extrema)
-#     (p.m[], p.n[])
-# end
-# function Base.range(p::LaurentPolynomial)
-#     Base.depwarn("`range(::LaurentPolynomial)` is deprecated. Use `firstindex(p):lastindex(p)`", :range)
-#     p.m[]:p.n[]
-# end
 
 function Base.inv(p::LaurentPolynomial{T, X}) where {T, X}
     m,n =  (extrema∘degreerange)(p)
