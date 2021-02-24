@@ -705,17 +705,15 @@ variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 # basis
 # var is a positional argument, not a keyword; can't deprecate so we do `_var; var=_var`
 # return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
-function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
-    zs = zeros(Int, k+1)
-    zs[end] = 1
-    ⟒(P){eltype(P), _var}(zs)
-end
 function basis(::Type{P}, k::Int) where {T, X, P<:AbstractPolynomial{T,X}}
     zs = zeros(Int, k+1)
     zs[end] = 1
     ⟒(P){eltype(P), X}(zs)
 end
-    
+function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
+    T,X = eltype(P), Symbol(_var)
+    basis(⟒(P){T,X},k)
+end
 basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
 
 #=
