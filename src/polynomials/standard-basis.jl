@@ -37,6 +37,13 @@ function variable(::Type{P}, var::SymbolLike) where {P <: StandardBasisPolynomia
 end
 
 ## multiplication algorithms for computing p * q.
+## default multiplication between same type.
+## subtypes might relax to match T,S to avoid one conversion
+function Base.:*(p::P, q::P) where {T,X, P<:StandardBasisPolynomial{T,X}}
+    cs = ⊗(P, coeffs(p), coeffs(q))
+    P(cs)
+end
+                                    
 ## put here, not with type defintion, in case reuse is possible
 function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
     R = promote_type(T,S)

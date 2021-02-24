@@ -525,6 +525,17 @@ function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
 #    return coeffs(p)[idx + 1]
 end
 Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
+## straight from array.jl
+function getindex(A::AbstractPolynomial, I::UnitRange{Int})
+    lI = length(I)
+    X = similar(A.coeffs, lI)
+    if lI > 0
+        offset = -1 - firstindex(A)
+        unsafe_copyto!(X, 1, A.coeffs, first(I .- offset), lI)
+    end
+    return X
+end
+Base.getindex(p::AbstractPolynomial, indices::CartesianIndex) = first(indices.I)
 Base.getindex(p::AbstractPolynomial, indices) = [getindex(p, i) for i in indices]
 Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 
@@ -588,6 +599,7 @@ Base.keys(p::AbstractPolynomial) =  PolynomialKeys(p)
 Base.values(p::AbstractPolynomial) =  PolynomialValues(p)
 Base.length(p::PolynomialValues) = length(p.p.coeffs)
 Base.length(p::PolynomialKeys) = length(p.p.coeffs)
+Base.size(p::Union{PolynomialValues, PolynomialKeys}) = (length(p),)
 function Base.iterate(v::PolynomialKeys, state=nothing)
     i = firstindex(v.p)
     state==nothing && return (i, i)
@@ -843,7 +855,7 @@ end
 
 ## polynomial p*q
 ## Polynomial multiplication formula depend on the particular basis used. The subtype must implement
-function Base.:*(p1::P, p2::O) where {T,X,P <: AbstractPolynomial{T,X},S,Y,O <: AbstractPolynomial{S,Y}}
+function Base.:*(p1::P, p2::Q) where {T,X,P <: AbstractPolynomial{T,X},S,Y,Q <: AbstractPolynomial{S,Y}}
     isconstant(p1) && return constantterm(p1) * p2
     isconstant(p2) && return p1 * constantterm(p2)
     assert_same_variable(X, Y)
