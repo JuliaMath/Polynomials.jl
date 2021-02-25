@@ -15,8 +15,31 @@ function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, firs
     return true
 end
 
-# allows  broadcast  issue #209
-evalpoly(x, p::StandardBasisPolynomial) = p(x)
+"""
+    evalpoly(x, p::StandardBasisPolynomial)
+    p(x)
+
+Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division, as implemented in `evalpoly` of base `Julia`.
+
+# Examples
+```jldoctest
+julia> using Polynomials
+
+julia> p = Polynomial([1, 0, 3])
+Polynomial(1 + 3*x^2)
+
+julia> p(0)
+1
+
+julia> p.(0:3)
+4-element Array{Int64,1}:
+  1
+  4
+ 13
+ 28
+```
+"""
+evalpoly(x, p::StandardBasisPolynomial) = EvalPoly.evalpoly(x, p.coeffs) # allows  broadcast  issue #209
 constantterm(p::StandardBasisPolynomial) = p[0]
 
 domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
@@ -37,6 +60,13 @@ function variable(::Type{P}, var::SymbolLike) where {P <: StandardBasisPolynomia
 end
 
 ## multiplication algorithms for computing p * q.
+## default multiplication between same type.
+## subtypes might relax to match T,S to avoid one conversion
+function Base.:*(p::P, q::P) where {T,X, P<:StandardBasisPolynomial{T,X}}
+    cs = ⊗(P, coeffs(p), coeffs(q))
+    P(cs)
+end
+                                    
 ## put here, not with type defintion, in case reuse is possible
 function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
     R = promote_type(T,S)
@@ -485,7 +515,7 @@ domain(::Type{<:ArnoldiFit}) = Interval(-Inf, Inf)
 
 Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "ArnoldiFit of degree $(length(p.coeffs)-1)")
 
-(p::ArnoldiFit)(x) = polyvalA(p.coeffs, p.H, x)
+evalpoly(x, p::ArnoldiFit) = polyvalA(p.coeffs, p.H, x)
 
 fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T} = polyfitA(x, y, deg; var=var)
 
@@ -523,8 +553,8 @@ end
 @inline function compensated_horner(ps, x)
     n, T = length(ps), eltype(ps)
     aᵢ = ps[end]
-    sᵢ = aᵢ * _one(x)
-    c = zero(T) * _one(x)
+    sᵢ = aᵢ * EvalPoly._one(x)
+    c = zero(T) * EvalPoly._one(x)
     for i in n-1:-1:1
 	aᵢ = ps[i]
         pᵢ, πᵢ = two_product_fma(sᵢ, x)
@@ -538,8 +568,8 @@ function compensated_horner(ps::Tuple, x::S) where {S}
     ps == () && return zero(S)
     if @generated
         n = length(ps.parameters)
-        sσᵢ =:(ps[end] * _one(x), zero(S))
-        c = :(zero(S) * _one(x))
+        sσᵢ =:(ps[end] * EvalPoly._one(x), zero(S))
+        c = :(zero(S) * EvalPoly._one(x))
         for i in n-1:-1:1
             pπᵢ = :(two_product_fma($sσᵢ[1], x))
 	    sσᵢ = :(two_sum($pπᵢ[1], ps[$i]))

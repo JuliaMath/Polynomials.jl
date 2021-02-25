@@ -97,7 +97,7 @@ julia> c.(-1:0.5:1)
  5.0
 ```
 """
-function (ch::ChebyshevT{T})(x::S) where {T,S}
+function evalpoly(x::S, ch::ChebyshevT{T}) where {T,S}
     x ∉ domain(ch) && throw(ArgumentError("$x outside of domain"))
     R = promote_type(T, S)
     length(ch) == 0 && return zero(R)

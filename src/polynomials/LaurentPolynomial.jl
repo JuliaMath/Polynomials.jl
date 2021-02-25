@@ -176,19 +176,13 @@ Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  Laurent
 Base.zero(::Type{LaurentPolynomial},  var=Symbollike=:x) =  zero(LaurentPolynomial{Float64, Symbol(var)})
 Base.zero(p::P, var=Symbollike=:x) where {P  <: LaurentPolynomial} = zero(P, var)
 
+# like that in common, only return zero if idx < firstindex(p)
 function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T}
     m,M = firstindex(p), lastindex(p)
     m <= idx <= M || return zero(T)
     p.coeffs[idx-m+1]
-end
+ end
 
-# # get/set index. Work with  offset
-# function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T <: Number}
-#     m,n = (extrema ∘ degreerange)(p)
-#     i = idx - m + 1
-#     (i < 1 || i > (n-m+1))  && return zero(T)
-#     p.coeffs[i]
-# end
 
 # extend if out of bounds
 function Base.setindex!(p::LaurentPolynomial{T}, value::Number, idx::Int) where {T}
@@ -411,17 +405,17 @@ end
 
 
 # evaluation uses `evalpoly`
-function (p::LaurentPolynomial{T})(x::S) where {T,S}
+function evalpoly(x::S, p::LaurentPolynomial{T}) where {T,S}
     m,n = (extrema ∘ degreerange)(p)
-    m  == n == 0 && return p[0] * _one(S)
+    m  == n == 0 && return p[0] * EvalPoly._one(S)
     if m >= 0
-        evalpoly(x, ntuple(i -> p[i-1], n+1)) # NTuple{n+1}(p[i] for i in 0:n)
+        EvalPoly.evalpoly(x, ntuple(i -> p[i-1], n+1)) # NTuple{n+1}(p[i] for i in 0:n)
     elseif n <= 0
-        evalpoly(inv(x), ntuple(i -> p[-i+1], -m+1)) # NTuple{-m+1}(p[i] for i in 0:-1:m)
+        EvalPoly.evalpoly(inv(x), ntuple(i -> p[-i+1], -m+1)) # NTuple{-m+1}(p[i] for i in 0:-1:m)
     else
         # eval pl(x) = a_mx^m + ...+ a_0 at 1/x; pr(x) = a_0 + a_1x + ... + a_nx^n  at  x; subtract a_0
-        l = evalpoly(inv(x),  ntuple(i -> p[-i+1], -m+1)) # NTuple{-m+1}(p[i] for i in 0:-1:m)
-        r =  evalpoly(x, ntuple(i -> p[i-1], n+1)) # NTuple{n+1}(p[i] for i in 0:n)
+        l = EvalPoly.evalpoly(inv(x),  ntuple(i -> p[-i+1], -m+1)) # NTuple{-m+1}(p[i] for i in 0:-1:m)
+        r =  EvalPoly.evalpoly(x, ntuple(i -> p[i-1], n+1)) # NTuple{n+1}(p[i] for i in 0:n)
         mid = p[0]
         l + r - mid
     end
