@@ -52,30 +52,6 @@ end
 @register Polynomial
 
 
-# """
-#     (p::Polynomial)(x)
-
-# Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division, as implemented in `evalpoly` of base `Julia`.
-
-# # Examples
-# ```jldoctest
-# julia> using Polynomials
-
-# julia> p = Polynomial([1, 0, 3])
-# Polynomial(1 + 3*x^2)
-
-# julia> p(0)
-# 1
-
-# julia> p.(0:3)
-# 4-element Array{Int64,1}:
-#   1
-#   4
-#  13
-#  28
-# ```
-# """
-#(p::Polynomial{T})(x::S) where {T,S} = EvalPoly.evalpoly(x, coeffs(p))
 
 # scalar +,* faster  than standard-basis/common versions as it avoids a copy
 function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}

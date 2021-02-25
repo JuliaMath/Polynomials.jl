@@ -4,6 +4,10 @@ module Polynomials
 using LinearAlgebra
 using Intervals
 
+if VERSION >= v"1.4.0"
+    import Base: evalpoly
+end
+
 include("abstract.jl")
 include("show.jl")
 include("plots.jl")

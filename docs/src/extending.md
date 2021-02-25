@@ -21,7 +21,7 @@ As always, if the default implementation does not work or there are more efficie
 | Constructor | x | |
 | Type function (`(::P)(x)`) | x | |
 | `convert(::Polynomial, ...)` | | Not required, but the library is built off the [`Polynomial`](@ref) type, so all operations are guaranteed to work with it. Also consider writing the inverse conversion method. |
-| `Base.evalpoly(x, p::P)` |  to evaluate the polynomial at `x`  | 
+| `Polynomials.evalpoly(x, p::P)` |  to evaluate the polynomial at `x` (`Base.evalpoly` okay post `v"1.4.0"`) |
 | `domain` | x | Should return an  [`AbstractInterval`](https://invenia.github.io/Intervals.jl/stable/#Intervals-1) |
 | `vander` | | Required for [`fit`](@ref) |
 | `companion` | | Required for [`roots`](@ref) |

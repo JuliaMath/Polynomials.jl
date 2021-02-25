@@ -186,9 +186,8 @@ end
 ## ----
 ##
     
-function Base.evalpoly(x::S, p::SparsePolynomial{T}) where {T,S}
-#function (p::SparsePolynomial{T})(x::S) where {T,S}
-    
+function evalpoly(x::S, p::SparsePolynomial{T}) where {T,S}
+
     tot = zero(T) * EvalPoly._one(x) 
     for (k,v) in p.coeffs
         tot = EvalPoly._muladd(x^k, v, tot)

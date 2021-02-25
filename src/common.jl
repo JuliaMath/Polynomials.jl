@@ -519,26 +519,12 @@ Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
-    idx < firstindex(p) && throw(BoundsError(p, idx))
-    idx > lastindex(p) && return zero(T)
-    i = idx - firstindex(p) + 1
-    return p.coeffs[i]
-#    return coeffs(p)[idx + 1]
+    m,M = firstindex(p), lastindex(p)
+    idx < m && throw(BoundsError(p, idx))
+    idx > M && return zero(T)
+    p.coeffs[idx - m + 1]
 end
 Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
-## straight from array.jl
-# function Base.getindex(A::AbstractPolynomial, I::UnitRange{Int})
-#     lI = length(I)
-#     (first(I) < firstindex(A) || lI > length(A.coeffs)) &&
-#         throw(ArgumentError("indexing out of bounds not permitted with ranges"))
-#     X = similar(A.coeffs, lI)
-#     if lI > 0
-#         offset = 1 - firstindex(A)
-#         unsafe_copyto!(X, 1, A.coeffs, first(I .+ offset), lI)
-#     end
-#     return X
-# end
-Base.getindex(p::AbstractPolynomial, indices::CartesianIndex) = first(indices.I)
 Base.getindex(p::AbstractPolynomial, indices) = [p[i] for i in indices]
 Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 

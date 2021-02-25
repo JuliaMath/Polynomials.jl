@@ -176,19 +176,13 @@ Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  Laurent
 Base.zero(::Type{LaurentPolynomial},  var=Symbollike=:x) =  zero(LaurentPolynomial{Float64, Symbol(var)})
 Base.zero(p::P, var=Symbollike=:x) where {P  <: LaurentPolynomial} = zero(P, var)
 
-# function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T}
-#     m,M = firstindex(p), lastindex(p)
-#     m <= idx <= M || return zero(T)
-#     p.coeffs[idx-m+1]
-# end
+# like that in common, only return zero if idx < firstindex(p)
+function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T}
+    m,M = firstindex(p), lastindex(p)
+    m <= idx <= M || return zero(T)
+    p.coeffs[idx-m+1]
+ end
 
-# # get/set index. Work with  offset
-function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T <: Number}
-    m,n = (extrema ∘ degreerange)(p)
-    i = idx - m + 1
-    (i < 1 || i > (n-m+1))  && return zero(T)
-    p.coeffs[i]
-end
 
 # extend if out of bounds
 function Base.setindex!(p::LaurentPolynomial{T}, value::Number, idx::Int) where {T}
@@ -411,8 +405,7 @@ end
 
 
 # evaluation uses `evalpoly`
-function Base.evalpoly(x::S, p::LaurentPolynomial{T}) where {T,S}
-#function (p::LaurentPolynomial{T})(x::S) where {T,S}
+function evalpoly(x::S, p::LaurentPolynomial{T}) where {T,S}
     m,n = (extrema ∘ degreerange)(p)
     m  == n == 0 && return p[0] * EvalPoly._one(S)
     if m >= 0
