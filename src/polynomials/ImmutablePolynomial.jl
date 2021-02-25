@@ -163,7 +163,7 @@ truncate!(p::ImmutablePolynomial; kwargs...) =  throw(MethodError("No `truncate!
 ## --------------------
 ##
 
-(p::ImmutablePolynomial{T,X,N})(x::S) where {T,X,N,S} = evalpoly(x, p.coeffs)
+#(p::ImmutablePolynomial{T,X,N})(x::S) where {T,X,N,S} = EvalPoly.evalpoly(x, p.coeffs)
 
 ## Addition
 # scalar ops

@@ -21,6 +21,7 @@ As always, if the default implementation does not work or there are more efficie
 | Constructor | x | |
 | Type function (`(::P)(x)`) | x | |
 | `convert(::Polynomial, ...)` | | Not required, but the library is built off the [`Polynomial`](@ref) type, so all operations are guaranteed to work with it. Also consider writing the inverse conversion method. |
+| `Base.evalpoly(x, p::P)` |  to evaluate the polynomial at `x`  | 
 | `domain` | x | Should return an  [`AbstractInterval`](https://invenia.github.io/Intervals.jl/stable/#Intervals-1) |
 | `vander` | | Required for [`fit`](@ref) |
 | `companion` | | Required for [`roots`](@ref) |
@@ -40,24 +41,19 @@ The constructor ensures that there are no trailing zeros. The method implemented
 julia> using Polynomials
 
 julia> struct AliasPolynomial{T <: Number, X} <: Polynomials.StandardBasisPolynomial{T, X}
-           coeffs::Vector{T}
-           function AliasPolynomial{T, X}(coeffs::Vector{S}) where {T, X, S}
-               N = findlast(!iszero, coeffs)
-               N == nothing && return new{T,X}(zeros(T,1))
-               resize!(coeffs, N)
-               new{T,X}(coeffs)
-           end
-       end
-
-julia> (p::AliasPolynomial)(x) = evalpoly(x, p.coeffs)
+                  coeffs::Vector{T}
+                  function AliasPolynomial{T, X}(coeffs::Vector{S}) where {T, X, S}
+                      p = new{T,X}(coeffs)
+                      chop!(p)
+                  end
+              end
 
 julia> Polynomials.@register AliasPolynomial
-AliasPolynomial
 ```
 
 To see this new polynomial type in action, we have:
 
-```
+```jldoctest
 julia> xs = [1,2,3,4];
 
 julia> p = AliasPolynomial(xs)
@@ -85,10 +81,9 @@ Scalar addition, `p+c`, defaults to `p + c*one(p)`, or polynomial multiplication
 
 ```jldoctest
 julia> function sadd!(p::AliasPolynomial{T}, c::T) where {T}
-         p.coeffs[1] += c
-		 p
-       end
-sadd! (generic function with 1 method)
+           p.coeffs[1] += c
+           p
+       end;
 
 julia> p::AliasPolynomial ⊕ c::Number = sadd!(p,c);
 ```
@@ -99,7 +94,7 @@ Then we have:
 julia> p
 AliasPolynomial(1 + 2*x + 3*x^2 + 4*x^3)
 
-julia> p ⊕ 2 # same result as p = p + 2, but makes no copies
+julia> p ⊕ 2
 AliasPolynomial(3 + 2*x + 3*x^2 + 4*x^3)
 
 julia> p
@@ -110,11 +105,11 @@ The viewpoint that a polynomial represents a vector of coefficients  leads to a 
 
 
 ```jldoctest
-julia> Base.broadcastable(p::AliasPolynomial) = p.coeffs
+julia> Base.broadcastable(p::AliasPolynomial) = p.coeffs;
 
 julia> Base.ndims(::Type{<:AliasPolynomial}) = 1
 
-julia> Base.copyto!(p::AliasPolynomial, x) = (copyto!(p.coeffs, x); chop!(p))
+julia> Base.copyto!(p::AliasPolynomial, x) = (copyto!(p.coeffs, x); chop!(p));
 ```
 
 The last `chop!` call would ensure that there are no trailing zeros in the coefficient vector after multiplication, as multiplication by `0` is possible.
@@ -123,12 +118,28 @@ Then we might have:
 
 ```jldoctest
 julia> p
-AliasPolynomial(2 + 4*x + 6*x^2 + 8*x^3)
+AliasPolynomial(3 + 2*x + 3*x^2 + 4*x^3)
 
 julia> p .*= 2
-AliasPolynomial(4 + 8*x + 12*x^2 + 16*x^3)
+AliasPolynomial(6 + 4*x + 6*x^2 + 8*x^3)
 
 julia> p
-AliasPolynomial(4 + 8*x + 12*x^2 + 16*x^3)
+AliasPolynomial(6 + 4*x + 6*x^2 + 8*x^3)
+
+julia> p ./= 2
+AliasPolynomial(3 + 2*x + 3*x^2 + 4*x^3)
+```
+
+Trying to divide again would throw an error, as the result would not fit with the integer type of `p`. 
+
+Now `p` is treated as the vector `p.coeffs`, as regards broadcasting, so some things may be surprising, for example this expression returns a vector, not a polynomial:
+
+```jldoctest
+p .+ 2
+4-element Array{Int64,1}:
+ 5
+ 4
+ 5
+ 6
 ```
 

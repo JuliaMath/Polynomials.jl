@@ -16,7 +16,7 @@ function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, firs
 end
 
 # allows  broadcast  issue #209
-evalpoly(x, p::StandardBasisPolynomial) = p(x)
+Base.evalpoly(x, p::StandardBasisPolynomial) = EvalPoly.evalpoly(x, p.coeffs)
 constantterm(p::StandardBasisPolynomial) = p[0]
 
 domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
@@ -492,7 +492,7 @@ domain(::Type{<:ArnoldiFit}) = Interval(-Inf, Inf)
 
 Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "ArnoldiFit of degree $(length(p.coeffs)-1)")
 
-(p::ArnoldiFit)(x) = polyvalA(p.coeffs, p.H, x)
+Base.evalpoly(x, p::ArnoldiFit) = polyvalA(p.coeffs, p.H, x)
 
 fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T} = polyfitA(x, y, deg; var=var)
 
@@ -530,8 +530,8 @@ end
 @inline function compensated_horner(ps, x)
     n, T = length(ps), eltype(ps)
     aᵢ = ps[end]
-    sᵢ = aᵢ * _one(x)
-    c = zero(T) * _one(x)
+    sᵢ = aᵢ * EvalPoly._one(x)
+    c = zero(T) * EvalPoly._one(x)
     for i in n-1:-1:1
 	aᵢ = ps[i]
         pᵢ, πᵢ = two_product_fma(sᵢ, x)
@@ -545,8 +545,8 @@ function compensated_horner(ps::Tuple, x::S) where {S}
     ps == () && return zero(S)
     if @generated
         n = length(ps.parameters)
-        sσᵢ =:(ps[end] * _one(x), zero(S))
-        c = :(zero(S) * _one(x))
+        sσᵢ =:(ps[end] * EvalPoly._one(x), zero(S))
+        c = :(zero(S) * EvalPoly._one(x))
         for i in n-1:-1:1
             pπᵢ = :(two_product_fma($sσᵢ[1], x))
 	    sσᵢ = :(two_sum($pπᵢ[1], ps[$i]))

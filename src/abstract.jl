@@ -62,6 +62,7 @@ macro register(name)
         $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S, Symbol(var)})
         $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T, Symbol(var)})
         $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
+        (p::$poly)(x) = evalpoly(x, p)
     end
 end
 
@@ -90,6 +91,7 @@ macro registerN(name, params...)
             n*one($poly{$(αs...),S,Symbol(var)})
         $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T,Symbol(var)})
         $poly{$(αs...)}(var::SymbolLike=:x) where {$(αs...)} = variable($poly{$(αs...)},Symbol(var))
+        (p::$poly)(x) = evalpoly(x, p)
     end
 end
 
