@@ -212,7 +212,7 @@ degreerange(p::LaurentPolynomial) = firstindex(p):lastindex(p)
 
 _convert(p::P, as) where {T,X,P <: LaurentPolynomial{T,X}} = ⟒(P)(as, firstindex(p), X)
 
-## chop/truncation
+## chop!
 # trim  from *both* ends
 function chop!(p::LaurentPolynomial{T};
                rtol::Real = Base.rtoldefault(real(T)),
@@ -242,25 +242,6 @@ function chop!(p::LaurentPolynomial{T};
     p.m[], p.n[] = m, max(m,n)
 
     p
-
-end
-
-function truncate!(p::LaurentPolynomial{T};
-                  rtol::Real = Base.rtoldefault(real(T)),
-                  atol::Real = 0,) where {T}
-
-    max_coeff = maximum(abs, coeffs(p))
-    thresh = max_coeff * rtol + atol
-
-    for i in eachindex(p)
-        if abs(p[i]) <= thresh
-            p[i] = zero(T)
-        end
-    end
-
-    chop!(p)
-
-    return p
 
 end
 

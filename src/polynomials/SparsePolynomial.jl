@@ -141,6 +141,7 @@ function Base.iterate(v::PolynomialKeys{SparsePolynomial{T,X}}, state...) where 
     y == nothing && return nothing
     return (y[1][1], y[2])
 end
+
 function Base.iterate(v::PolynomialValues{SparsePolynomial{T,X}}, state...) where {T,X}
     y = iterate(v.p.coeffs, state...)
     y == nothing && return nothing
@@ -148,39 +149,6 @@ function Base.iterate(v::PolynomialValues{SparsePolynomial{T,X}}, state...) wher
 end
 
 
-# only from tail
-function chop!(p::SparsePolynomial{T};
-               rtol::Real = Base.rtoldefault(real(T)),
-               atol::Real = 0,) where {T}
-
-    for k in sort(collect(keys(p.coeffs)), by=x->x[1], rev=true)
-        if isapprox(p[k], zero(T); rtol = rtol, atol = atol)
-            pop!(p.coeffs, k)
-        else
-            return p
-        end
-    end
-    
-    return p
-    
-end
-
-function truncate!(p::SparsePolynomial{T};
-                   rtol::Real = Base.rtoldefault(real(T)),
-                   atol::Real = 0,) where {T}
-    
-    max_coeff = maximum(abs, coeffs(p))
-    thresh = max_coeff * rtol + atol
-
-    for (k,val) in  p.coeffs
-        if abs(val) <= thresh
-            pop!(p.coeffs,k)
-        end
-    end
-    
-    return p
-    
-end
 
 ##
 ## ----

@@ -246,11 +246,39 @@ In-place version of [`truncate`](@ref)
 function truncate!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0,) where {T}
-    max_coeff = maximum(abs, coeffs(p))
-    thresh = max_coeff * rtol + atol
-    map!(c->abs(c) <= thresh ? zero(T) : c, coeffs(p), coeffs(p))
+    truncate!(p.coeffs, rtol=rtol, atol=atol)
     return chop!(p, rtol = rtol, atol = atol)
 end
+
+function truncate!(ps::Vector{T};
+                   rtol::Real = Base.rtoldefault(real(T)),
+                   atol::Real = 0,) where {T}
+    max_coeff = norm(ps, Inf)
+    thresh = max_coeff * rtol + atol
+    for (i,pᵢ) ∈ pairs(ps)
+        if abs(pᵢ) <= thresh
+            ps[i] = zero(T)
+        end
+    end
+    nothing
+end
+
+function truncate!(ps::Dict{Int,T};
+                   rtol::Real = Base.rtoldefault(real(T)),
+                   atol::Real = 0,) where {T}
+
+    max_coeff = norm(values(ps), Inf)
+    thresh = max_coeff * rtol + atol
+
+    for (k,val) in  ps
+        if abs(val) <= thresh
+            pop!(ps,k)
+        end
+    end
+    nothing
+end
+
+truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined."))
 
 """
     truncate(::AbstractPolynomial{T};
@@ -273,18 +301,45 @@ In-place version of [`chop`](@ref)
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-    isempty(coeffs(p)) && return p
-    tol = norm(p) * rtol + atol
-    for i = lastindex(p):-1:0
-        val = p[i]
-        if abs(val) > tol #!isapprox(val, zero(T); rtol = rtol, atol = atol)
-            resize!(p.coeffs, i + 1); 
-            return p
-        end
-    end
-    resize!(p.coeffs, 1)
+    chop!(p.coeffs, rtol=rtol, atol=atol)
     return p
 end
+
+# chop! underlying storage type
+function chop!(ps::Vector{T};
+               rtol::Real = Base.rtoldefault(real(T)),
+               atol::Real = 0,) where {T}
+
+    tol = norm(ps) * rtol + atol
+    for i = lastindex(ps):-1:1
+        val = ps[i]
+        if abs(val) > tol #!isapprox(val, zero(T); rtol = rtol, atol = atol)
+            resize!(ps, i); 
+            return nothing
+        end
+    end
+    resize!(ps, 1)
+    return nothing
+end
+
+function chop!(ps::Dict{Int,T};
+    rtol::Real = Base.rtoldefault(real(T)),
+    atol::Real = 0,) where {T}
+
+    tol = norm(values(ps)) * rtol + atol
+
+    for k in sort(collect(keys(ps)), by=x->x[1], rev=true)
+        if  abs(ps[k]) > tol
+            return nothing
+        end
+        pop!(ps, k)
+    end
+
+    return nothing
+end
+
+chop!(ps::NTuple; kwargs...) = throw(ArgumentError("chop! not defined"))
+
 
 """
     chop(::AbstractPolynomial{T};

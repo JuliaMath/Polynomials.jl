@@ -134,10 +134,12 @@ end
 # in common.jl these call chop! and truncate!
 function Base.chop(p::ImmutablePolynomial{T,X,N};
               rtol::Real = Base.rtoldefault(real(T)),
-              atol::Real = 0)  where {T,X,N}
+                   atol::Real = 0)  where {T,X,N}
+    N == 0 && return p
     cs = coeffs(p)
+    thresh = maximum(abs, cs) * rtol + atol
     for i in N:-1:1
-        if !isapprox(cs[i], zero(T), rtol=rtol, atol=atol)
+        if abs(cs[i]) > thresh
             return ImmutablePolynomial{T,X,i}(cs[1:i])
         end
     end
@@ -148,16 +150,13 @@ function Base.truncate(p::ImmutablePolynomial{T,X,N};
                        rtol::Real = Base.rtoldefault(real(T)),
                        atol::Real = 0)  where {T,X,N}
     q = chop(p, rtol=rtol, atol=atol)
-    iszero(q) && return  q
+    iszero(q) && return q
     cs = coeffs(q)
     thresh = maximum(abs,cs) * rtol + atol
     cs′ = map(c->abs(c) <= thresh ? zero(T) : c, cs)
     ImmutablePolynomial{T,X}(tuple(cs′...))
 end
 
-# no in-place chop! and truncate!
-chop!(p::ImmutablePolynomial; kwargs...) =  throw(MethodError("No `chop!` for the `ImmutablePolynomial` type. Use `chop`?")) 
-truncate!(p::ImmutablePolynomial; kwargs...) =  throw(MethodError("No `truncate!` for the `ImmutablePolynomial` type. Use `trunctate`?")) 
 
 ##
 ## --------------------
