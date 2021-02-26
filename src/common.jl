@@ -250,6 +250,7 @@ function truncate!(p::AbstractPolynomial{T};
     return chop!(p, rtol = rtol, atol = atol)
 end
 
+## truncate! underlying storage type
 function truncate!(ps::Vector{T};
                    rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0,) where {T}
