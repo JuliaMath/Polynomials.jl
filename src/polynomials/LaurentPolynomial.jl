@@ -383,7 +383,7 @@ end
 
 # evaluation uses `evalpoly`
 function evalpoly(x::S, p::LaurentPolynomial{T}) where {T,S}
-    xᵐ = (x/1)^firstindex(p) # make type stable
+    xᵐ = firstindex(p) < 0 ? inv(x)^(abs(firstindex(p))) : (x/1)^firstindex(p) # make type stable
     return EvalPoly.evalpoly(x, p.coeffs) * xᵐ
 end
 
