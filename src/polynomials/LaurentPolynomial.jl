@@ -169,12 +169,8 @@ Base.:(==)(p1::LaurentPolynomial, p2::LaurentPolynomial) =
 Base.hash(p::LaurentPolynomial, h::UInt) = hash(indeterminate(p), hash(degreerange(p), hash(coeffs(p), h)))
 
 isconstant(p::LaurentPolynomial) = iszero(lastindex(p)) && iszero(firstindex(p))
-basis(P::Type{<:LaurentPolynomial{T}}, n::Int, var::SymbolLike=:x) where{T} = LaurentPolynomial{T,Symbol(var)}(ones(T,1), n)
-basis(P::Type{LaurentPolynomial}, n::Int, var::SymbolLike=:x) = LaurentPolynomial{Float64, Symbol(var)}(ones(Float64, 1), n)
 
-Base.zero(::Type{LaurentPolynomial{T}},  var=Symbollike=:x) where {T} =  LaurentPolynomial{T,Symbol(var)}(zeros(T,1),  0)
-Base.zero(::Type{LaurentPolynomial},  var=Symbollike=:x) =  zero(LaurentPolynomial{Float64, Symbol(var)})
-Base.zero(p::P, var=Symbollike=:x) where {P  <: LaurentPolynomial} = zero(P, var)
+basis(P::Type{<:LaurentPolynomial{T,X}}, n::Int) where {T,X} = LaurentPolynomial{T,X}(ones(T,1), n)
 
 # like that in common, only return zero if idx < firstindex(p)
 function Base.getindex(p::LaurentPolynomial{T}, idx::Int) where {T}
@@ -387,19 +383,8 @@ end
 
 # evaluation uses `evalpoly`
 function evalpoly(x::S, p::LaurentPolynomial{T}) where {T,S}
-    m,n = (extrema ∘ degreerange)(p)
-    m  == n == 0 && return p[0] * EvalPoly._one(S)
-    if m >= 0
-        EvalPoly.evalpoly(x, ntuple(i -> p[i-1], n+1)) # NTuple{n+1}(p[i] for i in 0:n)
-    elseif n <= 0
-        EvalPoly.evalpoly(inv(x), ntuple(i -> p[-i+1], -m+1)) # NTuple{-m+1}(p[i] for i in 0:-1:m)
-    else
-        # eval pl(x) = a_mx^m + ...+ a_0 at 1/x; pr(x) = a_0 + a_1x + ... + a_nx^n  at  x; subtract a_0
-        l = EvalPoly.evalpoly(inv(x),  ntuple(i -> p[-i+1], -m+1)) # NTuple{-m+1}(p[i] for i in 0:-1:m)
-        r =  EvalPoly.evalpoly(x, ntuple(i -> p[i-1], n+1)) # NTuple{n+1}(p[i] for i in 0:n)
-        mid = p[0]
-        l + r - mid
-    end
+    xᵐ = (x/1)^firstindex(p) # make type stable
+    return EvalPoly.evalpoly(x, p.coeffs) * xᵐ
 end
 
 

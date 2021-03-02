@@ -55,8 +55,13 @@ function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolyno
     end
 end
 
-function variable(::Type{P}, var::SymbolLike) where {P <: StandardBasisPolynomial}
-    ⟒(P){eltype(P), indeterminate(P,Symbol(var))}([0, 1])
+function Base.one(::Type{P}) where {P<:StandardBasisPolynomial}
+    T,X = eltype(P), indeterminate(P)
+    ⟒(P){T,X}(ones(T,1))
+end
+function variable(::Type{P}) where {P<:StandardBasisPolynomial}
+    T,X = eltype(P), indeterminate(P)
+    ⟒(P){T,X}([zero(T),one(T)])
 end
 
 ## multiplication algorithms for computing p * q.

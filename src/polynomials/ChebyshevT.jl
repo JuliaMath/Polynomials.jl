@@ -68,11 +68,15 @@ Base.convert(C::Type{<:ChebyshevT}, p::Polynomial) = p(variable(C))
 
 
 domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
-function variable(P::Type{<:ChebyshevT}, var::SymbolLike)
-    X′ = _indeterminate(P)
-    X = X′ == nothing ? Symbol(var) : X′
-    ⟒(P){eltype(P), X}([0, 1])
+function Base.one(::Type{P}) where {P<:ChebyshevT}
+    T,X = eltype(P), indeterminate(P)
+    ChebyshevT{T,X}(ones(T,1))
 end
+function variable(::Type{P}) where {P<:ChebyshevT}
+    T,X = eltype(P), indeterminate(P)
+    ChebyshevT{T,X}([zero(T), one(T)])
+end
+constantterm(p::ChebyshevT) = p(0)
 """
     (::ChebyshevT)(x)
 
@@ -110,7 +114,6 @@ function evalpoly(x::S, ch::ChebyshevT{T}) where {T,S}
     return R(c0 + c1 * x)
 end
 
-constantterm(p::ChebyshevT) = p(0)
 
 function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     A = Matrix{T}(undef, length(x), n + 1)

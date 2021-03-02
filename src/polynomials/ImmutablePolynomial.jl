@@ -92,28 +92,12 @@ end
 ## ----
 ##
 # overrides from common.jl due to  coeffs being non mutable, N in type parameters
-Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
 
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p))
-
-function  Base.one(P::Type{<:ImmutablePolynomial}, var::SymbolLike=indeterminate(P))
-    R = eltype(P)
-    ImmutablePolynomial{R,Symbol(var),1}(NTuple{1,R}(one(R)))
-end
-function variable(P::Type{<:ImmutablePolynomial}, var::SymbolLike=indeterminate(P))
-    R  = eltype(P)
-    ImmutablePolynomial{R,Symbol(var),2}(NTuple{2,R}((zero(R), one(R))))
-end
-
 
 # degree, isconstant
 degree(p::ImmutablePolynomial{T,X, N}) where {T,X,N} = N - 1 # no trailing zeros
 isconstant(p::ImmutablePolynomial{T,X,N}) where {T,X,N}  = N <= 1
-
-function Base.getindex(p::ImmutablePolynomial{T,X, N}, idx::Int) where {T <: Number,X, N}
-    (idx <  0 || idx > N-1) && return zero(T)
-    return p.coeffs[idx + 1]
-end
 
 Base.setindex!(p::ImmutablePolynomial, val::Number,  idx::Int) = throw(ArgumentError("ImmutablePolynomials are immutable"))
 
@@ -132,29 +116,18 @@ for op in [:isequal, :(==)]
 end
 
 # in common.jl these call chop! and truncate!
-function Base.chop(p::ImmutablePolynomial{T,X,N};
+function Base.chop(p::ImmutablePolynomial{T,X};
               rtol::Real = Base.rtoldefault(real(T)),
-                   atol::Real = 0)  where {T,X,N}
-    N == 0 && return p
-    cs = coeffs(p)
-    thresh = maximum(abs, cs) * rtol + atol
-    for i in N:-1:1
-        if abs(cs[i]) > thresh
-            return ImmutablePolynomial{T,X,i}(cs[1:i])
-        end
-    end
-    zero(ImmutablePolynomial{T,X})
+                   atol::Real = 0)  where {T,X}
+    ps = chop(p.coeffs; rtol=rtol, atol=atol)
+    return ImmutablePolynomial{T,X}(ps)
 end
 
-function Base.truncate(p::ImmutablePolynomial{T,X,N};
-                       rtol::Real = Base.rtoldefault(real(T)),
-                       atol::Real = 0)  where {T,X,N}
-    q = chop(p, rtol=rtol, atol=atol)
-    iszero(q) && return q
-    cs = coeffs(q)
-    thresh = maximum(abs,cs) * rtol + atol
-    cs′ = map(c->abs(c) <= thresh ? zero(T) : c, cs)
-    ImmutablePolynomial{T,X}(tuple(cs′...))
+function Base.truncate(p::ImmutablePolynomial{T,X};
+                  rtol::Real = Base.rtoldefault(real(T)),
+                  atol::Real = 0)  where {T,X}
+    ps = truncate(p.coeffs; rtol=rtol, atol=atol)
+    ImmutablePolynomial{T,X}(ps)
 end
 
 

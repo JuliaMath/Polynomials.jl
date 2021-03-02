@@ -353,7 +353,7 @@ end
         fit(P, xx, yy, 2)
 
         # issue #214 --  should error
-        @test_throws MethodError fit(Polynomial, rand(2,2), rand(2,2))
+        @test_throws ArgumentError fit(Polynomial, rand(2,2), rand(2,2))
 
         # issue #268 -- inexacterror
         @test fit(P, 1:4, 1:4, var=:x) ≈ variable(P{Float64}, :x)

@@ -126,7 +126,7 @@ fit(P::Type{<:AbstractPolynomial},
     var = :x,) = fit′(P, promote(collect(x), collect(y))..., deg; weights = weights, var = var)
 
 #  avoid issue  214
-fit′(P::Type{<:AbstractPolynomial}, x, y, args...;kwargs...) = throw(MethodError("x and y do not produce abstract   vectors"))
+fit′(P::Type{<:AbstractPolynomial}, x, y, args...;kwargs...) = throw(ArgumentError("x and y do not produce abstract   vectors"))
 fit′(P::Type{<:AbstractPolynomial},
      x::AbstractVector{T},
      y::AbstractVector{T},
@@ -207,7 +207,7 @@ vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 Return an antiderivative for `p`
 """
-integrate(P::AbstractPolynomial) = throw(MethodError("`integrate` not implemented for polynomials of type $P"))
+integrate(P::AbstractPolynomial) = throw(ArgumentError("`integrate` not implemented for polynomials of type $P"))
 
 """
     integrate(::AbstractPolynomial, C)
@@ -280,6 +280,14 @@ function truncate!(ps::Dict{Int,T};
 end
 
 truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined."))
+Base.truncate(ps::NTuple{0}; kwargs...) = ps
+function Base.truncate(ps::NTuple{N,T};
+              rtol::Real = Base.rtoldefault(real(T)),
+              atol::Real = 0,) where {N,T}
+    thresh = norm(ps, Inf) * rtol + atol
+    return NTuple{N,T}(abs(pᵢ) <= thresh ? zero(T) : pᵢ for pᵢ ∈ values(ps))
+end
+
 
 """
     truncate(::AbstractPolynomial{T};
@@ -340,6 +348,19 @@ function chop!(ps::Dict{Int,T};
 end
 
 chop!(ps::NTuple; kwargs...) = throw(ArgumentError("chop! not defined"))
+Base.chop(ps::NTuple{0}; kwargs...) = ps
+function Base.chop(ps::NTuple{N,T};
+              rtol::Real = Base.rtoldefault(real(T)),
+              atol::Real = 0,) where {N,T}
+    thresh = norm(ps, Inf) * rtol + atol
+    for i in N:-1:1
+        if abs(ps[i]) > thresh
+            return ps[1:i]
+        end
+    end
+    return NTuple{0,T}()
+end
+
 
 
 """
@@ -492,7 +513,18 @@ isintegral(p::AbstractPolynomial) = all(isinteger, p)
 
 Determine whether a polynomial is a monic polynomial, i.e., its leading coefficient is one.
 """
-ismonic(p::AbstractPolynomial) = isone(p[end])
+ismonic(p::AbstractPolynomial) = isone(convert(Polynomial, p)[end])
+
+"`hasnan(p::AbstractPolynomial)` are any coefficients `NaN`"
+hasnan(p::AbstractPolynomial) = any(isnan, p)
+
+
+"""
+    isconstant(::AbstractPolynomial)
+
+Is the polynomial  `p` a constant.
+"""
+isconstant(p::AbstractPolynomial) = degree(p) <= 0
 
 """
     coeffs(::AbstractPolynomial)
@@ -512,7 +544,6 @@ return `p(0)`, the constant term in the standard basis
 constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
 
 
-hasnan(p::AbstractPolynomial) = any(isnan, p)
 
 
 """
@@ -523,13 +554,6 @@ has a nonzero coefficient. The degree of the zero polynomial is defined to be -1
 """
 degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p) 
 
-
-"""
-    isconstant(::AbstractPolynomial)
-
-Is the polynomial  `p` a constant.
-"""
-isconstant(p::AbstractPolynomial) = degree(p) <= 0
 
 """
     domain(::Type{<:AbstractPolynomial})
@@ -566,6 +590,7 @@ function mapdomain(P::Type{<:AbstractPolynomial}, x::AbstractArray)
     return x_scaled
 end
 mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
+
 #=
 indexing =#
 Base.firstindex(p::AbstractPolynomial) = 0
@@ -713,8 +738,11 @@ zero, one, variable, basis =#
 
 Returns a representation of 0 as the given polynomial.
 """
-Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(zeros(eltype(P), 1), var)
-Base.zero(::Type{P}) where {T, X, P<:AbstractPolynomial{T,X}} = ⟒(P){T,X}(zeros(T,1))
+function Base.zero(::Type{P}) where {P<:AbstractPolynomial}
+    T,X = eltype(P), indeterminate(P)
+    ⟒(P){T,X}(zeros(T,1))
+end
+Base.zero(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = zero(⟒(P){eltype(P),Symbol(var)}) #default 0⋅b₀
 Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, indeterminate(p))
 """
     one(::Type{<:AbstractPolynomial})
@@ -722,9 +750,9 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, indeterminate(p))
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P){eltype(P), Symbol(var)}(ones(eltype(P),1))  # assumes  p₀ = 1
-Base.one(::Type{P}) where {T, X, P<:AbstractPolynomial{T,X}} = ⟒(P){T,X}(ones(T,1))
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P, indeterminate(p))
+Base.one(::Type{P}) where {P<:AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default method
+Base.one(::Type{P}, var) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var == nothing ? :x : var)})
+Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
@@ -754,22 +782,23 @@ julia> roots((x - 3) * (x + 2))
 
 ```
 """
-variable(::Type{P}, var::SymbolLike = :x) where {P <: AbstractPolynomial} = MethodError()
+variable(::Type{P}) where {P <: AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default
+variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P),Symbol(var)})
 variable(p::AbstractPolynomial, var::SymbolLike = indeterminate(p)) = variable(typeof(p), var)
-variable(::Type{P}) where {T,X, P <: AbstractPolynomial{T,X}} = variable(P, X)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
 # basis
 # var is a positional argument, not a keyword; can't deprecate so we do `_var; var=_var`
 # return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
-function basis(::Type{P}, k::Int) where {T, X, P<:AbstractPolynomial{T,X}}
-    zs = zeros(Int, k+1)
-    zs[end] = 1
-    ⟒(P){eltype(P), X}(zs)
+function basis(::Type{P}, k::Int) where {P<:AbstractPolynomial}
+    T,X = eltype(P), indeterminate(P)
+    zs = zeros(T, k+1)
+    zs[end] = one(T)
+    ⟒(P){eltype(P), indeterminate(P)}(zs)
 end
-function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
-    T,X = eltype(P), Symbol(_var)
-    basis(⟒(P){T,X},k)
+function basis(::Type{P}, k::Int, _var::SymbolLike; var=_var) where {P <: AbstractPolynomial}
+    T,X = eltype(P), Symbol(var)
+    basis(⟒(P){T,X}, k)
 end
 basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
 
@@ -793,7 +822,7 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 
 
 ## addition
-## Fall back addition. 
+## Fall back addition is possible as vector addition with padding by 0s
 ## Subtypes will likely want to implement both:
 ## +(p::P,c::Number) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
 ## though the default for poly+poly isn't terrible
@@ -802,7 +831,6 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
 
 function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
-
     R = promote_type(T,S)
     q = convert(⟒(P){R,X}, p)
     q + R(c)
@@ -810,7 +838,6 @@ end
 
 # polynomial + polynomial when different types
 function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: AbstractPolynomial{S,Y}}
-
     isconstant(p) && return constantterm(p) + q
     isconstant(q) && return p + constantterm(q)
     assert_same_variable(X,Y)

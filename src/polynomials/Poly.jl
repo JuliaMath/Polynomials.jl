@@ -56,10 +56,13 @@ function Base.iterate(p::Poly, state=nothing)
 end
 Base.collect(p::Poly) = [pᵢ for pᵢ ∈ p]
 
-
-
-Base.zero(P::Type{<:Poly},var=:x) = Poly(zeros(_eltype(P),0), var)
-Base.one(P::Type{<:Poly},var=:x) = Poly(ones(_eltype(P),1), var)
+# need two here as `eltype(P)` is `_eltype(P)`.
+Base.zero(::Type{P}) where {P <: Poly} = Poly{_eltype(P), Polynomials.indeterminate(P)}([0])
+Base.zero(::Type{P},var::Polynomials.SymbolLike) where {P <: Poly} = Poly(zeros(_eltype(P),1), var)
+Base.one(::Type{P}) where {P <: Poly} = Poly{_eltype(P), Polynomials.indeterminate(P)}([1])
+Base.one(::Type{P},var::Polynomials.SymbolLike) where {P <: Poly} = Poly(ones(_eltype(P),1), var)
+Polynomials.variable(::Type{P}) where {P <: Poly} = Poly{_eltype(P), Polynomials.indeterminate(P)}([0,1])
+Polynomials.variable(::Type{P},var::Polynomials.SymbolLike) where {P <: Poly} = Poly(_eltype(P)[0,1], var)
 function Polynomials.basis(P::Type{<:Poly}, k::Int, _var::Polynomials.SymbolLike=:x; var=_var) 
     zs = zeros(Int, k+1)
     zs[end] = 1
