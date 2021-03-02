@@ -95,6 +95,10 @@ function isconstant(p::SparsePolynomial)
     return true
 end
 
+function basis(P::Type{<:SparsePolynomial}, n::Int)
+    T,X = eltype(P), indeterminate(P)
+    SparsePolynomial{T,X}(Dict(n=>one(T)))
+end
 
 # return coeffs as  a vector
 # use p.coeffs to get Dictionary
