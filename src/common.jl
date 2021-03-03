@@ -743,7 +743,7 @@ function Base.zero(::Type{P}) where {P<:AbstractPolynomial}
     ⟒(P){T,X}(zeros(T,1))
 end
 Base.zero(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = zero(⟒(P){eltype(P),Symbol(var)}) #default 0⋅b₀
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, indeterminate(p))
+Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, var)
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
@@ -751,8 +751,8 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, indeterminate(p))
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}) where {P<:AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default method
-Base.one(::Type{P}, var) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var == nothing ? :x : var)})
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
+Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var == nothing ? :x : var)})
+Base.one(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = one(P, var)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
@@ -784,7 +784,7 @@ julia> roots((x - 3) * (x + 2))
 """
 variable(::Type{P}) where {P <: AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default
 variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P),Symbol(var)})
-variable(p::AbstractPolynomial, var::SymbolLike = indeterminate(p)) = variable(typeof(p), var)
+variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
 # basis
@@ -800,7 +800,7 @@ function basis(::Type{P}, k::Int, _var::SymbolLike; var=_var) where {P <: Abstra
     T,X = eltype(P), Symbol(var)
     basis(⟒(P){T,X}, k)
 end
-basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
+basis(p::P, k::Int, _var=indeterminate(p); var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
 
 #=
 arithmetic =#
