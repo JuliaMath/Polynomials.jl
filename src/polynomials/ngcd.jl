@@ -13,7 +13,7 @@ function ngcd(p::P, q::Q, args...;kwargs...) where {T, S, P<:StandardBasisPolyno
     degree(p) == 0 && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
     degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
     degree(q) == 0 && return (u=one(p), v=p, w=q,       θ=NaN, κ=NaN)
-    check_same_variable(p,q) || throw(ArgumentError("Mis-matched variables"))
+    assert_same_variable(p,q) 
 
     p′,q′ = promote(p,q)
     
@@ -24,7 +24,7 @@ function ngcd(p::P, q::Q, args...;kwargs...) where {T, S, P<:StandardBasisPolyno
     ps, qs = [p′[i] for i in eachindex(p′)], [q′[i] for i in eachindex(q′)] # need vectors, want copy
     u,v,w,Θ,κ = NGCD.ngcd(ps, qs, args...; kwargs...)
     P′ = ⟒(typeof(p′))
-    (u=P′(u, p.var), v=P′(v, p.var), w = P′(w, p.var), θ=Θ, κ=κ)
+    (u=P′(u, indeterminate(p)), v=P′(v, indeterminate(p)), w = P′(w, indeterminate(p)), θ=Θ, κ=κ)
     
 end
 

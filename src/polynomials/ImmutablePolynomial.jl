@@ -1,7 +1,7 @@
 export ImmutablePolynomial
 
 """
-    ImmutablePolynomial{T<:Number, N}(coeffs::AbstractVector{T}, var=:x)
+    ImmutablePolynomial{T<:Number, X, N}(coeffs::AbstractVector{T})
 
 Construct an immutable (static) polynomial from its coefficients 
 `a₀, a₁, …, aₙ`,
@@ -45,111 +45,59 @@ ImmutablePolynomial(1.0)
     This was modeled after https://github.com/tkoolen/StaticUnivariatePolynomials.jl by @tkoolen.
 
 """
-struct ImmutablePolynomial{T <: Number,  N} <: StandardBasisPolynomial{T}
+struct ImmutablePolynomial{T <: Number, X, N} <: StandardBasisPolynomial{T, X}
     coeffs::NTuple{N, T}
-    var::Symbol
-    
-    function ImmutablePolynomial{T,N}(coeffs::NTuple{N,T}, var::SymbolLike=:x) where {T <: Number,N}
-        N == 0 && return new{T,0}(coeffs, Symbol(var))
+    function ImmutablePolynomial{T,X,N}(coeffs::NTuple{N,T}) where {T <: Number, X, N}
+        N == 0 && return new{T,X, 0}(coeffs)
         iszero(coeffs[end]) &&  throw(ArgumentError("Leading  term must  be  non-zero"))
-        new{T,N}(coeffs, Symbol(var))
+        new{T,X,N}(coeffs)
     end
-
-    
 end
 
 @register ImmutablePolynomial
 
 ## Various interfaces
-function ImmutablePolynomial{T,N}(coeffs::Tuple, var::SymbolLike=:x)  where {T,N}
-    ImmutablePolynomial{T,N}(NTuple{N,T}(T.(coeffs)), var)
-end
 
-function ImmutablePolynomial{T,N}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {T <: Number, N, S}
+## Abstract Vector coefficients
+function ImmutablePolynomial{T,X}(coeffs::AbstractVector{S})  where {T,X,S}
+    R = promote_type(T,S)
+    
     if Base.has_offset_axes(coeffs)
-      @warn "ignoring the axis offset of the coefficient vector"
+        @warn "ignoring the axis offset of the coefficient vector"
     end
-    ImmutablePolynomial{T,N}(NTuple{N,T}(tuple(coeffs...)), var)
-end
-
-## --
-function ImmutablePolynomial{T}(coeffs::NTuple{M,S}, var::SymbolLike=:x) where {T, S<: Number, M}
     N = findlast(!iszero, coeffs)
-    if N == nothing
-        return zero(ImmutablePolynomial{T}, var)
-    else
-        cs = NTuple{N,T}(coeffs[i] for  i in  1:N)
-        return ImmutablePolynomial{T,N}(cs, var)
-    end
+    N == nothing && return ImmutablePolynomial{R,X,0}(())
+    N′ = N + 1 - firstindex(coeffs)
+    cs = NTuple{N′,T}(coeffs[i] for i ∈ firstindex(coeffs):N)
+    ImmutablePolynomial{T, X, N′}(cs)
 end
 
-function ImmutablePolynomial{T}(coeffs::Tuple, var::SymbolLike=:x)  where {T}
-    ImmutablePolynomial{T}(T.(coeffs), var)
+## -- Tuple arguments
+function ImmutablePolynomial{T,X}(coeffs::Tuple)  where {T,X}
+    N = findlast(!iszero, coeffs)
+    N == nothing && return zero(ImmutablePolynomial{T,X})
+    ImmutablePolynomial{T,X,N}(NTuple{N,T}(coeffs[i] for i in 1:N))
 end
 
-# entry point from abstract.jl; note T <: Number
-function ImmutablePolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
-    if Base.has_offset_axes(coeffs)
-      @warn "ignoring the axes of the coefficient vector and treating it as a list"
-    end
-    M = length(coeffs)
-    ImmutablePolynomial{T}(NTuple{M,T}(tuple(coeffs...)), var)
-end
-
-## --
+ImmutablePolynomial{T}(coeffs::Tuple, var::SymbolLike=:x)  where {T} = ImmutablePolynomial{T,Symbol(var)}(coeffs)
 
 function ImmutablePolynomial(coeffs::Tuple, var::SymbolLike=:x)
     cs = NTuple(promote(coeffs...))
     T = eltype(cs)
-    ImmutablePolynomial{T}(cs, var)
+    ImmutablePolynomial{T, Symbol(var)}(cs)
 end
 
-# Convenience; pass tuple to Polynomial
-# Not documented, not sure this is a good idea as P(...)::P is not true...
-# Deprecated
-function Polynomial(coeffs::NTuple{N,T}, var::SymbolLike = :x) where{N,T}
-    Base.depwarn("Use of `Polynomial(NTuple, var)` is deprecated. Use the `ImmutablePolynomial` constructor",
-                 :Polynomial)
-    ImmutablePolynomial(coeffs, var)
-end
-function Polynomial{T}(coeffs::NTuple{N,S}, var::SymbolLike = :x) where{N,T,S}
-    Base.depwarn("Use of `Polynomial(NTuple, var)` is deprecated. Use the `ImmutablePolynomial` constructor",
-                 :Polynomial)
-    ImmutablePolynomial{N,T}(T.(coeffs), var)
-end
 
 ##
 ## ----
 ##
 # overrides from common.jl due to  coeffs being non mutable, N in type parameters
-Base.collect(p::P) where {P <: ImmutablePolynomial} = [pᵢ for pᵢ ∈ p]
 
-Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p), p.var)
-
-## defining these speeds things up
-function Base.zero(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
-    R = eltype(P)
-    ImmutablePolynomial{R,0}(NTuple{0,R}(),var)
-end
-
-function  Base.one(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
-    R = eltype(P)
-    ImmutablePolynomial{R,1}(NTuple{1,R}(1),var)
-end
-function variable(P::Type{<:ImmutablePolynomial}, var::SymbolLike=:x)
-    R  = eltype(P)
-    ImmutablePolynomial{R,2}(NTuple{2,R}((0,1)),var)
-end
-
+Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p))
 
 # degree, isconstant
-degree(p::ImmutablePolynomial{T,N}) where {T,N} = N - 1 # no trailing zeros
-isconstant(p::ImmutablePolynomial{T,N}) where {T,N}  = N <= 1
-
-function Base.getindex(p::ImmutablePolynomial{T,N}, idx::Int) where {T <: Number,N}
-    (idx <  0 || idx > N-1) && return zero(T)
-    return p.coeffs[idx + 1]
-end
+degree(p::ImmutablePolynomial{T,X, N}) where {T,X,N} = N - 1 # no trailing zeros
+isconstant(p::ImmutablePolynomial{T,X,N}) where {T,X,N}  = N <= 1
 
 Base.setindex!(p::ImmutablePolynomial, val::Number,  idx::Int) = throw(ArgumentError("ImmutablePolynomials are immutable"))
 
@@ -168,161 +116,97 @@ for op in [:isequal, :(==)]
 end
 
 # in common.jl these call chop! and truncate!
-function Base.chop(p::ImmutablePolynomial{T,N};
+function Base.chop(p::ImmutablePolynomial{T,X};
               rtol::Real = Base.rtoldefault(real(T)),
-              atol::Real = 0)  where {T,N}
-    cs = coeffs(p)
-    for i in N:-1:1
-        if !isapprox(cs[i], zero(T), rtol=rtol, atol=atol)
-            return ImmutablePolynomial{T,i}(cs[1:i], p.var)
-        end
-    end
-    zero(ImmutablePolynomial{T}, p.var)
+                   atol::Real = 0)  where {T,X}
+    ps = chop(p.coeffs; rtol=rtol, atol=atol)
+    return ImmutablePolynomial{T,X}(ps)
 end
 
-function Base.truncate(p::ImmutablePolynomial{T,N};
-                       rtol::Real = Base.rtoldefault(real(T)),
-                       atol::Real = 0)  where {T,N}
-    q = chop(p, rtol=rtol, atol=atol)
-    iszero(q) && return  q
-    cs = coeffs(q)
-    thresh = maximum(abs,cs) * rtol + atol
-    cs′ = map(c->abs(c) <= thresh ? zero(T) : c, cs)
-    ImmutablePolynomial{T}(tuple(cs′...), p.var)
+function Base.truncate(p::ImmutablePolynomial{T,X};
+                  rtol::Real = Base.rtoldefault(real(T)),
+                  atol::Real = 0)  where {T,X}
+    ps = truncate(p.coeffs; rtol=rtol, atol=atol)
+    ImmutablePolynomial{T,X}(ps)
 end
 
-# no in-place chop! and truncate!
-chop!(p::ImmutablePolynomial; kwargs...) =  chop(p; kwargs...)
-truncate!(p::ImmutablePolynomial; kwargs...) =  truncate(p; kwargs...)
 
 ##
 ## --------------------
 ##
 
-(p::ImmutablePolynomial{T,N})(x::S) where {T,N,S} = evalpoly(x, p.coeffs)
-
-
-function Base.:+(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) where {T,N,S,M}
-
-    R = promote_type(S,T)
-    iszero(N) && return ImmutablePolynomial{R}(coeffs(p2), p2.var)
-    iszero(M) && return ImmutablePolynomial{R}(coeffs(p1), p1.var)
-    
-    isconstant(p1) && p1.var != p2.var && return p2 + p1[0]*one(ImmutablePolynomial{R}, p2.var)
-    isconstant(p2) && p1.var != p2.var && return p1 + p2[0]*one(ImmutablePolynomial{R}, p1.var)
-
-    p1.var != p2.var && error("Polynomials must have same variable")
-
-    if  N == M
-        cs = NTuple{N,R}(p1[i] + p2[i] for i in 0:N-1)
-        ImmutablePolynomial{R}(cs, p1.var)        
-    elseif N < M
-        cs = (p2.coeffs) ⊕ (p1.coeffs)
-        ImmutablePolynomial{R,M}(cs, p1.var)        
-    else
-        cs = (p1.coeffs) ⊕ (p2.coeffs)
-        ImmutablePolynomial{R,N}(cs, p1.var)                
-    end
-
-end
-
-# not type stable!!!
-function Base.:*(p1::ImmutablePolynomial{T,N}, p2::ImmutablePolynomial{S,M}) where {T,N,S,M}
-    isconstant(p1) && return p2 * p1[0] 
-    isconstant(p2) && return p1 * p2[0]
-    p1.var != p2.var && error("Polynomials must have same variable")
-    R = promote_type(S,T)
-    cs = (p1.coeffs) ⊗ (p2.coeffs)
-    if !iszero(cs[end])
-        return ImmutablePolynomial{R, N+M-1}(cs, p1.var)
-    else
-        n = findlast(!iszero, cs)
-        return ImmutablePolynomial{R, n}(cs[1:n], p1.var)
-    end
-end
-
-# Padded vector sum of two tuples assuming N > M
-# assume N > M.
-# As N ≠ M, we are assured of size of output (max(N,M)), so we generate the function
-@generated function ⊕(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
-
-    R = promote_type(T,S)
-
-    exprs = Any[nothing for i = 1:N]
-    for i in  1:M
-        exprs[i] = :(p1[$i] + p2[$i])
-    end
-    for i in M+1:N
-        exprs[i] =:(p1[$i])
-    end
-
-    return quote
-        Base.@_inline_meta
-        tuple($(exprs...))
-    end
-
-end
-
-
-
-## Static size of product makes generated functions  a good choice
-## from https://github.com/tkoolen/StaticUnivariatePolynomials.jl/blob/master/src/monomial_basis.jl
-## convolution of two tuples
-@generated function ⊗(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
-    P = M + N - 1
-    R = promote_type(T,S)
-    exprs = Any[nothing for i = 1 : P]
-    for i in 1 : N
-        for j in 1 : M
-            k = i + j - 1
-            if exprs[k] === nothing
-                exprs[k] = :(p1[$i] * p2[$j])
-            else
-                exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
-            end
-        end
-    end
-
-    return quote
-        Base.@_inline_meta
-        tuple($(exprs...))        
-    end
-
-end
-
+## Addition
 # scalar ops
-function Base.:+(p::ImmutablePolynomial{T,N}, c::S) where {T, N, S<:Number}
+function Base.:+(p::P, c::S) where {T, X, N, P <: ImmutablePolynomial{T,X,N}, S<:Number}
     R = promote_type(T,S)
 
-    iszero(c) && return ImmutablePolynomial{R,N}(p.coeffs, p.var)
-    N == 0 && return ImmutablePolynomial{R,1}((c,), p.var)
-    N == 1 && return ImmutablePolynomial((p[0]+c,), p.var)
+    iszero(c) && return ImmutablePolynomial{R,X,N}(convert(NTuple{N,R},p.coeffs))
+    N == 0 && return ImmutablePolynomial{R,X,1}(NTuple{1,R}(c))
+    N == 1 && return ImmutablePolynomial((p[0]+c,), X)
 
-    q = ImmutablePolynomial{R,1}((c,), p.var)
-    return p + q
+    cs = ⊕(P, convert(NTuple{N,R},p.coeffs), NTuple{1,R}(c))
+    q = ImmutablePolynomial{R,X,N}(cs)
+
+    return q
+    
+end
+
+Base.:-(p::ImmutablePolynomial{T,X,N}) where {T,X,N} = ImmutablePolynomial{T,X,N}(.-p.coeffs)
+
+function Base.:+(p1::P, p2::Q) where {T,X,N,P<:ImmutablePolynomial{T,X,N},
+                                      S,  M,Q<:ImmutablePolynomial{S,X,M}}
+
+    R = promote_type(T,S)
+    P′ = ImmutablePolynomial{R,X}
+    if  N == M
+        cs = ⊕(P, p1.coeffs, p2.coeffs)
+        return P′(R.(cs))
+    elseif N < M
+        cs = ⊕(P, p2.coeffs, p1.coeffs)
+        return P′{M}(R.(cs))
+    else
+        cs = ⊕(P, p1.coeffs, p2.coeffs)
+        return P′{N}(R.(cs))
+    end
 
 end
 
-function Base.:*(p::ImmutablePolynomial{T,N}, c::S) where {T, N, S <: Number}
-    R = promote_type(T,S)
-    iszero(c) && return zero(ImmutablePolynomial{R}, p.var)
-    ImmutablePolynomial{R,N}(p.coeffs .* c, p.var)
+## multiplication
+
+function Base.:*(p::ImmutablePolynomial{T,X,N}, c::S) where {T, X,N, S <: Number}
+    R = eltype(one(T)*one(S))
+    P = ImmutablePolynomial{R,X}
+    (N == 0  || iszero(c)) && return zero(P)
+    cs = p.coeffs .* c
+    iszero(cs[end]) ? P(cs) : P{N}(cs) # more performant to specify when N is known
 end
 
-function Base.:/(p::ImmutablePolynomial{T,N}, c::S) where {T,N,S <: Number}
+function Base.:/(p::ImmutablePolynomial{T,X,N}, c::S) where {T,X,N,S <: Number}
     R = eltype(one(T)/one(S))
-    isinf(c)  && return zero(ImmutablePolynomial{R}, p.var)
-    ImmutablePolynomial{R,N}(p.coeffs ./ c, p.var)
+    P = ImmutablePolynomial{R,X}
+    (N == 0  || isinf(c)) && return zero(P)
+    cs = p.coeffs ./ c
+    iszero(cs[end]) ? P(cs) : P{N}(cs) # more performant to specify when N is known
 end
 
-Base.:-(p::ImmutablePolynomial{T,N}) where {T,N} = ImmutablePolynomial{T,N}(.-p.coeffs, p.var)
 
-Base.to_power_type(p::ImmutablePolynomial{T,N}) where {T,N} = p
+function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,X,M}) where {T,S,X,N,M}
+    R = promote_type(T,S)
+    P = ImmutablePolynomial{R,X}
+
+    (iszero(N) || iszero(M)) && return zero(P)
+
+    cs = ⊗(ImmutablePolynomial, p1.coeffs, p2.coeffs) #(p1.coeffs) ⊗ (p2.coeffs)
+    iszero(cs[end]) ? P(cs) : P{N+M-1}(cs)  # more performant to specify when N is known
+
+end
+
+Base.to_power_type(p::ImmutablePolynomial{T,X,N}) where {T,X,N} = p
 
 
 ## more performant versions borrowed from StaticArrays
 ## https://github.com/JuliaArrays/StaticArrays.jl/blob/master/src/linalg.jl
-LinearAlgebra.norm(q::ImmutablePolynomial{T,0}) where {T} = zero(real(float(T)))
+LinearAlgebra.norm(q::ImmutablePolynomial{T,X,0}) where {T,X} = zero(real(float(T)))
 LinearAlgebra.norm(q::ImmutablePolynomial) = _norm(q.coeffs)
 LinearAlgebra.norm(q::ImmutablePolynomial, p::Real) = _norm(q.coeffs, p)
 

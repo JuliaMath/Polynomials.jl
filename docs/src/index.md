@@ -97,7 +97,7 @@ julia> q = Polynomial([1, 2, 3], :s)
 Polynomial(1 + 2*s + 3*s^2)
 
 julia> p + q
-ERROR: Polynomials must have same variable
+ERROR: ArgumentError: Polynomials have different indeterminates
 [...]
 ```
 
@@ -199,7 +199,7 @@ julia> derivative(p1)
 ChebyshevT(2.0⋅T_0(x) + 12.0⋅T_1(x))
 
 julia> integrate(p2)
-ChebyshevT(0.25⋅T_0(x) - 1.0⋅T_1(x) + 0.25⋅T_2(x) + 0.3333333333333333⋅T_3(x))
+ChebyshevT(- 1.0⋅T_1(x) + 0.25⋅T_2(x) + 0.3333333333333333⋅T_3(x))
 
 julia> convert(Polynomial, p1)
 Polynomial(-2.0 + 2.0*x + 6.0*x^2)
@@ -213,14 +213,67 @@ ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))
 
 ### Iteration
 
-If its basis is implicit, then a polynomial may be  seen as just a vector of  coefficients. Vectors or 1-based, but, for convenience, polynomial types are 0-based, for purposes of indexing (e.g. `getindex`, `setindex!`, `eachindex`). Iteration over a polynomial steps through the basis vectors, e.g. `a_0`, `a_1*x`, ...
+If its basis is implicit, then a polynomial may be  seen as just a vector of  coefficients. Vectors or 1-based, but, for convenience, polynomial types are 0-based, for purposes of indexing (e.g. `getindex`, `setindex!`, `eachindex`). Iteration over a polynomial steps through the underlying coefficients.
 
 ```jldoctest
 julia> as = [1,2,3,4,5]; p = Polynomial(as);
 
 julia> as[3], p[2], collect(p)[3]
-(3, 3, Polynomial(3*x^2))
+(3, 3, 3)
 ```
+
+
+The `pairs` iterator, iterates over the indices and coefficients, attempting to match how `pairs` applies to the underlying storage model:
+
+```jldoctest
+julia> v = [1,2,0,4]
+4-element Array{Int64,1}:
+ 1
+ 2
+ 0
+ 4
+
+julia> p,ip,sp,lp = Polynomial(v), ImmutablePolynomial(v), SparsePolynomial(v), LaurentPolynomial(v, -1);
+
+julia> collect(pairs(p))
+4-element Array{Pair{Int64,Int64},1}:
+ 0 => 1
+ 1 => 2
+ 2 => 0
+ 3 => 4
+
+julia> collect(pairs(ip)) == collect(pairs(p))
+true
+
+julia> collect(pairs(sp)) # unordered dictionary with only non-zero terms
+3-element Array{Pair{Int64,Int64},1}:
+ 0 => 1
+ 3 => 4
+ 1 => 2
+
+julia> collect(pairs(lp))
+4-element Array{Pair{Int64,Int64},1}:
+ -1 => 1
+  0 => 2
+  1 => 0
+  2 => 4
+```
+
+
+The unexported `monomials` iterator iterates over the terms (`p[i]*Polynomials.basis(p,i)`) of the polynomial:
+
+```jldoctest
+julia> p = Polynomial([1,2,0,4], :u)
+Polynomial(1 + 2*u + 4*u^3)
+
+julia> collect(Polynomials.monomials(p))
+4-element Array{Any,1}:
+ Polynomial(1)
+ Polynomial(2*u)
+ Polynomial(0)
+ Polynomial(4*u^3)
+```
+
 
 ## Related Packages
 
@@ -234,9 +287,12 @@ julia> as[3], p[2], collect(p)[3]
 
 * [PolynomialRings](https://github.com/tkluck/PolynomialRings.jl) A library for arithmetic and algebra with multi-variable polynomials.
 
-* [AbstractAlgebra.jl](https://github.com/wbhart/AbstractAlgebra.jl) and [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series
+* [AbstractAlgebra.jl](https://github.com/wbhart/AbstractAlgebra.jl), [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series, [Hecke.jl](https://github.com/thofma/Hecke.jl) for algebraic number theory.
+
+* [CommutativeAlgebra](https://github.com/KlausC/CommutativeRings.jl) the start of a computer algebra system specialized to discrete calculations with support for polynomials.
 
 * [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) and [AMRVW](https://github.com/jverzani/AMRVW.jl).
+
 
 
 

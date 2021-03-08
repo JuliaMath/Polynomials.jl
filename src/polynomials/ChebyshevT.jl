@@ -1,7 +1,7 @@
 export ChebyshevT
 
 """
-    ChebyshevT{<:Number}(coeffs::AbstractVector, [var = :x])
+    ChebyshevT{T<:Number, X}(coeffs::AbstractVector)
 
 Chebyshev polynomial of the first kind.
 
@@ -27,48 +27,56 @@ julia> one(ChebyshevT)
 ChebyshevT(1.0⋅T_0(x))
 ```
 """
-struct ChebyshevT{T <: Number} <: AbstractPolynomial{T}
+struct ChebyshevT{T <: Number, X} <: AbstractPolynomial{T, X}
     coeffs::Vector{T}
-    var::Symbol
-    function ChebyshevT{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T <: Number}
-        length(coeffs) == 0 && return new{T}(zeros(T, 1), var)
+    function ChebyshevT{T, X}(coeffs::AbstractVector{S}) where {T <: Number,X, S}
+
         if Base.has_offset_axes(coeffs)
             @warn "ignoring the axis offset of the coefficient vector"
         end
-        c = OffsetArrays.no_offset_view(coeffs)
-        last_nz = findlast(!iszero, c)
-        last = max(1, last_nz === nothing ? 0 : last_nz)
-        return new{T}(c[1:last], var)
+
+        N = findlast(!iszero, coeffs)
+        N == nothing && return new{T,X}(zeros(T,1))
+        cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
+        new{T,X}(cs)
     end
 end
 
 @register ChebyshevT
 
 function Base.convert(P::Type{<:Polynomial}, ch::ChebyshevT)
+    T = eltype(P)
+    X = indeterminate(P,ch)
+    Q = ⟒(P){T,X}
+
     if length(ch) < 3
-        return P(ch.coeffs, ch.var)
+        return Q(ch.coeffs)
     end
-    c0 = P(ch[end - 1], ch.var)
-    c1 = P(ch[end], ch.var)
+
+    c0 = Q(ch[end - 1])
+    c1 = Q(ch[end])
+    x = variable(Q)
     @inbounds for i in degree(ch):-1:2
         tmp = c0
-        c0 = P(ch[i - 2], ch.var) - c1
-        c1 = tmp + c1 * variable(P) * 2
+        c0 = Q(ch[i - 2]) - c1
+        c1 = tmp + c1 * x * 2
     end
-    return c0 + c1 * variable(P)
+    return c0 + c1 * x
 end
+Base.convert(C::Type{<:ChebyshevT}, p::Polynomial) = p(variable(C))
 
-function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
-    res = zero(C)
-    @inbounds for i in degree(p):-1:0
-        res = variable(C) * res + p[i]
-    end
-    return res
-end
 
 
 domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
-variable(P::Type{<:ChebyshevT}, var::SymbolLike=:x ) = P([0,1], var)
+function Base.one(::Type{P}) where {P<:ChebyshevT}
+    T,X = eltype(P), indeterminate(P)
+    ChebyshevT{T,X}(ones(T,1))
+end
+function variable(::Type{P}) where {P<:ChebyshevT}
+    T,X = eltype(P), indeterminate(P)
+    ChebyshevT{T,X}([zero(T), one(T)])
+end
+constantterm(p::ChebyshevT) = p(0)
 """
     (::ChebyshevT)(x)
 
@@ -93,8 +101,8 @@ julia> c.(-1:0.5:1)
  5.0
 ```
 """
-function (ch::ChebyshevT{T})(x::S) where {T,S}
-    x ∉ domain(ch) && error("$x outside of domain")
+function evalpoly(x::S, ch::ChebyshevT{T}) where {T,S}
+    x ∉ domain(ch) && throw(ArgumentError("$x outside of domain"))
     R = promote_type(T, S)
     length(ch) == 0 && return zero(R)
     length(ch) == 1 && return R(ch[0])
@@ -105,6 +113,7 @@ function (ch::ChebyshevT{T})(x::S) where {T,S}
     end
     return R(c0 + c1 * x)
 end
+
 
 function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     A = Matrix{T}(undef, length(x), n + 1)
@@ -118,14 +127,15 @@ function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {
     return A
 end
 
-function integrate(p::ChebyshevT{T}, C::S) where {T,S <: Number}
-    R = promote_type(eltype(one(T) / 1), S)
-    if hasnan(p) || isnan(C)
-        return ChebyshevT([NaN])
+function integrate(p::ChebyshevT{T,X}) where {T,X}
+    R = eltype(one(T) / 1)
+    Q = ChebyshevT{R,X}
+    if hasnan(p)
+        return Q([NaN])
     end
     n = length(p)
     if n == 1
-        return ChebyshevT{R}([C, p[0]])
+        return Q([zero(R), p[0]])
     end
     a2 = Vector{R}(undef, n + 1)
     a2[1] = zero(R)
@@ -135,8 +145,8 @@ function integrate(p::ChebyshevT{T}, C::S) where {T,S <: Number}
         a2[i + 2] = p[i] / (2 * (i + 1))
         a2[i] -= p[i] / (2 * (i - 1))
     end
-    a2[1] += R(C) - ChebyshevT(a2)(0)
-    return ChebyshevT(a2, p.var)
+
+    return Q(a2)
 end
 
 
@@ -144,7 +154,7 @@ function derivative(p::ChebyshevT{T}, order::Integer = 1) where {T}
     order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
     R  = eltype(one(T)/1)
     order == 0 && return convert(ChebyshevT{R}, p)
-    hasnan(p) && return ChebyshevT(R[NaN], p.var)
+    hasnan(p) && return ChebyshevT(R[NaN], indeterminate(p))
     order > length(p) && return zero(ChebyshevT{R})
 
 
@@ -161,14 +171,14 @@ function derivative(p::ChebyshevT{T}, order::Integer = 1) where {T}
     end
     der[1] = q[1]
 
-    pp = ChebyshevT(der, p.var)
+    pp = ChebyshevT(der, indeterminate(p))
     return order > 1 ?  derivative(pp, order - 1) : pp
 
 end
 
 function companion(p::ChebyshevT{T}) where T
     d = length(p) - 1
-    d < 1 && error("Series must have degree greater than 1")
+    d < 1 && throw(ArgumentError("Series must have degree greater than 1"))
     d == 1 && return diagm(0 => [-p[0] / p[1]])
     R = eltype(one(T) / one(T))
 
@@ -182,30 +192,42 @@ function companion(p::ChebyshevT{T}) where T
     return R.(comp)
 end
 
-function Base.:+(p1::ChebyshevT, p2::ChebyshevT)
-    p1.var != p2.var && error("Polynomials must have same variable")
+# scalar +
+function Base.:+(p::ChebyshevT{T,X}, c::S) where {T,X, S<:Number}
+    R = promote_type(T,S)
+    cs = collect(R, values(p))
+    cs[1] += c
+    ChebyshevT{R,X}(cs)
+end
+function Base.:+(p::P, c::T) where {T,X,P<:ChebyshevT{T,X}}
+    cs = collect(T, values(p))
+    cs[1] += c
+    P(cs)
+end
+
+function Base.:+(p1::ChebyshevT{T,X}, p2::ChebyshevT{T,X}) where {T,X}
     n = max(length(p1), length(p2))
-    c = [p1[i] + p2[i] for i = 0:n]
-    return ChebyshevT(c, p1.var)
+    c = T[p1[i] + p2[i] for i = 0:n]
+    return ChebyshevT{T,X}(c)
 end
 
 
-function Base.:*(p1::ChebyshevT{T}, p2::ChebyshevT{S}) where {T,S}
-    p1.var != p2.var && error("Polynomials must have same variable")
+function Base.:*(p1::ChebyshevT{T,X}, p2::ChebyshevT{T,X}) where {T,X}
     z1 = _c_to_z(p1.coeffs)
     z2 = _c_to_z(p2.coeffs)
     prod = fastconv(z1, z2)
-    ret = ChebyshevT(_z_to_c(prod), p1.var)
+    cs = _z_to_c(prod)
+    ret = ChebyshevT(cs,X)
     return truncate!(ret)
 end
 
-function Base.divrem(num::ChebyshevT{T}, den::ChebyshevT{S}) where {T,S}
-    num.var != den.var && error("Polynomials must have same variable")
+function Base.divrem(num::ChebyshevT{T,X}, den::ChebyshevT{S,Y}) where {T,X,S,Y}
+    assert_same_variable(num, den)
     n = length(num) - 1
     m = length(den) - 1
 
     R = typeof(one(T) / one(S))
-    P = ChebyshevT{R}
+    P = ChebyshevT{R,X}
 
     if n < m
         return zero(P), convert(P, num)
@@ -219,10 +241,10 @@ function Base.divrem(num::ChebyshevT{T}, den::ChebyshevT{S}) where {T,S}
     quo, rem = _z_division(znum, zden)
     q_coeff = _z_to_c(quo)
     r_coeff = _z_to_c(rem)
-    return P(q_coeff, num.var), P(r_coeff, num.var)
+    return P(q_coeff), P(r_coeff)
 end
 
-function showterm(io::IO, ::Type{ChebyshevT{T}}, pj::T, var, j, first::Bool, mimetype) where {N, T}
+function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, mimetype) where {N, T,X}
     iszero(pj) && return false
     !first &&  print(io, " ")
     print(io, hasneg(T)  && isneg(pj) ? "- " :  (!first ? "+ " : ""))

@@ -1,6 +1,8 @@
 module PadeApproximation
 
 using ..Polynomials
+indeterminate = Polynomials.indeterminate
+
 using ..PolyCompat
 export Pade, padeval
 
@@ -27,8 +29,8 @@ struct Pade{T <: Number,S <: Number}
     q::Union{Poly{S}, Polynomial{S}}
     var::Symbol
     function Pade{T,S}(p::Union{Poly{T}, Polynomial{T}}, q::Union{Poly{S}, Polynomial{S}}) where {T,S}
-        if p.var != q.var error("Polynomials must have same variable") end
-        new{T,S}(p, q, p.var)
+        if indeterminate(p) != indeterminate(q) error("Polynomials must have same variable") end
+        new{T,S}(p, q, indeterminate(p))
     end
 end
 
@@ -36,10 +38,10 @@ Pade(p::Polynomial{T}, q::Polynomial{S}) where {T <: Number,S <: Number} = Pade{
 
 function Pade(c::Polynomial{T}, m::Integer, n::Integer) where {T}
     m + n < length(c) || error("m + n must be less than the length of the Polynomial")
-    rold = Polynomial([zeros(T, m + n + 1);one(T)], c.var)
-    rnew = Polynomial(c[0:m + n], c.var)
-    uold = Polynomial([one(T)], c.var)
-    vold = Polynomial([zero(T)], c.var)
+    rold = Polynomial([zeros(T, m + n + 1);one(T)], indeterminate(c))
+    rnew = Polynomial(c[0:m + n], indeterminate(c))
+    uold = Polynomial([one(T)], indeterminate(c))
+    vold = Polynomial([zero(T)], indeterminate(c))
     unew, vnew = vold, uold
     @inbounds for i = 1:n
         temp0, temp1, temp2 = rnew, unew, vnew
@@ -61,10 +63,10 @@ Pade(p::Poly{T}, q::Poly{S}) where {T <: Number,S <: Number} = Pade{T,S}(p, q)
 
 function Pade(c::Poly{T}, m::Integer, n::Integer) where {T}
     m + n < length(c) || error("m + n must be less than the length of the polynomial")
-    rold = Poly([zeros(T, m + n + 1);one(T)], c.var)
-    rnew = Poly(c[0:m + n], c.var)
-    uold = Poly([one(T)], c.var)
-    vold = Poly([zero(T)], c.var)
+    rold = Poly([zeros(T, m + n + 1);one(T)], indeterminate(c))
+    rnew = Poly(c[0:m + n], indeterminate(c))
+    uold = Poly([one(T)], indeterminate(c))
+    vold = Poly([zero(T)], indeterminate(c))
     unew, vnew = vold, uold
     @inbounds for i = 1:n
         temp0, temp1, temp2 = rnew, unew, vnew

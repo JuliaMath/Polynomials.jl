@@ -8,7 +8,7 @@
     @test p.coeffs == coeff
     @test coeffs(p) == coeff
     @test degree(p) == length(coeff) - 1
-    @test p.var == :x
+    @test Polynomials.indeterminate(p) == :x
     @test length(p) == length(coeff)
     @test size(p) == size(coeff)
     @test size(p, 1) == size(coeff, 1)
@@ -91,8 +91,8 @@ end
 @testset "Companion" begin
     c_null = ChebyshevT(Int[])
     c_1 = ChebyshevT([1])
-    @test_throws ErrorException companion(c_null)
-    @test_throws ErrorException companion(c_1)
+    @test_throws ArgumentError companion(c_null)
+    @test_throws ArgumentError companion(c_1)
     for i in 1:5
         coef = vcat(zeros(i), 1)
         c = ChebyshevT(coef)

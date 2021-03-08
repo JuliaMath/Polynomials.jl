@@ -1,6 +1,4 @@
-abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
-
-
+abstract type StandardBasisPolynomial{T,X} <: AbstractPolynomial{T,X} end
 
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T}
 
@@ -17,21 +15,106 @@ function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, firs
     return true
 end
 
-# allows  broadcast  issue #209
-evalpoly(x, p::StandardBasisPolynomial) = p(x)
+"""
+    evalpoly(x, p::StandardBasisPolynomial)
+    p(x)
+
+Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division, as implemented in `evalpoly` of base `Julia`.
+
+# Examples
+```jldoctest
+julia> using Polynomials
+
+julia> p = Polynomial([1, 0, 3])
+Polynomial(1 + 3*x^2)
+
+julia> p(0)
+1
+
+julia> p.(0:3)
+4-element Array{Int64,1}:
+  1
+  4
+ 13
+ 28
+```
+"""
+evalpoly(x, p::StandardBasisPolynomial) = EvalPoly.evalpoly(x, p.coeffs) # allows  broadcast  issue #209
+constantterm(p::StandardBasisPolynomial) = p[0]
 
 domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 
-## generic test if polynomial `p` is a constant
-isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
+function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial)
+    if isa(q, P)
+        return q
+    else
+        T = _eltype(P,q)
+        X = indeterminate(P,q)
+        return ⟒(P){T,X}([q[i] for i in 0:degree(q)])
+    end
+end
 
-Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
+function Base.one(::Type{P}) where {P<:StandardBasisPolynomial}
+    T,X = eltype(P), indeterminate(P)
+    ⟒(P){T,X}(ones(T,1))
+end
+function variable(::Type{P}) where {P<:StandardBasisPolynomial}
+    T,X = eltype(P), indeterminate(P)
+    ⟒(P){T,X}([zero(T),one(T)])
+end
 
-Base.values(p::StandardBasisPolynomial) = values(p.coeffs)
+## multiplication algorithms for computing p * q.
+## default multiplication between same type.
+## subtypes might relax to match T,S to avoid one conversion
+function Base.:*(p::P, q::P) where {T,X, P<:StandardBasisPolynomial{T,X}}
+    cs = ⊗(P, coeffs(p), coeffs(q))
+    P(cs)
+end
+                                    
+## put here, not with type defintion, in case reuse is possible
+function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
+    R = promote_type(T,S)
+    fastconv(convert(Vector{R}, p), convert(Vector{R},q))
+end
 
-variable(::Type{P}, var::SymbolLike = :x) where {P <: StandardBasisPolynomial} = P([0, 1], var)
+## Static size of product makes generated functions  a good choice
+## from https://github.com/tkoolen/StaticUnivariatePolynomials.jl/blob/master/src/monomial_basis.jl
+## convolution of two tuples
+@generated function ⊗(::Type{<:StandardBasisPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+    P = M + N - 1
+    exprs = Any[nothing for i = 1 : P]
+    for i in 1 : N
+        for j in 1 : M
+            k = i + j - 1
+            if exprs[k] === nothing
+                exprs[k] = :(p1[$i] * p2[$j])
+            else
+                exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
+            end
+        end
+    end
 
+    return quote
+        Base.@_inline_meta
+        tuple($(exprs...))        
+    end
+
+end
+
+function ⊗(P::Type{<:StandardBasisPolynomial}, p::Dict{Int,T}, q::Dict{Int,S}) where {T,S}
+    R = promote_type(T,S)
+    c = Dict{Int,R}()
+    for (i,pᵢ) ∈ pairs(p)
+        for (j,qⱼ) ∈ pairs(q)
+            cᵢⱼ = get(c, i+j, zero(R))
+            @inbounds c[i+j] = muladd(pᵢ, qⱼ, cᵢⱼ)
+        end
+    end
+    c
+end
+
+## ---
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)
@@ -47,55 +130,49 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
 end
 
 
-function Base.:+(p::P, c::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
-    R = promote_type(T,S)
-    as = R[c  for c in coeffs(p)]
-    as[1] += c
-    _convert(p, as)
-end
-
-
-function derivative(p::P, order::Integer = 1) where {T, P <: StandardBasisPolynomial{T}}
-    order < 0 && error("Order of derivative must be non-negative")
+function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPolynomial{T, X}}
+    order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
 
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
     R = eltype(one(T)*1)
+    Q = ⟒(P){R,X}
+    
     order == 0 && return p
-    hasnan(p) && return ⟒(P){R}(R[NaN], p.var)
-    order > length(p) && return zero(⟒(P){R},p.var)
+    hasnan(p) && return Q(R[NaN])
+    order > length(p) && return zero(Q)
     d = degree(p)
-    d <= 0 && return zero(⟒(P){R},p.var)
+    d <= 0 && return zero(Q)
     n = d + 1
     a2 = Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1
         a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
     end
-    return _convert(p, a2)
+    Q(a2)
 end
 
+function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
+    R = eltype(one(T)/1)
+    Q = ⟒(P){R,X}    
 
-function integrate(p::P, k::S) where {T, P <: StandardBasisPolynomial{T}, S<:Number}
+    hasnan(p) && return Q([NaN])
+    iszero(p) && return zero(Q)
 
-    R = eltype((one(T)+one(S))/1)
-    if hasnan(p) || isnan(k)
-        return ⟒(P)([NaN])
-    end
     n = length(p)
-    a2 = Vector{R}(undef, n + 1)
-    a2[1] = k
-    @inbounds for i in 1:n
-        a2[i + 1] = p[i - 1] / i
+    as = Vector{R}(undef, n + 1)
+    as[1] = zero(R)
+    for (i, pᵢ) ∈ pairs(p)
+        i′ = i + 1
+        @inbounds as[i′+1] = pᵢ/i′
     end
-    return _convert(p, a2)
+    return Q(as)
 end
-
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
 
-    check_same_variable(num, den) || error("Polynomials must have same variable")
-    var = num.var
+    assert_same_variable(num, den) 
+    X = indeterminate(num)
 
 
     n = degree(num)
@@ -109,7 +186,7 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
     deg = n - m + 1
 
     if deg ≤ 0
-        return zero(P, var), num
+        return zero(P), num
     end
 
     q_coeff = zeros(R, deg)
@@ -251,7 +328,7 @@ Base.gcd(::Val{:numerical}, p, q, args...; kwargs...) = ngcd(p,q, args...; kwarg
 
 function companion(p::P) where {T, P <: StandardBasisPolynomial{T}}
     d = length(p) - 1
-    d < 1 && error("Series must have degree greater than 1")
+    d < 1 && throw(ArgumentError("Series must have degree greater than 1"))
     d == 1 && return diagm(0 => [-p[0] / p[1]])
 
 
@@ -284,7 +361,7 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
     k  == K && return zeros(R, k-1)
 
     # find eigenvalues of the  companion matrix
-    comp  = companion(⟒(P)(as[k:K], p.var))
+    comp  = companion(⟒(P)(as[k:K], indeterminate(p)))
     L = eigvals(comp; kwargs...)
     append!(L, zeros(eltype(L), k-1))
 
@@ -410,7 +487,7 @@ function polyfitA(x, y, n=length(x)-1; var=:x)
         Q[:,k+1] .= q/H[k+1,k]
     end
     d = Q \ y
-    ArnoldiFit(d, H, var)
+    ArnoldiFit{eltype(d),typeof(H),Symbol(var)}(d, H)
 end
 
 function polyvalA(d, H::AbstractMatrix{S}, s::T) where {T, S}
@@ -433,10 +510,9 @@ end
 
 A polynomial type produced through fitting a degree ``n`` or less polynomial to data ``(x_1,y_1),…,(x_N, y_N), N ≥ n+1``, This uses Arnoldi orthogonalization to avoid the exponentially ill-conditioned Vandermonde polynomial. See [`Polynomials.polyfitA`](@ref) for details.
 """
-struct ArnoldiFit{T, M<:AbstractArray{T,2}}  <: AbstractPolynomial{T}
+struct ArnoldiFit{T, M<:AbstractArray{T,2}, X}  <: AbstractPolynomial{T,X}
     coeffs::Vector{T}
     H::M
-    var::Symbol
 end
 export ArnoldiFit
 @register ArnoldiFit
@@ -444,11 +520,11 @@ domain(::Type{<:ArnoldiFit}) = Interval(-Inf, Inf)
 
 Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "ArnoldiFit of degree $(length(p.coeffs)-1)")
 
-(p::ArnoldiFit)(x) = polyvalA(p.coeffs, p.H, x)
+evalpoly(x, p::ArnoldiFit) = polyvalA(p.coeffs, p.H, x)
 
 fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T} = polyfitA(x, y, deg; var=var)
 
-Base.convert(::Type{P}, p::ArnoldiFit) where {P <: AbstractPolynomial} = p(variable(P,p.var))
+Base.convert(::Type{P}, p::ArnoldiFit) where {P <: AbstractPolynomial} = p(variable(P,indeterminate(p)))
 
 
 
@@ -482,8 +558,8 @@ end
 @inline function compensated_horner(ps, x)
     n, T = length(ps), eltype(ps)
     aᵢ = ps[end]
-    sᵢ = aᵢ * _one(x)
-    c = zero(T) * _one(x)
+    sᵢ = aᵢ * EvalPoly._one(x)
+    c = zero(T) * EvalPoly._one(x)
     for i in n-1:-1:1
 	aᵢ = ps[i]
         pᵢ, πᵢ = two_product_fma(sᵢ, x)
@@ -497,8 +573,8 @@ function compensated_horner(ps::Tuple, x::S) where {S}
     ps == () && return zero(S)
     if @generated
         n = length(ps.parameters)
-        sσᵢ =:(ps[end] * _one(x), zero(S))
-        c = :(zero(S) * _one(x))
+        sσᵢ =:(ps[end] * EvalPoly._one(x), zero(S))
+        c = :(zero(S) * EvalPoly._one(x))
         for i in n-1:-1:1
             pπᵢ = :(two_product_fma($sσᵢ[1], x))
 	    sσᵢ = :(two_sum($pπᵢ[1], ps[$i]))

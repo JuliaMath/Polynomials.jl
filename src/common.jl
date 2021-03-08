@@ -70,19 +70,41 @@ fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} =
     fit(::Type{<:AbstractPolynomial}, x, y, deg=length(x)-1; [weights], var=:x)
 
 Fit the given data as a polynomial type with the given degree. Uses
-linear least squares to minimize the norm of `V⋅c - y`, where `V` is
-the Vandermonde matrix and `c` are the coefficients of the polynomial
+linear least squares to minimize the norm  `||y - V⋅β||^2`, where `V` is
+the Vandermonde matrix and `β` are the coefficients of the polynomial
 fit.
 
 This will automatically scale your data to the [`domain`](@ref) of the
 polynomial type using [`mapdomain`](@ref). The default polynomial type
 is [`Polynomial`](@ref).
 
-When weights are given, as either a `Number`, `Vector` or `Matrix`,
-this will use weighted linear least squares. That is, the norm of
-`W ⋅ (y - V ⋅ x)` is minimized. (As of now, the weights are specified 
-using their squares: for a number use `w^2`, for a vector `wᵢ^2`, and for a matrix
- specify `W'*W`. This behavior may change in the future.)
+
+## Weights
+
+Weights may be assigned to the points by specifying a vector or matrix of weights. 
+
+When specified as a vector, `[w₁,…,wₙ]`, the weights should be
+non-negative as the minimization problem is `argmin_β Σᵢ wᵢ |yᵢ - Σⱼ
+Vᵢⱼ βⱼ|² = argmin_β || √(W)⋅(y - V(x)β)||²`, where, `W` the digonal
+matrix formed from `[w₁,…,wₙ]`, is used for the solution, `V` being
+the Vandermonde matrix of `x` corresponding to the specified
+degree. This parameterization of the weights is different from that of
+`numpy.polyfit`, where the weights would be specified through 
+`[ω₁,ω₂,…,ωₙ] = [√w₁, √w₂,…,√wₙ]` 
+with the answer solving 
+`argminᵦ | (ωᵢ⋅yᵢ- ΣⱼVᵢⱼ(ω⋅x) βⱼ) |^2`.
+
+When specified as a matrix, `W`, the solution is through the normal
+equations `(VᵀWV)β = (Vᵀy)`, again `V` being the Vandermonde matrix of
+`x` corresponding to the specified degree.
+
+(In statistics, the vector case corresponds to weighted least squares,
+where weights are typically given by `wᵢ = 1/σᵢ²`, the `σᵢ²` being the
+variance of the measurement; the matrix specification follows that of
+the generalized least squares estimator with `W = Σ⁻¹`, the inverse of
+the variance-covariance matrix.)
+
+## large degree
 
 For fitting with a large degree, the Vandermonde matrix is exponentially ill-conditioned. The [`ArnoldiFit`](@ref) type introduces an Arnoldi orthogonalization that fixes this problem.
 
@@ -104,7 +126,7 @@ fit(P::Type{<:AbstractPolynomial},
     var = :x,) = fit′(P, promote(collect(x), collect(y))..., deg; weights = weights, var = var)
 
 #  avoid issue  214
-fit′(P::Type{<:AbstractPolynomial}, x, y, args...;kwargs...) = throw(MethodError("x and y do not produce abstract   vectors"))
+fit′(P::Type{<:AbstractPolynomial}, x, y, args...;kwargs...) = throw(ArgumentError("x and y do not produce abstract   vectors"))
 fit′(P::Type{<:AbstractPolynomial},
      x::AbstractVector{T},
      y::AbstractVector{T},
@@ -136,7 +158,6 @@ end
 
 
 # Weighted linear least squares
-# TODO: Breaking change for 2.0: use non-squared weights
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
 function _wlstsq(vand, y, w::AbstractVector)
     W = Diagonal(sqrt.(w))
@@ -182,11 +203,22 @@ Calculate the psuedo-Vandermonde matrix of the given polynomial type with the gi
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 """
-    integrate(::AbstractPolynomial, C=0)
+    integrate(p::AbstractPolynomial)
 
-Returns the indefinite integral of the polynomial with constant `C`.
+Return an antiderivative for `p`
 """
-integrate(p::AbstractPolynomial, C::Number = 0) = integrate(p, C)
+integrate(P::AbstractPolynomial) = throw(ArgumentError("`integrate` not implemented for polynomials of type $P"))
+
+"""
+    integrate(::AbstractPolynomial, C)
+
+Returns the indefinite integral of the polynomial with constant `C` when expressed in the standard basis.
+"""
+function integrate(p::P, C) where {P <: AbstractPolynomial}
+    ∫p = integrate(p)
+    isnan(C) && return ⟒(P){eltype(∫p+C), indeterminate(∫p)}([C])
+    ∫p + (C - constantterm(∫p))
+end
 
 """
     integrate(::AbstractPolynomial, a, b)
@@ -214,11 +246,48 @@ In-place version of [`truncate`](@ref)
 function truncate!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0,) where {T}
-    max_coeff = maximum(abs, coeffs(p))
-    thresh = max_coeff * rtol + atol
-    map!(c->abs(c) <= thresh ? zero(T) : c, coeffs(p), coeffs(p))
+    truncate!(p.coeffs, rtol=rtol, atol=atol)
     return chop!(p, rtol = rtol, atol = atol)
 end
+
+## truncate! underlying storage type
+function truncate!(ps::Vector{T};
+                   rtol::Real = Base.rtoldefault(real(T)),
+                   atol::Real = 0,) where {T}
+    max_coeff = norm(ps, Inf)
+    thresh = max_coeff * rtol + atol
+    for (i,pᵢ) ∈ pairs(ps)
+        if abs(pᵢ) <= thresh
+            ps[i] = zero(T)
+        end
+    end
+    nothing
+end
+
+function truncate!(ps::Dict{Int,T};
+                   rtol::Real = Base.rtoldefault(real(T)),
+                   atol::Real = 0,) where {T}
+
+    max_coeff = norm(values(ps), Inf)
+    thresh = max_coeff * rtol + atol
+
+    for (k,val) in  ps
+        if abs(val) <= thresh
+            pop!(ps,k)
+        end
+    end
+    nothing
+end
+
+truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined."))
+Base.truncate(ps::NTuple{0}; kwargs...) = ps
+function Base.truncate(ps::NTuple{N,T};
+              rtol::Real = Base.rtoldefault(real(T)),
+              atol::Real = 0,) where {N,T}
+    thresh = norm(ps, Inf) * rtol + atol
+    return NTuple{N,T}(abs(pᵢ) <= thresh ? zero(T) : pᵢ for pᵢ ∈ values(ps))
+end
+
 
 """
     truncate(::AbstractPolynomial{T};
@@ -241,18 +310,58 @@ In-place version of [`chop`](@ref)
 function chop!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-    isempty(values(p)) && return p
-    tol = norm(p) * rtol + atol
-    for i = lastindex(p):-1:0
-        val = p[i]
-        if abs(val) > tol #!isapprox(val, zero(T); rtol = rtol, atol = atol)
-            resize!(p.coeffs, i + 1); 
-            return p
-        end
-    end
-    resize!(p.coeffs, 1)
+    chop!(p.coeffs, rtol=rtol, atol=atol)
     return p
 end
+
+# chop! underlying storage type
+function chop!(ps::Vector{T};
+               rtol::Real = Base.rtoldefault(real(T)),
+               atol::Real = 0,) where {T}
+
+    tol = norm(ps) * rtol + atol
+    for i = lastindex(ps):-1:1
+        val = ps[i]
+        if abs(val) > tol 
+            resize!(ps, i); 
+            return nothing
+        end
+    end
+    resize!(ps, 1)
+    return nothing
+end
+
+function chop!(ps::Dict{Int,T};
+    rtol::Real = Base.rtoldefault(real(T)),
+    atol::Real = 0,) where {T}
+
+    tol = norm(values(ps)) * rtol + atol
+
+    for k in sort(collect(keys(ps)), by=x->x[1], rev=true)
+        if  abs(ps[k]) > tol
+            return nothing
+        end
+        pop!(ps, k)
+    end
+
+    return nothing
+end
+
+chop!(ps::NTuple; kwargs...) = throw(ArgumentError("chop! not defined"))
+Base.chop(ps::NTuple{0}; kwargs...) = ps
+function Base.chop(ps::NTuple{N,T};
+              rtol::Real = Base.rtoldefault(real(T)),
+              atol::Real = 0,) where {N,T}
+    thresh = norm(ps, Inf) * rtol + atol
+    for i in N:-1:1
+        if abs(ps[i]) > thresh
+            return ps[1:i]
+        end
+    end
+    return NTuple{0,T}()
+end
+
+
 
 """
     chop(::AbstractPolynomial{T};
@@ -275,7 +384,15 @@ end
 Check if either `p` or `q` is constant or if `p` and `q` share the same variable
 """
 check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial) =
-    (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || p.var ==  q.var
+    (isconstant(p) || isconstant(q)) || indeterminate(p) ==  indeterminate(q)
+
+function assert_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
+    check_same_variable(p,q) || throw(ArgumentError("Polynomials have different indeterminates"))
+end
+
+function assert_same_variable(X::Symbol, Y::Symbol)
+    X == Y ||  throw(ArgumentError("Polynomials have different indeterminates"))
+end
 
 #=
 Linear Algebra =#
@@ -286,6 +403,7 @@ Calculates the p-norm of the polynomial's coefficients
 """
 function LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2)
     vs = values(q)
+    isempty(vs) && return zero(eltype(q))
     return norm(vs, p) # if vs=() must be handled in special type
 end
 
@@ -326,7 +444,13 @@ Base.eltype(p::AbstractPolynomial{T}) where {T} = T
 # in  analogy  with  polynomial as a Vector{T} with different operations defined.
 Base.eltype(::Type{<:AbstractPolynomial}) = Float64
 Base.eltype(::Type{<:AbstractPolynomial{T}}) where {T} = T
-#Base.eltype(::Type{P}) where {P <: AbstractPolynomial} = P # changed  in v1.1.0
+_eltype(::Type{<:AbstractPolynomial}) = nothing
+_eltype(::Type{<:AbstractPolynomial{T}}) where {T} = T
+function _eltype(P::Type{<:AbstractPolynomial}, p::AbstractPolynomial)
+    T′ = _eltype(P)
+    T = T′ == nothing ? eltype(p) : T′
+    T
+end
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
@@ -389,22 +513,10 @@ isintegral(p::AbstractPolynomial) = all(isinteger, p)
 
 Determine whether a polynomial is a monic polynomial, i.e., its leading coefficient is one.
 """
-ismonic(p::AbstractPolynomial) = isone(p[end])
+ismonic(p::AbstractPolynomial) = isone(convert(Polynomial, p)[end])
 
-"""
-    coeffs(::AbstractPolynomial)
-
-Return the coefficient vector `[a_0, a_1, ..., a_n]` of a polynomial.
-"""
-coeffs(p::AbstractPolynomial) = p.coeffs
-
-"""
-    degree(::AbstractPolynomial)
-
-Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
-has a nonzero coefficient. The degree of the zero polynomial is defined to be -1.
-"""
-degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p) 
+"`hasnan(p::AbstractPolynomial)` are any coefficients `NaN`"
+hasnan(p::AbstractPolynomial) = any(isnan, p)
 
 
 """
@@ -414,10 +526,34 @@ Is the polynomial  `p` a constant.
 """
 isconstant(p::AbstractPolynomial) = degree(p) <= 0
 
+"""
+    coeffs(::AbstractPolynomial)
+
+Return the coefficient vector `[a_0, a_1, ..., a_n]` of a polynomial.
+"""
+coeffs(p::AbstractPolynomial) = p.coeffs
 
 
 
-hasnan(p::AbstractPolynomial) = any(isnan, p)
+# specialize this to p[0] when basis vector is 1
+"""
+    constantterm(p::AbstractPolynomial)
+
+return `p(0)`, the constant term in the standard basis
+"""
+constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
+
+
+
+
+"""
+    degree(::AbstractPolynomial)
+
+Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
+has a nonzero coefficient. The degree of the zero polynomial is defined to be -1. The default method assumes the basis polynomial, `βₖ` has degree `k`.
+"""
+degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p) 
+
 
 """
     domain(::Type{<:AbstractPolynomial})
@@ -454,33 +590,23 @@ function mapdomain(P::Type{<:AbstractPolynomial}, x::AbstractArray)
     return x_scaled
 end
 mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, x)
+
 #=
 indexing =#
 Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1
 Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
-# like coeffs, though possibly only non-zero values (e.g. SparsePolynomial)
-Base.values(p::AbstractPolynomial) = coeffs(p) 
-
-# iteration
-# iteration occurs over the basis polynomials
-Base.iterate(p::AbstractPolynomial) = (p[0] * one(typeof(p)), 1)
-function Base.iterate(p::AbstractPolynomial, state)
-    state <= length(p) - 1 ? (p[state] * basis(p, state), state + 1) : nothing
-end
-
-
-Base.collect(p::P) where {P <: AbstractPolynomial} = collect(P, p)
 
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
-    idx < 0 && throw(BoundsError(p, idx))
-    idx ≥ length(p) && return zero(T)
-    return coeffs(p)[idx + 1]
+    m,M = firstindex(p), lastindex(p)
+    idx < m && throw(BoundsError(p, idx))
+    idx > M && return zero(T)
+    p.coeffs[idx - m + 1]
 end
 Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
-Base.getindex(p::AbstractPolynomial, indices) = [getindex(p, i) for i in indices]
+Base.getindex(p::AbstractPolynomial, indices) = [p[i] for i in indices]
 Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 
 # setindex
@@ -506,28 +632,127 @@ Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
     [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
 
 #=
+Iteration =#
+## XXX breaking change in v2.0.0
+#
+# we want to keep iteration close to iteration over the coefficients as a vector:
+# `iterate` iterates over coefficients, includes 0s
+# `collect(T, p)` yields coefficients of `p` converted to type `T`
+# `keys(p)` an iterator spanning `firstindex` to `lastindex` which *may* skip 0 terms (SparsePolynomial)
+#    and *may* not be in order (SparsePolynomial)
+# `values(p)` `pᵢ` for each `i` in `keys(p)`
+# `pairs(p)`: `i => pᵢ` possibly skipping over values of `i` with `pᵢ == 0` (SparsePolynomial)
+#    and possibly non ordered (SparsePolynomial)
+# `monomials(p)`: iterates over pᵢ ⋅ basis(p, i) i  ∈ keys(p)
+function Base.iterate(p::AbstractPolynomial, state=nothing)
+    i = firstindex(p)
+    if state == nothing
+        return (p[i], i)
+    else
+        j = lastindex(p)
+        if i <= state < j
+            return (p[state+1], state+1)
+        end
+        return nothing
+    end
+end
+
+# pairs map i -> aᵢ *possibly* skipping over ai == 0
+# cf. abstractdict.jl
+struct PolynomialKeys{P}
+    p::P
+end
+struct PolynomialValues{P}
+    p::P
+end
+Base.keys(p::AbstractPolynomial) =  PolynomialKeys(p)
+Base.values(p::AbstractPolynomial) =  PolynomialValues(p)
+Base.length(p::PolynomialValues) = length(p.p.coeffs)
+Base.length(p::PolynomialKeys) = length(p.p.coeffs)
+Base.size(p::Union{PolynomialValues, PolynomialKeys}) = (length(p),)
+function Base.iterate(v::PolynomialKeys, state=nothing)
+    i = firstindex(v.p)
+    state==nothing && return (i, i)
+    j = lastindex(v.p)
+    i <= state < j && return (state+1, state+1)
+    return nothing
+end
+
+function Base.iterate(v::PolynomialValues, state=nothing)
+    i = firstindex(v.p)
+    state==nothing && return (v.p[i], i)
+    j = lastindex(v.p)
+    i <= state < j && return (v.p[state+1], state+1)
+    return nothing
+end
+
+
+# iterate over monomials of the polynomial
+struct Monomials{P}
+    p::P
+end
+"""
+    monomials(p::AbstractPolynomial)
+
+Returns an iterator over the terms, `pᵢ⋅basis(p,i)`, of the polynomial for each `i` in `keys(p)`.
+"""
+monomials(p) = Monomials(p)
+function Base.iterate(v::Monomials, state...)
+    y = iterate(pairs(v.p), state...)
+    y == nothing && return nothing
+    kv, s = y
+    return (kv[2]*basis(v.p, kv[1]), s)
+end
+Base.length(v::Monomials) = length(keys(v.p))
+
+
+#=
 identity =#
 Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(coeffs(p)))
-Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
+Base.hash(p::AbstractPolynomial, h::UInt) = hash(indeterminate(p), hash(coeffs(p), h))
+
+# get symbol of polynomial. (e.g. `:x` from 1x^2 + 2x^3...
+#_indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T, X}} = X
+_indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
+_indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
+function indeterminate(::Type{P}) where {P <: AbstractPolynomial}
+    X = _indeterminate(P)
+    X == nothing ? :x : X
+end
+indeterminate(p::P) where {P <: AbstractPolynomial} = _indeterminate(P)
+function indeterminate(PP::Type{P}, p::AbstractPolynomial) where {P <: AbstractPolynomial}
+    X = _indeterminate(PP) == nothing ? indeterminate(p) :  _indeterminate(PP)
+end
+function indeterminate(PP::Type{P}, x::Symbol) where {P <: AbstractPolynomial}
+    X = _indeterminate(PP) == nothing ? x :  _indeterminate(PP)
+end
 
 #=
 zero, one, variable, basis =#
+
+
+
 """
     zero(::Type{<:AbstractPolynomial})
     zero(::AbstractPolynomial)
 
 Returns a representation of 0 as the given polynomial.
 """
-Base.zero(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(zeros(eltype(P), 1), var)
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, p.var)
+function Base.zero(::Type{P}) where {P<:AbstractPolynomial}
+    T,X = eltype(P), indeterminate(P)
+    ⟒(P){T,X}(zeros(T,1))
+end
+Base.zero(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = zero(⟒(P){eltype(P),Symbol(var)}) #default 0⋅b₀
+Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, var)
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}, var=:x) where {P <: AbstractPolynomial} = ⟒(P)(ones(eltype(P),1), var)  # assumes  p₀ = 1
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P, p.var)
+Base.one(::Type{P}) where {P<:AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default method
+Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var == nothing ? :x : var)})
+Base.one(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = one(P, var)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
@@ -536,7 +761,7 @@ Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
 """
     variable(var=:x)
     variable(::Type{<:AbstractPolynomial}, var=:x)
-    variable(p::AbstractPolynomial, var=p.var)
+    variable(p::AbstractPolynomial, var=indeterminate(p))
 
 Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
 
@@ -557,21 +782,25 @@ julia> roots((x - 3) * (x + 2))
 
 ```
 """
-variable(::Type{P}, var::SymbolLike = :x) where {P <: AbstractPolynomial} = MethodError()
-variable(p::AbstractPolynomial, var::SymbolLike = p.var) = variable(typeof(p), var)
+variable(::Type{P}) where {P <: AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default
+variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P),Symbol(var)})
+variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
 # basis
 # var is a positional argument, not a keyword; can't deprecate so we do `_var; var=_var`
-#@deprecate basis(p::P, k::Int; var=:x)  where {P<:AbstractPolynomial}  basis(p, k, var)
-#@deprecate basis(::Type{P}, k::Int; var=:x) where {P <: AbstractPolynomial} basis(P, k,var)
 # return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
-function basis(::Type{P}, k::Int, _var::SymbolLike=:x; var=_var) where {P <: AbstractPolynomial}
-    zs = zeros(Int, k+1)
-    zs[end] = 1
-    ⟒(P){eltype(P)}(zs, var)
+function basis(::Type{P}, k::Int) where {P<:AbstractPolynomial}
+    T,X = eltype(P), indeterminate(P)
+    zs = zeros(T, k+1)
+    zs[end] = one(T)
+    ⟒(P){eltype(P), indeterminate(P)}(zs)
 end
-basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
+function basis(::Type{P}, k::Int, _var::SymbolLike; var=_var) where {P <: AbstractPolynomial}
+    T,X = eltype(P), Symbol(var)
+    basis(⟒(P){T,X}, k)
+end
+basis(p::P, k::Int, _var=indeterminate(p); var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
 
 #=
 arithmetic =#
@@ -581,6 +810,111 @@ Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
 Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
 Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
+# scalar operations
+# no generic p+c, as polynomial addition falls back to scalar ops
+#function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
+#    p1, p2 = promote(p, n)
+#    return p1 + p2
+#end
+
+
+Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
+
+
+## addition
+## Fall back addition is possible as vector addition with padding by 0s
+## Subtypes will likely want to implement both:
+## +(p::P,c::Number) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
+## though the default for poly+poly isn't terrible
+
+# polynomial + scalar
+Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
+
+function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
+    R = promote_type(T,S)
+    q = convert(⟒(P){R,X}, p)
+    q + R(c)
+end
+
+# polynomial + polynomial when different types
+function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: AbstractPolynomial{S,Y}}
+    isconstant(p) && return constantterm(p) + q
+    isconstant(q) && return p + constantterm(q)
+    assert_same_variable(X,Y)
+    sum(promote(p,q))
+
+end
+
+# Works when p,q of same type.
+# For Immutable, must remove N,M bit;
+# for others, can widen to Type{T,X}, Type{S,X} to avoid a promotion
+function Base.:+(p::P, q::P) where {T,X,P<:AbstractPolynomial{T,X}}
+    cs = degree(p) >= degree(q)  ? ⊕(P, p.coeffs, q.coeffs) : ⊕(P, q.coeffs, p.coeffs)
+    return P(cs)
+end
+
+# addition of polynomials is just vector space addition, so can be done regardless
+# of basis, as long as the same. These ⊕ methods try to find a performant means to add
+# to sets of coefficients based on the storage type. These assume n1 >= n2
+function ⊕(P::Type{<:AbstractPolynomial}, p1::Vector{T}, p2::Vector{S}) where {T,S}
+
+    n1, n2 = length(p1), length(p2)
+    R = promote_type(T,S)
+
+    cs = collect(R,p1)
+    for i in 1:n2
+        cs[i] += p2[i]
+    end
+    
+    return cs
+end
+
+# Padded vector sum of two tuples assuming N ≥ M
+@generated function ⊕(P::Type{<:AbstractPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+
+    exprs = Any[nothing for i = 1:N]
+    for i in  1:M
+        exprs[i] = :(p1[$i] + p2[$i])
+    end
+    for i in M+1:N
+        exprs[i] =:(p1[$i])
+    end
+
+    return quote
+        Base.@_inline_meta
+        tuple($(exprs...))
+    end
+
+end
+
+# addition when a dictionary is used for storage
+function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) where {T,S}
+
+    R = promote_type(T,S)
+    p = Dict{Int, R}()
+                     
+
+    # this allocates in the union
+#    for i in union(eachindex(p1), eachindex(p2)) 
+#        p[i] = p1[i] + p2[i]
+#    end
+
+    for (i,pi) ∈ pairs(p1)
+        @inbounds p[i] = pi + get(p2, i, zero(R))
+    end
+    for (i,pi) ∈ pairs(p2)
+        if iszero(get(p,i,zero(R)))
+            @inbounds p[i] = get(p1, i, zero(R)) + pi
+        end
+    end
+    
+    return  p
+
+end
+
+## -- multiplication
+
+## scalar *, /
 function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) .* c)
 end
@@ -589,22 +923,16 @@ function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) ./ c)
 end
 
-Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
-
-function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
-    p1, p2 = promote(p, n)
-    return p1 + p2
-end
-
-function Base.:+(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
-    p1, p2 = promote(p1, p2)
-    return p1 + p2
-end
-
-function Base.:*(p1::P, p2::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
+## polynomial p*q
+## Polynomial multiplication formula depend on the particular basis used. The subtype must implement
+function Base.:*(p1::P, p2::Q) where {T,X,P <: AbstractPolynomial{T,X},S,Y,Q <: AbstractPolynomial{S,Y}}
+    isconstant(p1) && return constantterm(p1) * p2
+    isconstant(p2) && return p1 * constantterm(p2)
+    assert_same_variable(X, Y)
     p1, p2 = promote(p1, p2)
     return p1 * p2
 end
+
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
@@ -646,7 +974,7 @@ function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{T};
     while !iszero(r₁) && iter ≤ itermax
         _, rtemp = divrem(r₀, r₁)
         r₀ = r₁
-        r₁ = truncate(rtemp; atol=atol, rtol=rtol)  
+        r₁ = truncate(rtemp; atol=atol, rtol=rtol)
         iter += 1
     end
     return r₀
@@ -670,13 +998,11 @@ Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && p[0] == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
-function Base.isapprox(p1::AbstractPolynomial{T},
-    p2::AbstractPolynomial{S};
+function Base.isapprox(p1::AbstractPolynomial{T,X},
+    p2::AbstractPolynomial{S,Y};
     rtol::Real = (Base.rtoldefault(T, S, 0)),
-                       atol::Real = 0,) where {T,S}
-    
-    p1, p2 = promote(p1, p2)
-    check_same_variable(p1, p2)  || error("p1 and p2 must have same var")
+                       atol::Real = 0,) where {T,X,S,Y}
+    assert_same_variable(p1, p2)
     # copy over from abstractarray.jl
     Δ  = norm(p1-p2)
     if isfinite(Δ)

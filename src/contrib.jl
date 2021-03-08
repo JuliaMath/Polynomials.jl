@@ -32,6 +32,8 @@ end
 ## cf. https://github.com/JuliaLang/julia/pull/32753
 ## Slight modification when `x` is a matrix
 ## Remove once dependencies for Julia 1.0.0 are dropped
+module EvalPoly
+using LinearAlgebra
 function evalpoly(x::S, p::Tuple) where {S}
     p == () && return zero(S)
     if @generated
@@ -116,7 +118,7 @@ _muladd(a::Matrix, b, c) = a*(b*I) + c*I
 _one(P::Type{<:Matrix}) = one(eltype(P))*I
 _one(x::Matrix) = one(eltype(x))*I
 _one(x) = one(x)
-
+end
 ## get type of parametric composite type without type parameters
 ## this is needed when the underlying type changes, e.g. with integration
 ## where T=Int might become T=Float64

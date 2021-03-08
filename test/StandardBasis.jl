@@ -35,7 +35,7 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         p = P(coeff)
         @test coeffs(p) ==ᵗ⁰ coeff
         @test degree(p) == length(coeff) - 1
-        @test p.var == :x
+        @test Polynomials.indeterminate(p) == :x
         P == Polynomial && @test length(p) == length(coeff)
         P == Polynomial && @test size(p) == size(coeff)
         P == Polynomial && @test size(p, 1) == size(coeff, 1)
@@ -124,25 +124,35 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
         @test Polynomials.isconstant(P(1))
         @test !Polynomials.isconstant(variable(P))
     end
+end
 
-    @testset "OffsetVector" begin
-        as = ones(3:4)
-        bs = parent(as)
-
-        for P in Ps
+@testset "OffsetVector" begin
+    as = ones(3:4)
+    bs = parent(as)
+    
+    
+    for P in Ps
+        # LaurentPolynomial accepts OffsetArrays; others throw warning
+        if P == LaurentPolynomial
+            @test LaurentPolynomial(as) == LaurentPolynomial(bs, 3)
+        else
             @test P(as) == P(bs)
             @test P{eltype(as)}(as) == P{eltype(as)}(bs)
+            # (Or throw an error?)
+            # @test_throws ArgumentError P(as) 
+            # @test P{eltype(as)}(as) == P{eltype(as)}(bs)
         end
+    end
         
-        a = [1,1]
-        b = OffsetVector(a, axes(a))
-        c = ZVector(a)
-        d = ZVector(b)
-        for P in Ps
+    a = [1,1]
+    b = OffsetVector(a, axes(a))
+    c = ZVector(a)
+    d = ZVector(b)
+    for P in Ps
+        if P == LaurentPolynomial && continue
             @test P(a) == P(b) == P(c) == P(d)
         end
-
-        @test ImmutablePolynomial{eltype(as), length(as)}(as) == ImmutablePolynomial(bs)
+        
     end
 end
 
@@ -241,11 +251,11 @@ end
         @test pX != pS1
         @test pS1 == pS2
         @test pS1 == pS3
-        @test_throws ErrorException pS1 + pX
-        @test_throws ErrorException pS1 - pX
-        @test_throws ErrorException pS1 * pX
-        @test_throws ErrorException pS1 ÷ pX
-        @test_throws ErrorException pS1 % pX
+        @test_throws ArgumentError pS1 + pX
+        @test_throws ArgumentError pS1 - pX
+        @test_throws ArgumentError pS1 * pX
+        @test_throws ArgumentError pS1 ÷ pX
+        @test_throws ArgumentError pS1 % pX
 
         # Testing copying.
         pcpy1 = P([1,2,3,4,5], :y)
@@ -272,7 +282,7 @@ end
         @test p1s ≠ p1x
         @test p1s ≠ p2s
 
-        @test_throws ErrorException p1s ≈ p1x
+        @test_throws ArgumentError p1s ≈ p1x
         @test p1s ≉ p2s
         @test p1s ≈ P([1,2.], :s)
 
@@ -310,7 +320,7 @@ end
         @test zero(P, :x) ≈ zero(P, :y)
         @test one(P, :x) ≈ one(P, :y)
         @test (variable(P, :x) ≈ variable(P, :x))
-        @test_throws ErrorException variable(P, :x) ≈ variable(P, :y)
+        @test_throws ArgumentError variable(P, :x) ≈ variable(P, :y)
 
     end
 end
@@ -343,7 +353,7 @@ end
         fit(P, xx, yy, 2)
 
         # issue #214 --  should error
-        @test_throws MethodError fit(Polynomial, rand(2,2), rand(2,2))
+        @test_throws ArgumentError fit(Polynomial, rand(2,2), rand(2,2))
 
         # issue #268 -- inexacterror
         @test fit(P, 1:4, 1:4, var=:x) ≈ variable(P{Float64}, :x)
@@ -460,18 +470,20 @@ end
 end
 
 @testset "Conversion" begin
+
+    X = :x
     for P in Ps
         if !isimmutable(P)
             p = P([0,one(Float64)])
-            @test P{Complex{Float64}} == typeof(p + 1im)
-            @test P{Complex{Float64}} == typeof(1im - p)
-            @test P{Complex{Float64}} == typeof(p * 1im)
+            @test P{Complex{Float64},X} == typeof(p + 1im)
+            @test P{Complex{Float64},X} == typeof(1im - p)
+            @test P{Complex{Float64},X} == typeof(p * 1im)
         else
             p = P([0,one(Float64)])
             N=2
-            @test P{Complex{Float64},N} == typeof(p + 1im)
-            @test P{Complex{Float64},N} == typeof(1im - p)
-            @test P{Complex{Float64},N} == typeof(p * 1im)
+            @test P{Complex{Float64},X,N} == typeof(p + 1im)
+            @test P{Complex{Float64},X,N} == typeof(1im - p)
+            @test P{Complex{Float64},X,N} == typeof(p * 1im)
         end
     end
 
@@ -588,7 +600,7 @@ end
         @test derivative(pR) == P([-2 // 1,2 // 1])
         @test derivative(p3) == P([2,2])
         @test derivative(p1) == derivative(p0) == derivative(pNULL) == pNULL
-        @test_throws ErrorException derivative(pR, -1)
+        @test_throws ArgumentError derivative(pR, -1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
 
         @test derivative(integrate(pN)) == convert(P{Float64}, pN)
@@ -614,8 +626,9 @@ end
         @test isequal(pder, P([NaN]))
         @test isequal(pint, P([NaN]))
 
-        pint  = integrate(p, 0.0im)
-        @test isequal(pint, P([NaN]))
+        c = 0.0im
+        pint  = integrate(p, c)
+        @test isequal(pint, P{promote_type(eltype(p), typeof(c)), :x}([NaN]))
 
         # Issue with overflow and polyder Issue #159
         @test derivative(P(BigInt[0, 1])^100, 100) == P(factorial(big(100)))
@@ -632,8 +645,8 @@ end
             @test q isa Vector{typeof(p1)}
             @test p isa Vector{typeof(p2)}
         else
-            @test q isa Vector{P{eltype(p1)}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
-            @test p isa Vector{P{eltype(p2)}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
+            @test q isa Vector{P{eltype(p1),:x}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
+            @test p isa Vector{P{eltype(p2),:x}} # ImmutablePolynomial{Int64,N} where {N}, different  Ns
         end
 
 
@@ -767,15 +780,15 @@ end
 
         p1 = P([1,2,0,3])
         for term in p1
-            @test isa(term, P)
+            @test isa(term, eltype(p1))
         end
 
         @test eltype(p1) == Int
         for P in Ps
             p1 = P([1,2,0,3])
-            @test eltype(collect(p1)) <: P{Int}
-            @test eltype(collect(P{Float64}, p1)) <: P{Float64}
-            @test_throws InexactError collect(P{Int}, P([1.2]))
+            @test eltype(collect(p1)) <: Int
+            @test eltype(collect(Float64, p1)) <: Float64
+            @test_throws InexactError collect(Int, P([1.2]))
         end
 
         p1 = P([1,2,0,3])
@@ -784,6 +797,37 @@ end
         @test [p1[idx] for idx in eachindex(p1)] ==ᵗᶻ [1,2,0,3]
     end
 end
+
+@testset "Iteration" begin
+    p, ip, lp, sp = ps = (Polynomial([1,2,0,4]), ImmutablePolynomial((1,2,0,4)),
+                          LaurentPolynomial([1,2,0,4], -2), SparsePolynomial(Dict(0=>1, 1=>2, 3=>4)))
+    for pp ∈ ps
+        # iteration
+        @test all(collect(pp) .== coeffs(pp))
+
+        # keys, values, pairs
+        ks, vs, kvs = keys(pp), values(pp), pairs(pp)
+        if !isa(pp, SparsePolynomial)
+            @test first(ks) == firstindex(pp)
+            @test first(vs) == pp[first(ks)]
+            @test length(vs) == length(coeffs(pp))
+            @test first(kvs) == (first(ks) => first(vs))
+        else
+            @test first(sort(collect(ks))) == firstindex(pp)
+            @test length(vs) == length(pp.coeffs)
+        end
+
+        ## monomials
+        if !isa(pp, SparsePolynomial)
+            i = firstindex(pp)
+            @test first(Polynomials.monomials(pp)) == pp[i] * Polynomials.basis(pp,i)
+        else
+            @test first(Polynomials.monomials(pp)) ∈ [pp[i] * Polynomials.basis(pp,i) for i ∈ keys(pp)]
+        end
+    end
+
+end
+
 
 @testset "Copying" begin
     for P in Ps
@@ -994,11 +1038,11 @@ end
             for P in Ps
                 if !isimmutable(P)
                     p = P{T2}(T1.(rand(1:3,3)))
-                    @test typeof(p) == P{T2}
+                    @test typeof(p) == P{T2, :x}
                 else
                     N = 3
                     p = P{T2}(T1.(rand(1:3,N)))
-                    @test typeof(p) == P{T2,N}
+                    @test typeof(p) == P{T2,:x, N}
                 end
             end
 
@@ -1010,14 +1054,14 @@ end
         if !isimmutable(P)
             for  T in (Int32, Int64, BigInt)
                 p₁ =  P{T}(Float64.(rand(1:3,5)))
-                @test typeof(p₁) == P{T} # conversion works
+                @test typeof(p₁) == P{T,:x} # conversion works
                 @test_throws InexactError  P{T}(rand(5))
             end
         else
             for  T in (Int32, Int64, BigInt)
                 N = 5
                 p₁ =  P{T}(Float64.(rand(1:3,5)))
-                @test typeof(p₁) == P{T,5} # conversion works
+                @test typeof(p₁) == P{T,:x,5} # conversion works
                 @test_throws InexactError  P{T}(rand(5))
             end
         end
