@@ -139,8 +139,7 @@ end
 Base.convert(::Type{P}, p::LaurentPolynomial) where {T, X, P<:LaurentPolynomial{T,X}} = P(p.coeffs, p.m[])
 function Base.convert(::Type{P}, p::LaurentPolynomial) where {P<:LaurentPolynomial}
     T = eltype(P)
-    v′ = _indeterminate(P)
-    X = v′ == nothing ? indeterminate(p) : v′
+    X = indeterminate(P,p)
     ⟒(P){T, X}(convert(Vector{T},p.coeffs), p.m[])
 end
 

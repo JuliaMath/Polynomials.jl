@@ -322,7 +322,7 @@ function chop!(ps::Vector{T};
     tol = norm(ps) * rtol + atol
     for i = lastindex(ps):-1:1
         val = ps[i]
-        if abs(val) > tol #!isapprox(val, zero(T); rtol = rtol, atol = atol)
+        if abs(val) > tol 
             resize!(ps, i); 
             return nothing
         end
@@ -384,7 +384,7 @@ end
 Check if either `p` or `q` is constant or if `p` and `q` share the same variable
 """
 check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial) =
-    (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || indeterminate(p) ==  indeterminate(q)
+    (isconstant(p) || isconstant(q)) || indeterminate(p) ==  indeterminate(q)
 
 function assert_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
     check_same_variable(p,q) || throw(ArgumentError("Polynomials have different indeterminates"))
@@ -550,7 +550,7 @@ constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
     degree(::AbstractPolynomial)
 
 Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
-has a nonzero coefficient. The degree of the zero polynomial is defined to be -1.
+has a nonzero coefficient. The degree of the zero polynomial is defined to be -1. The default method assumes the basis polynomial, `βₖ` has degree `k`.
 """
 degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p) 
 
