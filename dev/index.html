@@ -36,7 +36,7 @@ julia&gt; q = Polynomial([1, 2, 3], :s)
 Polynomial(1 + 2*s + 3*s^2)
 
 julia&gt; p + q
-ERROR: Polynomials must have same variable
+ERROR: ArgumentError: Polynomials have different indeterminates
 [...]</code></pre><p>Except for operations  involving constant polynomials.</p><pre><code class="language-julia-repl">julia&gt; p = Polynomial([1, 2, 3], :x)
 Polynomial(1 + 2*x + 3*x^2)
 
@@ -70,7 +70,7 @@ f2 = fit(xs, ys, 2) # degree = 2
 
 scatter(xs, ys, markerstrokewidth=0, label=&quot;Data&quot;)
 plot!(f, extrema(xs)..., label=&quot;Fit&quot;)
-plot!(f2, extrema(xs)..., label=&quot;Quadratic Fit&quot;)</code></pre><pre><code class="language-none">/home/runner/.julia/packages/GR/RlE5Y/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
+plot!(f2, extrema(xs)..., label=&quot;Quadratic Fit&quot;)</code></pre><pre><code class="language-none">/home/runner/.julia/packages/GR/9Vi4m/src/../deps/gr/bin/gksqt: error while loading shared libraries: libQt5Widgets.so.5: cannot open shared object file: No such file or directory
 connect: Connection refused
 GKS: can&#39;t connect to GKS socket application
 
@@ -91,13 +91,51 @@ julia&gt; derivative(p1)
 ChebyshevT(2.0⋅T_0(x) + 12.0⋅T_1(x))
 
 julia&gt; integrate(p2)
-ChebyshevT(0.25⋅T_0(x) - 1.0⋅T_1(x) + 0.25⋅T_2(x) + 0.3333333333333333⋅T_3(x))
+ChebyshevT(- 1.0⋅T_1(x) + 0.25⋅T_2(x) + 0.3333333333333333⋅T_3(x))
 
 julia&gt; convert(Polynomial, p1)
 Polynomial(-2.0 + 2.0*x + 6.0*x^2)
 
 julia&gt; convert(ChebyshevT, Polynomial([1.0, 2,  3]))
-ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>The older  <code>Poly</code> type that this package used prior to <code>v0.7</code>  is implemented as an alternate basis  to provide support for older code bases. As of <code>v1.0</code>,  this type will be only available by executing <code>using Polynomials.PolyCompat</code>.</p></div></div><h3 id="Iteration-1"><a class="docs-heading-anchor" href="#Iteration-1">Iteration</a><a class="docs-heading-anchor-permalink" href="#Iteration-1" title="Permalink"></a></h3><p>If its basis is implicit, then a polynomial may be  seen as just a vector of  coefficients. Vectors or 1-based, but, for convenience, polynomial types are 0-based, for purposes of indexing (e.g. <code>getindex</code>, <code>setindex!</code>, <code>eachindex</code>). Iteration over a polynomial steps through the basis vectors, e.g. <code>a_0</code>, <code>a_1*x</code>, ...</p><pre><code class="language-julia-repl">julia&gt; as = [1,2,3,4,5]; p = Polynomial(as);
+ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>The older  <code>Poly</code> type that this package used prior to <code>v0.7</code>  is implemented as an alternate basis  to provide support for older code bases. As of <code>v1.0</code>,  this type will be only available by executing <code>using Polynomials.PolyCompat</code>.</p></div></div><h3 id="Iteration-1"><a class="docs-heading-anchor" href="#Iteration-1">Iteration</a><a class="docs-heading-anchor-permalink" href="#Iteration-1" title="Permalink"></a></h3><p>If its basis is implicit, then a polynomial may be  seen as just a vector of  coefficients. Vectors or 1-based, but, for convenience, polynomial types are 0-based, for purposes of indexing (e.g. <code>getindex</code>, <code>setindex!</code>, <code>eachindex</code>). Iteration over a polynomial steps through the underlying coefficients.</p><pre><code class="language-julia-repl">julia&gt; as = [1,2,3,4,5]; p = Polynomial(as);
 
 julia&gt; as[3], p[2], collect(p)[3]
-(3, 3, Polynomial(3*x^2))</code></pre><h2 id="Related-Packages-1"><a class="docs-heading-anchor" href="#Related-Packages-1">Related Packages</a><a class="docs-heading-anchor-permalink" href="#Related-Packages-1" title="Permalink"></a></h2><ul><li><p><a href="https://github.com/tkoolen/StaticUnivariatePolynomials.jl">StaticUnivariatePolynomials.jl</a> Fixed-size univariate polynomials backed by a Tuple</p></li><li><p><a href="https://github.com/daviddelaat/MultiPoly.jl">MultiPoly.jl</a> for sparse multivariate polynomials</p></li><li><p><a href="https://github.com/JuliaAlgebra/DynamicPolynomials.jl">DynamicPolynomals.jl</a> Multivariate polynomials implementation of commutative and non-commutative variables</p></li><li><p><a href="https://github.com/JuliaAlgebra/MultivariatePolynomials.jl">MultivariatePolynomials.jl</a> for multivariate polynomials and moments of commutative or non-commutative variables</p></li><li><p><a href="https://github.com/tkluck/PolynomialRings.jl">PolynomialRings</a> A library for arithmetic and algebra with multi-variable polynomials.</p></li><li><p><a href="https://github.com/wbhart/AbstractAlgebra.jl">AbstractAlgebra.jl</a> and <a href="https://github.com/wbhart/Nemo.jl">Nemo.jl</a> for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series</p></li><li><p><a href="https://github.com/giordano/PolynomialRoots.jl">PolynomialRoots.jl</a> for a fast complex polynomial root finder. For larger degree problems, also <a href="https://github.com/andreasnoack/FastPolynomialRoots.jl">FastPolynomialRoots</a> and <a href="https://github.com/jverzani/AMRVW.jl">AMRVW</a>.</p></li></ul><h2 id="Contributing-1"><a class="docs-heading-anchor" href="#Contributing-1">Contributing</a><a class="docs-heading-anchor-permalink" href="#Contributing-1" title="Permalink"></a></h2><p>If you are interested in this project, feel free to open an issue or pull request! In general, any changes must be thoroughly tested, allow deprecation, and not deviate too far from the common interface. All PR&#39;s must have an updated project version, as well, to keep the continuous delivery cycle up-to-date.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="reference/">Reference/API »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Tuesday 2 February 2021 20:19">Tuesday 2 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+(3, 3, 3)</code></pre><p>The <code>pairs</code> iterator, iterates over the indices and coefficients, attempting to match how <code>pairs</code> applies to the underlying storage model:</p><pre><code class="language-julia-repl">julia&gt; v = [1,2,0,4]
+4-element Array{Int64,1}:
+ 1
+ 2
+ 0
+ 4
+
+julia&gt; p,ip,sp,lp = Polynomial(v), ImmutablePolynomial(v), SparsePolynomial(v), LaurentPolynomial(v, -1);
+
+julia&gt; collect(pairs(p))
+4-element Array{Pair{Int64,Int64},1}:
+ 0 =&gt; 1
+ 1 =&gt; 2
+ 2 =&gt; 0
+ 3 =&gt; 4
+
+julia&gt; collect(pairs(ip)) == collect(pairs(p))
+true
+
+julia&gt; collect(pairs(sp)) # unordered dictionary with only non-zero terms
+3-element Array{Pair{Int64,Int64},1}:
+ 0 =&gt; 1
+ 3 =&gt; 4
+ 1 =&gt; 2
+
+julia&gt; collect(pairs(lp))
+4-element Array{Pair{Int64,Int64},1}:
+ -1 =&gt; 1
+  0 =&gt; 2
+  1 =&gt; 0
+  2 =&gt; 4</code></pre><p>The unexported <code>monomials</code> iterator iterates over the terms (<code>p[i]*Polynomials.basis(p,i)</code>) of the polynomial:</p><pre><code class="language-julia-repl">julia&gt; p = Polynomial([1,2,0,4], :u)
+Polynomial(1 + 2*u + 4*u^3)
+
+julia&gt; collect(Polynomials.monomials(p))
+4-element Array{Any,1}:
+ Polynomial(1)
+ Polynomial(2*u)
+ Polynomial(0)
+ Polynomial(4*u^3)</code></pre><h2 id="Related-Packages-1"><a class="docs-heading-anchor" href="#Related-Packages-1">Related Packages</a><a class="docs-heading-anchor-permalink" href="#Related-Packages-1" title="Permalink"></a></h2><ul><li><p><a href="https://github.com/tkoolen/StaticUnivariatePolynomials.jl">StaticUnivariatePolynomials.jl</a> Fixed-size univariate polynomials backed by a Tuple</p></li><li><p><a href="https://github.com/daviddelaat/MultiPoly.jl">MultiPoly.jl</a> for sparse multivariate polynomials</p></li><li><p><a href="https://github.com/JuliaAlgebra/DynamicPolynomials.jl">DynamicPolynomals.jl</a> Multivariate polynomials implementation of commutative and non-commutative variables</p></li><li><p><a href="https://github.com/JuliaAlgebra/MultivariatePolynomials.jl">MultivariatePolynomials.jl</a> for multivariate polynomials and moments of commutative or non-commutative variables</p></li><li><p><a href="https://github.com/tkluck/PolynomialRings.jl">PolynomialRings</a> A library for arithmetic and algebra with multi-variable polynomials.</p></li><li><p><a href="https://github.com/wbhart/AbstractAlgebra.jl">AbstractAlgebra.jl</a>, <a href="https://github.com/wbhart/Nemo.jl">Nemo.jl</a> for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series, <a href="https://github.com/thofma/Hecke.jl">Hecke.jl</a> for algebraic number theory.</p></li><li><p><a href="https://github.com/KlausC/CommutativeRings.jl">CommutativeAlgebra</a> the start of a computer algebra system specialized to discrete calculations with support for polynomials.</p></li><li><p><a href="https://github.com/giordano/PolynomialRoots.jl">PolynomialRoots.jl</a> for a fast complex polynomial root finder. For larger degree problems, also <a href="https://github.com/andreasnoack/FastPolynomialRoots.jl">FastPolynomialRoots</a> and <a href="https://github.com/jverzani/AMRVW.jl">AMRVW</a>.</p></li></ul><h2 id="Contributing-1"><a class="docs-heading-anchor" href="#Contributing-1">Contributing</a><a class="docs-heading-anchor-permalink" href="#Contributing-1" title="Permalink"></a></h2><p>If you are interested in this project, feel free to open an issue or pull request! In general, any changes must be thoroughly tested, allow deprecation, and not deviate too far from the common interface. All PR&#39;s must have an updated project version, as well, to keep the continuous delivery cycle up-to-date.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="reference/">Reference/API »</a></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Monday 8 March 2021 15:17">Monday 8 March 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
