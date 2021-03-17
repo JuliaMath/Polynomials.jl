@@ -322,7 +322,7 @@ function chop!(ps::Vector{T};
     tol = norm(ps) * rtol + atol
     for i = lastindex(ps):-1:1
         val = ps[i]
-        if abs(val) > tol #!isapprox(val, zero(T); rtol = rtol, atol = atol)
+        if abs(val) > tol 
             resize!(ps, i); 
             return nothing
         end
@@ -384,7 +384,7 @@ end
 Check if either `p` or `q` is constant or if `p` and `q` share the same variable
 """
 check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial) =
-    (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || indeterminate(p) ==  indeterminate(q)
+    (isconstant(p) || isconstant(q)) || indeterminate(p) ==  indeterminate(q)
 
 function assert_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
     check_same_variable(p,q) || throw(ArgumentError("Polynomials have different indeterminates"))
@@ -425,6 +425,7 @@ Base.promote_rule(::Type{<:AbstractPolynomial{T}},
     ::Type{<:AbstractPolynomial{S}},
 ) where {T,S} = Polynomial{promote_type(T, S)}
 
+
 #=
 Inspection =#
 """
@@ -452,6 +453,7 @@ function _eltype(P::Type{<:AbstractPolynomial}, p::AbstractPolynomial)
     T
 end
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
+
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
 """
@@ -543,14 +545,11 @@ return `p(0)`, the constant term in the standard basis
 """
 constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
 
-
-
-
 """
     degree(::AbstractPolynomial)
 
 Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
-has a nonzero coefficient. The degree of the zero polynomial is defined to be -1.
+has a nonzero coefficient. The degree of the zero polynomial is defined to be -1. The default method assumes the basis polynomial, `βₖ` has degree `k`.
 """
 degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p) 
 
@@ -743,7 +742,7 @@ function Base.zero(::Type{P}) where {P<:AbstractPolynomial}
     ⟒(P){T,X}(zeros(T,1))
 end
 Base.zero(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = zero(⟒(P){eltype(P),Symbol(var)}) #default 0⋅b₀
-Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, indeterminate(p))
+Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, var)
 """
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
@@ -751,8 +750,8 @@ Base.zero(p::P) where {P <: AbstractPolynomial} = zero(P, indeterminate(p))
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}) where {P<:AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default method
-Base.one(::Type{P}, var) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var == nothing ? :x : var)})
-Base.one(p::P) where {P <: AbstractPolynomial} = one(P)
+Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var == nothing ? :x : var)})
+Base.one(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = one(P, var)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
@@ -800,7 +799,7 @@ function basis(::Type{P}, k::Int, _var::SymbolLike; var=_var) where {P <: Abstra
     T,X = eltype(P), Symbol(var)
     basis(⟒(P){T,X}, k)
 end
-basis(p::P, k::Int, _var::SymbolLike=:x; var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
+basis(p::P, k::Int, _var=indeterminate(p); var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
 
 #=
 arithmetic =#

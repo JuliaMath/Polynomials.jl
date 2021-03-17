@@ -269,9 +269,9 @@ Polynomial(1 + 2*u + 4*u^3)
 julia> collect(Polynomials.monomials(p))
 4-element Array{Any,1}:
  Polynomial(1)
- Polynomial(2*x)
+ Polynomial(2*u)
  Polynomial(0)
- Polynomial(4*x^3)
+ Polynomial(4*u^3)
 ```
 
 

@@ -20,6 +20,7 @@ abstract type AbstractPolynomial{T,X} end
 # (and for LaurentPolynomial the offset)
 _convert(p::P, as) where {P <: AbstractPolynomial} = ⟒(P)(as, indeterminate(P))
 
+
 """
     Polynomials.@register(name)
 
