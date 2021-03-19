@@ -26,6 +26,9 @@ ChebyshevT(1⋅T_0(s) + 2⋅T_1(s) + 3⋅T_2(s))
 julia> one(ChebyshevT)
 ChebyshevT(1.0⋅T_0(x))
 ```
+
+!!! Note:
+    The Chebyshev polynomials are also implemented in `ApproxFun`, `ClassicalOrthogonalPolynomials.jl`, `FastTransforms.jl`, and `SpecialPolynomials.jl`.
 """
 struct ChebyshevT{T <: Number, X} <: AbstractPolynomial{T, X}
     coeffs::Vector{T}
