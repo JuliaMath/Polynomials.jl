@@ -421,9 +421,39 @@ LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 Conversions =#
 Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
 Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
+function Base.convert(::Type{S}, p::P) where {S <: Number,T, P<:Polynomials.AbstractPolynomial{T}}
+    Polynomials.isconstant(p) && return convert(S, Polynomials.constantterm(p))
+    throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
+end
+
+# promote to Polynomial if in doubt; be mindful of variable
 Base.promote_rule(::Type{<:AbstractPolynomial{T}},
-    ::Type{<:AbstractPolynomial{S}},
-) where {T,S} = Polynomial{promote_type(T, S)}
+                  ::Type{<:AbstractPolynomial{S}},
+                  ) where {T,S} = Polynomial{promote_type(T, S)}
+Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
+                                              S,   Q<:AbstractPolynomial{S,X}} =
+                                                   Polynomial{promote_type(T, S),X}
+Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
+                                              S,Y, Q<:AbstractPolynomial{S,Y}} =
+                                                  assert_same_variable(X,Y)
+
+# Needed for working with arrays
+Base.eltypeof(p::P) where {P <: AbstractPolynomial} = P
+_adjust_constant(p::AbstractPolynomial) = isconstant(p) ? constantterm(p) : p
+_adjust_constant(x) = x
+function Base.promote_eltypeof(p::P, qs...) where {T,X, P<: AbstractPolynomial{T,X}}
+    p′ = _adjust_constant(p)
+    qs′ = _adjust_constant.(qs)
+    Base.promote_type(Base.eltypeof(p′), Base.promote_eltypeof(qs′...))
+end
+
+function Base.promote_eltypeof(p::P, q::Q) where {T,X, P<: AbstractPolynomial{T,X},
+                                                  S,Y, Q<: AbstractPolynomial{S,Y}}
+    isconstant(p) || isconstant(q) || Polynomials.assert_same_variable(X,Y)
+    p′ = _adjust_constant(p)
+    q′ = _adjust_constant(q)
+    Base.promote_type(Base.eltypeof(p′), Base.eltypeof(q′))
+end
 
 
 #=
