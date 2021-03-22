@@ -711,6 +711,76 @@ end
         @test all([1 -λ]*[λ^2 λ; λ 1] .== 0)
         @test [λ 1] + [1 λ] == (λ+1) .* [1 1] # (λ+1) not a number, so we broadcast
     end
+
+    # issue 312; using mixed polynomial types withing arrays and promotion
+    P′ = Polynomial
+    r,s = P′([1,2], :x), P′([1,2],:y)
+    function _test(x, T,X)
+        U = eltype(x)
+        Polynomials.constructorof(U) == T && Polynomials.indeterminate(U) == X
+    end
+        
+    for P in Ps
+        p,q = P([1,2], :x), P([1,2], :y)
+        P′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
+        
+        @test _test([p,p], P, :x)
+        @test _test([p p], P, :x)
+        @test _test([p; p], P, :x)        
+        @test _test([p, r], P′′, :x)
+        @test _test([p r], P′′, :x)
+        @test _test([p; r], P′′, :x)
+        @test _test([p,1], P, :x)
+        @test _test([p 1], P, :x)
+        @test _test([p; 1], P, :x)
+
+        @test _test([1,1,p], P, :x)
+        @test _test([1 1 p], P, :x)
+        @test _test([1;1;p], P, :x)
+
+        @test_throws ArgumentError [p, q]
+        @test_throws ArgumentError [p q]
+        @test_throws ArgumentError [p; q]        
+        @test_throws ArgumentError [p, s]
+        @test_throws ArgumentError [p s]
+        @test_throws ArgumentError [p; s]
+
+        @test _test([p, one(q)], P, :x)
+        @test _test([p  one(q)], P, :x)
+        @test _test([p; one(q)], P, :x)
+        @test _test([one(q), p], P, :x)
+        @test _test([one(q)  p], P, :x)
+        @test _test([one(q); p], P, :x)
+
+        @test _test([p, one(q), 1], P, :x)
+        @test _test([p  one(q)  1], P, :x)
+        @test _test([p; one(q); 1], P, :x)                
+
+        @test isa([1, one(p)], Array{Int})
+        @test isa([1  one(p)], Array{Int})
+        @test isa([1; one(p)], Array{Int})
+        @test isa([one(p), 1], Array{Int})
+        @test isa([one(p)  1], Array{Int})
+        @test isa([one(p); 1], Array{Int})
+
+        @test _test([p, one(r)], P, :x) # treat one(r) as 1
+        @test _test([p one(r)], P, :x) # treat one(r) as 1
+        @test _test([p; one(r)], P, :x) # treat one(r) as1 
+        @test _test([one(r), p], P, :x) # treat one(r) as 1
+        @test _test([one(r)  p], P, :x) # treat one(r) as 1
+        @test _test([one(r); p], P, :x) # treat one(r) as1 
+
+        @test _test([p one(s)], P, :x)
+        
+        @test _test([1 1; one(q) p], P, :x)
+        @test _test(hcat([p p; 1 one(q)], I), P, :x)
+        
+        @test_throws ArgumentError [[p p]; [q q]]
+        @test _test([[p p]; [one(p) one(q)]], P, :x)
+    end
+
+
+    
 end
 
 @testset "Linear Algebra" begin

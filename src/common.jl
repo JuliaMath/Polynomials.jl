@@ -426,7 +426,13 @@ function Base.convert(::Type{S}, p::P) where {S <: Number,T, P<:Polynomials.Abst
     throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
 end
 
-# promote to Polynomial if in doubt; be mindful of variable
+# Promote rules
+# for mixed cases polynomials, we promote to `Polynomial`
+# Much of this is to ensure that matrices of polynomials behave as desired
+# * should promote to Polynomial type if mixed
+# * non-constant polynomials must share the same indeterminate
+# * constant polynomials of type P{T,X} should be treated as of type T.
+# * numeric constants should promote to a polynomial, when mixed
 Base.promote_rule(::Type{<:AbstractPolynomial{T}},
                   ::Type{<:AbstractPolynomial{S}},
                   ) where {T,S} = Polynomial{promote_type(T, S)}
@@ -437,21 +443,51 @@ Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
                                               S,Y, Q<:AbstractPolynomial{S,Y}} =
                                                   assert_same_variable(X,Y)
 
-# Needed for working with arrays
-Base.eltypeof(p::P) where {P <: AbstractPolynomial} = P
-_adjust_constant(p::AbstractPolynomial) = isconstant(p) ? constantterm(p) : p
-_adjust_constant(x) = x
-function Base.promote_eltypeof(p::P, qs...) where {T,X, P<: AbstractPolynomial{T,X}}
-    p′ = _adjust_constant(p)
-    qs′ = _adjust_constant.(qs)
-    Base.promote_type(Base.eltypeof(p′), Base.promote_eltypeof(qs′...))
+# Needed for working with arrays. We want to treat constant polynomials
+# as constants
+Base.eltypeof(p::P) where {T,X,P <: AbstractPolynomial{T,X}} = isconstant(p) ? T : P
+
+"""
+    _flatten(p::Polynomial)
+
+If `p` is a constant, flatten `p` from a vector to  scalar. Otherwise, leave as an identity
+"""
+_flatten(p::AbstractPolynomial) = isconstant(p) ? constantterm(p) : p
+_flatten(x) = x
+
+## [a,b] calls `Base.vect` which in turn calls Base.promote_typeof for promotion
+Base.promote_typeof(p::P) where {P <: AbstractPolynomial} = Base.eltypeof(p)
+#function Base.promote_typeof(p::P, xs...) where {P <: AbstractPolynomial}
+#    x = _flatten(p)
+#    Base.promote_type(Base.typeof(x), Base.promote_typeof(xs...))
+#end
+function Base.promote_typeof(p::P, q::Q) where {T,X, P<: AbstractPolynomial{T,X},
+                                                S,Y, Q<: AbstractPolynomial{S,Y}}
+    isconstant(p) || isconstant(q) || assert_same_variable(X,Y)
+    p′ = _flatten(p)
+    q′ = _flatten(q)
+    Base.promote_type(Base.eltypeof(p′), Base.eltypeof(q′))
 end
+# ensure [one(p)] -> [1] as Base.vect(X,Xs...) does.
+function Base.vect(p::P) where {T, X, P<:AbstractPolynomial{T,X}}
+    isconstant(p) && return [constantterm(p)]
+    ⟒(P){T,X}[p]
+end
+    
+
+## [p q] and [p;q] call `Base.cat` which in turn call Base.promote_eltypeof for promtion
+Base.promote_eltypeof(p::P) where {T,X, P<: AbstractPolynomial{T,X}} = Base.eltypeof(p)
+    
+#function Base.promote_eltypeof(p::P, xs...) where {T,X, P<: AbstractPolynomial{T,X}}
+#    x = _flatten(p)
+#    Base.promote_type(Base.eltypeof(x), Base.promote_eltypeof(xs...))
+#end
 
 function Base.promote_eltypeof(p::P, q::Q) where {T,X, P<: AbstractPolynomial{T,X},
                                                   S,Y, Q<: AbstractPolynomial{S,Y}}
-    isconstant(p) || isconstant(q) || Polynomials.assert_same_variable(X,Y)
-    p′ = _adjust_constant(p)
-    q′ = _adjust_constant(q)
+    isconstant(p) || isconstant(q) || assert_same_variable(X,Y)
+    p′ = _flatten(p)
+    q′ = _flatten(q)
     Base.promote_type(Base.eltypeof(p′), Base.eltypeof(q′))
 end
 
