@@ -273,7 +273,13 @@ end
 Check if either `p` or `q` is constant or if `p` and `q` share the same variable
 """
 check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial) =
-    (Polynomials.isconstant(p) || Polynomials.isconstant(q)) || p.var ==  q.var
+    (isconstant(p) || isconstant(q)) || p.var ==  q.var
+function assert_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
+    check_same_variable(p,q) || throw(ArgumentError("Polynomials have different indeterminates"))
+end
+function assert_same_variable(X::Symbol, Y::Symbol)
+    X == Y || throw(ArgumentError("Polynomials have different indeterminates"))
+end
 
 #=
 Linear Algebra =#
@@ -412,6 +418,11 @@ Is the polynomial  `p` a constant.
 """
 isconstant(p::AbstractPolynomial) = degree(p) <= 0
 
+"""
+    constantterm(p::AbstractPolynomial)
+return `p(0)`, the constant term in the standard basis
+"""
+constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
 
 
 
@@ -510,6 +521,13 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(p.var, hash(coeffs(p), h))
 
 #=
 zero, one, variable, basis =#
+"""
+    indeterminate(p::AbstractPolynomial)
+
+Return polynomial indeterminate (symbol)
+"""
+indeterminate(p::AbstractPolynomial) = p.var
+
 """
     zero(::Type{<:AbstractPolynomial})
     zero(::AbstractPolynomial)

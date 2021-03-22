@@ -25,6 +25,7 @@ mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 
 ## generic test if polynomial `p` is a constant
 isconstant(p::StandardBasisPolynomial) = degree(p) <= 0
+constantterm(p::StandardBasisPolynomial) = p[0]
 
 Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial) = isa(q, P) ? q : P([q[i] for i in 0:degree(q)], q.var)
 
