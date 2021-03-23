@@ -28,6 +28,7 @@ As always, if the default implementation does not work or there are more efficie
 | `fromroots` | | By default, will form polynomials using `prod(variable(::P) - r)` for reach root `r`|
 | `*(::P, ::P)` | | Multiplication of polynomials |
 | `divrem` | | Required for [`gcd`](@ref)|
+| `one`| | Convenience to find constant in new basis |
 | `variable`| | Convenience to find monomial `x` in new  basis|
 
 Check out both the [`Polynomial`](@ref) and [`ChebyshevT`](@ref) for examples of this interface being extended. 
@@ -77,16 +78,15 @@ julia> p(3)
 
 For the `Polynomial` type, the default on operations is to copy the array. For this type, it might seem reasonable -- to avoid allocations -- to update the coefficients in place for scalar addition and scalar multiplication. 
 
-Scalar addition, `p+c`, defaults to `p + c*one(p)`, or polynomial multiplication, which is not inplace without addition work. As such, we create a new method and an infix operator
+Scalar addition, `p+c`, defaults to `p + c*one(p)`, or polynomial addition, which is not inplace without addition work. As such, we create a new method and an infix operator
 
 ```jldoctest AliasPolynomial
-julia> function sadd!(p::AliasPolynomial{T}, c::T) where {T}
+julia> function scalar_add!(p::AliasPolynomial{T}, c::T) where {T}
            p.coeffs[1] += c
            p
        end;
 
-
-julia> p::AliasPolynomial ⊕ c::Number = sadd!(p,c);
+julia> p::AliasPolynomial ⊕ c::Number = scalar_add!(p,c);
 
 ```
 
@@ -103,7 +103,7 @@ julia> p
 AliasPolynomial(3 + 2*x + 3*x^2 + 4*x^3)
 ```
 
-The viewpoint that a polynomial represents a vector of coefficients  leads to a desire to inherit vector operations when possible. Scalar multiplication is a vector operation, so it seems reasonable to override the broadcast machinery to implement an in place operation (e.g. `p .*= 2`). By default, the polynomial types are not broadcastable over their coefficients. We would need to make a change there and modify the `copyto!` function:
+The viewpoint that a polynomial represents a vector of coefficients  leads to an expectation that vector operations should match when possible. Scalar multiplication is a vector operation, so it seems reasonable to override the broadcast machinery to implement an in place operation (e.g. `p .*= 2`). By default, the polynomial types are not broadcastable over their coefficients. We would need to make a change there and modify the `copyto!` function:
 
 
 ```jldoctest AliasPolynomial
