@@ -57,7 +57,7 @@ macro register(name)
             $poly(collect(coeffs), var)
         end
         $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
-            n *  one($poly{T}, Symbol(var))
+            T(n) *  one($poly{T}, Symbol(var))
         $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S}, Symbol(var))
         $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T}, Symbol(var))
         $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
@@ -82,7 +82,7 @@ macro registerN(name, params...)
         end
         $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
             $poly{$(αs...),T}(coeffs, Symbol(var))
-        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = n*one($poly{$(αs...),T}, Symbol(var))
+        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = T(n)*one($poly{$(αs...),T}, Symbol(var))
         $poly{$(αs...)}(n::Number, var::SymbolLike = :x) where {$(αs...)} = n*one($poly{$(αs...)}, Symbol(var))
         $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T}, Symbol(var))
         $poly{$(αs...)}(var::SymbolLike=:x) where {$(αs...)} = variable($poly{$(αs...)}, Symbol(var))
