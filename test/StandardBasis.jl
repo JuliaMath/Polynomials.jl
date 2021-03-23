@@ -42,6 +42,12 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         P == Polynomial && @test typeof(p).parameters[1] == eltype(coeff)
         @test eltype(p) == eltype(coeff)
         @test all([-200, -0.3, 1, 48.2] .∈ domain(p))
+
+        ## issue #316
+        @test_throws InexactError P{Int,:x}([1+im, 1])
+        @test_throws InexactError P{Int}([1+im, 1], :x)
+        @test_throws InexactError P{Int,:x}(1+im)
+        @test_throws InexactError P{Int}(1+im)        
     end
 
 end
