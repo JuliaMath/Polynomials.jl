@@ -25,7 +25,6 @@ As always, if the default implementation does not work or there are more efficie
 | `domain` | x | Should return an  [`AbstractInterval`](https://invenia.github.io/Intervals.jl/stable/#Intervals-1) |
 | `vander` | | Required for [`fit`](@ref) |
 | `companion` | | Required for [`roots`](@ref) |
-| `fromroots` | | By default, will form polynomials using `prod(variable(::P) - r)` for reach root `r`|
 | `*(::P, ::P)` | | Multiplication of polynomials |
 | `divrem` | | Required for [`gcd`](@ref)|
 | `one`| | Convenience to find constant in new basis |
@@ -36,7 +35,7 @@ Check out both the [`Polynomial`](@ref) and [`ChebyshevT`](@ref) for examples of
 ## Example
 
 The following shows a minimal example where the polynomial aliases the vector defining the coefficients. 
-The constructor ensures that there are no trailing zeros. The method implemented below is the convenient call syntax. This example subtypes `StandardBasisPolynomial`, not `AbstractPolynomial`, and consequently inherits the methods above. For other bases,  more methods may be necessary to define  (again, refer to [`ChebyshevT`](@ref) for an example).
+The constructor ensures that there are no trailing zeros. The `@register` call ensures a common interface. This example subtypes `StandardBasisPolynomial`, not `AbstractPolynomial`, and consequently inherits the methods above that otherwise would have been required. For other bases, more methods may be necessary to define (again, refer to [`ChebyshevT`](@ref) for an example).
 
 ```jldoctest AliasPolynomial
 julia> using Polynomials
