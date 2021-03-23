@@ -57,9 +57,9 @@ macro register(name)
             $poly{eltype(cs), Symbol(var)}(cs)
         end
         $poly{T,X}(n::S) where {T, X, S<:Number} =
-            n *  one($poly{T, X})
+            T(n) *  one($poly{T, X})
         $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
-            n *  one($poly{T, Symbol(var)})
+            T(n) *  one($poly{T, Symbol(var)})
         $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S, Symbol(var)})
         $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T, Symbol(var)})
         $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
@@ -86,8 +86,8 @@ macro registerN(name, params...)
         $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
             $poly{$(αs...),T,Symbol(var)}(coeffs)
 
-        $poly{$(αs...),T,X}(n::Number) where {$(αs...),T,X} = n*one($poly{$(αs...),T,X})
-        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = n*one($poly{$(αs...),T,Symbol(var)})
+        $poly{$(αs...),T,X}(n::Number) where {$(αs...),T,X} = T(n)*one($poly{$(αs...),T,X})
+        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = T(n)*one($poly{$(αs...),T,Symbol(var)})
         $poly{$(αs...)}(n::S, var::SymbolLike = :x) where {$(αs...), S<:Number} =
             n*one($poly{$(αs...),S,Symbol(var)})
         $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T,Symbol(var)})

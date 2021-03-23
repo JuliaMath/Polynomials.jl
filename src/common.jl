@@ -849,7 +849,7 @@ julia> roots((x - 3) * (x + 2))
 """
 variable(::Type{P}) where {P <: AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default
 variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P),Symbol(var)})
-variable(p::AbstractPolynomial, var::SymbolLike = indeterminate(p)) = variable(typeof(p), var)
+variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
 # basis
