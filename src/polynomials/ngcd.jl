@@ -10,10 +10,10 @@ In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call on
 function ngcd(p::P, q::Q, args...;kwargs...) where {T, S, P<:StandardBasisPolynomial{T}, Q <: StandardBasisPolynomial{S}}
 
     degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
-    degree(p) == 0 && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
+    degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
     degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
     degree(q) == 0 && return (u=one(p), v=p, w=q,       θ=NaN, κ=NaN)
-    assert_same_variable(p,q) 
+    assert_same_variable(p,q)
 
     p′,q′ = promote(p,q)
     
@@ -264,8 +264,8 @@ end
 # return guess at smallest singular value and right sinuglar value, x
 # for an upper triangular matrix, V
 function smallest_singular_value(V::AbstractArray{T,2},
-                                 atol=eps(T),
-                                 rtol=zero(T)) where {T}
+                                 atol=eps(real(T)),
+                                 rtol=zero(real(T))) where {T}
     
     R = UpperTriangular(V)
     k = size(R)[1]/2
