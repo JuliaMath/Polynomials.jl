@@ -426,13 +426,16 @@ function Base.convert(::Type{S}, p::P) where {S <: Number,T, P<:Polynomials.Abst
     throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
 end
 
-# Promote rules
+# Methods to ensure that matrices of polynomials behave as desired
+# Promotion rules
 # for mixed cases polynomials, we promote to `Polynomial`
-# Much of this is to ensure that matrices of polynomials behave as desired
 # * should promote to Polynomial type if mixed
-# * non-constant polynomials must share the same indeterminate
-# * constant polynomials of type P{T,X} should be treated as of type T.
 # * numeric constants should promote to a polynomial, when mixed
+# * non-constant polynomials must share the same indeterminate
+# * constant polynomials of type P{T,X} should be treated as of type T.  <<<---XXX
+#   - This means [1 one(p)] is an array of type T, not typeof(p)
+#   - This means [one(p)] is an array of type T, not typeof(p)
+# THe latter rules allow nesting of rules
 Base.promote_rule(::Type{<:AbstractPolynomial{T}},
                   ::Type{<:AbstractPolynomial{S}},
                   ) where {T,S} = Polynomial{promote_type(T, S)}
@@ -457,10 +460,11 @@ _flatten(x) = x
 
 ## [a,b] calls `Base.vect` which in turn calls Base.promote_typeof for promotion
 Base.promote_typeof(p::P) where {P <: AbstractPolynomial} = Base.eltypeof(p)
-#function Base.promote_typeof(p::P, xs...) where {P <: AbstractPolynomial}
-#    x = _flatten(p)
-#    Base.promote_type(Base.typeof(x), Base.promote_typeof(xs...))
-#end
+function Base.promote_typeof(p::P, xs...) where {P <: AbstractPolynomial}
+    x = _flatten(p)
+    U = Base.promote_type(Base.typeof(x), Base.promote_typeof(xs...))
+    U
+end
 function Base.promote_type(p::P, q::S) where {T,X, P<: AbstractPolynomial{T,X},S}
     p′ = _flatten(p)
     Base.promote_type(Base.eltypeof(p′), Base.eltypeof(q))
@@ -473,12 +477,25 @@ function Base.promote_typeof(p::P, q::Q) where {T,X, P<: AbstractPolynomial{T,X}
     q′ = _flatten(q)
     Base.promote_type(Base.eltypeof(p′), Base.eltypeof(q′))
 end
+
 # ensure [one(p)] -> [1] as Base.vect(X,Xs...) does.
 function Base.vect(p::P) where {T, X, P<:AbstractPolynomial{T,X}}
     isconstant(p) && return [constantterm(p)]
     ⟒(P){T,X}[p]
 end
-    
+function Base.vect(Xs::P...) where {T,X,P<:AbstractPolynomial{T,X}}
+    Ys = _flatten.(Xs)
+    S = eltype(Ys)
+    S[ Ys[i] for i = 1:length(Ys) ]
+end
+function Base.vect(Y::P, Ys...) where {T,X,P<:AbstractPolynomial{T,X}}
+    y = _flatten(Y)
+    R = Base.promote_typeof(y,Ys...)
+    #T[ X[i] for i=1:length(X) ]
+    # TODO: this is currently much faster. should figure out why. not clear.
+    return copyto!(Vector{R}(undef, 1+length(Ys)), (y,Ys...))
+end
+
 
 ## [p q] and [p;q] call `Base.cat` which in turn call Base.promote_eltypeof for promtion
 Base.promote_eltypeof(p::P) where {T,X, P<: AbstractPolynomial{T,X}} = Base.eltypeof(p)
@@ -496,6 +513,17 @@ function Base.promote_eltypeof(p::P, q::Q) where {T,X, P<: AbstractPolynomial{T,
     Base.promote_type(Base.eltypeof(p′), Base.eltypeof(q′))
 end
 
+# avoid special cases in array.jl
+function Base.vcat(Ps::P...) where {T,X,P<:AbstractPolynomial{T,X}}
+    Qs = _flatten.(Ps)
+    S = eltype(Qs)
+    S[ Qs[j] for j=1:length(Qs) ]
+end
+function Base.hcat(Ps::P...) where {T,X,P<:AbstractPolynomial{T,X}}
+    Qs = _flatten.(Ps)
+    S = eltype(Qs)
+    S[ Qs[j] for i=1:1, j=1:length(Qs) ]
+end
 
 #=
 Inspection =#

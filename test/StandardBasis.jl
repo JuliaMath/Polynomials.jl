@@ -729,24 +729,27 @@ end
     for P in Ps
         p,q = P([1,2], :x), P([1,2], :y)
         P′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
-        
+
+        # * should promote to Polynomial type if mixed (save Laurent Polynomial)
         @test _test([p,p], P, :x)
         @test _test([p p], P, :x)
         @test _test([p; p], P, :x)        
         @test _test([p, r], P′′, :x)
         @test _test([p r], P′′, :x)
         @test _test([p; r], P′′, :x)
+
+        # * numeric constants should promote to a polynomial, when mixed
         @test _test([p,1], P, :x)
         @test _test([p 1], P, :x)
         @test _test([p; 1], P, :x)
         @test _test([1,p], P, :x)
         @test _test([1 p], P, :x)
         @test _test([1; p], P, :x)
-
         @test _test([1,1,p], P, :x)
         @test _test([1 1 p], P, :x)
         @test _test([1;1;p], P, :x)
 
+        # * non-constant polynomials must share the same indeterminate
         @test_throws ArgumentError [p, q]
         @test_throws ArgumentError [p q]
         @test_throws ArgumentError [p; q]        
@@ -754,6 +757,8 @@ end
         @test_throws ArgumentError [p s]
         @test_throws ArgumentError [p; s]
 
+
+        # * constant polynomials of type P{T,X} should be treated as of type T.
         @test _test([p, one(q)], P, :x)
         @test _test([p  one(q)], P, :x)
         @test _test([p; one(q)], P, :x)
@@ -763,8 +768,23 @@ end
 
         @test _test([p, one(q), 1], P, :x)
         @test _test([p  one(q)  1], P, :x)
-        @test _test([p; one(q); 1], P, :x)                
+        @test _test([p; one(q); 1], P, :x)
 
+        @test _test([p, one(r)], P, :x) # treat one(r) as 1
+        @test _test([p one(r)], P, :x) # 
+        @test _test([p; one(r)], P, :x) #
+        @test _test([one(r), p], P, :x) # treat one(r) as 1
+        @test _test([one(r)  p], P, :x) 
+        @test _test([one(r); p], P, :x) 
+        @test _test([p, one(s)], P, :x) # s has different type and symbol...
+        @test _test([p one(s)], P, :x)
+        @test _test([p; one(s)], P, :x)
+        @test _test([one(s), p], P, :x) # s has different type and symbol...
+        @test _test([one(s)  p], P, :x)
+        @test _test([one(s); p], P, :x)
+
+
+        #   - This means [1 one(p)] is an array of type T, not typeof(p)
         @test isa([1, one(p)], Array{Int})
         @test isa([1  one(p)], Array{Int})
         @test isa([1; one(p)], Array{Int})
@@ -772,18 +792,25 @@ end
         @test isa([one(p)  1], Array{Int})
         @test isa([one(p); 1], Array{Int})
 
-        @test _test([p, one(r)], P, :x) # treat one(r) as 1
-        @test _test([p one(r)], P, :x) # treat one(r) as 1
-        @test _test([p; one(r)], P, :x) # treat one(r) as1 
-        @test _test([one(r), p], P, :x) # treat one(r) as 1
-        @test _test([one(r)  p], P, :x) # treat one(r) as 1
-        @test _test([one(r); p], P, :x) # treat one(r) as1 
+        @test isa([one(p), one(q)], Array{Int})
+        @test isa([one(p)  one(q)], Array{Int})
+        @test isa([one(p); one(q)], Array{Int})
 
-        @test _test([p one(s)], P, :x)
+        #   - This means [one(p)] is an array of type T, not typeof(p)
+        @test isa([one(p)], Array{Int})
+        @test isa([one(p), one(p)], Array{Int})
+        @test isa([one(p)  one(p)], Array{Int})
+        @test isa([one(p); one(p)], Array{Int})
         
+
+
+        # by
         @test _test([1 1; one(q) p], P, :x)
         @test _test(hcat([p p; 1 one(q)], I), P, :x)
-        
+
+
+
+        #
         @test_throws ArgumentError [[p p]; [q q]]
         @test _test([[p p]; [one(p) one(q)]], P, :x)
     end
