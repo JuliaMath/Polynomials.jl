@@ -25,6 +25,7 @@ As always, if the default implementation does not work or there are more efficie
 | `domain` | x | Should return an  [`AbstractInterval`](https://invenia.github.io/Intervals.jl/stable/#Intervals-1) |
 | `vander` | | Required for [`fit`](@ref) |
 | `companion` | | Required for [`roots`](@ref) |
+| `fromroots` | | By default, will form polynomials using `prod(variable(::P) - r)` for reach root `r`|
 | `*(::P, ::P)` | | Multiplication of polynomials |
 | `divrem` | | Required for [`gcd`](@ref)|
 | `one`| | Convenience to find constant in new basis |
