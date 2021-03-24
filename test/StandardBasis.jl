@@ -47,7 +47,7 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         @test_throws InexactError P{Int,:x}([1+im, 1])
         @test_throws InexactError P{Int}([1+im, 1], :x)
         @test_throws InexactError P{Int,:x}(1+im)
-        @test_throws InexactError P{Int}(1+im)        
+        @test_throws InexactError P{Int}(1+im)
     end
 
 end
@@ -739,6 +739,9 @@ end
         @test _test([p,1], P, :x)
         @test _test([p 1], P, :x)
         @test _test([p; 1], P, :x)
+        @test _test([1,p], P, :x)
+        @test _test([1 p], P, :x)
+        @test _test([1; p], P, :x)
 
         @test _test([1,1,p], P, :x)
         @test _test([1 1 p], P, :x)

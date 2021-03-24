@@ -461,6 +461,11 @@ Base.promote_typeof(p::P) where {P <: AbstractPolynomial} = Base.eltypeof(p)
 #    x = _flatten(p)
 #    Base.promote_type(Base.typeof(x), Base.promote_typeof(xs...))
 #end
+function Base.promote_type(p::P, q::S) where {T,X, P<: AbstractPolynomial{T,X},S}
+    p′ = _flatten(p)
+    Base.promote_type(Base.eltypeof(p′), Base.eltypeof(q))
+end 
+
 function Base.promote_typeof(p::P, q::Q) where {T,X, P<: AbstractPolynomial{T,X},
                                                 S,Y, Q<: AbstractPolynomial{S,Y}}
     isconstant(p) || isconstant(q) || assert_same_variable(X,Y)

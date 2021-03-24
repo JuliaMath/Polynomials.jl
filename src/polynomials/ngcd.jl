@@ -146,7 +146,7 @@ function ngcd(ps::Vector{T},
               verbose=false,
               minⱼ = -1
               ) where {T <: AbstractFloat}
-    
+
     m, n = _degree.((ps, qs))
 
     if m < n
@@ -184,7 +184,7 @@ function ngcd(ps::Vector{T},
         verbose && println("------ degree $j ----- σ₁: $σ  --- $flag")
 
         if (flag == :iszero || flag == :ispossible)
-            
+
             u, v, w = initial_uvw(Val(flag), j, ps, qs, x)
             flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, ps, qs, atol, rtol)
 
@@ -353,7 +353,7 @@ function initial_uvw(::Val{:ispossible}, j, ps, qs, x)
     # Sk*[w;-v] = 0, so pick out v,w after applying permuation
     m,n = _degree.((ps, qs))
     vᵢ = vcat(2:m-n+2, m-n+4:2:length(x))
-    wᵢ = vcat(1, (m-n+3):2:length(x))
+    wᵢ = m-n+3 > length(x) ? [1] : vcat(1, (m-n+3):2:length(x))
     v = -x[vᵢ]
     w = x[wᵢ]
     # p194 3.9 C_k(v) u = p or Ck(w) u = q; this uses 10.2
