@@ -13,7 +13,7 @@ hasneg(::Type{T}) where {T} = false
 isneg(pj::T) where {T} = hasneg(T) && pj < zero(T)
 
 "Make `pj` positive if it is negative. (Don't call `abs` as that may not be defined, or appropriate.)"
-aspos(pj::T) where {T} = (hasneg(T) && isneg(pj)) ? -pj : pj
+aspos(pj::T) where {T} = (hasneg(T) && isneg(pj)===true) ? -pj : pj
 
 "Should a value of `one(T)` be shown as a coefficient of monomial `x^i`, `i >= 1`? (`1.0x^2` is shown, `1 x^2` is not)"
 showone(::Type{T}) where {T} = true
@@ -163,7 +163,7 @@ function showterm(io::IO, ::Type{AbstractPolynomial}, pj::T, var, j, first::Bool
 ## print the sign
 ## returns aspos(pj)
 function printsign(io::IO, pj::T, first, mimetype) where {T}
-    neg = isneg(pj)
+    neg = hasneg(T) && isneg(pj) === true
     if first
         neg && print(io, showop(mimetype, "l-"))    #Prepend - if first and negative
     else
