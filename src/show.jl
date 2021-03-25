@@ -10,10 +10,10 @@ export printpoly
 hasneg(::Type{T}) where {T} = false
 
 "Could value possibly be negative and if so, is it?"
-isneg(pj::T) where {T} = hasneg(T) && pj < zero(T)
+isneg(pj::T) where {T} = hasneg(T) && sign(pj) === -one(T)
 
 "Make `pj` positive if it is negative. (Don't call `abs` as that may not be defined, or appropriate.)"
-aspos(pj::T) where {T} = (hasneg(T) && isneg(pj)) ? -pj : pj
+aspos(pj::T) where {T} = (hasneg(T) && isneg(pj) == true) ? -pj : pj
 
 "Should a value of `one(T)` be shown as a coefficient of monomial `x^i`, `i >= 1`? (`1.0x^2` is shown, `1 x^2` is not)"
 showone(::Type{T}) where {T} = true

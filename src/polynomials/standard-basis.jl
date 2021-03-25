@@ -4,11 +4,11 @@ abstract type StandardBasisPolynomial{T} <: AbstractPolynomial{T} end
 
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T}
 
-    if iszero(pj) return false end
+    if pj === zero(T) return false end
 
     pj = printsign(io, pj, first, mimetype)
 
-    if !(pj == one(T) && !(showone(T) || j == 0))
+    if !(pj === one(T) && !(showone(T) || j == 0))
         printcoefficient(io, pj, j, mimetype)
     end
 
