@@ -725,96 +725,89 @@ end
         U = eltype(x)
         Polynomials.constructorof(U) == T && Polynomials.indeterminate(U) == X
     end
+    meths = (Base.vect, Base.vcat, Base.hcat)
+    for P in (Polynomial, ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
         
-    for P in Ps
         p,q = P([1,2], :x), P([1,2], :y)
         P′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
-
-        # * should promote to Polynomial type if mixed (save Laurent Polynomial)
-        @test _test([p,p], P, :x)
-        @test _test([p p], P, :x)
-        @test _test([p; p], P, :x)        
-        @test _test([p, r], P′′, :x)
-        @test _test([p r], P′′, :x)
-        @test _test([p; r], P′′, :x)
-
-        # * numeric constants should promote to a polynomial, when mixed
-        @test _test([p,1], P, :x)
-        @test _test([p 1], P, :x)
-        @test _test([p; 1], P, :x)
-        @test _test([1,p], P, :x)
-        @test _test([1 p], P, :x)
-        @test _test([1; p], P, :x)
-        @test _test([1,1,p], P, :x)
-        @test _test([1 1 p], P, :x)
-        @test _test([1;1;p], P, :x)
-
-        # * non-constant polynomials must share the same indeterminate
-        @test_throws ArgumentError [p, q]
-        @test_throws ArgumentError [p q]
-        @test_throws ArgumentError [p; q]        
-        @test_throws ArgumentError [p, s]
-        @test_throws ArgumentError [p s]
-        @test_throws ArgumentError [p; s]
-
-
-        # * constant polynomials of type P{T,X} should be treated as of type T.
-        @test _test([p, one(q)], P, :x)
-        @test _test([p  one(q)], P, :x)
-        @test _test([p; one(q)], P, :x)
-        @test _test([one(q), p], P, :x)
-        @test _test([one(q)  p], P, :x)
-        @test _test([one(q); p], P, :x)
-
-        @test _test([p, one(q), 1], P, :x)
-        @test _test([p  one(q)  1], P, :x)
-        @test _test([p; one(q); 1], P, :x)
-
-        @test _test([p, one(r)], P, :x) # treat one(r) as 1
-        @test _test([p one(r)], P, :x) # 
-        @test _test([p; one(r)], P, :x) #
-        @test _test([one(r), p], P, :x) # treat one(r) as 1
-        @test _test([one(r)  p], P, :x) 
-        @test _test([one(r); p], P, :x) 
-        @test _test([p, one(s)], P, :x) # s has different type and symbol...
-        @test _test([p one(s)], P, :x)
-        @test _test([p; one(s)], P, :x)
-        @test _test([one(s), p], P, :x) # s has different type and symbol...
-        @test _test([one(s)  p], P, :x)
-        @test _test([one(s); p], P, :x)
-
-
-        #   - This means [1 one(p)] is an array of type T, not typeof(p)
-        @test isa([1, one(p)], Array{Int})
-        @test isa([1  one(p)], Array{Int})
-        @test isa([1; one(p)], Array{Int})
-        @test isa([one(p), 1], Array{Int})
-        @test isa([one(p)  1], Array{Int})
-        @test isa([one(p); 1], Array{Int})
-
-        @test isa([one(p), one(q)], Array{Int})
-        @test isa([one(p)  one(q)], Array{Int})
-        @test isa([one(p); one(q)], Array{Int})
-
-        #   - This means [one(p)] is an array of type T, not typeof(p)
-        @test isa([one(p)], Array{Int})
-        @test isa([one(p), one(p)], Array{Int})
-        @test isa([one(p)  one(p)], Array{Int})
-        @test isa([one(p); one(p)], Array{Int})
         
-
-
-        # by
-        @test _test([1 1; one(q) p], P, :x)
-        @test _test(hcat([p p; 1 one(q)], I), P, :x)
-
-
-
-        #
-        @test_throws ArgumentError [[p p]; [q q]]
-        @test _test([[p p]; [one(p) one(q)]], P, :x)
+        # * should promote to Polynomial type if mixed (save Laurent Polynomial)
+        @testset "promote mixed polys" begin
+            for m ∈ meths
+                @test _test(m(p,p), P, :x)            
+                @test _test(m(p,r), P′′, :x)
+            end
+            
+            @test _test(Base.hvcat((2,1), p, r,[p r]), P′′, :x)
+            
+        end
+        
+        # * numeric constants should promote to a polynomial, when mixed
+        @testset "promote numbers to poly" begin
+            for m ∈ meths
+                @test _test(m(p,1), P, :x)
+                @test _test(m(1,p), P, :x)
+                @test _test(m(1,1,p), P, :x)
+                @test _test(m(p,1,1), P, :x)
+            end
+            
+            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)        
+        end
+        
+        # * non-constant polynomials must share the same indeterminate
+        @testset "non constant polys share same X" begin
+            for m ∈ meths
+                @test_throws ArgumentError m(p,q)
+                @test_throws ArgumentError m(p,s)
+            end
+            
+            @test_throws ArgumentError Base.hvcat((2,1), p, q,[p q])
+        end
+        
+        
+        # # * constant polynomials of type P{T,X} should be treated as of type T.
+        @testset "constant P{T,X} treated as T" begin
+            for m ∈ meths
+                @test _test(m(p, one(q)), P, :x)
+                @test _test(m(one(q), p), P, :x)
+                @test _test(m(p, one(q), 1), P, :x)
+                @test _test(m(p, one(r)), P, :x) # treat one(r) as 1
+                @test _test(m(one(r), p), P, :x)
+                @test _test(m(p, one(s)), P, :x) # s has different type, symbo
+                @test _test(m(one(s), p), P, :x)
+            end
+            
+            @test _test(Base.hvcat((3,1), 1, one(q), p,[1 one(q) p]), P, :x)        
+        end
+        
+        # #   - This means [1 one(p)] is an array of type T, not typeof(p)
+        @testset "may promote to T, not P{T,X}" begin
+            for m ∈ meths
+                @test m(1, one(p))  isa Array{Int}
+                @test m(one(p), 1)  isa Array{Int}
+                @test m(one(p), one(p)) isa Array{Int}
+                @test m(one(p), one(q)) isa Array{Int}
+            end
+            
+            @test Base.hvcat((3,1), 1, one(q), one(p), [1 one(q) one(p)]) isa Array{Int}
+            
+            #     #   - This means [one(p)] is an array of type T, not typeof(p)
+            @test isa([one(p)], Array{Int})
+            
+    end    
+        
+        
+        @testset "hvcat" begin
+            @test _test([1 1; one(q) p], P, :x)
+            @test _test(hcat([p p; 1 one(q)], I), P, :x)
+            
+            #
+            @test_throws ArgumentError [[p p]; [q q]]
+            @test _test([[p p]; [one(p) one(q)]], P, :x)        
+            @test _test([[p p]; [1 1]], P, :x)
+        end
+        
     end
-
 
     
 end
