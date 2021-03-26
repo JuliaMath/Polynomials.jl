@@ -462,15 +462,16 @@ _flatten(p::AbstractPolynomial) = isconstant(p) ? constantterm(p) : p
 _flatten(x) = x
 
 ## [a,b] calls `Base.vect` which in turn calls Base.promote_typeof for promotion
+# function Base.promote_type(p::P, q::S) where {T,X, P<: AbstractPolynomial{T,X},S}
+#     p′ = _flatten(p)
+#     Base.promote_type(Base.eltypeof(p′), Base.eltypeof(q))
+# end 
+
 function Base.promote_typeof(p::P, xs...) where {P <: AbstractPolynomial}
     x = _flatten(p)
     U = Base.promote_type(Base.typeof(x), Base.promote_typeof(xs...))
     U
 end
-function Base.promote_type(p::P, q::S) where {T,X, P<: AbstractPolynomial{T,X},S}
-    p′ = _flatten(p)
-    Base.promote_type(Base.eltypeof(p′), Base.eltypeof(q))
-end 
 
 function Base.promote_typeof(p::P, q::Q) where {T,X, P<: AbstractPolynomial{T,X},
                                                 S,Y, Q<: AbstractPolynomial{S,Y}}
