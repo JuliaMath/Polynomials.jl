@@ -337,7 +337,7 @@ However, as there would be an ambiguous outcome of the following
 julia> [one(p) one(q)]
 ERROR: ArgumentError: Polynomials have different indeterminates
 [...]
-``` 
+```
 
 an error thrown.
 
