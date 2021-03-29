@@ -157,7 +157,16 @@ end
     @test d.coeffs ≈ [0, 2]
     @test r.coeffs ≈ [-2, -4]
 
-
+    # evaluation
+    c1 = ChebyshevT([0,0,1,1])
+    fn = x -> (2x^2-1) + (4x^3 - 3x)
+    for xᵢ ∈ range(-0.9, stop=0.9, length=5)
+        @test c1(xᵢ) ≈ fn(xᵢ)
+    end
+    # issue 326 evaluate outside of domain
+    @test Polynomials.evalpoly(2, c1, false) ≈ fn(2)
+    @test Polynomials.evalpoly(3, c1, false) ≈ fn(3)
+    
     # GCD
     c1 = ChebyshevT([1, 2, 3])
     c2 = ChebyshevT([3, 2, 1])
