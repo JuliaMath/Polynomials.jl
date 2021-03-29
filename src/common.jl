@@ -413,7 +413,8 @@ end
 Returns the complex conjugate of the polynomial
 """
 LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = map(conj, p)
-LinearAlgebra.adjoint(p::P) where {P <: AbstractPolynomial} = map(adjoint, p) 
+LinearAlgebra.adjoint(p::P) where {P <: AbstractPolynomial} = map(adjoint, p)
+LinearAlgebra.adjoint(A::VecOrMat{<:AbstractPolynomial}) = adjoint.(permutedims(A))
 LinearAlgebra.transpose(p::AbstractPolynomial) = p
 LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 
