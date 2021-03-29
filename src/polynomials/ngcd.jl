@@ -13,6 +13,7 @@ function ngcd(p::P, q::Q, args...;kwargs...) where {T, S, P<:StandardBasisPolyno
     degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
     degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
     degree(q) == 0 && return (u=one(p), v=p, w=q,       θ=NaN, κ=NaN)
+    p == q         && return (u=p,v=one(p),  w=one(p),  θ=NaN, κ=NaN)
     assert_same_variable(p,q)
 
     p′,q′ = promote(p,q)
@@ -146,7 +147,7 @@ function ngcd(ps::Vector{T},
               verbose=false,
               minⱼ = -1
               ) where {T <: AbstractFloat}
-    
+
     m, n = _degree.((ps, qs))
 
     if m < n
