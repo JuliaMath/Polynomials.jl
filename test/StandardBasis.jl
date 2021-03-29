@@ -764,47 +764,50 @@ end
             @test_throws ArgumentError Base.hvcat((2,1), p, q,[p q])
         end
         
-        
-        # # * constant polynomials of type P{T,X} should be treated as of type T.
-        @testset "constant P{T,X} treated as T" begin
+
+        # * constant polynomials are treated as `P{T,X}`, not elements of `T`
+         @testset "constant polys" begin
             for m ∈ meths
-                @test _test(m(p, one(q)), P, :x)
-                @test _test(m(one(q), p), P, :x)
-                @test _test(m(p, one(q), 1), P, :x)
-                @test _test(m(p, one(r)), P, :x) # treat one(r) as 1
-                @test _test(m(one(r), p), P, :x)
-                @test _test(m(p, one(s)), P, :x) # s has different type, symbo
-                @test _test(m(one(s), p), P, :x)
+                @test _test(m(one(p),1), P, :x)
+                @test _test(m(1,one(p)), P, :x)
+                @test _test(m(1,1,one(p)), P, :x)
+                @test _test(m(one(p),1,1), P, :x)
             end
             
-            @test _test(Base.hvcat((3,1), 1, one(q), p,[1 one(q) p]), P, :x)        
+            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)        
         end
         
-        # #   - This means [1 one(p)] is an array of type T, not typeof(p)
-        @testset "may promote to T, not P{T,X}" begin
-            for m ∈ meths
-                @test m(1, one(p))  isa Array{Int}
-                @test m(one(p), 1)  isa Array{Int}
-                @test m(one(p), one(p)) isa Array{Int}
-                @test m(one(p), one(q)) isa Array{Int}
-            end
-            
-            @test Base.hvcat((3,1), 1, one(q), one(p), [1 one(q) one(p)]) isa Array{Int}
-            
-            #     #   - This means [one(p)] is an array of type T, not typeof(p)
-            @test isa([one(p)], Array{Int})
-            
-    end    
-        
+        # * Promotion can be forced to mix constant-polynomials
+        @testset "Use typed constructor to mix constant polynomals" begin
+            𝑷,𝑸 = P{Int,:x}, P{Int,:y} # not typeof(p),... as Immutable carries N
+            @test_throws ArgumentError [one(p), one(q)]
+            @test eltype(𝑷[one(p), one(q)]) == 𝑷
+            @test eltype(𝑸[one(p), one(q)]) == 𝑸
+            @test eltype(𝑷[one(p); one(q)]) == 𝑷
+            @test eltype(𝑸[one(p); one(q)]) == 𝑸
+            @test eltype(𝑷[one(p)  one(q)]) == 𝑷
+            @test eltype(𝑸[one(p)  one(q)]) == 𝑸
+
+            @test_throws ArgumentError [1 one(p);
+                                        one(p) one(q)]
+            @test eltype(𝑷[1 one(p); one(p) one(q)]) == 𝑷
+            @test eltype(𝑸[1 one(p); one(p) one(q)]) == 𝑸
+        end
         
         @testset "hvcat" begin
-            @test _test([1 1; one(q) p], P, :x)
-            @test _test(hcat([p p; 1 one(q)], I), P, :x)
+            p,q = P([1,2],:x), P([1,2],:y)
             
-            #
-            @test_throws ArgumentError [[p p]; [q q]]
-            @test _test([[p p]; [one(p) one(q)]], P, :x)        
-            @test _test([[p p]; [1 1]], P, :x)
+            q1 = [q 1]
+            q11 = [one(q) 1]
+
+            @test_throws ArgumentError hvcat((2,1), 1, p, q1)
+
+            @test_throws ArgumentError [1 p; q11]
+            @test_throws ArgumentError hvcat((2,1), 1, p, q11)
+
+            𝑷 = P{Int,:x}
+            @test eltype(𝑷[1 p; q11]) == 𝑷
+            @test eltype(Base.typed_hvcat(𝑷, (2, 1), 1, p, q11)) == 𝑷
         end
         
     end

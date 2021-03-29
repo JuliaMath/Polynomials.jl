@@ -42,7 +42,10 @@ macro register(name)
     poly = esc(name)
     quote
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.convert(P::Type{<:$poly}, p::$poly{T}) where {T} = constructorof(P){eltype(P), indeterminate(P,p)}(coeffs(p))
+        function Base.convert(P::Type{<:$poly}, p::$poly{T,X}) where {T,X}
+            isconstant(p) && return constructorof(P){eltype(P),indeterminate(P)}(constantterm(p))
+            constructorof(P){eltype(P), indeterminate(P,p)}(coeffs(p))
+        end
         Base.promote(p::P, q::Q) where {X, T, P <:$poly{T,X}, Q <: $poly{T,X}} = p,q
         Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{<:$poly{S,X}}) where {T,S,X} =  $poly{promote_type(T, S),X}
         Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{S}) where {T,S<:Number,X} =
