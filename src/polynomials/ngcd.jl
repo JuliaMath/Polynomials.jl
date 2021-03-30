@@ -1,3 +1,12 @@
+"""
+    ngcd(p,q, [k]; kwargs...)
+
+Find numerical GCD of polynomials `p` and `q`. Refer to [`NGCD.ngcd`](@ref) for details.
+
+
+In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call one step of the Euclidean gcd approach, and then call `ngcd` with relaxed tolerances.
+
+"""
 function ngcd(p::P, q::Q,
               args...; kwargs...) where {T,X,P<:AbstractPolynomial{T,X},
                                          S,Y,Q<:AbstractPolynomial{S,Y}}
@@ -15,20 +24,23 @@ function ngcd(p::P, q::Q,
     chop!(ps); chop!(qs)
     p′ = NGCD.NCPolynomial(ps)
     q′ = NGCD.NCPolynomial(qs)
-    if degree(p′) > 5*degree(q′)
+    if degree(p′) > 5*degree(q′) # heuristic
         out = NGCD.ngcd′(p′, q′, args...; kwargs...)
     else
         out = NGCD.ngcd(p′, q′; kwargs...)
     end
 
-    𝑷 = promote_type(P,Q)
+    𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X} 
     u,v,w = convert.(𝑷, (out.u,out.v,out.w))
     (u=u,v=v,w=w, Θ=out.Θ, κ = out.κ)
+    
 end
 
+## ---- the work is done in this module
 
 module NGCD
 using Polynomials, LinearAlgebra
+
 # non-copying polynomial for performance reasons
 struct NCPolynomial{T <: Number, X} <: Polynomials.StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
@@ -42,14 +54,14 @@ NCPolynomial(coeffs::AbstractVector{T}, var=:x) where {T} = NCPolynomial{T,X}(co
 Polynomials.@register NCPolynomial
 Base.broadcastable(p::NCPolynomial) = p.coeffs;
 Base.ndims(::Type{<:NCPolynomial}) = 1
-Base.copyto!(p::NCPolynomial, x) = (copyto!(p.coeffs, x); chop!(p));
+Base.copyto!(p::NCPolynomial, x) = copyto!(p.coeffs, x);
 
 
      
 """
     ngcd′(p,q)
 
-When degree(p) ≫ degree(q), this uses a early call to `divrem` to bring about commensurate degrees
+When degree(p) ≫ degree(q), this uses an early call to `divrem` to bring about commensurate degrees
 before calling `ngcd`.
 """
 function ngcd′(p::NCPolynomial{T}, q::NCPolynomial{T};
@@ -72,10 +84,88 @@ function ngcd′(p::NCPolynomial{T}, q::NCPolynomial{T};
 end
 
 
+"""
+    ngcd(ps::NCPolynomial{T,X}, qs::NCPolynomial{T,X}, [k::Int]; scale::Bool=false, atol=eps(T), rtol=eps(T), satol=atol, srtol=rtol)
 
+Return `u, v, w, Θ, κ` where ``u⋅v ≈ ps`` and ``u⋅w ≈ qs`` (polynomial multiplication); `Θ` (`\\Theta[tab]`) is the residual error (``‖ [u⋅v,u⋅w] - [ps,qs] ‖``); and `κ` (`\\kappa[tab]`) is the numerical gcd condition number estimate. When `scale=true`, ``u⋅v ≈ ps/‖ps‖`` and ``u⋅w ≈ qs/‖qs‖``
+
+The numerical GCD problem is defined in [1] (5.4). Let ``(p,q)`` be a
+polynomial pair with degree m,n. Let Ρmn be set of all such pairs. Any
+given pair of polynomials has an exact greatest common divisor, ``u``, of
+degree ``k``, defined up to constant factors. Let ``Ρᵏmn`` be the manifold of
+all such ``(p,q)`` pairs with exact gcd of degree ``k``. A given pair ``(p,q)`` with exact gcd of degree ``j`` will
+have some distance ``Θᵏ`` from ``Pᵏ``.  For a given threshold ``ϵ > 0`` a numerical GCD
+of ``(p,q)`` within ``ϵ`` is an exact GCD of a pair ``(p̂,q̂)`` in ``Ρᵏ`` with 
+
+``‖ (p,q) - (p̂,q̂) ‖ <= Θᵏ``, where ``k`` is the largest value for which ``Θᵏ < ϵ``. 
+
+(In the ``ϵ → 0`` limit, this would be the exact GCD.)
+
+
+Suppose ``(p,q)`` is an ``ϵ`` pertubation from ``(p̂,q̂)`` where ``(p̂,q̂)`` has an exact gcd of degree ``k``, then ``degree(gcdₑ(p,q)) = k``; as ``ϵ → 0``, ``gcdₑ(p,q) → gcd(p̂, q̂)``, and
+
+``limsup_{(p,q)→(p̂,q̂)} inf{ ‖ (u,v,w) - (û,v̂,ŵ) ‖} / ‖ (p,q) - (p̂,q̂) ‖ < κₑ(p,q)``.
+
+``κ`` is called the numerical GCD condition number.
+
+
+The Zeng algorithm proposes a degree for ``u`` and *if* a triple ``(u,v,w)`` with ``u`` of degree ``k`` and ``(u⋅v, u⋅w)`` in ``Ρᵏmn`` can be found satisfying ``‖ (u⋅v, u⋅w) - (p,q) ‖ < ϵ`` then ``(u,v,w)`` is returned; otherwise the proposed degree is reduced and the process repeats. If not terminated, at degree ``0`` a constant gcd is returned.
+
+The initial proposed degree is the first ``j``,  ``j=min(m,n):-1:1``, where ``Sⱼ`` is believed to have a singular value of ``0`` (``Sⱼ`` being related to the Sylvester matrix of `ps` and `qs`). The verification of the proposed degree is done using a Gauss-Newton iteration scheme holding the degree of ``u`` constant.
+
+## Scaling:
+
+If `scale=true` (the default when a polynomial norm is large), the gcd of ``p/‖p‖`` and ``q/‖q‖`` is identified. Scaling can reduce the condition numbers significantly.
+
+## Tolerances:
+
+There are two places where tolerances are utilized:
+
+* in the identification of the rank of ``Sⱼ`` a value ``σ₁ = ‖Rx‖`` is identified. To test if this is zero a tolerance of `max(satol, ‖R‖ₒₒ ⋅ srtol)` is used.
+
+* to test if ``(u ⋅ v, u ⋅ w) ≈ (p,q)`` a tolerance of `max(atol, λ⋅rtol)` is used with `λ` chosen to be  ``(‖(p,q)‖⋅n⋅m)⋅κ′⋅‖A‖ₒₒ`` to reflect the scale of ``p`` and ``q`` and an estimate for the condition number of ``A`` (a Jacobian involved in the solution). 
+
+
+This seems to work well for a reasaonable range of polynomials, however there can be issues: when the degree of ``p`` is much larger than the degree of ``q``, these choices can fail; when a higher rank is proposed, then too large a tolerance for `rtol` or `atol` can lead to a false verification; when a tolerance for `atol` or `rtol` is too strict, then a degree may not be verified. 
+
+!!! note:
+    These tolerances are adjusted from those proposed in [1].
+
+## Specified degree:
+
+When `k` is specified, a value for ``(u,v,w)`` is identified with ``degree(u)=k``. No tolerances are utilized in computing ``Θᵏ``.
+
+
+
+Output:
+
+The function outputs a named tuple with names (`u`, `v`, `w`, `Θ`, `κ`). The components `u`,`v`,`w` estimate the gcd and give the divisors. The value `Θ` estimates ``Θᵏ`` and `κ` estimates the numerical condition number.
+
+Example:
+
+```
+using Polynomials
+x = variable(Polynomial{Float64})
+p = (x+10)*(x^9 + x^8/3 + 1)
+q = (x+10)*(x^9 + x^8/7 - 6/7)
+gcd(p,q) # u a constant
+gcd(p,q, method=:numerical)  # u a degree 1 polynomial
+Polynomials.NGCD.ngcd(coeffs(p), coeffs(q), verbose=true) # to see some computations
+```
+
+Reference:
+
+[1] The Numerical Greatest Common Divisor of Univariate Polynomials
+by Zhonggang Zeng;
+[url](http://homepages.neiu.edu/~zzeng/uvgcd.pdf);
+[doi](https://doi.org/10.1090/conm/556/11014)
+
+Note: Based on work by Andreas Varga; Requires `VERSION >= v"1.2"`.
+
+"""
 function ngcd(p::NCPolynomial{T,X},
               q::NCPolynomial{T,X};
-              scale::Bool=false, #norm(ps) > 1e6, #false,
+              scale::Bool=false, 
               atol = eps(real(T)),
               rtol = Base.rtoldefault(real(T)),
               satol = eps(real(T))^(5/6),
@@ -87,7 +177,7 @@ function ngcd(p::NCPolynomial{T,X},
     m, n = degree.((p, q))
     vw = true
     if m < n
-        out = _ngcd(q, p; scale=scale,
+        out = ngcd(q, p; scale=scale,
                     atol=atol, rtol=rtol, satol=satol,
                     srtol=srtol,
                     verbose=verbose, minⱼ = minⱼ)
@@ -109,6 +199,7 @@ function ngcd(p::NCPolynomial{T,X},
     Q = zeros(T, m + n, m + n)
     R = zeros(T, m + n, m + n)
     Sₓ = hcat(convmtx(p,1),  convmtx(q, m-n+1))
+    
     local x::Vector{T}
 
     j = n  # We count down Sn, S_{n-1}, ..., S₂, S₁
@@ -125,7 +216,7 @@ function ngcd(p::NCPolynomial{T,X},
         verbose && println("------ degree $j ----- σ₁: $σ  --- $flag")
 
         if (flag == :iszero || flag == :ispossible)
-
+            @show j, x, flag
             u, v, w = initial_uvw(Val(flag), j, p, q, x)
             flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, p, q, atol, rtol)
 
@@ -154,7 +245,8 @@ function ngcd(p::NCPolynomial{T,X},
     end
 
     # u is a constant
-    verbose && println("------ GCD is constant ------")    
+    verbose && println("------ GCD is constant ------")
+
     u, v, w = initial_uvw(Val(:constant), j, p, q, x)
     flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, atol, rtol)
     return (u=u, v=v, w=w, Θ=ρ₁, κ=κ)
@@ -189,11 +281,6 @@ function ngcd(p::P,
     return (u=u, v=v, w=w, Θ=ρ₁, κ=κ) 
 
 end
-
-# function ngcd(ps::Vector{T}, qs::Vector{S}, k::Int; kwargs...) where {T, S}
-#     ps′,qs′ = promote(float.(ps), float(qs))
-#     ngcd(ps′, qs′, k; kwargs...)
-# end
 
 ## -----
 
@@ -298,6 +385,7 @@ function initial_uvw(::Val{:ispossible}, j, p::P, q, x) where {T,X,P<:AbstractPo
 end
 
 function initial_uvw(::Val{:iszero}, j, p::P, q, x) where {T,X,P<:AbstractPolynomial{T,X}}
+    
     m,n = degree.((p,q))
     S = [convmtx(p, n-j+1) convmtx(q, m-j+1)]
 
@@ -335,9 +423,8 @@ function σ₂(J)
 end
     
 ## attempt to refine u,v,w
-## check that [u ⊗ v; u ⊗ w] ≈ [p; q]
+## check that [u * v; u * w] ≈ [p; q]
 function refine_uvw!(u::P, v, w, p, q, atol, rtol) where {T,X,P<:AbstractPolynomial{T,X}}
-    
     m, n, l =  degree.((u, v, w))
 
     uv = u * v
@@ -345,7 +432,7 @@ function refine_uvw!(u::P, v, w, p, q, atol, rtol) where {T,X,P<:AbstractPolynom
     ρ₀, ρ₁ = one(T), residual_error(p,q,uv,uw)
 
     # storage
-    A = zeros(T, JF_size(u, v, w)...)
+
     b = zeros(T, 1 + length(p) + length(q))     #b = zeros(T, 1 + length(p) + length(q))
     Δf = zeros(T, m + n + l + 3)
     steps = 0
@@ -353,7 +440,7 @@ function refine_uvw!(u::P, v, w, p, q, atol, rtol) where {T,X,P<:AbstractPolynom
     h, β =  u, norm(u)^2
     minᵢ, Maxᵢ = 5, 20
     κ = NaN
-
+    A=zeros(T, JF_size(u, v, w)...)
     JF!(A, h, u, v, w)
     Fmp!(b,  dot(h,u) - β, p, q, uv, uw)
 
@@ -457,7 +544,6 @@ function JF!(M, h,  u::P, v, w) where {T,X,P<:AbstractPolynomial{T,X}}
     J13 = view(M, 1:r13, c11 + c22 .+ (1:c23))
     J22 = view(M, r11 .+ (1:r22), c11 .+ (1:c22))
     J23 = view(M, r13 .+ (1:r23), (c11 + c22) .+ (1:c23))
-
     convmtx!(J11, u, dv+1)
     convmtx!(J13, v, du+1)
     convmtx!(J22, u, dw+1)
@@ -510,31 +596,24 @@ C = convmtx(v,n) returns the convolution matrix C for a vector v.
 If q is a column vector of length n, then C*q is the same as conv(v,q). 
 
 """
-convmtx!
-function convmtx!(C, v::AbstractVector{T}, n::Int) where T
-
+function convmtx!(C, v::AbstractPolynomial, n::Int) where T
     #   Form C as the Toeplitz matrix 
     #   C = Toeplitz([v; zeros(n-1)],[v[1]; zeros(n-1));  put Toeplitz code inline
-
     nv = length(v)-1
 
     @inbounds for j = 1:n
-        C[j:j+nv,j] = v
+        C[j:j+nv,j] = coeffs(v)
     end
 
-    nothing
-  
-end
+    return nothing
 
-function convmtx!(C, v::AbstractPolynomial, n::Int) where T
-    convmtx!(C, coeffs(v), n)
 end
 
 convmtx_size(v::AbstractPolynomial, n) = (n + degree(v), n)
 function convmtx(v::AbstractPolynomial{T}, n::Int) where {T}
     d = degree(v)
     C = zeros(T, (n + d, n))
-    convmtx!(C, coeffs(v), n)
+    convmtx!(C, v, n)
     C
 end
 
