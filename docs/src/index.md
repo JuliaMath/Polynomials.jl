@@ -279,7 +279,7 @@ julia> collect(Polynomials.monomials(p))
 The addition of a polynomial and a scalar, such as
 
 ```jldoctest natural_inclusion
-juila> using Polynomials
+julia> using Polynomials
 
 julia> p = Polynomial([1,2,3], :x)
 Polynomial(1 + 2*x + 3*x^2)
