@@ -50,13 +50,28 @@ struct NCPolynomial{T <: Number, X} <: Polynomials.StandardBasisPolynomial{T, X}
     end
 end
 
-NCPolynomial(coeffs::AbstractVector{T}, var=:x) where {T} = NCPolynomial{T,X}(coeffs)
+#NCPolynomial(coeffs::AbstractVector{T}, var=:x) where {T} = NCPolynomial{T,X}(coeffs)
 Polynomials.@register NCPolynomial
 Base.broadcastable(p::NCPolynomial) = p.coeffs;
 Base.ndims(::Type{<:NCPolynomial}) = 1
 Base.copyto!(p::NCPolynomial, x) = copyto!(p.coeffs, x);
-
-
+function Base.:*(p::NCPolynomial{T,X}, q::NCPolynomial{T,X}) where {T,X} # allocates less
+    m,n = degree(p), degree(q)
+    cs = zeros(T, m + n + 1)
+    for i ∈ 0:m
+        for j ∈ 0:n
+            k = i + j
+            cs[1+k] += p.coeffs[1+i] * q.coeffs[1+j]
+        end
+    end
+    NCPolynomial{T,X}(cs)
+end
+function Base.:-(p::NCPolynomial{T,X}) where {T,X}
+    for i ∈ eachindex(p.coeffs)
+        p.coeffs[i] *= -1
+    end
+    p
+end
      
 """
     ngcd′(p,q)
@@ -184,7 +199,6 @@ function ngcd(p::NCPolynomial{T,X},
         # switch v,w
         return (u=out.u, v=out.w, w=out.v, Θ=out.Θ, κ=out.κ)
     end
-
     if scale
         p ./= norm(p)
         q ./= norm(q)
@@ -199,15 +213,15 @@ function ngcd(p::NCPolynomial{T,X},
     Q = zeros(T, m + n, m + n)
     R = zeros(T, m + n, m + n)
     Sₓ = hcat(convmtx(p,1),  convmtx(q, m-n+1))
-    
+
     local x::Vector{T}
 
     j = n  # We count down Sn, S_{n-1}, ..., S₂, S₁
     
-    F = qr(Sₓ)
+    F = qr(Sₓ) 
     nr, nc = size(Sₓ) # m+1, m-n+2
-    Q[1:nr, 1:nr] = F.Q
-    R[1:nc, 1:nc] = F.R
+    Q[1:nr, 1:nr] .= F.Q
+    R[1:nc, 1:nc] .= F.R
 
     while true
 
@@ -216,7 +230,6 @@ function ngcd(p::NCPolynomial{T,X},
         verbose && println("------ degree $j ----- σ₁: $σ  --- $flag")
 
         if (flag == :iszero || flag == :ispossible)
-            @show j, x, flag
             u, v, w = initial_uvw(Val(flag), j, p, q, x)
             flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, p, q, atol, rtol)
 
@@ -239,8 +252,8 @@ function ngcd(p::NCPolynomial{T,X},
         nr += 1
         nc += 2
         nc > nr && break
-
         extend_QR!(Q,R, nr, nc, A0) # before Q⋅R = Sⱼ, now Q⋅R = Sⱼ₋₁
+
 
     end
 
@@ -289,7 +302,7 @@ end
 function smallest_singular_value(V::AbstractArray{T,2},
                                  atol=eps(real(T)),
                                  rtol=zero(real(T))) where {T}
-    
+
     R = UpperTriangular(V)
     k = size(R)[1]/2
     if iszero(det(R)) 
@@ -319,7 +332,6 @@ function smallest_singular_value(V::AbstractArray{T,2},
         else
             break
         end
-        
         steps += 1
     end
 
@@ -424,7 +436,7 @@ end
     
 ## attempt to refine u,v,w
 ## check that [u * v; u * w] ≈ [p; q]
-function refine_uvw!(u::P, v, w, p, q, atol, rtol) where {T,X,P<:AbstractPolynomial{T,X}}
+function refine_uvw!(u::P, v::P, w::P, p::P, q::P, atol, rtol) where {T,X,P<:NCPolynomial{T,X}}
     m, n, l =  degree.((u, v, w))
 
     uv = u * v
