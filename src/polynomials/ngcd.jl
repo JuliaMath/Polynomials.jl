@@ -8,8 +8,8 @@ In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call on
 
 """
 function ngcd(p::P, q::Q,
-              args...; kwargs...) where {T,X,P<:AbstractPolynomial{T,X},
-                                         S,Y,Q<:AbstractPolynomial{S,Y}}
+              args...; kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
+                                         S,Y,Q<:StandardBasisPolynomial{S,Y}}
 
     degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
     degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
@@ -282,12 +282,13 @@ function ngcd(p::NCPolynomial{T,X},
 end
 
 # fix the degree, k
-function ngcd(p::P,
-              q::P,
+function ngcd(p′::P,
+              q′::P,
               k::Int;
               kwargs...
-              ) where {T <: AbstractFloat,X, P <: AbstractPolynomial{T,X}}
+              ) where {T <: AbstractFloat,X, P <: Polynomials.StandardBasisPolynomial{T,X}}
 
+    p,q = NCPolynomial(coeffs(p′)), NCPolynomial(coeffs(q′))
     m, n = degree.((p,q))
 
     if m < n
@@ -300,14 +301,14 @@ function ngcd(p::P,
     F = qr(Sⱼ)
     flag, σ, x = smallest_singular_value(F.R, eps(T) *  sqrt(1 + m - k), eps(T))
     if flag != :iszero
-        w, v = P(x[1:n-k+1]), P(-x[n-k+2:end])
+        w, v = NCPolynomial(x[1:n-k+1]), NCPolynomial(-x[n-k+2:end])
         u = solve_u(v,w,p,q,k)
     else
         u,v,w = initial_uvw(Val(flag), k, p, q, nothing)
     end
     uv, uw = copy(p), copy(q)
     flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, uv, uw, Inf, Inf)
-    return (u=u, v=v, w=w, Θ=ρ₁, κ=κ) 
+    return (u=convert(P,u), v=convert(P,v), w=convert(P,w), Θ=ρ₁, κ=κ) 
 
 end
 
@@ -399,7 +400,7 @@ end
 ## Refine u,v,w
 
 ## Find u₀,v₀,w₀ from right singular vector
-function initial_uvw(::Val{:ispossible}, j, p::P, q, x) where {T,X,P<:AbstractPolynomial{T,X}}
+function initial_uvw(::Val{:ispossible}, j, p::P, q, x) where {T,X,P<:NCPolynomial{T,X}}
 
     # Sk*[w;-v] = 0, so pick out v,w after applying permuation
     m,n = degree.((p, q))
@@ -413,7 +414,7 @@ function initial_uvw(::Val{:ispossible}, j, p::P, q, x) where {T,X,P<:AbstractPo
     
 end
 
-function initial_uvw(::Val{:iszero}, j, p::P, q, x) where {T,X,P<:AbstractPolynomial{T,X}}
+function initial_uvw(::Val{:iszero}, j, p::P, q, x) where {T,X,P<:NCPolynomial{T,X}}
     
     m,n = degree.((p,q))
     S = [convmtx(p, n-j+1) convmtx(q, m-j+1)]
@@ -436,7 +437,7 @@ function initial_uvw(::Val{:iszero}, j, p::P, q, x) where {T,X,P<:AbstractPolyno
     return u,v,w
 end
 
-function initial_uvw(::Val{:constant}, j, p::P, q, x) where {T,X,P<:AbstractPolynomial{T,X}}
+function initial_uvw(::Val{:constant}, j, p::P, q, x) where {T,X,P<:NCPolynomial{T,X}}
     u = one(P)
     w = q
     v = p
