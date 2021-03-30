@@ -70,16 +70,17 @@ function Base.:*(p::NCPolynomial{T,X}, q::NCPolynomial{T,X}) where {T,X} # alloc
     NCPolynomial{T,X}(cs)
 end
 
-function pmul!(cs, p::NCPolynomial{T,X}, q) where {T,X}
+function pmul!(pq, p::NCPolynomial{T,X}, q) where {T,X}
     m,n = degree(p), degree(q)
-    cs .= zero(T)
+    pq.coeffs .= zero(T)
     for i ∈ 0:m
         for j ∈ 0:n
             k = i + j
-            cs[1+k] += p.coeffs[1+i] * q.coeffs[1+j]
+            pq.coeffs[1+k] += p.coeffs[1+i] * q.coeffs[1+j]
         end
     end
-    NCPolynomial{T,X}(cs)
+    nothing
+    #NCPolynomial{T,X}(cs)
 end
 
 function Base.:-(p::NCPolynomial{T,X}) where {T,X}
@@ -230,6 +231,9 @@ function ngcd(p::NCPolynomial{T,X},
     R = zeros(T, m + n, m + n)
     Sₓ = hcat(convmtx(p,1),  convmtx(q, m-n+1))
 
+    uv = copy(p)
+    uw = copy(q)
+    
     local x::Vector{T}
 
     j = n  # We count down Sn, S_{n-1}, ..., S₂, S₁
@@ -247,7 +251,7 @@ function ngcd(p::NCPolynomial{T,X},
 
         if (flag == :iszero || flag == :ispossible)
             u, v, w = initial_uvw(Val(flag), j, p, q, x)
-            flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, p, q, atol, rtol)
+            flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, p, q, uv, uw, atol, rtol)
 
             verbose && println("   --- Θᵏ: $ρ₁ --- $flag (ρ=$(ρ))")
 
@@ -260,7 +264,7 @@ function ngcd(p::NCPolynomial{T,X},
         # unless we hit specified minimum, in which case return it
         if j == minⱼ
             u, v, w = initial_uvw(Val(:ispossible), j, p, q, x)
-            flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, p, q, atol, rtol)
+            flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, p, q, uv, uw, atol, rtol)
             return (u=u, v=v, w=w, Θ=ρ₁, κ=σ₂)
         end
 
@@ -277,7 +281,7 @@ function ngcd(p::NCPolynomial{T,X},
     verbose && println("------ GCD is constant ------")
 
     u, v, w = initial_uvw(Val(:constant), j, p, q, x)
-    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, atol, rtol)
+    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, uv, uw, atol, rtol)
     return (u=u, v=v, w=w, Θ=ρ₁, κ=κ)
 
 end
@@ -306,7 +310,8 @@ function ngcd(p::P,
     else
         u,v,w = initial_uvw(Val(flag), k, p, q, nothing)
     end
-    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, Inf, Inf)
+    uv, uw = copy(p), copy(q)
+    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, uv, uw, Inf, Inf)
     return (u=u, v=v, w=w, Θ=ρ₁, κ=κ) 
 
 end
@@ -453,11 +458,11 @@ end
     
 ## attempt to refine u,v,w
 ## check that [u * v; u * w] ≈ [p; q]
-function refine_uvw!(u::P, v::P, w::P, p::P, q::P, atol, rtol) where {T,X,P<:NCPolynomial{T,X}}
+function refine_uvw!(u::P, v::P, w::P, p::P, q::P, uv, uw, atol, rtol) where {T,X,P<:NCPolynomial{T,X}}
     m, n, l =  degree.((u, v, w))
 
-    uv = u * v
-    uw = u * w
+    pmul!(uv, u, v)
+    pmul!(uw, u, w)
     ρ₀, ρ₁ = one(T), residual_error(p,q,uv,uw)
 
     # storage
@@ -493,8 +498,8 @@ function refine_uvw!(u::P, v::P, w::P, p::P, q::P, atol, rtol) where {T,X,P<:NCP
         v .-= Δv
         w .-= Δw
 
-        uv = u*v
-        uw = u*w
+        pmul!(uv, u, v)
+        pmul!(uv, u, w)
         
         ρ₀, ρ′ = ρ₁, residual_error(p, q, uv, uw)
 
@@ -636,13 +641,16 @@ C = convmtx(v,n) returns the convolution matrix C for a vector v.
 If q is a column vector of length n, then C*q is the same as conv(v,q). 
 
 """
-function convmtx!(C, v::AbstractPolynomial, n::Int) where T
+function convmtx!(C, v::AbstractPolynomial, n::Int)
+    convmtx(C, coeffs(v), n)
+end
+function convmtx!(C, v::AbstractVector, n::Int)
     #   Form C as the Toeplitz matrix 
     #   C = Toeplitz([v; zeros(n-1)],[v[1]; zeros(n-1));  put Toeplitz code inline
     nv = length(v)-1
 
     @inbounds for j = 1:n
-        C[j:j+nv,j] = coeffs(v)
+        C[j:j+nv,j] = v
     end
 
     return nothing
@@ -652,6 +660,13 @@ end
 convmtx_size(v::AbstractPolynomial, n) = (n + degree(v), n)
 function convmtx(v::AbstractPolynomial{T}, n::Int) where {T}
     d = degree(v)
+    C = zeros(T, (n + d, n))
+    convmtx!(C, v, n)
+    C
+end
+# in noda-sassaki
+function convmtx(v::Matrix{T}, n::Int) where {T}
+    d = length(v)-1
     C = zeros(T, (n + d, n))
     convmtx!(C, v, n)
     C
