@@ -1086,6 +1086,8 @@ end
     ## issue 278 with complex
     @test printpoly_to_string(Polynomial([1 + im, 1, 2, im, 2im, 1+im, 1-im])) == "1 + im + x + 2*x^2 + im*x^3 + 2im*x^4 + (1 + im)x^5 + (1 - im)x^6"
 
+    ## issue #320 (fix was broken)
+    @test printpoly_to_string(Polynomial(BigInt[1,0,1], :y)) == "1 + y^2"
 end
 
 @testset "Plotting" begin
