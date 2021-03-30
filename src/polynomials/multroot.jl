@@ -99,7 +99,6 @@ function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T};
     u, v, w, θ′, κ = Polynomials.ngcd(p, derivative(p),
                                        atol=ρ*norm(p), satol = θ*norm(p),
                                        rtol = zT, srtol = zT)
-
     zs = roots(v)
     nrts = length(zs)
     ls = ones(Int, nrts)
@@ -170,7 +169,6 @@ function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
 
         evalJ!(J, zₖs, ls)
         evalG!(G, zₖs, ls)
-
         Δₖ .= (W*J) \ (W*(view(G, 2:1+m) .- a)) # weighted least squares
 
         δₖ₁ = norm(Δₖ, 2)
