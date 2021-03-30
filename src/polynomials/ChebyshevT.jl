@@ -105,7 +105,7 @@ julia> c(0)
 1.5
 
 julia> c.(-1:0.5:1)
-5-element Array{Float64,1}:
+5-element Vector{Float64}:
  2.0
  1.25
  1.5

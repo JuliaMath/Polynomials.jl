@@ -144,17 +144,17 @@ the returned roots may be real or complex.
 
 ```jldoctest
 julia> roots(Polynomial([1, 0, -1]))
-2-element Array{Float64,1}:
+2-element Vector{Float64}:
  -1.0
   1.0
 
 julia> roots(Polynomial([1, 0, 1]))
-2-element Array{Complex{Float64},1}:
+2-element Vector{ComplexF64}:
  0.0 - 1.0im
  0.0 + 1.0im
 
 julia> roots(Polynomial([0, 0, 1]))
-2-element Array{Float64,1}:
+2-element Vector{Float64}:
  0.0
  0.0
 ```
@@ -227,7 +227,7 @@ The `pairs` iterator, iterates over the indices and coefficients, attempting to 
 
 ```jldoctest
 julia> v = [1,2,0,4]
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
  1
  2
  0
@@ -236,7 +236,7 @@ julia> v = [1,2,0,4]
 julia> p,ip,sp,lp = Polynomial(v), ImmutablePolynomial(v), SparsePolynomial(v), LaurentPolynomial(v, -1);
 
 julia> collect(pairs(p))
-4-element Array{Pair{Int64,Int64},1}:
+4-element Vector{Pair{Int64, Int64}}:
  0 => 1
  1 => 2
  2 => 0
@@ -246,13 +246,13 @@ julia> collect(pairs(ip)) == collect(pairs(p))
 true
 
 julia> collect(pairs(sp)) # unordered dictionary with only non-zero terms
-3-element Array{Pair{Int64,Int64},1}:
+3-element Vector{Pair{Int64, Int64}}:
  0 => 1
  3 => 4
  1 => 2
 
 julia> collect(pairs(lp))
-4-element Array{Pair{Int64,Int64},1}:
+4-element Vector{Pair{Int64, Int64}}:
  -1 => 1
   0 => 2
   1 => 0
@@ -267,7 +267,7 @@ julia> p = Polynomial([1,2,0,4], :u)
 Polynomial(1 + 2*u + 4*u^3)
 
 julia> collect(Polynomials.monomials(p))
-4-element Array{Any,1}:
+4-element Vector{Any}:
  Polynomial(1)
  Polynomial(2*u)
  Polynomial(0)
@@ -278,7 +278,9 @@ julia> collect(Polynomials.monomials(p))
 
 The addition of a polynomial and a scalar, such as
 
-```jldoctest
+```jldoctest natural_inclusion
+juila> using Polynomials
+
 julia> p = Polynomial([1,2,3], :x)
 Polynomial(1 + 2*x + 3*x^2)
 
@@ -290,7 +292,7 @@ seems natural, but in `Julia`, as `3` is of type `Int` and `p` of type `Polynomi
 
 This identification of a scalar with a constant polynomial can go both ways. If `q` is a *constant* polynomial of type `Polynomial{Int, :y}` then we should expect that `p+q` would be defined, as `p` plus the constant term of `q`. Indeed this is the case
 
-```jldoctest
+```jldoctest natural_inclusion
 julia> q = Polynomial(3, :y)
 Polynomial(3)
 
@@ -304,7 +306,7 @@ The same conversion is done for polynomial multiplication: constant polynomials 
 
 There is an oddity though the following two computations look the same, they are technically different:
 
-```jldoctest
+```jldoctest natural_inclusion
 julia> one(Polynomial, :x) + one(Polynomial, :y)
 Polynomial(2.0)
 
@@ -318,9 +320,12 @@ This technical difference causes no issues with polynomial addition or multiplic
 
 For arrays, the promotion of numbers to polynomials, allows natural constructions like:
 
-```jldoctest
-julia> p,q = Polynomial([1,2],:x), Polynomial([1,2],:y)  # non-constant polynomials with different indeterminates
-(Polynomial(1 + 2*x), Polynomial(1 + 2*y))
+```jldoctest natural_inclusion
+julia> p = Polynomial([1,2],:x)
+Polynomial(1 + 2*x)
+
+julia> q = Polynomial([1,2],:y)  # non-constant polynomials with different indeterminates
+Polynomial(1 + 2*y)
 
 julia> [1 p]
 1×2 Matrix{Polynomial{Int64, :x}}:
@@ -333,7 +338,7 @@ julia> [1 one(q)]
 
 However, as there would be an ambiguous outcome of the following
 
-```jldoctest
+```jldoctest natural_inclusion
 julia> [one(p) one(q)]
 ERROR: ArgumentError: Polynomials have different indeterminates
 [...]
@@ -345,7 +350,7 @@ In general, arrays with mixtures of non-constant polynomials with *different* in
 
 Using `one(q)` for a constant polynomial with indeterminate `:y` we have:
 
-```jldoctest
+```jldoctest natural_inclusion
 julia> P = typeof(p)
 Polynomial{Int64, :x}
 
@@ -356,7 +361,7 @@ julia> P[one(p) one(q)]
 
 Of course, by not being explicit, there are sill gotchas. For example, we can construct this matrix without a specific types:
 
-```jldoctest
+```jldoctest natural_inclusion
 julia> [one(p), one(q)+one(p)]
 2-element Vector{Polynomial{Int64, :x}}:
  Polynomial(1)
@@ -365,11 +370,23 @@ julia> [one(p), one(q)+one(p)]
 
 but not this one:
 
-```jldoctest
+```jldoctest natural_inclusion
 julia> [one(p), one(p) + one(q)]
 ERROR: ArgumentError: Polynomials have different indeterminates
 [...]
 ```
+
+Also, mixing types can result in unspecific symbols, as this example shows:
+
+```jldoctest natural_inclusion
+julia> [1 p; p 1] + [1 2one(q); 3 4] # array{P{T,:x}} + array{P{T,:y}}
+2×2 Matrix{Polynomial{Int64, X} where X}:
+ Polynomial(2)        Polynomial(3 + 2*x)
+ Polynomial(4 + 2*x)  Polynomial(5)
+```
+
+Though were a non-constant polynomial with indeterminate `y` replacing
+`2one(q)` above, that addition would throw an error.
 
 ## Related Packages
 

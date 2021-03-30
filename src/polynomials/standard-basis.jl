@@ -32,7 +32,7 @@ julia> p(0)
 1
 
 julia> p.(0:3)
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
   1
   4
  13

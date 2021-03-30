@@ -792,7 +792,7 @@ julia> p = 100 + 24x - 3x^2
 Polynomial(100 + 24*x - 3*x^2)
 
 julia> roots((x - 3) * (x + 2))
-2-element Array{Float64,1}:
+2-element Vector{Float64}:
  -2.0
   3.0
 

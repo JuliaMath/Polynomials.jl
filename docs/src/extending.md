@@ -140,7 +140,7 @@ Now `p` is treated as the vector `p.coeffs`, as regards broadcasting, so some th
 
 ```jldoctest AliasPolynomial
 julia> p .+ 2
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
  5
  4
  5
