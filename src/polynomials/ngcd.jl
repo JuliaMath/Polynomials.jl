@@ -48,6 +48,9 @@ struct NCPolynomial{T <: Number, X} <: Polynomials.StandardBasisPolynomial{T, X}
         iszero(coeffs[end]) && throw(ArgumentError("trim your coeffs; $coeffs"))
         new{T,X}(coeffs)
     end
+    function NCPolynomial{T,X}(coeffs::AbstractVector{T},::Any) where {T <: Number, X}
+        new{T,X}(coeffs) # no check if two args
+    end
 end
 
 #NCPolynomial(coeffs::AbstractVector{T}, var=:x) where {T} = NCPolynomial{T,X}(coeffs)
@@ -66,6 +69,19 @@ function Base.:*(p::NCPolynomial{T,X}, q::NCPolynomial{T,X}) where {T,X} # alloc
     end
     NCPolynomial{T,X}(cs)
 end
+
+function pmul!(cs, p::NCPolynomial{T,X}, q) where {T,X}
+    m,n = degree(p), degree(q)
+    cs .= zero(T)
+    for i ∈ 0:m
+        for j ∈ 0:n
+            k = i + j
+            cs[1+k] += p.coeffs[1+i] * q.coeffs[1+j]
+        end
+    end
+    NCPolynomial{T,X}(cs)
+end
+
 function Base.:-(p::NCPolynomial{T,X}) where {T,X}
     for i ∈ eachindex(p.coeffs)
         p.coeffs[i] *= -1
@@ -394,6 +410,7 @@ function initial_uvw(::Val{:ispossible}, j, p::P, q, x) where {T,X,P<:AbstractPo
     # p194 3.9 C_k(v) u = p or Ck(w) u = q; this uses 10.2
     u = solve_u(v,w,p,q,j)
     return u,v,w
+    
 end
 
 function initial_uvw(::Val{:iszero}, j, p::P, q, x) where {T,X,P<:AbstractPolynomial{T,X}}
@@ -456,6 +473,10 @@ function refine_uvw!(u::P, v::P, w::P, p::P, q::P, atol, rtol) where {T,X,P<:NCP
     JF!(A, h, u, v, w)
     Fmp!(b,  dot(h,u) - β, p, q, uv, uw)
 
+    Δvᵢ = 1:(n+1)
+    Δwᵢ = (n+1+1):(n+1+l+1)
+    Δuᵢ = (n+1+l+1+1):length(Δf)
+
     while ρ₁ > 0.0
 
         # update A, b, then solve A\b
@@ -464,16 +485,23 @@ function refine_uvw!(u::P, v::P, w::P, p::P, q::P, atol, rtol) where {T,X,P<:NCP
         # m + n = degree(p)
         # m + l = degree(q)
         # b has length degree(p)+degree(q) + 3
-        Δv, Δw, Δu = P(Δf[1:(n+1)]), P(Δf[(n+1) .+ (1:l+1)]), P(Δf[n+1+l+1 + 1:end])
+        Δv = view(Δf, Δvᵢ) 
+        Δw = view(Δf, Δwᵢ) 
+        Δu = view(Δf, Δuᵢ)
         
-        uv, uw =  (u-Δu) * (v-Δv),  (u-Δu) * (w-Δw)
+        u .-= Δu
+        v .-= Δv
+        w .-= Δw
+
+        uv = u*v
+        uw = u*w
+        
         ρ₀, ρ′ = ρ₁, residual_error(p, q, uv, uw)
 
         # don't worry about first few, but aftewards each step must be productive
         # though we can have really bad first steps, which we cap
         if  (steps <= Maxᵢ) && (steps <= minᵢ || ρ′ < 0.95 * ρ₀) && (  ρ′ < 100*ρ₁ )
             ρ₁ = ρ′
-            u .-= Δu; v .-= Δv; w .-= Δw
             steps += 1
         else
             break
