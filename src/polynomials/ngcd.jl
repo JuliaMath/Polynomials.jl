@@ -21,7 +21,6 @@ function ngcd(p::P, q::Q,
     R = promote_type(float(T), float(S))
     ps = R[pᵢ for pᵢ ∈ coeffs(p)]
     qs = R[qᵢ for qᵢ ∈ coeffs(q)]
-    chop!(ps); chop!(qs)
     p′ = NGCD.NCPolynomial(ps)
     q′ = NGCD.NCPolynomial(qs)
     if degree(p′) > 5*degree(q′) # heuristic
@@ -45,11 +44,7 @@ using Polynomials, LinearAlgebra
 struct NCPolynomial{T <: Number, X} <: Polynomials.StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
     function NCPolynomial{T, X}(coeffs::AbstractVector{T}) where {T <: Number, X}
-        iszero(coeffs[end]) && throw(ArgumentError("trim your coeffs; $coeffs"))
-        new{T,X}(coeffs)
-    end
-    function NCPolynomial{T,X}(coeffs::AbstractVector{T},::Any) where {T <: Number, X}
-        new{T,X}(coeffs) # no check if two args
+        new{T,X}(coeffs) # NO CHECK on trailing zeros
     end
 end
 
@@ -463,11 +458,11 @@ function refine_uvw!(u::P, v::P, w::P, p::P, q::P, uv, uw, atol, rtol) where {T,
 
     pmul!(uv, u, v)
     pmul!(uw, u, w)
+
     ρ₀, ρ₁ = one(T), residual_error(p,q,uv,uw)
 
     # storage
-
-    b = zeros(T, 1 + length(p) + length(q))     #b = zeros(T, 1 + length(p) + length(q))
+    b = zeros(T, (m+n) + (m+l) + 3) # degree(p) + degree(q) + 3 = 1 + length(p) + length(q))
     Δf = zeros(T, m + n + l + 3)
     steps = 0
 
@@ -641,32 +636,32 @@ C = convmtx(v,n) returns the convolution matrix C for a vector v.
 If q is a column vector of length n, then C*q is the same as conv(v,q). 
 
 """
-function convmtx!(C, v::AbstractPolynomial, n::Int)
-    convmtx(C, coeffs(v), n)
-end
-function convmtx!(C, v::AbstractVector, n::Int)
+function convmtx!(C, v::AbstractVector{T}, n::Int) where T
+
     #   Form C as the Toeplitz matrix 
     #   C = Toeplitz([v; zeros(n-1)],[v[1]; zeros(n-1));  put Toeplitz code inline
+
     nv = length(v)-1
 
     @inbounds for j = 1:n
         C[j:j+nv,j] = v
     end
 
-    return nothing
+    nothing
 
 end
-
-convmtx_size(v::AbstractPolynomial, n) = (n + degree(v), n)
-function convmtx(v::AbstractPolynomial{T}, n::Int) where {T}
-    d = degree(v)
-    C = zeros(T, (n + d, n))
+convmtx_size(v::AbstractVector, n) = (n + length(v) - 1, n)
+function convmtx(v::AbstractVector{T}, n::Int) where {T}
+    C = zeros(T, convmtx_size(v, n)...)
     convmtx!(C, v, n)
     C
 end
-# in noda-sassaki
-function convmtx(v::Matrix{T}, n::Int) where {T}
-    d = length(v)-1
+
+# multroot uses vector/matrix interface.
+convmtx!(C, v::AbstractPolynomial, n::Int) = convmtx!(C, coeffs(v), n)
+convmtx_size(v::AbstractPolynomial, n) = (n + degree(v), n)
+function convmtx(v::AbstractPolynomial{T}, n::Int) where {T}
+    d = degree(v)
     C = zeros(T, (n + d, n))
     convmtx!(C, v, n)
     C
