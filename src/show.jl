@@ -6,14 +6,17 @@ export printpoly
 ## to handle this case we create some functions
 ## which can be modified by users for other Ts
 
+_iszero(x::T) where {T} = (x == zero(T)) === true
+_isone(x::T) where {T} = (x == one(T)) === true
+
 "`hasneg(::T)` attribute is true if: `pj < zero(T)` is defined."
 hasneg(::Type{T}) where {T} = false
 
 "Could value possibly be negative and if so, is it?"
-isneg(pj::T) where {T} = hasneg(T) && pj < zero(T)
+isneg(pj::T) where {T} = hasneg(T) && _isone(sign(-pj))
 
 "Make `pj` positive if it is negative. (Don't call `abs` as that may not be defined, or appropriate.)"
-aspos(pj::T) where {T} = (hasneg(T) && isneg(pj)===true) ? -pj : pj
+aspos(pj::T) where {T} = (hasneg(T) && isneg(pj)) ? -pj : pj
 
 "Should a value of `one(T)` be shown as a coefficient of monomial `x^i`, `i >= 1`? (`1.0x^2` is shown, `1 x^2` is not)"
 showone(::Type{T}) where {T} = true
@@ -177,7 +180,7 @@ end
 function printproductsign(io::IO, pj::T, j, mimetype) where {T}
     j == 0 && return
     multiplication_symbol = showop(mimetype, get(io, :multiplication_symbol,"*"))
-    (showone(T) || pj != one(T)) &&  print(io, multiplication_symbol)
+    (showone(T) || !_isone(pj)) &&  print(io, multiplication_symbol)
 end
 
 function printproductsign(io::IO, pj::T, j, mimetype) where {T<:Complex}

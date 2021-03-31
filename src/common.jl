@@ -413,7 +413,8 @@ end
 Returns the complex conjugate of the polynomial
 """
 LinearAlgebra.conj(p::P) where {P <: AbstractPolynomial} = map(conj, p)
-LinearAlgebra.adjoint(p::P) where {P <: AbstractPolynomial} = map(adjoint, p) 
+LinearAlgebra.adjoint(p::P) where {P <: AbstractPolynomial} = map(adjoint, p)
+LinearAlgebra.adjoint(A::VecOrMat{<:AbstractPolynomial}) = adjoint.(permutedims(A)) # default has indeterminate indeterminate
 LinearAlgebra.transpose(p::AbstractPolynomial) = p
 LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 
@@ -421,9 +422,22 @@ LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 Conversions =#
 Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
 Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
+function Base.convert(::Type{S}, p::P) where {S <: Number,T, P<:Polynomials.AbstractPolynomial{T}}
+    Polynomials.isconstant(p) && return convert(S, Polynomials.constantterm(p))
+    throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
+end
+
+# Methods to ensure that matrices of polynomials behave as desired
 Base.promote_rule(::Type{<:AbstractPolynomial{T}},
-    ::Type{<:AbstractPolynomial{S}},
-) where {T,S} = Polynomial{promote_type(T, S)}
+                  ::Type{<:AbstractPolynomial{S}},
+                  ) where {T,S} = Polynomial{promote_type(T, S)}
+Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
+                                              S,   Q<:AbstractPolynomial{S,X}} =
+                                                   Polynomial{promote_type(T, S),X}
+Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
+                                              S,Y, Q<:AbstractPolynomial{S,Y}} =
+                                                  assert_same_variable(X,Y)
+
 
 #=
 Inspection =#
@@ -452,6 +466,7 @@ function _eltype(P::Type{<:AbstractPolynomial}, p::AbstractPolynomial)
     T
 end
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
+
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
 """
@@ -542,9 +557,6 @@ coeffs(p::AbstractPolynomial) = p.coeffs
 return `p(0)`, the constant term in the standard basis
 """
 constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
-
-
-
 
 """
     degree(::AbstractPolynomial)
@@ -720,8 +732,12 @@ function indeterminate(::Type{P}) where {P <: AbstractPolynomial}
     X == nothing ? :x : X
 end
 indeterminate(p::P) where {P <: AbstractPolynomial} = _indeterminate(P)
-function indeterminate(PP::Type{P}, p::AbstractPolynomial) where {P <: AbstractPolynomial}
-    X = _indeterminate(PP) == nothing ? indeterminate(p) :  _indeterminate(PP)
+function indeterminate(PP::Type{P}, p::AbstractPolynomial{T,Y}) where {P <: AbstractPolynomial, T,Y}
+    X = _indeterminate(PP)
+    X == nothing && return Y
+    assert_same_variable(X,Y)
+    return X
+    #X = _indeterminate(PP) == nothing ? indeterminate(p) :  _indeterminate(PP)
 end
 function indeterminate(PP::Type{P}, x::Symbol) where {P <: AbstractPolynomial}
     X = _indeterminate(PP) == nothing ? x :  _indeterminate(PP)
@@ -776,7 +792,7 @@ julia> p = 100 + 24x - 3x^2
 Polynomial(100 + 24*x - 3*x^2)
 
 julia> roots((x - 3) * (x + 2))
-2-element Array{Float64,1}:
+2-element Vector{Float64}:
  -2.0
   3.0
 
