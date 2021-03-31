@@ -135,12 +135,14 @@ function Base.convert(P::Type{<:Polynomial}, q::LaurentPolynomial)
     P([q[i] for i  in 0:n], indeterminate(q))
 end
 
-# save variable if specified in P
-Base.convert(::Type{P}, p::LaurentPolynomial) where {T, X, P<:LaurentPolynomial{T,X}} = P(p.coeffs, p.m[])
+# need to add p.m[], so abstract.jl method isn't sufficent
 function Base.convert(::Type{P}, p::LaurentPolynomial) where {P<:LaurentPolynomial}
-    T = eltype(P)
-    X = indeterminate(P,p)
-    ⟒(P){T, X}(convert(Vector{T},p.coeffs), p.m[])
+    S′ = _eltype(P)
+    Y′ = _indeterminate(P)
+    S = S′ == nothing ? eltype(p) : S′
+    Y = Y′ == nothing ? indeterminate(p) : Y′
+    isconstant(p) && return LaurentPolynomial{S,Y}(constantterm(p))
+    LaurentPolynomial{S,Y}(p.coeffs, p.m[])
 end
 
 function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {T, P <:LaurentPolynomial{T},S}

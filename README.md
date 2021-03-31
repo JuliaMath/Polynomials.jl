@@ -206,13 +206,18 @@ Polynomial objects also have other methods:
 
 * [MultivariatePolynomials.jl](https://github.com/JuliaAlgebra/MultivariatePolynomials.jl) for multivariate polynomials and moments of commutative or non-commutative variables
 
-* [PolynomialRings](https://github.com/tkluck/PolynomialRings.jl) A library for arithmetic and algebra with multi-variable polynomials.
+* [PolynomialRings.jl](https://github.com/tkluck/PolynomialRings.jl) A library for arithmetic and algebra with multi-variable polynomials.
 
 * [AbstractAlgebra.jl](https://github.com/wbhart/AbstractAlgebra.jl), [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series, [Hecke.jl](https://github.com/thofma/Hecke.jl) for algebraic number theory.
 
-* [CommutativeAlgebra](https://github.com/KlausC/CommutativeRings.jl) the start of a computer algebra system specialized to discrete calculations with support for polynomials.
+* [CommutativeAlgebra.jl](https://github.com/KlausC/CommutativeRings.jl) the start of a computer algebra system specialized to discrete calculations with support for polynomials.
 
 * [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) and [AMRVW](https://github.com/jverzani/AMRVW.jl).
+
+
+* [SpecialPolynomials.jl](https://github.com/jverzani/SpecialPolynomials.jl) A package providing various polynomial types beyond the standard basis polynomials in `Polynomials.jl`. Includes interpolating polynomials, Bernstein polynomials, and classical orthogonal polynomials.
+
+* [ClassicalOrthogonalPolynomials.jl](https://github.com/JuliaApproximation/ClassicalOrthogonalPolynomials.jl) A Julia package for classical orthogonal polynomials and expansions. Includes `chebyshevt`, `chebyshevu`, `legendrep`, `jacobip`, `ultrasphericalc`, `hermiteh`, and `laguerrel`. The same repository includes `FastGaussQuadrature.jl`, `FastTransforms.jl`, and the `ApproxFun` packages.
 
 
 ## Legacy code

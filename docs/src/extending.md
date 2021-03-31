@@ -25,7 +25,6 @@ As always, if the default implementation does not work or there are more efficie
 | `domain` | x | Should return an  [`AbstractInterval`](https://invenia.github.io/Intervals.jl/stable/#Intervals-1) |
 | `vander` | | Required for [`fit`](@ref) |
 | `companion` | | Required for [`roots`](@ref) |
-| `fromroots` | | By default, will form polynomials using `prod(variable(::P) - r)` for reach root `r`|
 | `*(::P, ::P)` | | Multiplication of polynomials |
 | `divrem` | | Required for [`gcd`](@ref)|
 | `one`| | Convenience to find constant in new basis |
@@ -141,7 +140,7 @@ Now `p` is treated as the vector `p.coeffs`, as regards broadcasting, so some th
 
 ```jldoctest AliasPolynomial
 julia> p .+ 2
-4-element Array{Int64,1}:
+4-element Vector{Int64}:
  5
  4
  5
