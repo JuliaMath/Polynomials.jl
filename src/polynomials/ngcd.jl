@@ -21,8 +21,8 @@ function ngcd(p::P, q::Q,
     R = promote_type(float(T), float(S))
     ps = R[pᵢ for pᵢ ∈ coeffs(p)]
     qs = R[qᵢ for qᵢ ∈ coeffs(q)]
-    p′ = NGCD.NCPolynomial(ps)
-    q′ = NGCD.NCPolynomial(qs)
+    p′ = ΠₙPolynomial(ps)
+    q′ = ΠₙPolynomial(qs)
     if degree(p′) > 5*degree(q′) # heuristic
         out = NGCD.ngcd′(p′, q′, args...; kwargs...)
     else
@@ -39,52 +39,7 @@ end
 
 module NGCD
 using Polynomials, LinearAlgebra
-
-# non-copying polynomial for performance reasons
-struct NCPolynomial{T <: Number, X} <: Polynomials.StandardBasisPolynomial{T, X}
-    coeffs::Vector{T}
-    function NCPolynomial{T, X}(coeffs::AbstractVector{T}) where {T <: Number, X}
-        new{T,X}(coeffs) # NO CHECK on trailing zeros
-    end
-end
-
-#NCPolynomial(coeffs::AbstractVector{T}, var=:x) where {T} = NCPolynomial{T,X}(coeffs)
-Polynomials.@register NCPolynomial
-Base.broadcastable(p::NCPolynomial) = p.coeffs;
-Base.ndims(::Type{<:NCPolynomial}) = 1
-Base.copyto!(p::NCPolynomial, x) = copyto!(p.coeffs, x);
-function Base.:*(p::NCPolynomial{T,X}, q::NCPolynomial{T,X}) where {T,X} # allocates less
-    m,n = degree(p), degree(q)
-    cs = zeros(T, m + n + 1)
-    for i ∈ 0:m
-        for j ∈ 0:n
-            k = i + j
-            cs[1+k] += p.coeffs[1+i] * q.coeffs[1+j]
-        end
-    end
-    NCPolynomial{T,X}(cs)
-end
-
-function pmul!(pq, p::NCPolynomial{T,X}, q) where {T,X}
-    m,n = degree(p), degree(q)
-    pq.coeffs .= zero(T)
-    for i ∈ 0:m
-        for j ∈ 0:n
-            k = i + j
-            pq.coeffs[1+k] += p.coeffs[1+i] * q.coeffs[1+j]
-        end
-    end
-    nothing
-    #NCPolynomial{T,X}(cs)
-end
-
-function Base.:-(p::NCPolynomial{T,X}) where {T,X}
-    for i ∈ eachindex(p.coeffs)
-        p.coeffs[i] *= -1
-    end
-    p
-end
-     
+import Polynomials: ΠₙPolynomial
 """
     ngcd′(p,q)
 
@@ -190,8 +145,8 @@ by Zhonggang Zeng;
 Note: Based on work by Andreas Varga; Requires `VERSION >= v"1.2"`.
 
 """
-function ngcd(p::NCPolynomial{T,X},
-              q::NCPolynomial{T,X};
+function ngcd(p::ΠₙPolynomial{T,X},
+              q::ΠₙPolynomial{T,X};
               scale::Bool=false, 
               atol = eps(real(T)),
               rtol = Base.rtoldefault(real(T)),
@@ -288,7 +243,7 @@ function ngcd(p′::P,
               kwargs...
               ) where {T <: AbstractFloat,X, P <: Polynomials.StandardBasisPolynomial{T,X}}
 
-    p,q = NCPolynomial(coeffs(p′)), NCPolynomial(coeffs(q′))
+    p,q = ΠₙPolynomial(coeffs(p′)), ΠₙPolynomial(coeffs(q′))
     m, n = degree.((p,q))
 
     if m < n
@@ -301,7 +256,7 @@ function ngcd(p′::P,
     F = qr(Sⱼ)
     flag, σ, x = smallest_singular_value(F.R, eps(T) *  sqrt(1 + m - k), eps(T))
     if flag != :iszero
-        w, v = NCPolynomial(x[1:n-k+1]), NCPolynomial(-x[n-k+2:end])
+        w, v = ΠₙPolynomial(x[1:n-k+1]), ΠₙPolynomial(-x[n-k+2:end])
         u = solve_u(v,w,p,q,k)
     else
         u,v,w = initial_uvw(Val(flag), k, p, q, nothing)
@@ -400,21 +355,22 @@ end
 ## Refine u,v,w
 
 ## Find u₀,v₀,w₀ from right singular vector
-function initial_uvw(::Val{:ispossible}, j, p::P, q, x) where {T,X,P<:NCPolynomial{T,X}}
+function initial_uvw(::Val{:ispossible}, j, p::P, q, x) where {T,X,P<:ΠₙPolynomial{T,X}}
 
     # Sk*[w;-v] = 0, so pick out v,w after applying permuation
     m,n = degree.((p, q))
     vᵢ = vcat(2:m-n+2, m-n+4:2:length(x))
     wᵢ = m-n+3 > length(x) ? [1] : vcat(1, (m-n+3):2:length(x))
-    v = P(-x[vᵢ])
-    w = P(x[wᵢ])
+    𝑷 = Polynomials.constructorof(P){T,X}
+    v = 𝑷(-x[vᵢ])
+    w = 𝑷(x[wᵢ])
     # p194 3.9 C_k(v) u = p or Ck(w) u = q; this uses 10.2
     u = solve_u(v,w,p,q,j)
     return u,v,w
     
 end
 
-function initial_uvw(::Val{:iszero}, j, p::P, q, x) where {T,X,P<:NCPolynomial{T,X}}
+function initial_uvw(::Val{:iszero}, j, p::P, q, x) where {T,X,P<:ΠₙPolynomial{T,X}}
     
     m,n = degree.((p,q))
     S = [convmtx(p, n-j+1) convmtx(q, m-j+1)]
@@ -430,14 +386,15 @@ function initial_uvw(::Val{:iszero}, j, p::P, q, x) where {T,X,P<:NCPolynomial{T
         x ./= norm(x)
     end
 
-    w = P(x[1:n-j+1])
-    v = P(-x[(n-j+2):end])
+    𝑷 = Polynomials.constructorof(P){T,X}
+    w = 𝑷(x[1:n-j+1])
+    v = 𝑷(-x[(n-j+2):end])
 
     u = solve_u(v,w,p,q,j)
     return u,v,w
 end
 
-function initial_uvw(::Val{:constant}, j, p::P, q, x) where {T,X,P<:NCPolynomial{T,X}}
+function initial_uvw(::Val{:constant}, j, p::P, q, x) where {T,X,P<:ΠₙPolynomial{T,X}}
     u = one(P)
     w = q
     v = p
@@ -454,11 +411,11 @@ end
     
 ## attempt to refine u,v,w
 ## check that [u * v; u * w] ≈ [p; q]
-function refine_uvw!(u::P, v::P, w::P, p::P, q::P, uv, uw, atol, rtol) where {T,X,P<:NCPolynomial{T,X}}
+function refine_uvw!(u::P, v, w, p, q, uv, uw, atol, rtol) where {T,X,N,P<:ΠₙPolynomial{T,X,N}}
     m, n, l =  degree.((u, v, w))
 
-    pmul!(uv, u, v)
-    pmul!(uw, u, w)
+    mul!(uv, u, v)
+    mul!(uw, u, w)
 
     ρ₀, ρ₁ = one(T), residual_error(p,q,uv,uw)
 
@@ -494,8 +451,8 @@ function refine_uvw!(u::P, v::P, w::P, p::P, q::P, uv, uw, atol, rtol) where {T,
         v .-= Δv
         w .-= Δw
 
-        pmul!(uv, u, v)
-        pmul!(uv, u, w)
+        mul!(uv, u, v)
+        mul!(uv, u, w)
         
         ρ₀, ρ′ = ρ₁, residual_error(p, q, uv, uw)
 
@@ -670,10 +627,10 @@ end
 
 
 # solve for u from [v,w] \ [p,q]
-function solve_u(v::P,w,p,q, k) where {T,X,P<:NCPolynomial{T,X}}
+function solve_u(v::P,w,p,q, k) where {T,X,P<:ΠₙPolynomial{T,X}}
     A = [convmtx(v,k+1); convmtx(w, k+1)]
     b = vcat(coeffs(p), coeffs(q))
-    u = P(A \ b)
+    u = ΠₙPolynomial{T,X}(A \ b)
     return u
 end
 
