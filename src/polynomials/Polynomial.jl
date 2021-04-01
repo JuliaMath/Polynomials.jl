@@ -50,6 +50,7 @@ struct Polynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
 end
 
 @register Polynomial
+@register_mutable_arithmetic Polynomial
 
 
 
