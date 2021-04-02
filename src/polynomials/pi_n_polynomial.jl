@@ -5,7 +5,7 @@ A polynomial in Πₘ, meaning we keep n+1 coefficient vectors, though possibly 
 
 
 """
-    ΠₙPolynomial{T,X,N}(coeffs::Vector{T})
+    ΠₙPolynomial{T,X}(coeffs::Vector{T})
 
 Construct a polynomial in `Πₙ`, the collection of polynomials of degree `n` or less using a vector of length `N+1`.
 
@@ -15,10 +15,9 @@ Construct a polynomial in `Πₙ`, the collection of polynomials of degree `n` o
 """
 struct ΠₙPolynomial{T,X} <: Polynomials.StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
-    N::Int
     function ΠₙPolynomial{T, X}(coeffs::AbstractVector{T}) where {T, X}
         N = length(coeffs) - 1
-        new{T,X}(coeffs,N) # NO CHECK on trailing zeros
+        new{T,X}(coeffs) # NO CHECK on trailing zeros
     end
 end
 
@@ -26,24 +25,21 @@ end
 
 Polynomials.@register ΠₙPolynomial
 
+# change broadcast semantics
 Base.broadcastable(p::ΠₙPolynomial) = p.coeffs;
 Base.ndims(::Type{<:ΠₙPolynomial}) = 1
 Base.copyto!(p::ΠₙPolynomial, x) = copyto!(p.coeffs, x);
 
-maxdegree(::Type{P}) where {T,X,N, P<:ΠₙPolynomial{T,X,N}} = N # get N
-maxdegree(p::ΠₙPolynomial{T,X,N}) where {T,X,N} = N
+maxdegree(p::ΠₙPolynomial{T,X}) where {T,X} = length(p)-1
 function Polynomials.degree(p::ΠₙPolynomial)
     i = findlast(!iszero, p.coeffs)
     i == nothing && return -1
     i - 1
 end
 
-
-
 # pre-allocated multiplication
 function LinearAlgebra.mul!(pq, p::ΠₙPolynomial{T,X}, q) where {T,X}
-    #    m,n = degree(p), degree(q)
-    m,n = Πₙ(p), Πₙ(q)    
+    m,n = maxdegree(p), maxdegree(q)    
     pq.coeffs .= zero(T)
     for i ∈ 0:m
         for j ∈ 0:n

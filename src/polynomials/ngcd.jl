@@ -11,6 +11,7 @@ function ngcd(p::P, q::Q,
               args...; kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
                                          S,Y,Q<:StandardBasisPolynomial{S,Y}}
 
+    degree(q) > degree(p) && ngcd(q,p,args...;kwargs...)    
     degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
     degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
     degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
@@ -35,36 +36,12 @@ function ngcd(p::P, q::Q,
     
 end
 
+
 ## ---- the work is done in this module
 
 module NGCD
 using Polynomials, LinearAlgebra
-import Polynomials: ΠₙPolynomial, Πₙ, constructorof
-"""
-    ngcd′(p,q)
-
-When degree(p) ≫ degree(q), this uses an early call to `divrem` to bring about commensurate degrees
-before calling `ngcd`.
-"""
-function ngcd′(p::ΠₙPolynomial{T}, q::ΠₙPolynomial{T};
-               atol = eps(real(float(T))),
-               rtol = atol, 
-               satol= atol,
-               srtol= rtol,
-               kwargs...
-               ) where {T}
-
-
-    a, b = divrem(p,q)
-
-    # check if a=u (p,q) ≈ (aq,q)
-    if isapprox(p, a*q, atol=atol, rtol=rtol)
-        return (u=a, v=p, w=q, θ=NaN, κ=NaN)
-    else
-        ngcd(q, b; atol=100atol, rtol=100rtol, kwargs...)
-    end
-end
-
+import Polynomials: ΠₙPolynomial,maxdegree, constructorof
 
 """
     ngcd(ps::ΠₙPolynomial{T,X}, qs::ΠₙPolynomial{T,X}, [k::Int]; scale::Bool=false, atol=eps(T), rtol=eps(T), satol=atol, srtol=rtol)
@@ -145,8 +122,8 @@ by Zhonggang Zeng;
 Note: Based on work by Andreas Varga; Requires `VERSION >= v"1.2"`.
 
 """
-function ngcd(p::ΠₙPolynomial{T,X,M},
-              q::ΠₙPolynomial{T,X,N};
+function ngcd(p::ΠₙPolynomial{T,X},
+              q::ΠₙPolynomial{T,X};
               scale::Bool=false, 
               atol = eps(real(T)),
               rtol = Base.rtoldefault(real(T)),
@@ -154,18 +131,31 @@ function ngcd(p::ΠₙPolynomial{T,X,M},
               srtol = eps(real(T)),
               verbose=false,
               minⱼ = -1
-              ) where {T <: AbstractFloat, X, M,N}
+              ) where {T <: AbstractFloat, X}
 
-    m,n = M,N
+    m,n = maxdegree(p), maxdegree(q)
     vw = true
+
+    ## check sizes of p,q
     if m < n
-        out = ngcd(q, p; scale=scale,
-                    atol=atol, rtol=rtol, satol=satol,
-                    srtol=srtol,
-                    verbose=verbose, minⱼ = minⱼ)
+        out = ngcd(q, p;
+                   scale=scale,
+                   atol=atol, rtol=rtol, satol=satol,
+                   srtol=srtol,
+                   verbose=verbose, minⱼ = minⱼ)
         # switch v,w
         return (u=out.u, v=out.w, w=out.v, Θ=out.Θ, κ=out.κ)
     end
+    
+    if m > 5n # heuristic for mismatch polys
+        return NGCD.ngcd′(p′, q′,
+                          scale=scale,
+                          atol=atol, rtol=rtol, satol=satol,
+                          srtol=srtol,
+                          verbose=verbose, minⱼ = minⱼ)
+    end
+
+    ## --- begin
     if scale
         p ./= norm(p)
         q ./= norm(q)
@@ -235,6 +225,57 @@ function ngcd(p::ΠₙPolynomial{T,X,M},
     return (u=u, v=v, w=w, Θ=ρ₁, κ=κ)
 
 end
+
+# fix the degree, k
+function ngcd(p′::P,
+              q′::P,
+              k::Int;
+              kwargs...
+              ) where {T <: AbstractFloat,X, P <: ΠₙPolynomial{T,X}}
+
+
+    m::Int, n::Int = maxdegree.((p,q))
+
+    #    u,v,w = initial_uvw(Val(:iszero), k, ps, qs, nothing)
+    Sⱼ = [convmtx(p, n-k+1) convmtx(q, m-k+1)]
+    F = qr(Sⱼ)
+    flag, σ, x = smallest_singular_value(F.R, eps(T) *  sqrt(1 + m - k), eps(T))
+    if flag != :iszero
+        w, v = ΠₙPolynomial(x[1:n-k+1]), ΠₙPolynomial(-x[n-k+2:end])
+        u = solve_u(v,w,p,q,k)
+    else
+        u,v,w = initial_uvw(Val(flag), k, p, q, nothing)
+    end
+    uv, uw = copy(p), copy(q)
+    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, uv, uw, Inf, Inf)
+    return (u=convert(P,u), v=convert(P,v), w=convert(P,w), Θ=ρ₁, κ=κ) 
+
+end
+
+
+"""
+    ngcd′(p,q)
+
+When degree(p) ≫ degree(q), this uses an early call to `divrem` to bring about commensurate degrees
+before calling `ngcd`.
+"""
+function ngcd′(p::ΠₙPolynomial{T}, q::ΠₙPolynomial{T};
+               atol = eps(real(float(T))),
+               rtol = atol, 
+               kwargs...
+               ) where {T}
+
+
+    a, b = divrem(p,q)
+
+    # check if a=u (p,q) ≈ (aq,q)
+    if isapprox(p, a*q, atol=atol, rtol=rtol)
+        return (u=a, v=p, w=q, θ=NaN, κ=NaN)
+    else
+        ngcd(q, b; atol=100atol, rtol=100rtol, kwargs...)
+    end
+end
+
 
 
 ## -----
@@ -325,29 +366,28 @@ end
 ## Refine u,v,w
 
 ## Find u₀,v₀,w₀ from right singular vector
-function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,M,N,
-                                                              P<:ΠₙPolynomial{T,X,M},
-                                                              Q<:ΠₙPolynomial{T,X,N}}
+function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,
+                                                              P<:ΠₙPolynomial{T,X},
+                                                              Q<:ΠₙPolynomial{T,X}}
 
-    # Sk*[w;-v] = 0, so pick out v,w after applying permuation
-    m,n = M,N
+    # Sk*[w;-v] = 0, so pick out v,w after applying permutation
+    m,n = maxdegree(p), maxdegree(q)
     vᵢ = vcat(2:m-n+2, m-n+4:2:length(x))
     wᵢ = m-n+3 > length(x) ? [1] : vcat(1, (m-n+3):2:length(x))
-    𝑷 = constructorof(P){T,X}
     #    v = 𝑷{m-j}(-x[vᵢ])
-    v = ΠₙPolynomial{T,X,m-j}(-x[vᵢ])
-    w = 𝑷{n-j}(x[wᵢ])
+    v = P(-x[vᵢ])
+    w = P(x[wᵢ])
     # p194 3.9 C_k(v) u = p or Ck(w) u = q; this uses 10.2
     u = solve_u(v,w,p,q,j)
     return u,v,w
     
 end
 
-function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,M,N,
-                                                              P<:ΠₙPolynomial{T,X,M},
-                                                              Q<:ΠₙPolynomial{T,X,N}}
+function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,
+                                                              P<:ΠₙPolynomial{T,X},
+                                                              Q<:ΠₙPolynomial{T,X}}
     
-    m,n = M,N
+    m,n = maxdegree(p), maxdegree(q)
     S = [convmtx(p, n-j+1) convmtx(q, m-j+1)]
 
     F = qr(S)
@@ -361,9 +401,8 @@ function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,M,N,
         x ./= norm(x)
     end
 
-    𝑷 = constructorof(P){T,X}
-    w = 𝑷{n-j}(x[1:n-j+1])
-    v = 𝑷{m-j}(-x[(n-j+2):end])
+    w = P(x[1:n-j+1])
+    v = P(-x[(n-j+2):end])
 
     u = solve_u(v,w,p,q,j)
     return u,v,w
@@ -387,12 +426,11 @@ end
 ## attempt to refine u,v,w
 ## check that [u * v; u * w] ≈ [p; q]
 function refine_uvw!(u::U, v::V, w::W, p, q, uv, uw, atol, rtol) where {T,X,
-                                                                        M,N,L,
-                                                                        U<:ΠₙPolynomial{T,X,M},
-                                                                        V<:ΠₙPolynomial{T,X,N},
-                                                                        W<:ΠₙPolynomial{T,X,L}}
+                                                                        U<:ΠₙPolynomial{T,X},
+                                                                        V<:ΠₙPolynomial{T,X},
+                                                                        W<:ΠₙPolynomial{T,X}}
     
-    m,n,l = M, N, L
+    m,n,l = maxdegree(u), maxdegree(v), maxdegree(w)
 
     mul!(uv, u, v)
     mul!(uw, u, w)
@@ -486,7 +524,7 @@ end
 ## Jacobian F(u,v,w) = [p,p'] is J(u,v,w)
 function JF_size(u, v, w)
 
-    m, k, j = degree(u), degree(v), degree(w)
+    m, k, j = length(u)-1, length(v)-1, length(w)-1
     n, l = m + k, m + j
 
     ai, aj = convmtx_size(v, m + 1)
@@ -509,7 +547,7 @@ end
 
 function JF!(M, h,  u::P, v, w) where {T,X,P<:AbstractPolynomial{T,X}}
 
-    du, dv, dw = degree(u), degree(v), degree(w)    
+    du, dv, dw = length(u)-1, length(v)-1, length(w)-1
     m, n = du + dv, du + dw
 
     # JF_size should return these
@@ -597,9 +635,9 @@ end
 
 # multroot uses vector/matrix interface.
 convmtx!(C, v::AbstractPolynomial, n::Int) = convmtx!(C, coeffs(v), n)
-convmtx_size(v::AbstractPolynomial, n) = (n + degree(v), n)
+convmtx_size(v::AbstractPolynomial, n) = (n + length(v)-1, n)
 function convmtx(v::AbstractPolynomial{T}, n::Int) where {T}
-    d = degree(v)
+    d = length(v)-1
     C = zeros(T, (n + d, n))
     convmtx!(C, v, n)
     C
@@ -610,42 +648,11 @@ end
 function solve_u(v::P,w,p,q, k) where {T,X,P<:ΠₙPolynomial{T,X}}
     A = [convmtx(v,k+1); convmtx(w, k+1)]
     b = vcat(coeffs(p), coeffs(q))
-    u = ΠₙPolynomial{T,X,k}(A \ b)
+    u = P(A \ b)
     return u
 end
 
 
-## --- streamline
-# fix the degree, k
-function ngcd(p′::P,
-              q′::P,
-              k::Int;
-              kwargs...
-              ) where {T <: AbstractFloat,X, P <: Polynomials.StandardBasisPolynomial{T,X}}
-
-    p,q = ΠₙPolynomial(coeffs(p′)), ΠₙPolynomial(coeffs(q′))
-    m::Int, n::Int = Πₙ.((p,q))
-
-    if m < n
-        out = ngcd(q, p, k, atol=Inf, rtol=Inf)
-        return (u=out.u, v=out.w, w=out.v, Θ=out.Θ, κ=out.κ)
-    end
-
-    #    u,v,w = initial_uvw(Val(:iszero), k, ps, qs, nothing)
-    Sⱼ = [convmtx(p, n-k+1) convmtx(q, m-k+1)]
-    F = qr(Sⱼ)
-    flag, σ, x = smallest_singular_value(F.R, eps(T) *  sqrt(1 + m - k), eps(T))
-    if flag != :iszero
-        w, v = ΠₙPolynomial(x[1:n-k+1]), ΠₙPolynomial(-x[n-k+2:end])
-        u = solve_u(v,w,p,q,k)
-    else
-        u,v,w = initial_uvw(Val(flag), k, p, q, nothing)
-    end
-    uv, uw = copy(p), copy(q)
-    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, uv, uw, Inf, Inf)
-    return (u=convert(P,u), v=convert(P,v), w=convert(P,w), Θ=ρ₁, κ=κ) 
-
-end
 
 
 
