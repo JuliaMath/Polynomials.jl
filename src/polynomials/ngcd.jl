@@ -43,7 +43,7 @@ end
 
 module NGCD
 using Polynomials, LinearAlgebra
-import Polynomials: ΠₙPolynomial,maxdegree, constructorof
+import Polynomials: ΠₙPolynomial, constructorof
 
 """
     ngcd(ps::ΠₙPolynomial{T,X}, qs::ΠₙPolynomial{T,X}, [k::Int]; scale::Bool=false, atol=eps(T), rtol=eps(T), satol=atol, srtol=rtol)
@@ -136,7 +136,7 @@ function ngcd(p::ΠₙPolynomial{T,X},
               λ = 1
               ) where {T <: AbstractFloat, X}
 
-    m,n = maxdegree(p), maxdegree(q)
+    m,n = length(p)-1, length(q)-1
     @assert m >= n
 
     ## --- begin
@@ -168,7 +168,7 @@ function ngcd(p::ΠₙPolynomial{T,X},
     R[1:nc, 1:nc] .= F.R
 
     j = n  # We count down Sn, S_{n-1}, ..., S₂, S₁
-    
+
     while true
 
         V = view(R, 1:nc, 1:nc)
@@ -219,7 +219,7 @@ function ngcd(p::P,
               kwargs...
               ) where {T <: AbstractFloat,X, P <: ΠₙPolynomial{T,X}}
 
-    m::Int, n::Int = maxdegree.((p,q))
+    m::Int, n::Int = length(p)-1, length(q)-1
 
     #    u,v,w = initial_uvw(Val(:iszero), k, ps, qs, nothing)
     Sⱼ = [convmtx(p, n-k+1) convmtx(q, m-k+1)]
@@ -291,7 +291,7 @@ function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,
                                                               Q<:ΠₙPolynomial{T,X}}
 
     # Sk*[w;-v] = 0, so pick out v,w after applying permutation
-    m,n = maxdegree(p), maxdegree(q)
+    m,n = length(p)-1, length(q)-1
     vᵢ = vcat(2:m-n+2, m-n+4:2:length(x))
     wᵢ = m-n+3 > length(x) ? [1] : vcat(1, (m-n+3):2:length(x))
     #    v = 𝑷{m-j}(-x[vᵢ])
@@ -307,7 +307,7 @@ function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,
                                                               P<:ΠₙPolynomial{T,X},
                                                               Q<:ΠₙPolynomial{T,X}}
     
-    m,n = maxdegree(p), maxdegree(q)
+    m,n = length(p)-1, length(q)-1
     S = [convmtx(p, n-j+1) convmtx(q, m-j+1)]
 
     F = qr(S)
@@ -359,7 +359,7 @@ function refine_uvw!(u::U, v::V, w::W, p, q, uv, uw, atol, rtol) where {T,X,
                                                                         V<:ΠₙPolynomial{T,X},
                                                                         W<:ΠₙPolynomial{T,X}}
     
-    m,n,l = maxdegree(u), maxdegree(v), maxdegree(w)
+    m,n,l = length(u)-1, length(v)-1, length(w)-1
 
     mul!(uv, u, v)
     mul!(uw, u, w)
@@ -461,7 +461,7 @@ function extend_QR!(Q,R, nr, nc, A0)
     n = nc-2 
     m = nr - 1
     k,l = size(A0)
-    
+
     # add two columns to R
     # need to apply Q to top part of new columns
     R[nr-k+1:nr, (nc-1):nc] = A0
@@ -469,22 +469,22 @@ function extend_QR!(Q,R, nr, nc, A0)
 
     # extend Q with row and column with identity 
     Q[nr,nr] = 1
-    
+
     # Make R upper triangular using Givens rotations
     for j in nr-1:-1:nc-1
         gj,_ = givens(R[j,nc-1], R[j+1,nc-1], j, j+1)
         rmul!(Q, gj')
         lmul!(gj, R)
     end
-    
+
     for j in nr-1:-1:nc
         gj,_ = givens(R[j,nc], R[j+1,nc], j, j+1)
         rmul!(Q, gj')
         lmul!(gj, R)
     end
-    
+
     return nothing
-    
+
 end
 
 

@@ -1,14 +1,9 @@
-""" 
-
-A polynomial in Πₘ, meaning we keep n+1 coefficient vectors, though possibly the tail ones are zeros.
-"""
-
-
 """
     ΠₙPolynomial{T,X}(coeffs::Vector{T})
 
 Construct a polynomial in `Πₙ`, the collection of polynomials of degree `n` or less using a vector of length `N+1`.
 
+* Unlike other polynomial types, this type allows trailing zeros in the coefficient vector
 * Unlike other polynomial types, this does not copy the coefficients on construction
 * Unlike other polynomial types, this type broadcasts like a vector for in-place vector operations (scalare multiplication, polynomial addition/subtraction of the same size)
 
@@ -30,7 +25,6 @@ Base.broadcastable(p::ΠₙPolynomial) = p.coeffs;
 Base.ndims(::Type{<:ΠₙPolynomial}) = 1
 Base.copyto!(p::ΠₙPolynomial, x) = copyto!(p.coeffs, x);
 
-maxdegree(p::ΠₙPolynomial{T,X}) where {T,X} = length(p)-1
 function Polynomials.degree(p::ΠₙPolynomial)
     i = findlast(!iszero, p.coeffs)
     i == nothing && return -1
@@ -39,7 +33,7 @@ end
 
 # pre-allocated multiplication
 function LinearAlgebra.mul!(pq, p::ΠₙPolynomial{T,X}, q) where {T,X}
-    m,n = maxdegree(p), maxdegree(q)    
+    m,n = length(p)-1, length(q)-1
     pq.coeffs .= zero(T)
     for i ∈ 0:m
         for j ∈ 0:n

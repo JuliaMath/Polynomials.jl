@@ -1030,7 +1030,7 @@ end
         out1 = Polynomials.ngcd(p,q,1)
         out3 = Polynomials.ngcd(p,q,3)
         @test out.Θ <= out1.Θ
-        @test out.Θ <= out3.Θ        
+        @test out.Θ <= out3.Θ
     end
 end
 
