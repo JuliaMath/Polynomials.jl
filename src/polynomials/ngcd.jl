@@ -11,24 +11,26 @@ function ngcd(p::P, q::Q,
               args...; kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
                                          S,Y,Q<:StandardBasisPolynomial{S,Y}}
 
-    degree(q) > degree(p) && ngcd(q,p,args...;kwargs...)    
+    degree(q) > degree(p) && return ngcd(q,p,args...;kwargs...)
+    if degree(p) > 5*(1+degree(q))
+        a,b = divrem(p,q)
+        return ngcd(q,b, args...; λ=100, kwargs...)
+    end
+    # easy cases
     degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
     degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
     degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
     degree(q) == 0 && return (u=one(p), v=p, w=q,       θ=NaN, κ=NaN)
-    p == q         && return (u=p,v=one(p),  w=one(p),  θ=NaN, κ=NaN)
+    p ≈ q          && return (u=p,v=one(p),  w=one(p),  θ=NaN, κ=NaN)
     Polynomials.assert_same_variable(p,q)
-    
+
     R = promote_type(float(T), float(S))
     ps = R[pᵢ for pᵢ ∈ coeffs(p)]
     qs = R[qᵢ for qᵢ ∈ coeffs(q)]
     p′ = ΠₙPolynomial(ps)
     q′ = ΠₙPolynomial(qs)
-    if degree(p′) > 5*degree(q′) # heuristic
-        out = NGCD.ngcd′(p′, q′, args...; kwargs...)
-    else
-        out = NGCD.ngcd(p′, q′; kwargs...)
-    end
+
+    out = NGCD.ngcd(p′, q′, args...; kwargs...)
 
     𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X} 
     u,v,w = convert.(𝑷, (out.u,out.v,out.w))
@@ -70,11 +72,11 @@ Suppose ``(p,q)`` is an ``ϵ`` pertubation from ``(p̂,q̂)`` where ``(p̂,q̂)`
 
 The Zeng algorithm proposes a degree for ``u`` and *if* a triple ``(u,v,w)`` with ``u`` of degree ``k`` and ``(u⋅v, u⋅w)`` in ``Ρᵏmn`` can be found satisfying ``‖ (u⋅v, u⋅w) - (p,q) ‖ < ϵ`` then ``(u,v,w)`` is returned; otherwise the proposed degree is reduced and the process repeats. If not terminated, at degree ``0`` a constant gcd is returned.
 
-The initial proposed degree is the first ``j``,  ``j=min(m,n):-1:1``, where ``Sⱼ`` is believed to have a singular value of ``0`` (``Sⱼ`` being related to the Sylvester matrix of `ps` and `qs`). The verification of the proposed degree is done using a Gauss-Newton iteration scheme holding the degree of ``u`` constant.
+The initial proposed degree is the first ``j``,  ``j=min(m,n):-1:1``, where ``Sⱼ`` is believed to have a singular value of ``0`` (``Sⱼ`` being related to the Sylvester matrix of `ps` and `qs`). The verification of the proposed degree is done using a Gauss-Newton iteration scheme holding the degree of ``u`` constant. 
 
 ## Scaling:
 
-If `scale=true` (the default when a polynomial norm is large), the gcd of ``p/‖p‖`` and ``q/‖q‖`` is identified. Scaling can reduce the condition numbers significantly.
+If `scale=true` the gcd of ``p/‖p‖`` and ``q/‖q‖`` is identified. Scaling can reduce the condition numbers significantly.
 
 ## Tolerances:
 
@@ -130,37 +132,21 @@ function ngcd(p::ΠₙPolynomial{T,X},
               satol = eps(real(T))^(5/6),
               srtol = eps(real(T)),
               verbose=false,
-              minⱼ = -1
+              minⱼ = -1,
+              λ = 1
               ) where {T <: AbstractFloat, X}
 
     m,n = maxdegree(p), maxdegree(q)
-    vw = true
-
-    ## check sizes of p,q
-    if m < n
-        out = ngcd(q, p;
-                   scale=scale,
-                   atol=atol, rtol=rtol, satol=satol,
-                   srtol=srtol,
-                   verbose=verbose, minⱼ = minⱼ)
-        # switch v,w
-        return (u=out.u, v=out.w, w=out.v, Θ=out.Θ, κ=out.κ)
-    end
-    
-    if m > 5n # heuristic for mismatch polys
-        return NGCD.ngcd′(p′, q′,
-                          scale=scale,
-                          atol=atol, rtol=rtol, satol=satol,
-                          srtol=srtol,
-                          verbose=verbose, minⱼ = minⱼ)
-    end
+    @assert m >= n
 
     ## --- begin
     if scale
         p ./= norm(p)
         q ./= norm(q)
     end
-    
+    atol *= λ
+    rtol *= λ
+
     # storage
     A0 = zeros(T, m+1, 2)
     A0[:,1] = coeffs(p)
@@ -176,13 +162,13 @@ function ngcd(p::ΠₙPolynomial{T,X},
     
     local x::Vector{T}
 
-    j = n  # We count down Sn, S_{n-1}, ..., S₂, S₁
-    
     F = qr(Sₓ) 
     nr, nc = size(Sₓ) # m+1, m-n+2
     Q[1:nr, 1:nr] .= F.Q
     R[1:nc, 1:nc] .= F.R
 
+    j = n  # We count down Sn, S_{n-1}, ..., S₂, S₁
+    
     while true
 
         V = view(R, 1:nc, 1:nc)
@@ -227,12 +213,11 @@ function ngcd(p::ΠₙPolynomial{T,X},
 end
 
 # fix the degree, k
-function ngcd(p′::P,
-              q′::P,
+function ngcd(p::P,
+              q::P,
               k::Int;
               kwargs...
               ) where {T <: AbstractFloat,X, P <: ΠₙPolynomial{T,X}}
-
 
     m::Int, n::Int = maxdegree.((p,q))
 
@@ -240,42 +225,12 @@ function ngcd(p′::P,
     Sⱼ = [convmtx(p, n-k+1) convmtx(q, m-k+1)]
     F = qr(Sⱼ)
     flag, σ, x = smallest_singular_value(F.R, eps(T) *  sqrt(1 + m - k), eps(T))
-    if flag != :iszero
-        w, v = ΠₙPolynomial(x[1:n-k+1]), ΠₙPolynomial(-x[n-k+2:end])
-        u = solve_u(v,w,p,q,k)
-    else
-        u,v,w = initial_uvw(Val(flag), k, p, q, nothing)
-    end
-    uv, uw = copy(p), copy(q)
-    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, uv, uw, Inf, Inf)
-    return (u=convert(P,u), v=convert(P,v), w=convert(P,w), Θ=ρ₁, κ=κ) 
+    u,v,w = initial_uvw(Val(:k), flag, k, p, q, x)
+    flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, copy(p), copy(q), copy(p), copy(q),
+                                 T(Inf), T(Inf)) # no tolerances
+    return (u=u, v=v, w=w, Θ=ρ₁, κ=κ) 
 
 end
-
-
-"""
-    ngcd′(p,q)
-
-When degree(p) ≫ degree(q), this uses an early call to `divrem` to bring about commensurate degrees
-before calling `ngcd`.
-"""
-function ngcd′(p::ΠₙPolynomial{T}, q::ΠₙPolynomial{T};
-               atol = eps(real(float(T))),
-               rtol = atol, 
-               kwargs...
-               ) where {T}
-
-
-    a, b = divrem(p,q)
-
-    # check if a=u (p,q) ≈ (aq,q)
-    if isapprox(p, a*q, atol=atol, rtol=rtol)
-        return (u=a, v=p, w=q, θ=NaN, κ=NaN)
-    else
-        ngcd(q, b; atol=100atol, rtol=100rtol, kwargs...)
-    end
-end
-
 
 
 ## -----
@@ -326,41 +281,6 @@ function smallest_singular_value(V::AbstractArray{T,2},
     
 end
 
-
-# extend QR to next size
-# Q gets a 1 in nc,nc, 0s should be elswhere
-function extend_QR!(Q,R, nr, nc, A0)
-
-
-    #old Q is m x m, old R is n x n; we add to these
-    n = nc-2 
-    m = nr - 1
-    k,l = size(A0)
-    
-    # add two columns to R
-    # need to apply Q to top part of new columns
-    R[nr-k+1:nr, (nc-1):nc] = A0
-    R[1:nr-1, (nc-1):nc] = (view(Q, 1:nr-1, 1:nr-1))' *  R[1:nr-1, (nc-1):nc]
-
-    # extend Q with row and column with identity 
-    Q[nr,nr] = 1
-    
-    # Make R upper triangular using Givens rotations
-    for j in nr-1:-1:nc-1
-        gj,_ = givens(R[j,nc-1], R[j+1,nc-1], j, j+1)
-        rmul!(Q, gj')
-        lmul!(gj, R)
-    end
-    
-    for j in nr-1:-1:nc
-        gj,_ = givens(R[j,nc], R[j+1,nc], j, j+1)
-        rmul!(Q, gj')
-        lmul!(gj, R)
-    end
-    
-    return nothing
-    
-end
 
 ## --------------------------------------------------
 ## Refine u,v,w
@@ -414,6 +334,15 @@ function initial_uvw(::Val{:constant}, j, p::P, q, x) where {T,X,P<:ΠₙPolynom
     v = p
     u,v,w
 end
+
+function initial_uvw(::Val{:k}, flag, k, p::P, q, x) where {T,X,P<:ΠₙPolynomial{T,X}}
+    flag == :iszero && return initial_uvw(Val(flag), k, p, q, nothing)
+    n = length(q)-1
+    w, v = P(x[1:n-k+1]), P(-x[n-k+2:end])
+    u = solve_u(v,w,p,q,k)
+    return (u,v,w)
+end
+    
 
 
 # find estimate for σ₂, used in a condition number (κ = 1/σ)
@@ -505,6 +434,8 @@ function refine_uvw!(u::U, v::V, w::W, p, q, uv, uw, atol, rtol) where {T,X,
     
 end
 
+## ---- QR factorization
+
 function qrsolve!(y::Vector{T}, A, b) where {T}
     y .= qr(A) \ b
 end
@@ -520,6 +451,42 @@ function qrsolve!(y::Vector{T}, A, b) where {T <: Float64}
     LinearAlgebra.LAPACK.ormqr!('L', tran, A, τ, view(b,:,1:1))
     y .= UpperTriangular(triu(A[1:n,:]))\b[1:n]
 end
+
+# extend QR to next size
+# Q gets a 1 in nc,nc, 0s should be elswhere
+function extend_QR!(Q,R, nr, nc, A0)
+
+
+    #old Q is m x m, old R is n x n; we add to these
+    n = nc-2 
+    m = nr - 1
+    k,l = size(A0)
+    
+    # add two columns to R
+    # need to apply Q to top part of new columns
+    R[nr-k+1:nr, (nc-1):nc] = A0
+    R[1:nr-1, (nc-1):nc] = (view(Q, 1:nr-1, 1:nr-1))' *  R[1:nr-1, (nc-1):nc]
+
+    # extend Q with row and column with identity 
+    Q[nr,nr] = 1
+    
+    # Make R upper triangular using Givens rotations
+    for j in nr-1:-1:nc-1
+        gj,_ = givens(R[j,nc-1], R[j+1,nc-1], j, j+1)
+        rmul!(Q, gj')
+        lmul!(gj, R)
+    end
+    
+    for j in nr-1:-1:nc
+        gj,_ = givens(R[j,nc], R[j+1,nc], j, j+1)
+        rmul!(Q, gj')
+        lmul!(gj, R)
+    end
+    
+    return nothing
+    
+end
+
 
 ## Jacobian F(u,v,w) = [p,p'] is J(u,v,w)
 function JF_size(u, v, w)
@@ -597,10 +564,7 @@ end
 
 
 
-## --------------------------------------------------
-## utils
-
-
+## ---- utils
 
 """
     convmtx(v, n::Int)
@@ -651,10 +615,6 @@ function solve_u(v::P,w,p,q, k) where {T,X,P<:ΠₙPolynomial{T,X}}
     u = P(A \ b)
     return u
 end
-
-
-
-
 
 end
 
