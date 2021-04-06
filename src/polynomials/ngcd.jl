@@ -27,8 +27,8 @@ function ngcd(p::P, q::Q,
     R = promote_type(float(T), float(S))
     ps = R[pᵢ for pᵢ ∈ coeffs(p)]
     qs = R[qᵢ for qᵢ ∈ coeffs(q)]
-    p′ = ΠₙPolynomial(ps)
-    q′ = ΠₙPolynomial(qs)
+    p′ = PnPolynomial(ps)
+    q′ = PnPolynomial(qs)
 
     out = NGCD.ngcd(p′, q′, args...; kwargs...)
 
@@ -43,10 +43,10 @@ end
 
 module NGCD
 using Polynomials, LinearAlgebra
-import Polynomials: ΠₙPolynomial, constructorof
+import Polynomials: PnPolynomial, constructorof
 
 """
-    ngcd(ps::ΠₙPolynomial{T,X}, qs::ΠₙPolynomial{T,X}, [k::Int]; scale::Bool=false, atol=eps(T), rtol=eps(T), satol=atol, srtol=rtol)
+    ngcd(ps::PnPolynomial{T,X}, qs::PnPolynomial{T,X}, [k::Int]; scale::Bool=false, atol=eps(T), rtol=eps(T), satol=atol, srtol=rtol)
 
 Return `u, v, w, Θ, κ` where ``u⋅v ≈ ps`` and ``u⋅w ≈ qs`` (polynomial multiplication); `Θ` (`\\Theta[tab]`) is the residual error (``‖ [u⋅v,u⋅w] - [ps,qs] ‖``); and `κ` (`\\kappa[tab]`) is the numerical gcd condition number estimate. When `scale=true`, ``u⋅v ≈ ps/‖ps‖`` and ``u⋅w ≈ qs/‖qs‖``
 
@@ -124,8 +124,8 @@ by Zhonggang Zeng;
 Note: Based on work by Andreas Varga; Requires `VERSION >= v"1.2"`.
 
 """
-function ngcd(p::ΠₙPolynomial{T,X},
-              q::ΠₙPolynomial{T,X};
+function ngcd(p::PnPolynomial{T,X},
+              q::PnPolynomial{T,X};
               scale::Bool=false, 
               atol = eps(real(T)),
               rtol = Base.rtoldefault(real(T)),
@@ -217,7 +217,7 @@ function ngcd(p::P,
               q::P,
               k::Int;
               kwargs...
-              ) where {T <: AbstractFloat,X, P <: ΠₙPolynomial{T,X}}
+              ) where {T <: AbstractFloat,X, P <: PnPolynomial{T,X}}
 
     m::Int, n::Int = length(p)-1, length(q)-1
 
@@ -287,8 +287,8 @@ end
 
 ## Find u₀,v₀,w₀ from right singular vector
 function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,
-                                                              P<:ΠₙPolynomial{T,X},
-                                                              Q<:ΠₙPolynomial{T,X}}
+                                                              P<:PnPolynomial{T,X},
+                                                              Q<:PnPolynomial{T,X}}
 
     # Sk*[w;-v] = 0, so pick out v,w after applying permutation
     m,n = length(p)-1, length(q)-1
@@ -304,8 +304,8 @@ function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,
 end
 
 function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,
-                                                              P<:ΠₙPolynomial{T,X},
-                                                              Q<:ΠₙPolynomial{T,X}}
+                                                              P<:PnPolynomial{T,X},
+                                                              Q<:PnPolynomial{T,X}}
     
     m,n = length(p)-1, length(q)-1
     S = [convmtx(p, n-j+1) convmtx(q, m-j+1)]
@@ -328,14 +328,14 @@ function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,
     return u,v,w
 end
 
-function initial_uvw(::Val{:constant}, j, p::P, q, x) where {T,X,P<:ΠₙPolynomial{T,X}}
+function initial_uvw(::Val{:constant}, j, p::P, q, x) where {T,X,P<:PnPolynomial{T,X}}
     u = one(P)
     w = q
     v = p
     u,v,w
 end
 
-function initial_uvw(::Val{:k}, flag, k, p::P, q, x) where {T,X,P<:ΠₙPolynomial{T,X}}
+function initial_uvw(::Val{:k}, flag, k, p::P, q, x) where {T,X,P<:PnPolynomial{T,X}}
     flag == :iszero && return initial_uvw(Val(flag), k, p, q, nothing)
     n = length(q)-1
     w, v = P(x[1:n-k+1]), P(-x[n-k+2:end])
@@ -355,9 +355,9 @@ end
 ## attempt to refine u,v,w
 ## check that [u * v; u * w] ≈ [p; q]
 function refine_uvw!(u::U, v::V, w::W, p, q, uv, uw, atol, rtol) where {T,X,
-                                                                        U<:ΠₙPolynomial{T,X},
-                                                                        V<:ΠₙPolynomial{T,X},
-                                                                        W<:ΠₙPolynomial{T,X}}
+                                                                        U<:PnPolynomial{T,X},
+                                                                        V<:PnPolynomial{T,X},
+                                                                        W<:PnPolynomial{T,X}}
     
     m,n,l = length(u)-1, length(v)-1, length(w)-1
 
@@ -609,7 +609,7 @@ end
 
 
 # solve for u from [v,w] \ [p,q]
-function solve_u(v::P,w,p,q, k) where {T,X,P<:ΠₙPolynomial{T,X}}
+function solve_u(v::P,w,p,q, k) where {T,X,P<:PnPolynomial{T,X}}
     A = [convmtx(v,k+1); convmtx(w, k+1)]
     b = vcat(coeffs(p), coeffs(q))
     u = P(A \ b)
