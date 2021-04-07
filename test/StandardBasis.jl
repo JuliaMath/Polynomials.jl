@@ -1022,6 +1022,15 @@ end
             q = (x-1) * (x-2) * (x-4)
             @test degree(gcd(p,q, method=:numerical)) == 2
         end
+
+        # check for fixed k
+        p = fromroots(P, [2,3,4])
+        q = fromroots(P, [3,4,5])
+        out = Polynomials.ngcd(p,q)
+        out1 = Polynomials.ngcd(p,q,1)
+        out3 = Polynomials.ngcd(p,q,3)
+        @test out.Θ <= out1.Θ
+        @test out.Θ <= out3.Θ
     end
 end
 
