@@ -1031,6 +1031,13 @@ end
         out3 = Polynomials.ngcd(p,q,3)
         @test out.Θ <= out1.Θ
         @test out.Θ <= out3.Θ
+
+        # check for correct output if degree p < degree q
+        x = variable(P{Float64})
+        p = -18.0 - 37.0*x - 54.0*x^2 - 36.0*x^3 - 16.0*x^4
+        q = 2.0 + 5.0*x + 8.0*x^2 + 7.0*x^3 + 4.0*x^4 + 1.0*x^5
+        out = Polynomials.ngcd(p,q)
+        @test out.u * out.v ≈ p
     end
 end
 
