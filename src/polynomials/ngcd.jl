@@ -11,7 +11,10 @@ function ngcd(p::P, q::Q,
               args...; kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
                                          S,Y,Q<:StandardBasisPolynomial{S,Y}}
 
-    degree(q) > degree(p) && return ngcd(q,p,args...;kwargs...)
+    if (degree(q) > degree(p))
+        out =  ngcd(q,p,args...;kwargs...)
+        return (u=out.u,v=out.w,w=out.v, Θ=out.Θ, κ = out.κ)
+    end
     if degree(p) > 5*(1+degree(q))
         a,b = divrem(p,q)
         return ngcd(q,b, args...; λ=100, kwargs...)
