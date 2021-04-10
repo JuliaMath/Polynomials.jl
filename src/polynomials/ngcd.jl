@@ -137,7 +137,7 @@ function ngcd(p::PnPolynomial{T,X},
               verbose=false,
               minⱼ = -1,
               λ = 1
-              ) where {T <: AbstractFloat, X}
+              ) where {T, X}
 
     m,n = length(p)-1, length(q)-1
     @assert m >= n
@@ -555,12 +555,12 @@ end
 
 
 function residual_error(p::P,q,uv,uw) where {T,X,P<:AbstractPolynomial{T,X}}
-    tot = zero(T)
+    tot = zero(real(T))
     for (pᵢ, uvᵢ) in zip(p,uv)
-        tot += (pᵢ-uvᵢ)^2
+        tot += norm(pᵢ-uvᵢ)^2
     end
     for (qᵢ, uwᵢ) in zip(q, uw)
-        tot += (qᵢ-uwᵢ)^2
+        tot += norm(qᵢ-uwᵢ)^2
     end
     sqrt(tot)
 end
