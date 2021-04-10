@@ -11,7 +11,10 @@ function ngcd(p::P, q::Q,
               args...; kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
                                          S,Y,Q<:StandardBasisPolynomial{S,Y}}
 
-    degree(q) > degree(p) && return ngcd(q,p,args...;kwargs...)
+    if (degree(q) > degree(p))
+        u,w,v,Θ,κ =  ngcd(q,p,args...;kwargs...)
+        return (u=u,v=v,w=w, Θ=Θ, κ=κ)
+    end
     if degree(p) > 5*(1+degree(q))
         a,b = divrem(p,q)
         return ngcd(q,b, args...; λ=100, kwargs...)
@@ -134,7 +137,7 @@ function ngcd(p::PnPolynomial{T,X},
               verbose=false,
               minⱼ = -1,
               λ = 1
-              ) where {T <: AbstractFloat, X}
+              ) where {T, X}
 
     m,n = length(p)-1, length(q)-1
     @assert m >= n
@@ -552,12 +555,12 @@ end
 
 
 function residual_error(p::P,q,uv,uw) where {T,X,P<:AbstractPolynomial{T,X}}
-    tot = zero(T)
+    tot = zero(real(T))
     for (pᵢ, uvᵢ) in zip(p,uv)
-        tot += (pᵢ-uvᵢ)^2
+        tot += norm(pᵢ-uvᵢ)^2
     end
     for (qᵢ, uwᵢ) in zip(q, uw)
-        tot += (qᵢ-uwᵢ)^2
+        tot += norm(qᵢ-uwᵢ)^2
     end
     sqrt(tot)
 end

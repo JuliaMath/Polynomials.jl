@@ -79,12 +79,16 @@ is misidentified.
 function multroot(p::Polynomials.StandardBasisPolynomial{T}; verbose=false,
                   kwargs...) where {T}
 
+    # degenerate case, all zeros
+    if findfirst(!iszero, coeffs(p)) == length(coeffs(p))
+        return (values=zeros(T,1), multiplicities=nz, κ=NaN, ϵ=NaN)
+    end
+
     z, l = pejorative_manifold(p; kwargs...)
     z̃ = pejorative_root(p, z, l)
     κ, ϵ = stats(p, z̃, l)
 
     verbose && show_stats(κ, ϵ)
-
     (values = z̃, multiplicities = l, κ = κ, ϵ = ϵ)
 
 end
