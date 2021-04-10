@@ -78,13 +78,22 @@ is misidentified.
 """
 function multroot(p::Polynomials.StandardBasisPolynomial{T}; verbose=false,
                   kwargs...) where {T}
+    # leading zeros
+    nz = findfirst(!iszero, coeffs(p)) - 1
+    p′ = Polynomial(p[nz:end])
+    if degree(p′) <= 0
+        return (values=zeros(T,1), multiplicities=nz, κ=NaN, ϵ=NaN)
+    end
 
-    z, l = pejorative_manifold(p; kwargs...)
-    z̃ = pejorative_root(p, z, l)
-    κ, ϵ = stats(p, z̃, l)
+    z, l = pejorative_manifold(p′; kwargs...)
+    z̃ = pejorative_root(p′, z, l)
+    κ, ϵ = stats(p′, z̃, l)
 
     verbose && show_stats(κ, ϵ)
-
+    if nz > 0
+        push!(z̃, zero(T))
+        push!(l, nz)
+    end
     (values = z̃, multiplicities = l, κ = κ, ϵ = ϵ)
 
 end
