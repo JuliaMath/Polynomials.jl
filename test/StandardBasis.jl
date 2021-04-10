@@ -576,6 +576,12 @@ end
             # with right manifold it does yield a small forward error
             zs′ = Polynomials.Multroot.pejorative_root(q, rts .+ 1e-4*rand(3), n*ls)
             @test prod(Polynomials.Multroot.stats(q, zs′, n*ls))  < sqrt(eps())
+            # bug with monomial
+            T = Float64
+            x = variable(P{T})
+            out = Polynomials.Multroot.multroot(x^3)
+            @test out.values == zeros(T,1)
+            @test out.multiplicities == [3]
         end
     end
 end

@@ -80,8 +80,8 @@ function multroot(p::Polynomials.StandardBasisPolynomial{T}; verbose=false,
                   kwargs...) where {T}
 
     # degenerate case, all zeros
-    if findfirst(!iszero, coeffs(p)) == length(coeffs(p))
-        return (values=zeros(T,1), multiplicities=nz, κ=NaN, ϵ=NaN)
+    if (nz = findfirst(!iszero, coeffs(p))) == length(coeffs(p))
+        return (values=zeros(T,1), multiplicities=[nz-1], κ=NaN, ϵ=NaN)
     end
 
     z, l = pejorative_manifold(p; kwargs...)
