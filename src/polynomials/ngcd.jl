@@ -12,8 +12,8 @@ function ngcd(p::P, q::Q,
                                          S,Y,Q<:StandardBasisPolynomial{S,Y}}
 
     if (degree(q) > degree(p))
-        out =  ngcd(q,p,args...;kwargs...)
-        return (u=out.u,v=out.w,w=out.v, Θ=out.Θ, κ = out.κ)
+        u,w,v,Θ,κ =  ngcd(q,p,args...;kwargs...)
+        return (u=u,v=v,w=w, Θ=Θ, κ=κ)
     end
     if degree(p) > 5*(1+degree(q))
         a,b = divrem(p,q)
