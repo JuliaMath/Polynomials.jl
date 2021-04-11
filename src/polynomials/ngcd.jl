@@ -30,13 +30,19 @@ function ngcd(p::P, q::Q,
     R = promote_type(float(T), float(S))
     ps = R[pᵢ for pᵢ ∈ coeffs(p)]
     qs = R[qᵢ for qᵢ ∈ coeffs(q)]
-    p′ = PnPolynomial(ps)
-    q′ = PnPolynomial(qs)
+
+    # cancel zeros
+    nz = min(findfirst(!iszero, ps), findfirst(!iszero, qs))
+    p′ = PnPolynomial(ps[nz:end])
+    q′ = PnPolynomial(qs[nz:end])
 
     out = NGCD.ngcd(p′, q′, args...; kwargs...)
 
     𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X} 
     u,v,w = convert.(𝑷, (out.u,out.v,out.w))
+    if nz > 1
+        u *= variable(u)^(nz-1)
+    end
     (u=u,v=v,w=w, Θ=out.Θ, κ = out.κ)
     
 end
