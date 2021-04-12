@@ -39,16 +39,16 @@ julia> derivative(pq)
 
 
 """
-struct RationalFunction{T, X, P<:Polynomials.AbstractPolynomial{T,X}} <: AbstractRationalFunction{T,X,P}
+struct RationalFunction{T, X, P<:AbstractPolynomial{T,X}} <: AbstractRationalFunction{T,X,P}
     num::P
     den::P
-    function RationalFunction(p::P, q::P) where {T,X, P<:Polynomials.AbstractPolynomial{T,X}}
+    function RationalFunction(p::P, q::P) where {T,X, P<:AbstractPolynomial{T,X}}
         new{T,X,P}(p, q)
     end
-    function RationalFunction(p::P, q::T) where {T,X, P<:Polynomials.AbstractPolynomial{T,X}}
+    function RationalFunction(p::P, q::T) where {T,X, P<:AbstractPolynomial{T,X}}
         new{T,X,P}(p, q*one(P))
     end
-    function RationalFunction(p::T, q::Q) where {T,X, Q<:Polynomials.AbstractPolynomial{T,X}}
+    function RationalFunction(p::T, q::Q) where {T,X, Q<:AbstractPolynomial{T,X}}
         new{T,X,Q}(p*one(Q), q)
     end
 end
@@ -60,7 +60,7 @@ RationalFunction(p::ImmutablePolynomial,q::ImmutablePolynomial) = throw(Argument
 (pq::RationalFunction)(x) = eval_rationalfunction(x, pq)
 
 # Look like rational numbers
-function Base.://(p::Polynomials.AbstractPolynomial,q::Polynomials.AbstractPolynomial)
+function Base.://(p::AbstractPolynomial,q::AbstractPolynomial)
     RationalFunction(p,q)
 end
 

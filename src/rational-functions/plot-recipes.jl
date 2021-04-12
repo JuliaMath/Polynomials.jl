@@ -27,10 +27,10 @@ function rational_function_trim(pq, a, b, xlims, ylims)
     dpq = derivative(p//q)
     p′,q′ = lowest_terms(dpq)
 
-    λs = Polynomials.Multroot.multroot(q).values
+    λs = Multroot.multroot(q).values
     λs = isempty(λs) ? λs : real.(filter(isapproxreal, λs))
 
-    cps = Polynomials.Multroot.multroot(p′).values
+    cps = Multroot.multroot(p′).values
     cps = isempty(cps) ? cps : real.(filter(isapproxreal, cps))
     cps = isempty(cps) ? cps : filter(!toobig(pq), cps)
 
