@@ -1,6 +1,16 @@
+## An example subtype of AbstractRationalFunction
+## that might prove useful as a guide
+module TransferFunction
 # https://github.com/andreasvarga/DescriptorSystems.jl/blob/main/src/types/RationalFunction.jl
 
-struct RationalTransferFunction{T,X,P<:Polynomials.AbstractPolynomial{T,X},Ts} <: AbstractRationalFunction{T,X,P}
+using Polynomials
+import Polynomials: AbstractPolynomial, AbstractRationalFunction, RationalFunction
+import Polynomials: pqs
+
+export RationalTransferFunction
+export sampling_time, gain
+
+struct RationalTransferFunction{T,X,P<:AbstractPolynomial{T,X},Ts} <: AbstractRationalFunction{T,X,P}
     num::P
     den::P
     function RationalTransferFunction{T,X,P,Ts}(num::P, den::P) where{T,X,P<:AbstractPolynomial{T,X}, Ts}
@@ -31,6 +41,13 @@ struct RationalTransferFunction{T,X,P<:Polynomials.AbstractPolynomial{T,X},Ts} <
     end
 end
 
+(pq::RationalTransferFunction)(x) = Polynomials.eval_rationalfunction(x, pq)
+
+function Base.convert(::Type{PQ}, pq::RationalTransferFunction) where {PQ <:RationalFunction}
+    p,q = pq
+    p//q
+end
+
 # alternate constructor
 function RationalTransferFunction(p′::P, q′::Q, Ts::Union{Real,Nothing}) where {T,X,P<:AbstractPolynomial{T,X},
                                                                                 S,  Q<:AbstractPolynomial{S,X}}
@@ -41,7 +58,7 @@ function RationalTransferFunction(p′::P, q′::Q, Ts::Union{Real,Nothing}) whe
 end
 
 
-function rational_function(::Type{PQ}, p::P, q::Q) where {PQ <:RationalTransferFunction,
+function Polynomials.rational_function(::Type{PQ}, p::P, q::Q) where {PQ <:RationalTransferFunction,
                                                           T,X,   P<:AbstractPolynomial{T,X},
                                                           S,   Q<:AbstractPolynomial{S,X}}
     RationalTransferFunction(promote(p,q)..., sampling_time(PQ))
@@ -67,7 +84,6 @@ ValT(::Val{T}) where {T} = T
 sampling_time(pq::RationalTransferFunction{T,X,P,Ts}) where {T,X,P,Ts} = ValT(Ts)
 sampling_time(::Type{𝑷}) where {T,X,P,Ts, 𝑷<:RationalTransferFunction{T,X,P,Ts}} = ValT(Ts)
 
-export sampling_time
 
 
 ## ----
@@ -148,3 +164,6 @@ end
 
 ## XXX confmap ...
 
+
+
+end

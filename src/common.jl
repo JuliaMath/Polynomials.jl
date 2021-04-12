@@ -1019,6 +1019,7 @@ function Base.isapprox(p1::AbstractPolynomial{T,X},
     rtol::Real = (Base.rtoldefault(T, S, 0)),
                        atol::Real = 0,) where {T,X,S,Y}
     assert_same_variable(p1, p2)
+    (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
     # copy over from abstractarray.jl
     Δ  = norm(p1-p2)
     if isfinite(Δ)

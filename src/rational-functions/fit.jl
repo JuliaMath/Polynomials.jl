@@ -1,6 +1,6 @@
 module RationalFunctionFit
 using ..Polynomials
-import ..Polynomials: RationalFunction
+import ..Polynomials: RationalFunction, indeterminate, constructorof
 using LinearAlgebra
 
 """

@@ -79,6 +79,9 @@ is misidentified.
 function multroot(p::Polynomials.StandardBasisPolynomial{T}; verbose=false,
                   kwargs...) where {T}
 
+    # degenerate case, constant
+    degree(p) == 0 && return (values=T[], multiplicities=Int[], κ=NaN, ϵ=NaN)
+
     # degenerate case, all zeros
     if (nz = findfirst(!iszero, coeffs(p))) == length(coeffs(p))
         return (values=zeros(T,1), multiplicities=[nz-1], κ=NaN, ϵ=NaN)
@@ -202,7 +205,7 @@ function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
 The multiplicity count may be in error: the initial guess for the roots failed
 to converge to a pejorative root.
 """)
-        return(zₘs)
+        return(zₖs)
     end
 
 end

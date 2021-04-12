@@ -54,7 +54,7 @@ struct RationalFunction{T, X, P<:Polynomials.AbstractPolynomial{T,X}} <: Abstrac
 end
 
 RationalFunction(p,q)  = RationalFunction(promote(p,q)...)
-RationalFunction(p::ImmutablePolynomial,q::ImmutablePolynomial) = throw(ArgumentError("Sorry, immutable polynomials are not a valid polynomial type for RationalFunction"))
+RationalFunction(p::ImmutablePolynomial,q::ImmutablePolynomial) = throw(ArgumentError("Sorry, immutable #polynomials are not a valid polynomial type for RationalFunction"))
 
 # evaluation
 (pq::RationalFunction)(x) = eval_rationalfunction(x, pq)

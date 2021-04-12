@@ -1,6 +1,6 @@
 export RationalFunction
 export poles, residues
-export normal_form
+export lowest_terms
 
 ## ----
 """
@@ -86,7 +86,7 @@ Base.promote_rule(::Type{PQ}, ::Type{P}) where {PQ <: AbstractRationalFunction, 
 # for other possible types.
 function Base.://(p::PQ,q::PQ′) where {PQ <: AbstractRationalFunction, PQ′ <: AbstractRationalFunction}
     p0,p1 = p
-    q0,q1 = p
+    q0,q1 = q
     rational_function(promote_type(PQ, PQ′), p0*q1, p1*q0)
 end
 
@@ -168,7 +168,7 @@ function indeterminate(::Type{PQ}, var=:x) where {PQ<:AbstractRationalFunction}
     X
 end
 
-isconstant(pq::AbstractRationalFunction; kwargs...) = all(isconstant.(normal_form(pq;kwargs...)))
+isconstant(pq::AbstractRationalFunction; kwargs...) = all(isconstant.(lowest_terms(pq;kwargs...)))
 isconstant(::Number) = true
 
 function constantterm(pq::AbstractRationalFunction; kwargs...)
@@ -198,7 +198,7 @@ end
     
 # use degree as largest degree of p,q after reduction
 function degree(pq::AbstractRationalFunction)
-    pq′ = normal_form(pq)
+    pq′ = lowest_terms(pq)
     maximum(degree.(pq′))
 end
 
@@ -236,7 +236,7 @@ function ==(p::Union{AbstractPolynomial, Number}, q::AbstractRationalFunction{T,
 end
 
 
-function isapprox(pq₁::PQ₁, pq₂::PQ₂,
+function Base.isapprox(pq₁::PQ₁, pq₂::PQ₂,
                   rtol::Real = sqrt(eps(real(promote_type(T,S)))),
                   atol::Real = zero(real(promote_type(T,S)))) where {T,X,P,PQ₁<:AbstractRationalFunction{T,X,P},
                                                                      S,Y,Q,PQ₂<:AbstractRationalFunction{S,Y,Q}}
@@ -395,21 +395,21 @@ end
 
 
 """
-    normal_form(pq::AbstractRationalFunction, method=:numerical)
+    lowest_terms(pq::AbstractRationalFunction, method=:numerical)
     
 Find GCD of `(p,q)`, `u`, and return `(p÷u)//(q÷u)`. Commonly referred to as lowest terms.
     
 * `method`: passed to `gcd(p,q)`
 * `kwargs`: passed to `gcd(p,q)`
 
-By default, `AbstractRationalFunction` types do not cancel common factors. This method will numerically cancel common factors, returning the normal form up to a scaling between the numerator and denominator. The result and original may be considered equivalent as rational expressions, but different when seen as functions of the indeterminate.
+By default, `AbstractRationalFunction` types do not cancel common factors. This method will numerically cancel common factors, returning the normal form, canonicalized here by `q[end]=1`. The result and original may be considered equivalent as rational expressions, but different when seen as functions of the indeterminate.
 
 """
-function normal_form(pq::PQ; method=:numerical, kwargs...) where {T,X,
+function lowest_terms(pq::PQ; method=:numerical, kwargs...) where {T,X,
                                                                    P<:StandardBasisPolynomial{T,X},
                                                                    PQ<:AbstractRationalFunction{T,X,P}}
     v,w = _divgcd(Val(method), pq; kwargs...)
-    rational_function(PQ, v, w)
+    rational_function(PQ, v/w[end], w/w[end])
 end
 
 ## ---- zeros, poles, ...
@@ -420,7 +420,7 @@ For a rational function `p/q`, first reduces to normal form, then finds the root
 
 """
 function poles(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
-    pq′ = normal_form(pq; method=method, kwargs...)
+    pq′ = lowest_terms(pq; method=method, kwargs...)
     den = denominator(pq′)
     mr = Multroot.multroot(den)
     (zs=mr.values, multiplicities = mr.multiplicities)
@@ -433,7 +433,7 @@ Return the `zeros` of the rational function (after cancelling commong factors, t
 
 """
 function roots(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
-    pq′ = normal_form(pq; method=method, kwargs...)
+    pq′ = lowest_terms(pq; method=method, kwargs...)
     den = numerator(pq′)
     mr = Multroot.multroot(den)
     (zs=mr.values, multiplicities = mr.multiplicities)
@@ -451,14 +451,54 @@ For a pole, `λj` of multiplicity `k` there are `k` residues,
 The residues are found using this formula: 
 `1/j! * dʲ/dsʲ (F(s)(s - λⱼ)^k` evaluated at `λⱼ` ([5-28](https://stanford.edu/~boyd/ee102/rational.pdf)).
 
-There are several areas where numerical issues can arise. The `divrem`, the identification of multiple roots (`multroot`), the evaluation of the derivatives, ...
+
+## Example
+
+(From page 5-33 of above pdf)
+
+```jldoctest
+julia> s = variable(Polynomial, :s)
+Polynomial(1.0*s)
+
+julia> pq = (-s^2 + s + 1) // (s * (s+1)^2)
+(1.0 + 1.0*s - 1.0*s^2) // (1.0*s + 2.0*s^2 + 1.0*s^3)
+
+julia> d,r = residues(pq)
+(Polynomial(0.0), Dict(-1.0 => [-1.9999999999999978, 1.0000000000000029], 2.0153919257182735e-18 => [1.0]))
+
+julia> iszero(d)
+true
+
+julia> z = variable(pq)
+(1.0*s) // (1.0)
+
+julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
+           for (i,rᵢ) ∈ enumerate(rs)
+               d += rᵢ/(z-λ)^i
+           end
+       end
+
+julia> p′, q′ = lowest_terms(d)
+(1.0 + 1.0*s - 1.0*s^2) // (6.64475e-16 + 1.0*s + 2.0*s^2 + 1.0*s^3)
+
+julia> q′ ≈ (s * (s+1)^2) # works, as q is monic
+true
+
+julia> p′ ≈ (-s^2 + s + 1) 
+true
+```
+
+
+
+!!! Note:
+    There are several areas where numerical issues can arise. The `divrem`, the identification of multiple roots (`multroot`), the evaluation of the derivatives, ...
 
 """
 function residues(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
 
     
     d,r′ = divrem(pq)
-    r = normal_form(r′; method=method, kwargs...)
+    r = lowest_terms(r′; method=method, kwargs...)
     b,a = pqs(r)
     a′ = derivative(a)
 
@@ -470,14 +510,14 @@ function residues(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
         if mₖ == 1
             push!(residues, λₖ => [b(λₖ)/a′(λₖ)])
         else
-            # returns rₖ,m, …, rₖ,1 where rₖ,i/(s-λₖ)ⁱ is part
+            # returns rₖ₁, rₖ₂,...rₖₘ where rₖ,i/(s-λₖ)ⁱ is part of the decomposition
             s = variable(a)
-            F = normal_form(r*(s-λₖ)^mₖ)
+            F = lowest_terms(r*(s-λₖ)^mₖ)
             rs = [F(λₖ)]
             j! = 1
             for j ∈ 1:mₖ-1
-                dF = normal_form(derivative(F))
-                push!(rs, 1/j! * dF(λₖ))
+                dF = lowest_terms(derivative(F))
+                pushfirst!(rs, 1/j! * dF(λₖ))
                 j! *= (j+1)
             end
             push!(residues, λₖ => rs)
