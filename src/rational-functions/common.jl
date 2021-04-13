@@ -385,13 +385,11 @@ end
 # like Base.divgcd in rational.jl
 # divide p,q by u
 function _divgcd(v::Val{:euclidean}, pq; kwargs...)
-    p,q = pqs(pq)
-    u = gcd(v, p, q; kwargs...)
+    u = gcd(v, pqs(pq)...; kwargs...)
     p÷u, q÷u
 end
 function _divgcd(v::Val{:noda_sasaki}, pq; kwargs...)
-    p,q = pqs(pq)
-    u = gcd(v, p, q; kwargs...)
+    u = gcd(v, pqs(pq)...; kwargs...)
     p÷u, q÷u
 end
 function _divgcd(v::Val{:numerical}, pq; kwargs...)
