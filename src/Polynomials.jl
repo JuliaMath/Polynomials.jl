@@ -30,11 +30,13 @@ include("polynomials/multroot.jl")
 include("polynomials/ChebyshevT.jl")
 
 # Rational functions
-include("rational-functions/common.jl")
-include("rational-functions/rational-function.jl")
-include("rational-functions/fit.jl")
-#include("rational-transfer-function.jl")
-include("rational-functions/plot-recipes.jl")
+if VERSION >= v"1.2.0"
+    include("rational-functions/common.jl")
+    include("rational-functions/rational-function.jl")
+    include("rational-functions/fit.jl")
+    #include("rational-transfer-function.jl")
+    include("rational-functions/plot-recipes.jl")
+end
 
 
 # compat; opt-in with `using Polynomials.PolyCompat`
