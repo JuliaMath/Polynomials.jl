@@ -360,6 +360,10 @@ function integrate(pq::P) where {P <: AbstractRationalFunction}
 end
 
 ## ----
+# :numerical only works for v1.2 or later
+# drop once new LTS Julia is released
+const default_gcd_method = VERSION >= v"1.2" ? :numerical : :euclidean
+
 """
     divrem(pq::AbstractRationalFunction; method=:numerical, kargs...)
 
@@ -368,7 +372,7 @@ Return `d,r` with `p/q = d + r/q` where `degree(numerator(r)) < degree(denominat
 * `method`: passed to `gcd`
 * `kwargs...`: passed to `gcd`
 """
-function Base.divrem(pq::PQ; method=:numerical, kwargs...) where {PQ <: AbstractRationalFunction}
+function Base.divrem(pq::PQ; method=default_gcd_method, kwargs...) where {PQ <: AbstractRationalFunction}
     p,q = pqs(pq)
     degree(p) < degree(q) && return (zero(p), pq)
 
@@ -405,7 +409,7 @@ Find GCD of `(p,q)`, `u`, and return `(p÷u)//(q÷u)`. Commonly referred to as l
 By default, `AbstractRationalFunction` types do not cancel common factors. This method will numerically cancel common factors, returning the normal form, canonicalized here by `q[end]=1`. The result and original may be considered equivalent as rational expressions, but different when seen as functions of the indeterminate.
 
 """
-function lowest_terms(pq::PQ; method=:numerical, kwargs...) where {T,X,
+function lowest_terms(pq::PQ; method=default_gcd_method, kwargs...) where {T,X,
                                                                    P<:StandardBasisPolynomial{T,X},
                                                                    PQ<:AbstractRationalFunction{T,X,P}}
     v,w = _divgcd(Val(method), pq; kwargs...)
@@ -419,7 +423,7 @@ end
 For a rational function `p/q`, first reduces to normal form, then finds the roots and multiplicities of the resulting denominator.
 
 """
-function poles(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
+function poles(pq::AbstractRationalFunction; method=default_gcd_method,  kwargs...)
     pq′ = lowest_terms(pq; method=method, kwargs...)
     den = denominator(pq′)
     mr = Multroot.multroot(den)
@@ -432,7 +436,7 @@ end
 Return the `zeros` of the rational function (after cancelling commong factors, the `zeros` are the roots of the numerator.
 
 """
-function roots(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
+function roots(pq::AbstractRationalFunction; method=default_gcd_method,  kwargs...)
     pq′ = lowest_terms(pq; method=method, kwargs...)
     den = numerator(pq′)
     mr = Multroot.multroot(den)
@@ -494,7 +498,7 @@ true
     There are several areas where numerical issues can arise. The `divrem`, the identification of multiple roots (`multroot`), the evaluation of the derivatives, ...
 
 """
-function residues(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
+function residues(pq::AbstractRationalFunction; method=default_gcd_method,  kwargs...)
 
     
     d,r′ = divrem(pq)
@@ -537,7 +541,7 @@ Should be if `p/q` is in normal form and `d,r=partial_fraction(p//q)` that
 `d + sum(r) - p//q ≈ 0`
 
 """
-function partial_fraction(pq::AbstractRationalFunction; method=:numerical, kwargs...)
+function partial_fraction(pq::AbstractRationalFunction; method=default_gcd_method, kwargs...)
     d,r = residues(pq; method=method, kwargs...)
     s = variable(pq)
     d, partial_fraction(Val(:residue), r, s)
