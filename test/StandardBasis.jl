@@ -313,6 +313,8 @@ end
         @test (P([1,eps(), 1]) ≈ P([1,0,1]))      == ([1,eps(), 1] ≈ [1,0,1]) # true
         @test (P([1,2]) ≈ P([1,2,eps()]))         == ([1,2,0] ≈ [1,2,eps()])
 
+        # NaN poisons comparison
+        @test !(P([NaN, 1.0, 2.0]) ≈ P([NaN, 1.0, 2.0]))
 
         # check how ==, ===, isapprox ignore variable mismatch when constants are involved, issue #217, issue #219
         @test zero(P, :x) == zero(P, :y)
@@ -582,6 +584,10 @@ end
             out = Polynomials.Multroot.multroot(x^3)
             @test out.values == zeros(T,1)
             @test out.multiplicities == [3]
+            # bug with constant
+            out = Polynomials.Multroot.multroot(P(1))
+            @test isempty(out.values)
+            @test isempty(out.multiplicities)
         end
     end
 end
@@ -1044,6 +1050,16 @@ end
         q = 2.0 + 5.0*x + 8.0*x^2 + 7.0*x^3 + 4.0*x^4 + 1.0*x^5
         out = Polynomials.ngcd(p,q)
         @test out.u * out.v ≈ p
+
+        # check for canceling of x^k terms
+        x = variable(P{Float64})
+        p,q = x^2 + 1, x^2 - 1
+        for j ∈ 0:2
+            for k ∈ 0:j
+                out = Polynomials.ngcd(x^j*p, x^k*q)
+                @test out.u == x^k
+            end
+        end
     end
 end
 

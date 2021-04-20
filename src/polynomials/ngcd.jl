@@ -19,6 +19,7 @@ function ngcd(p::P, q::Q,
         a,b = divrem(p,q)
         return ngcd(q,b, args...; λ=100, kwargs...)
     end
+
     # easy cases
     degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
     degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
@@ -28,15 +29,30 @@ function ngcd(p::P, q::Q,
     Polynomials.assert_same_variable(p,q)
 
     R = promote_type(float(T), float(S))
+    𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X}
+
     ps = R[pᵢ for pᵢ ∈ coeffs(p)]
     qs = R[qᵢ for qᵢ ∈ coeffs(q)]
-    p′ = PnPolynomial(ps)
-    q′ = PnPolynomial(qs)
 
+    # cancel zeros
+    nz = min(findfirst(!iszero, ps), findfirst(!iszero, qs))
+    if nz == length(qs)
+        x = variable(p)
+        u = x^(nz-1)
+        v,w = 𝑷(ps[nz:end]), 𝑷(qs[nz:end])
+        return (u=u, v=v, w=w, Θ=NaN, κ=NaN)
+    end
+
+    ## call ngcd
+    p′ = PnPolynomial{R,X}(ps[nz:end])
+    q′ = PnPolynomial{R,X}(qs[nz:end])
     out = NGCD.ngcd(p′, q′, args...; kwargs...)
 
-    𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X} 
+    𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X}
     u,v,w = convert.(𝑷, (out.u,out.v,out.w))
+    if nz > 1
+        u *= variable(u)^(nz-1)
+    end
     (u=u,v=v,w=w, Θ=out.Θ, κ = out.κ)
     
 end
