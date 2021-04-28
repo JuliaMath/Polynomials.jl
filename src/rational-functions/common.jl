@@ -116,7 +116,7 @@ Base.denominator(pq::AbstractRationalFunction) = pq.den
 
 # Treat a RationalFunction as a tuple (num=p, den=q)
 Base.length(pq::AbstractRationalFunction) = 2
-function Base.iterate(pq, state=nothing)
+function Base.iterate(pq::AbstractRationalFunction, state=nothing)
     state == nothing && return (numerator(pq), 1)
     state == 1 && return (denominator(pq), 2)
     nothing
