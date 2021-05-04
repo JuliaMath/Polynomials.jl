@@ -333,6 +333,16 @@ function uvw(::Val{:numerical}, p::P, q::P; kwargs...) where {P <: StandardBasis
     u,v,w,Θ,κ = ngcd(p,q; kwargs...)
     u,v,w
 end
+
+function uvw(V::Val{:euclidean}, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
+    u = gcd(V,p,q; kwargs...)
+    u, p÷u, q÷u
+end
+function _divgcd(V::Val{:noda_sasaki}, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
+    u = gcd(V,p,q; kwargs...)
+    u, p÷u, q÷u
+end
+
 function uvw(::Any, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
     throw(MethodError)
 end

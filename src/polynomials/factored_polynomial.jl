@@ -92,6 +92,19 @@ function printpoly(io::IO, p::FactoredPolynomial{T,X}, mimetype=nothing) where {
     end
 end
 
+Base.lastindex(p::FactoredPolynomial) = degree(p)
+Base.eachindex(p::FactoredPolynomial) = 0:degree(p)
+
+# getindex
+function Base.getindex(p::FactoredPolynomial{T}, idx::Int) where {T <: Number}
+    m,M = firstindex(p), lastindex(p)
+    idx < m && throw(BoundsError(p, idx))
+    idx > M && return zero(T)
+    coeffs(p)[idx - m + 1]
+end
+
+
+## ---
 Base.zero(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(), one(T))
 Base.one(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(), one(T))
 variable(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(0=>1), one(T))
@@ -155,11 +168,15 @@ function degree(p::FactoredPolynomial)
 end
 
 function integrate(p::FactoredPolynomial)
-    error("XXX")
+    𝒑 = convert(Polynomial, p)
+    ∫𝒑 = integrate(𝒑)
+    convert(FactoredPolynomial, ∫𝒑)
 end
 
 function derivative(p::FactoredPolynomial,n::Int)
-    error("XXX")
+    𝒑 = convert(Polynomial, p)
+    𝒑⁽ⁿ⁾ = derivative(𝒑, n)
+    convert(FactoredPolynomial, 𝒑⁽ⁿ⁾)
 end
 
 # pairs,keys, values
@@ -218,7 +235,7 @@ function Base.gcd(p::FactoredPolynomial{T,X}, q::FactoredPolynomial{T,X}) where 
 end
 
 # return u,v,w with p = u*v , q = u*w
-function uvw(p::FactoredPolynomial{T,X}, q::FactoredPolynomial{T,X}) where {T, X}
+function uvw(p::FactoredPolynomial{T,X}, q::FactoredPolynomial{T,X}; kwargs...) where {T, X}
     du, dv, dw = Dict{T,Int}(), Dict{T,Int}(), Dict{T,Int}()
     dp,dq = p.coeffs, q.coeffs
     kp,kq = keys(dp), keys(dq)
