@@ -21,9 +21,9 @@ abstract type AbstractRationalFunction{T,X,P} end
 function Base.show(io::IO, pq::AbstractRationalFunction)
     p,q = pq
     print(io,"(")
-    print(io, p)
+    printpoly(io, p)
     print(io, ") // (")
-    print(io, q)
+    printpoly(io, q)
     print(io, ")")
 end
 

@@ -7,6 +7,26 @@ A polynomial type that stores its data in a dictionary whose keys are the roots 
 
 The structure is utilized for polynomial multiplication and powers, the finding of roots, and the identification of a greatest common divisor.
 
+## Examples
+
+```jldoctest factored_polynomial
+julia> using Polynomials
+
+julia> p = FactoredPolynomial(Dict([0=>1, 1=>2, 3=>4]))
+FactoredPolynomial(1 * x * (x - 3)⁴ * (x - 1)²)
+
+julia> q = fromroots(FactoredPolynomial, [0,1,2,3])
+FactoredPolynomial(1 * x * (x - 2) * (x - 3) * (x - 1))
+
+julia> p*q
+FactoredPolynomial(1 * x² * (x - 2) * (x - 3)⁵ * (x - 1)³)
+
+julia> p^1000
+FactoredPolynomial(1 * x¹⁰⁰⁰ * (x - 3)⁴⁰⁰⁰ * (x - 1)²⁰⁰⁰)
+
+julia> gcd(p,q)
+FactoredPolynomial(1 * x * (x - 3) * (x - 1))
+```
 """
 struct FactoredPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Dict{T,Int}
@@ -51,11 +71,10 @@ function printpoly(io::IO, p::FactoredPolynomial{T,X}, mimetype=nothing) where {
         print(io, p.c)
     else
         isone(p.c) && iszero(length(p.coeffs)) && print(io, p.c)
-        print(io, p.c, " * ") 
-
+        !isone(p.c) && print(io, p.c)
         x = string(X)
         for (i,(k,v)) ∈ enumerate(p.coeffs)
-            i != 1 && print(io, " * ")
+            (!isone(p.c) || i != 1) && print(io, " * ")
             if iszero(k)
                 print(io, x)
             else
