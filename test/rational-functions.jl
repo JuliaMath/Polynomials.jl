@@ -27,7 +27,7 @@ using LinearAlgebra
     @test eltype(p//q) == typeof(pp)
     u = gcd(p//q...)
     @test u/u[end] ≈ fromroots(Polynomial, [2,3])
-    @test degree.(p // q) == [degree(p), degree(q)]
+    @test degree.(p//q) == degree(p//q) # no broadcast over rational functions
     
     # evaluation
     pq = p//q
@@ -40,6 +40,9 @@ using LinearAlgebra
     @test (pq + rs)(x) ≈ (pq(x) + rs(x))
     @test (pq * rs)(x) ≈ (pq(x) * rs(x))
     @test (-pq)(x) ≈ -p(x)/q(x)
+    @test pq .* (pq, pq) == (pq*pq, pq*pq)
+    @test pq .* [pq pq] == [pq*pq pq*pq]
+    
     
     # derivative
     pq = p // one(p)
@@ -57,8 +60,14 @@ using LinearAlgebra
     
     # lowest terms
     pq = p // q
-    pp, qq = lowest_terms(pq)
+    pp, qq = Polynomials.pqs(lowest_terms(pq))
     @test all(abs.(pp.(roots(qq))) .> 1/2)
+
+    # ≈
+    @test (2p)//(2one(p)) ≈ p//one(p)
+    @test p//one(p) ≈  p//one(p) + eps()
+    x = variable(p)
+    @test (x*p)//x ≈ p // one(p)
 
     
 end
