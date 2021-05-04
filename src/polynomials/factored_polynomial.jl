@@ -58,9 +58,8 @@ function FactoredPolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where
     X = Symbol(var)
     p = Polynomial{T,X}(Val(false), coeffs)
     zs = Multroot.multroot(p)
-    c = p[end]
     D = Dict(zip(zs.values, zs.multiplicities))
-    FactoredPolynomial(D, c)
+    FactoredPolynomial(D, p[end])
 end
 
 
@@ -187,7 +186,9 @@ Base.pairs(p::FactoredPolynomial) = pairs(convert(Polynomial, p))
 
 # addition 
 function Base.:+(p::P, q::P) where {T,X,P<:FactoredPolynomial{T,X}}
-    convert(P, convert(Polynomial, p) + convert(Polynomial, q))
+    𝑷 = Polynomial
+    𝒑,𝒒 = convert(𝑷, p), convert(𝑷, q)
+    convert(P, 𝒑 + 𝒒 )
 end
 
 # multiplication
@@ -258,11 +259,11 @@ end
         
         
 
-function Base.divrem(p::FactoredPolynomial{T,X}, q::FactoredPolynomial{T,X}) where {T, X}
+function Base.divrem(p::P, q::P) where {T, X, P<:FactoredPolynomial{T,X}}
     u,v,w = uvw(p,q)
     isconstant(w) && return (v / q.c, zero(v))
-    vv, ww = convert(Polynomial, v), convert(Polynomial, w)
-    d,r = divrem(vv,ww)
-    dd, rr = convert(FactoredPolynomial, d), convert(FactoredPolynomial,r)
-    dd,rr
+    𝑷 = Polynomial
+    𝒗, 𝒘 = convert(𝑷, v), convert(𝑷, w)
+    d,r = divrem(𝒗,𝒘)
+    convert(P, d), convert(P,r)
 end    
