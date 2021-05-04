@@ -33,6 +33,9 @@ using LinearAlgebra
     pq = p//q
     @test pq(2.5) ≈ p(2.5) / q(2.5)
     @test pq(2) ≈ fromroots([1,3])(2) / fromroots([3,4])(2)
+    @test zero(pq)(10) == 0
+    @test one(pq)(10) == 1
+
     
     # arithmetic
     rs = r // (r-1)
@@ -112,6 +115,7 @@ end
 
     ## T, Polynomial{T} promotes
     @test eltype([1, p, pp]) == PP
+    @test eltype(eltype(eltype([im, p, pp]))) == Complex{Int}
 
     ## test mixed types promote polynomial type
     @test eltype([pp rr p r]) == PP

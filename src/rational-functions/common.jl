@@ -40,7 +40,8 @@ function Base.convert(::Type{PQ}, pq′::PQ′) where {T,X,P,PQ <: AbstractRatio
                                                    T′,X′,P′,PQ′<:AbstractRationalFunction{T′,X′,P′} }
     !isconstant(pq′) && assert_same_variable(X,X′)
     p′,q′=pqs(pq′)
-    p,q = convert(P, p′), convert(P, q′)
+    𝑷 = isconstant(pq′) ? P :  promote_type(P, P′)
+    p,q = convert(𝑷, p′), convert(𝑷, q′)
     rational_function(PQ, p, q)
 end
 
@@ -81,7 +82,11 @@ function Base.promote_rule(::Type{PQ}, ::Type{PQ′}) where {T,X,P,PQ <: Abstrac
     𝑷𝑸{𝑻,X,𝑷{𝑻,X}}
 end
 Base.promote_rule(::Type{PQ}, ::Type{P}) where {PQ <: AbstractRationalFunction, P<:AbstractPolynomial} = PQ
-Base.promote_rule(::Type{PQ}, ::Type{P}) where {PQ <: AbstractRationalFunction, P<:Number} = PQ
+function Base.promote_rule(::Type{PQ}, ::Type{S}) where {T,X, P<:AbstractPolynomial{T,X}, PQ <: AbstractRationalFunction{T,X,P}, S<:Number}
+    R = promote_type(S,T)
+    P′ = constructorof(P){R,X}
+    constructorof(PQ){R,X,P′}
+end
 
 
 ## Look like rational numbers
@@ -101,6 +106,10 @@ function Base.://(p::PQ, q::Union{Number,AbstractPolynomial}) where {PQ <: Abstr
     p0, p1 = p
     rational_function(PQ, p0, p1*q)
 end
+
+Base.://(p::AbstractPolynomial,q::Number) = p // (q*one(p))
+Base.://(p::Number, q::AbstractPolynomial) = (p*one(q)) // q
+    
     
 function Base.copy(pq::PQ) where {PQ <: AbstractRationalFunction}
     p,q = pqs(pq)
@@ -208,8 +217,9 @@ function degree(pq::AbstractRationalFunction)
 end
 
 # Evaluation
-function eval_rationalfunction(x, pq::AbstractRationalFunction)
-    md = minimum(degree.(pqs(pq)))
+function eval_rationalfunction(x, pq::AbstractRationalFunction{T}) where {T}
+    md = minimum(degree, pq)
+    md < 0 && return zero(T)/one(T)
     num, den = pqs(pq)
     result = num(x)/den(x)
     while md >= 0
