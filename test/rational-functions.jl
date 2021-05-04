@@ -12,6 +12,7 @@ using LinearAlgebra
     @test p // q isa RationalFunction
     @test p // r isa RationalFunction
     @test_throws ArgumentError r // s
+    @test RationalFunction(p) == p // one(p)
 
     # We expect p::P // q::P (same type polynomial).
     # As Immutable Polynomials have N as type parameter, we disallow
