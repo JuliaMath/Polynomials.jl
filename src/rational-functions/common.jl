@@ -218,10 +218,11 @@ end
 
 # Evaluation
 function eval_rationalfunction(x, pq::AbstractRationalFunction{T}) where {T}
-    md = minimum(degree, pq)
-    md < 0 && return zero(T)/one(T)
     num, den = pqs(pq)
+    dn, dd = degree(num), degree(den)
+    md = min(dn, dd)
     result = num(x)/den(x)
+    md < 0 && return result
     while md >= 0
         !isnan(result) && return result
         num,den = derivative(num), derivative(den)
