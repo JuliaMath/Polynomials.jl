@@ -344,7 +344,7 @@ function _divgcd(V::Val{:noda_sasaki}, p::P, q::P; kwargs...) where {P <: Standa
 end
 
 function uvw(::Any, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
-    throw(MethodError)
+    throw(ArgumentError("not defined"))
 end
 
 

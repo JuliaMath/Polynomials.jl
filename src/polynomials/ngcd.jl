@@ -631,7 +631,7 @@ end
 function solve_u(v::P,w,p,q, k) where {T,X,P<:PnPolynomial{T,X}}
     A = [convmtx(v,k+1); convmtx(w, k+1)]
     b = vcat(coeffs(p), coeffs(q))
-    u = P(A \ b)
+    u = P(qr(A) \ b)
     return u
 end
 
