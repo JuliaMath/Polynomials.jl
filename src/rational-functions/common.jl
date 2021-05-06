@@ -19,7 +19,7 @@ abstract type AbstractRationalFunction{T,X,P} end
 
 
 function Base.show(io::IO, pq::AbstractRationalFunction)
-    p,q = pq
+    p,q = pqs(pq)
     print(io,"(")
     printpoly(io, p)
     print(io, ") // (")
@@ -40,7 +40,8 @@ function Base.convert(::Type{PQ}, pq′::PQ′) where {T,X,P,PQ <: AbstractRatio
                                                    T′,X′,P′,PQ′<:AbstractRationalFunction{T′,X′,P′} }
     !isconstant(pq′) && assert_same_variable(X,X′)
     p′,q′=pqs(pq′)
-    p,q = convert(P, p′), convert(P, q′)
+    𝑷 = isconstant(pq′) ? P :  promote_type(P, P′)
+    p,q = convert(𝑷, p′), convert(𝑷, q′)
     rational_function(PQ, p, q)
 end
 
@@ -81,7 +82,11 @@ function Base.promote_rule(::Type{PQ}, ::Type{PQ′}) where {T,X,P,PQ <: Abstrac
     𝑷𝑸{𝑻,X,𝑷{𝑻,X}}
 end
 Base.promote_rule(::Type{PQ}, ::Type{P}) where {PQ <: AbstractRationalFunction, P<:AbstractPolynomial} = PQ
-Base.promote_rule(::Type{PQ}, ::Type{P}) where {PQ <: AbstractRationalFunction, P<:Number} = PQ
+function Base.promote_rule(::Type{PQ}, ::Type{S}) where {T,X, P<:AbstractPolynomial{T,X}, PQ <: AbstractRationalFunction{T,X,P}, S<:Number}
+    R = promote_type(S,T)
+    P′ = constructorof(P){R,X}
+    constructorof(PQ){R,X,P′}
+end
 
 
 ## Look like rational numbers
@@ -101,9 +106,13 @@ function Base.://(p::PQ, q::Union{Number,AbstractPolynomial}) where {PQ <: Abstr
     p0, p1 = p
     rational_function(PQ, p0, p1*q)
 end
+
+Base.://(p::AbstractPolynomial,q::Number) = p // (q*one(p))
+Base.://(p::Number, q::AbstractPolynomial) = (p*one(q)) // q
+    
     
 function Base.copy(pq::PQ) where {PQ <: AbstractRationalFunction}
-    p,q = pq
+    p,q = pqs(pq)
     rational_function(PQ, p, q)
 end
 
@@ -122,7 +131,7 @@ function Base.iterate(pq::AbstractRationalFunction, state=nothing)
     nothing
 end
 Base.collect(pq::AbstractRationalFunction{T,X,P}) where {T,X,P} = collect(P, pq)
-
+Base.broadcastable(pq::AbstractRationalFunction) = Ref(pq)
 
 Base.eltype(pq::Type{<:AbstractRationalFunction{T,X,P}}) where {T,X,P} = P
 Base.eltype(pq::Type{<:AbstractRationalFunction{T,X}}) where {T,X} = Polynomial{T,X}
@@ -134,7 +143,6 @@ Base.eltype(pq::Type{<:AbstractRationalFunction}) = Polynomial{Float64,:x}
     pqs(pq) 
 
 Return `(p,q)`, where `pq=p/q`, as polynomials.
-Alternative to simply `p,q=pq` in case `pq` is not stored as two polynomials.
 """
 pqs(pq::AbstractRationalFunction) = (numerator(pq), denominator(pq))
 
@@ -171,7 +179,10 @@ function indeterminate(::Type{PQ}, var=:x) where {PQ<:AbstractRationalFunction}
     X
 end
 
-isconstant(pq::AbstractRationalFunction; kwargs...) = all(isconstant.(lowest_terms(pq;kwargs...)))
+function isconstant(pq::AbstractRationalFunction; kwargs...)
+    p,q = pqs(lowest_terms(pq, kwargs...))
+    isconstant(p) && isconstant(q)
+end
 isconstant(::Number) = true
 
 function constantterm(pq::AbstractRationalFunction; kwargs...)
@@ -202,14 +213,16 @@ end
 # use degree as largest degree of p,q after reduction
 function degree(pq::AbstractRationalFunction)
     pq′ = lowest_terms(pq)
-    maximum(degree.(pq′))
+    maximum(degree.(pqs(pq′)))
 end
 
 # Evaluation
-function eval_rationalfunction(x, pq::AbstractRationalFunction)
-    md = minimum(degree.(pq))
+function eval_rationalfunction(x, pq::AbstractRationalFunction{T}) where {T}
     num, den = pqs(pq)
+    dn, dd = degree(num), degree(den)
+    md = min(dn, dd)
     result = num(x)/den(x)
+    md < 0 && return result
     while md >= 0
         !isnan(result) && return result
         num,den = derivative(num), derivative(den)
@@ -240,8 +253,8 @@ end
 
 
 function Base.isapprox(pq₁::PQ₁, pq₂::PQ₂,
-                  rtol::Real = sqrt(eps(real(promote_type(T,S)))),
-                  atol::Real = zero(real(promote_type(T,S)))) where {T,X,P,PQ₁<:AbstractRationalFunction{T,X,P},
+                  rtol::Real = sqrt(eps(float(real(promote_type(T,S))))),
+                  atol::Real = zero(float(real(promote_type(T,S))))) where {T,X,P,PQ₁<:AbstractRationalFunction{T,X,P},
                                                                      S,Y,Q,PQ₂<:AbstractRationalFunction{S,Y,Q}}
 
     p₁,q₁ = pqs(pq₁)
@@ -253,7 +266,7 @@ end
 
 # Arithmetic
 function Base.:-(pq::PQ) where {PQ <: AbstractRationalFunction}
-    p, q = copy.(pq)
+    p, q = copy(pq)
     rational_function(PQ, -p, q)
 end
 

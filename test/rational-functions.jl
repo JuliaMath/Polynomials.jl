@@ -12,6 +12,7 @@ using LinearAlgebra
     @test p // q isa RationalFunction
     @test p // r isa RationalFunction
     @test_throws ArgumentError r // s
+    @test RationalFunction(p) == p // one(p)
 
     # We expect p::P // q::P (same type polynomial).
     # As Immutable Polynomials have N as type parameter, we disallow
@@ -26,12 +27,15 @@ using LinearAlgebra
     @test eltype(p//q) == typeof(pp)
     u = gcd(p//q...)
     @test u/u[end] ≈ fromroots(Polynomial, [2,3])
-    @test degree.(p // q) == [degree(p), degree(q)]
+    @test degree.(p//q) == degree(p//q) # no broadcast over rational functions
     
     # evaluation
     pq = p//q
     @test pq(2.5) ≈ p(2.5) / q(2.5)
     @test pq(2) ≈ fromroots([1,3])(2) / fromroots([3,4])(2)
+    @test zero(pq)(10) == 0
+    @test one(pq)(10) == 1
+
     
     # arithmetic
     rs = r // (r-1)
@@ -39,6 +43,9 @@ using LinearAlgebra
     @test (pq + rs)(x) ≈ (pq(x) + rs(x))
     @test (pq * rs)(x) ≈ (pq(x) * rs(x))
     @test (-pq)(x) ≈ -p(x)/q(x)
+    @test pq .* (pq, pq) == (pq*pq, pq*pq)
+    @test pq .* [pq pq] == [pq*pq pq*pq]
+    
     
     # derivative
     pq = p // one(p)
@@ -56,8 +63,14 @@ using LinearAlgebra
     
     # lowest terms
     pq = p // q
-    pp, qq = lowest_terms(pq)
+    pp, qq = Polynomials.pqs(lowest_terms(pq))
     @test all(abs.(pp.(roots(qq))) .> 1/2)
+
+    # ≈
+    @test (2p)//(2one(p)) ≈ p//one(p)
+    @test p//one(p) ≈  p//one(p) + eps()
+    x = variable(p)
+    @test (x*p)//x ≈ p // one(p)
 
     
 end
@@ -102,6 +115,7 @@ end
 
     ## T, Polynomial{T} promotes
     @test eltype([1, p, pp]) == PP
+    @test eltype(eltype(eltype([im, p, pp]))) == Complex{Int}
 
     ## test mixed types promote polynomial type
     @test eltype([pp rr p r]) == PP
