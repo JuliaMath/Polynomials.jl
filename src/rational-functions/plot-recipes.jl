@@ -55,7 +55,8 @@ function rational_function_trim(pq, a, b, xlims, ylims)
     n = 601
     xs = range(a,stop=b, length=n)
     ys = pq.(xs)
-    M = max(5, 3*maximum(abs, pq.(cps)), 1.25*maximum(abs, pq.((a,b))))
+    Mcps = isempty(cps) ? 5 : 3*maximum(abs, pq.(cps))
+    M = max(5, Mcps, 1.25*maximum(abs, pq.((a,b))))
 
     lo = ylims[1] == nothing ? -M : ylims[1]
     hi = ylims[2] == nothing ?  M : ylims[2]
