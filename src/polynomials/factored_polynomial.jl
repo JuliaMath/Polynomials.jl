@@ -255,6 +255,9 @@ roots(p::FactoredPolynomial{T}) where {T} = Base.typed_vcat(T,[repeat([k],v) for
 
 
 ## -----
+# unary subtraction
+Base.:-(p::P) where {T,X,P<:FactoredPolynomial{T,X}} = (-1)*p
+
 # addition 
 function Base.:+(p::P, q::P) where {T,X,P<:FactoredPolynomial{T,X}}
     𝑷 = Polynomial{T,X}
@@ -335,13 +338,22 @@ function uvw(p::P, q::P; kwargs...) where {T, X, P<:FactoredPolynomial{T,X}}
     P(du), P(dv, p.c), P(dw, q.c)
 end
 
+# return a,b with p = a + b*q
 function Base.divrem(p::P, q::P) where {T, X, P<:FactoredPolynomial{T,X}}
-    u,v,w = uvw(p,q)
-    isconstant(w) && return (v / q.c, zero(v))
-    
-    𝑷 = Polynomial{T,X}
-    𝒗, 𝒘 = convert(𝑷, v), convert(𝑷, w)
-    𝒅,𝒓 = divrem(𝒗,𝒘)
 
-    convert(P, 𝒅), convert(P,𝒓)
+    u, v,w = uvw(p, q)
+
+    dv, dw = degree(v), degree(w)
+    n = dv - dw
+
+    n < 0 && return (zero(w), w)
+
+    xⁿ = variable(p)^n
+    a = v.c / w.c * xⁿ
+
+    # solving p = a*q + b; v = a*w + b
+    b = v - a*w
+    return a, b*u
+
 end    
+
