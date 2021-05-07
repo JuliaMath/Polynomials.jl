@@ -222,7 +222,6 @@ end
 
 @testset "Divrem" begin
     for P in  Ps
-        P <: FactoredPolynomial && continue
         
         p0 = P([0])
         p1 = P([1])
@@ -232,13 +231,13 @@ end
         pN = P([276,3,87,15,24,0])
         pR = P([3 // 4, -2 // 1, 1 // 1])
 
-        @test divrem(p4, p2) == (p3, zero(p3))
-        @test p3 % p2 == p3
+        @test all(divrem(p4, p2) .==ᵟ (p3, zero(p3)))
+        @test p3 % p2 ==ᵟ p3
         @test all((map(abs, coeffs(p2 ÷ p3 - P([1 / 9,2 / 3])))) .< eps())
-        @test divrem(p0, p1) == (p0, p0)
-        @test divrem(p1, p1) == (p1, p0)
-        @test divrem(p2, p2) == (p1, p0)
-        @test divrem(pR, pR) == (one(pR), zero(pR))
+        @test all(divrem(p0, p1) .==ᵟ (p0, p0))
+        @test all(divrem(p1, p1) .==ᵟ (p1, p0))
+        @test all(divrem(p2, p2) .==ᵟ (p1, p0))
+        @test all(divrem(pR, pR) .==ᵟ (one(pR), zero(pR)))
         @test_throws DivideError p1 ÷ p0
         @test_throws DivideError divrem(p0, p0)
 
@@ -393,8 +392,7 @@ end
     fit(1:3,  rand(3))
 
     # weight test (PR #291)
-    # This should change with 2.0
-    # as for now we specify w^2.
+    # we specify w^2.
     x = range(0, stop=pi, length=30)
     y = sin.(x)
     wts = 1 ./ sqrt.(1 .+ x)
@@ -638,19 +636,19 @@ end
         @test_throws ArgumentError derivative(pR, -1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
 
-        @test derivative(integrate(pN)) == convert(P{Float64}, pN)
-        @test integrate(pNULL, 1) == convert(P{Float64}, p1)
+        @test derivative(integrate(pN)) ==ᵟ pN
+        @test integrate(pNULL, 1) ==ᵟ p1
         rc = Rational{Int64}[1,2,3]
         @test integrate(P(rc)) == P{eltype(rc)}([0, 1, 1, 1])
 
+
+        P <: FactoredPolynomial && continue
 
         for i in 1:10
             p = P(rand(1:5, 6))
             @test degree(truncate(p - integrate(derivative(p)), atol=1e-13)) <= 0
             @test degree(truncate(p - derivative(integrate(p)), atol=1e-13)) <= 0
-        end
-
-
+            end
 
         # Handling of `NaN`s
         p     = P([NaN, 1, 5])
@@ -878,7 +876,7 @@ end
 @testset "Indexing" begin
     # Indexing
     for P in Ps
-        P <: FactoredPolynomial && continue
+
         # getindex
         p = P([-1, 3, 5, -2])
         @test p[0] ≈ -1
@@ -886,8 +884,8 @@ end
         @test p[1:2] ==ᵗ⁰ [3, 5]
         @test p[:] ==ᵗ⁰ [-1, 3, 5, -2]
 
-        if !isimmutable(p) 
-            # setindex
+        # setindex
+        if !(isimmutable(p) || (P <: FactoredPolynomial))
             p1  = P([1,2,1])
             p1[5] = 1
             @test p1[5] == 1
@@ -916,11 +914,10 @@ end
             @test isa(term, eltype(p1))
         end
 
-        @test eltype(p1) == Int
+        !(P <: FactoredPolynomial) && @test eltype(p1) == Int
         for P in Ps
-            P <: FactoredPolynomial && continue
             p1 = P([1,2,0,3])
-            @test eltype(collect(p1)) <: Int
+            @test eltype(collect(p1)) <: eltype(p1)
             @test eltype(collect(Float64, p1)) <: Float64
             @test_throws InexactError collect(Int, P([1.2]))
         end

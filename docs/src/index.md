@@ -159,9 +159,9 @@ julia> roots(Polynomial([0, 0, 1]))
  0.0
 ```
 
-For polynomials with suspected multplicites, the non-exported `Polynomials.Multroot.multroot` function can avoid some numerical issues that `roots` will have. 
+For polynomials with multplicities, the non-exported `Polynomials.Multroot.multroot` function can avoid some numerical issues that `roots` will have. 
 
-The `FactoredPolynomial` type store the roots (with multiplicities) and the leading coefficent of a polynomial. In this example, the `multroot` function is used internally to identify the roots of `p` below, in the conversion from the `Polynomial` type to the `FactoredPolynomial` type:
+The `FactoredPolynomial` type stores the roots (with multiplicities) and the leading coefficent of a polynomial. In this example, the `multroot` function is used internally to identify the roots of `p` below, in the conversion from the `Polynomial` type to the `FactoredPolynomial` type:
 
 ```jldoctest
 julia> p = Polynomial([24, -50, 35, -10, 1])
@@ -376,7 +376,7 @@ ERROR: ArgumentError: Polynomials have different indeterminates
 [...]
 ```
 
-an error thrown.
+an error is thrown.
 
 In general, arrays with mixtures of non-constant polynomials with *different* indeterminates will error. By default, an error will occur when constant polynomials with different indeterminates are used as components. However, for *typed* arrays, conversion will allow such constructs to be used.
 
@@ -422,7 +422,7 @@ Though were a non-constant polynomial with indeterminate `y` replacing
 
 ## Rational functions
 
-The package provides support for rational functions or fractions of polynomials (for most types). The construction of the basic type mirrors that for construction rational numbers.
+The package provides support for rational functions -- fractions of polynomials (for most types). The construction of the basic type mirrors the construction of rational numbers.
 
 ```jldoctest
 julia> P = FactoredPolynomial
@@ -454,6 +454,17 @@ julia> d
 ((x - 4.0) * (x - 1.0000000000000002)) // ((x - 5.0) * (x - 2.0))
 ```
 
+A basic plot recipe is provided.
+
+```@example
+using Plots, Polynomials
+P = FactoredPolynomial
+p,q = fromroots(P, [1,2,3]), fromroots(P, [2,3,3,0])
+plot(p//q)
+savefig("rational_function.svg"); nothing # hide
+```
+
+![](rational_function.svg)
 
 
 ## Related Packages

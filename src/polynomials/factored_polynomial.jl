@@ -55,8 +55,10 @@ struct FactoredPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     end
 end
 
-# Unlike P{T}(...) we allow T to widen here if the roots of the polynomial Polynomial(coeffs) needs
-# a bigger class
+# There are idiosyncracies with this type
+# * unlike P{T}(...) we allow T to widen here if the roots of the polynomial Polynomial(coeffs) needs
+#   a bigger class
+# * the handling of Inf and NaN as specified coefficient is to just return a constant poly (Inf or NaN)
 function FactoredPolynomial{T,X}(coeffs::AbstractVector{S}) where {T,S,X}
     p = Polynomial{T,X}(T.(coeffs))
     iszero(p) && return zero(FactoredPolynomial{T,X})
@@ -112,7 +114,7 @@ function Base.convert(P::Type{<:FactoredPolynomial}, p::Polynomial{T,X}) where {
 end
 
 ## ----
-## apply to factors and the leading coefficient, not the coefficients
+## apply map to factors and the leading coefficient, not the coefficients
 function Base.map(fn, p::P, args...; kwargs...)  where {T,X,P<:FactoredPolynomial{T,X}}
     𝒅 = Dict{T, Int}()
     for (k,v) ∈ p.coeffs
@@ -172,7 +174,8 @@ Base.copy(p::P) where {P<:FactoredPolynomial} = P(copy(p.coeffs), p.c)
 Base.:(==)(p1::FactoredPolynomial, p2::FactoredPolynomial) =
     check_same_variable(p1,p2) && p1.c == p2.c && (p1.coeffs == p2.coeffs)
 
-# what does it mean to be approximate here?
+# what does it mean to be approximate here? Question pushed off to the Polynomial type
+# might be better to compare roots and multiplicities
 function Base.isapprox(p1::FactoredPolynomial{T,X},
                        p2::FactoredPolynomial{S,Y};
                        rtol::Real = (Base.rtoldefault(T, S, 0)),
@@ -198,7 +201,7 @@ function Base.isapprox(p1::FactoredPolynomial{T,X},
 end
 
 
-## ---
+## ----
 Base.iszero(p::FactoredPolynomial) = iszero(p.c)
 
 Base.zero(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(), zero(T))
@@ -224,21 +227,6 @@ function degree(p::P) where {P <: FactoredPolynomial}
     d > 0 && return sum(values(p.coeffs))
     iszero(p.c)  ? -1 : 0
 end
-
-function integrate(p::P) where {P <: FactoredPolynomial}
-    𝑷 = Polynomial
-    𝒑 = convert(𝑷, p)
-    ∫𝒑 = integrate(𝒑)
-    convert(P, ∫𝒑)
-end
-
-function derivative(p::P,n::Int) where {P <: FactoredPolynomial}
-    𝑷 = Polynomial
-    𝒑 = convert(𝑷, p)
-    𝒑⁽ⁿ⁾ = derivative(𝒑, n)
-    convert(P, 𝒑⁽ⁿ⁾)
-end
-
 
 ## ----
 
@@ -341,19 +329,29 @@ end
 # return a,b with p = a + b*q
 function Base.divrem(p::P, q::P) where {T, X, P<:FactoredPolynomial{T,X}}
 
-    u, v,w = uvw(p, q)
+    u, v, w = uvw(p, q)
+    𝑷 = Polynomial
+    𝒗,𝒘 = convert(𝑷, v), convert(𝑷, w)
+    𝒅,𝒓 = divrem(𝒗, 𝒘)
+    d,r = convert(P, 𝒅), convert(P, 𝒓)
 
-    dv, dw = degree(v), degree(w)
-    n = dv - dw
-
-    n < 0 && return (zero(w), w)
-
-    xⁿ = variable(p)^n
-    a = v.c / w.c * xⁿ
-
-    # solving p = a*q + b; v = a*w + b
-    b = v - a*w
-    return a, b*u
+    return (d, u*r)
 
 end    
+
+## ----
+
+function integrate(p::P) where {P <: FactoredPolynomial}
+    𝑷 = Polynomial
+    𝒑 = convert(𝑷, p)
+    ∫𝒑 = integrate(𝒑)
+    convert(P, ∫𝒑)
+end
+
+function derivative(p::P,n::Int) where {P <: FactoredPolynomial}
+    𝑷 = Polynomial
+    𝒑 = convert(𝑷, p)
+    𝒑⁽ⁿ⁾ = derivative(𝒑, n)
+    convert(P, 𝒑⁽ⁿ⁾)
+end
 
