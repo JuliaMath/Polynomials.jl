@@ -23,7 +23,13 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 ==ᵟ(a,b) = (a == b)
 ==ᵟ(a::FactoredPolynomial, b::FactoredPolynomial) = a ≈ b
 
-Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
+if VERSION >= v"2.1.2"
+    Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
+else
+    Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
+    @eval (:(struct FactoredPolynomial end))
+end
+
 isimmutable(p::P) where {P} = P <: ImmutablePolynomial
 isimmutable(::Type{<:ImmutablePolynomial}) = true
 
