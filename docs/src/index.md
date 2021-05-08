@@ -159,9 +159,9 @@ julia> roots(Polynomial([0, 0, 1]))
  0.0
 ```
 
-For polynomials with multplicities, the non-exported `Polynomials.Multroot.multroot` function can avoid some numerical issues that `roots` will have. 
+For polynomials with multplicities, the non-exported `Polynomials.Multroot.multroot` method can avoid some numerical issues that `roots` will have. 
 
-The `FactoredPolynomial` type stores the roots (with multiplicities) and the leading coefficent of a polynomial. In this example, the `multroot` function is used internally to identify the roots of `p` below, in the conversion from the `Polynomial` type to the `FactoredPolynomial` type:
+The `FactoredPolynomial` type stores the roots (with multiplicities) and the leading coefficent of a polynomial. In this example, the `multroot` method is used internally to identify the roots of `p` below, in the conversion from the `Polynomial` type to the `FactoredPolynomial` type:
 
 ```jldoctest
 julia> p = Polynomial([24, -50, 35, -10, 1])
@@ -301,7 +301,7 @@ Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
 FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
 
-julia> map(round, q, digits=2)
+julia> map(round, q, digits=10)
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 

@@ -999,7 +999,7 @@ end
 """
     uvw(p,q; kwargs...)
 
-return `u` the gcd of `p` and `q`, and `v` and `w`, where `v = p/u` and `w = q/u`.
+return `u` the gcd of `p` and `q`, and `v` and `w`, where `u*v = p` and `u*w = q`.
 """
 uvw(p::AbstractPolynomial, q::AbstractPolynomial; kwargs...) = uvw(promote(p,q)...; kwargs...)
 uvw(p1::P, p2::P; kwargs...) where {P <:AbstractPolynomial} = throw(ArgumentError("uvw not defind"))

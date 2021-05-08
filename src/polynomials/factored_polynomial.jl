@@ -5,7 +5,7 @@ export FactoredPolynomial
 
 A polynomial type that stores its data in a dictionary whose keys are the roots and whose values are the respecitive multiplicities along with a leading coefficient.
 
-The structure is utilized for polynomial multiplication and powers, the finding of roots, and the identification of a greatest common divisor. For other operations, say addition, the operation is done after converting to the `Polynomial` type then converting back. (This requires the identification of the roots structure.)
+The structure is utilized for scalar multiplication, polynomial multiplication and powers, the finding of roots, and the identification of a greatest common divisor. For other operations, say addition, the operation is done after converting to the `Polynomial` type then converting back. (This requires the identification of the roots, so is subject to numeric issues.)
 
 ## Examples
 
@@ -33,7 +33,7 @@ Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
 FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
 
-julia> map(round, q, digits=2) # map works over factors and leading coefficient -- not coefficients in standard basis
+julia> map(round, q, digits=12) # map works over factors and leading coefficient -- not coefficients in the standard basis
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 """
@@ -57,8 +57,8 @@ end
 
 # There are idiosyncracies with this type
 # * unlike P{T}(...) we allow T to widen here if the roots of the polynomial Polynomial(coeffs) needs
-#   a bigger class
-# * the handling of Inf and NaN as specified coefficient is to just return a constant poly (Inf or NaN)
+#   a wider type (e.g. Complex{Float64}, not Float64)
+# * the handling of Inf and NaN, when a specified coefficient, is to just return a constant poly (Inf or NaN)
 function FactoredPolynomial{T,X}(coeffs::AbstractVector{S}) where {T,S,X}
     p = Polynomial{T,X}(T.(coeffs))
     iszero(p) && return zero(FactoredPolynomial{T,X})
@@ -165,16 +165,17 @@ function Base.getindex(p::FactoredPolynomial{T}, idx::Int) where {T <: Number}
 end
 
 # pairs,keys, values
-Base.keys(p::FactoredPolynomial) = keys(convert(Polynomial, p))
+Base.keys(p::FactoredPolynomial)   = keys(convert(Polynomial, p))
 Base.values(p::FactoredPolynomial) = values(convert(Polynomial, p))
-Base.pairs(p::FactoredPolynomial) = pairs(convert(Polynomial, p))
+Base.pairs(p::FactoredPolynomial)  = pairs(convert(Polynomial, p))
 
 
 Base.copy(p::P) where {P<:FactoredPolynomial} = P(copy(p.coeffs), p.c)
 Base.:(==)(p1::FactoredPolynomial, p2::FactoredPolynomial) =
     check_same_variable(p1,p2) && p1.c == p2.c && (p1.coeffs == p2.coeffs)
 
-# what does it mean to be approximate here? Question pushed off to the Polynomial type
+# what does it mean to be approximate here?
+# Question pushed off to the Polynomial type
 # might be better to compare roots and multiplicities
 function Base.isapprox(p1::FactoredPolynomial{T,X},
                        p2::FactoredPolynomial{S,Y};
@@ -204,9 +205,9 @@ end
 ## ----
 Base.iszero(p::FactoredPolynomial) = iszero(p.c)
 
-Base.zero(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(), zero(T))
-Base.one(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(), one(T))
-variable(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(0=>1), one(T))
+Base.zero(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(),     zero(T))
+Base.one(::Type{FactoredPolynomial{T,X}}) where {T, X}  = FactoredPolynomial{T,X}(Dict{T,Int}(),     one(T))
+variable(::Type{FactoredPolynomial{T,X}}) where {T, X}  = FactoredPolynomial{T,X}(Dict{T,Int}(0=>1), one(T))
 
 
 #
@@ -257,11 +258,7 @@ end
 function Base.:*(p::P, q::P) where {T,X, P<:FactoredPolynomial{T,X}}
     d = copy(p.coeffs)
     for (k,v) ∈ q.coeffs
-        if haskey(d,k)
-            d[k] += v
-        else
-            d[k] = v
-        end
+        d[k] = get(d, k, 0) + v
     end
     P(d, p.c*q.c)
 end
@@ -269,10 +266,8 @@ end
 # scalar mult
 function Base.:*(p::P, c::S) where {S<:Number, T, X, P <: FactoredPolynomial{T, X}}
     R = promote_type(T,S)
-    d = Dict{R,Int}()
-    for (k,v) ∈ p.coeffs
-        d[k] = v
-    end
+    d = Dict{R, Int}() # wident
+    copy!(d, p.coeffs)
     FactoredPolynomial{R,X}(d, c * p.c)
 end
 

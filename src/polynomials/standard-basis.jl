@@ -338,10 +338,6 @@ function uvw(V::Val{:euclidean}, p::P, q::P; kwargs...) where {P <: StandardBasi
     u = gcd(V,p,q; kwargs...)
     u, p÷u, q÷u
 end
-function _divgcd(V::Val{:noda_sasaki}, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
-    u = gcd(V,p,q; kwargs...)
-    u, p÷u, q÷u
-end
 
 function uvw(::Any, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
     throw(ArgumentError("not defined"))

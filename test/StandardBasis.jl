@@ -228,7 +228,7 @@ end
 
 @testset "Divrem" begin
     for P in  Ps
-        
+
         p0 = P([0])
         p1 = P([1])
         p2 = P([5, 6, -3, 2 ,4])
@@ -543,10 +543,10 @@ end
         p = fromroots(P, r)
         @test p ==ᵟ P([6, -5, 1])
         @test sort(roots(p)) ≈ r
-        
+
         @test roots(p0) == roots(p1) == roots(pNULL) == []
         @test eltype(roots(p0)) == eltype(roots(p1)) == eltype(roots(pNULL))
-        !(P <: FactoredPolynomial) &&@test eltype(roots(pNULL)) == Float64
+        !(P <: FactoredPolynomial) && @test eltype(roots(pNULL)) == Float64
         @test P == LaurentPolynomial ? roots(variable(P)) == [0.0] : roots(P([0,1,0])) == [0.0]
 
         @test roots(p2) == [-1]
