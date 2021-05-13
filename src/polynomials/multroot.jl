@@ -30,7 +30,7 @@ julia> roots(p)
  1.4142350577588885 + 3.72273772278647e-5im
 
 julia> Polynomials.Multroot.multroot(p)
-(values = [0.9999999999999993, 1.4142135623730958], multiplicities = [2, 3], κ = 5.218455674370636, ϵ = 2.8736226244218195e-16)
+(values = [0.9999999999999992, 1.4142135623730958], multiplicities = [2, 3], κ = 5.218455674370639, ϵ = 1.5700924586837747e-16)
 ```
 
 The algorithm has two stages. First it uses `pejorative_manifold` to
