@@ -209,8 +209,9 @@ also be useful for the default `show` methods. The following example
 shows how `Dual` objects of `DualNumbers` may be printed with
 parentheses.
 
-```
-using DualNumbers
+```jldoctest
+julia> using DualNumbers
+
 julia> Polynomial([Dual(1,2), Dual(3,4)])
 Polynomial(1 + 2ɛ + 3 + 4ɛ*x)
 
