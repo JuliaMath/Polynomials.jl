@@ -214,16 +214,20 @@ julia> using DualNumbers
 
 julia> Polynomial([Dual(1,2), Dual(3,4)])
 Polynomial(1 + 2ɛ + 3 + 4ɛ*x)
+```
+
+```jldoctest 
+julia> using DualNumbers, Polynomials
 
 julia> function Base.show_unquoted(io::IO, pj::Dual, indent::Int, prec::Int)
-       if Base.operator_precedence(:+) <= prec
-            print(io, "(")
-            show(io, pj)
-            print(io, ")")
-        else
-            show(io, pj)
+            if Base.operator_precedence(:+) <= prec
+                print(io, "(")
+                show(io, pj)
+                print(io, ")")
+            else
+                show(io, pj)
+            end
         end
-    end
 
 julia> Polynomial([Dual(1,2), Dual(3,4)])
 Polynomial((1 + 2ɛ) + (3 + 4ɛ)*x)
