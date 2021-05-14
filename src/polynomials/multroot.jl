@@ -15,14 +15,14 @@ to identify roots of polynomials with suspected multiplicities over
 
 Example:
 
-```
+```jldoctest
 julia> using Polynomials
 
 julia> p = fromroots([sqrt(2), sqrt(2), sqrt(2), 1, 1])
 Polynomial(-2.8284271247461907 + 11.656854249492383*x - 19.07106781186548*x^2 + 15.485281374238573*x^3 - 6.242640687119286*x^4 + 1.0*x^5)
 
 julia> roots(p)
-5-element Array{Complex{Float64},1}:
+5-element Vector{ComplexF64}:
   0.999999677417768 + 0.0im
  1.0000003225831504 + 0.0im
  1.4141705716005981 + 0.0im
@@ -30,7 +30,7 @@ julia> roots(p)
  1.4142350577588885 + 3.72273772278647e-5im
 
 julia> Polynomials.Multroot.multroot(p)
-(values = [0.9999999999999993, 1.4142135623730958], multiplicities = [2, 3], κ = 5.218455674370636, ϵ = 2.8736226244218195e-16)
+(values = [0.9999999999999992, 1.4142135623730958], multiplicities = [2, 3], κ = 5.218455674370639, ϵ = 1.5700924586837747e-16)
 ```
 
 The algorithm has two stages. First it uses `pejorative_manifold` to

@@ -10,7 +10,7 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 ## Installation
 
 ```julia
-(v1.5) pkg> add Polynomials
+(v1.6) pkg> add Polynomials
 ```
 
 ## Available Types of Polynomials
@@ -23,7 +23,7 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 
 ## Usage
 
-```julia
+```jldoctest
 julia> using Polynomials
 ```
 
@@ -31,28 +31,28 @@ julia> using Polynomials
 
 Construct a polynomial from an array (a vector) of its coefficients, lowest order first.
 
-```julia
+```jldoctest
 julia> Polynomial([1,0,3,4])
 Polynomial(1 + 3*x^2 + 4*x^3)
 ```
 
 Optionally, the variable of the polynomial can be specified.
 
-```julia
+```jldoctest
 julia> Polynomial([1,2,3], :s)
 Polynomial(1 + 2*s + 3*s^2)
 ```
 
 Construct a polynomial from its roots.
 
-```julia
+```jldoctest
 julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
 Polynomial(-6 + 11*x - 6*x^2 + x^3)
 ```
 
 Evaluate the polynomial `p` at `x`.
 
-```julia
+```jldoctest
 julia> p = Polynomial([1, 0, -1]);
 julia> p(0.1)
 0.99
@@ -62,7 +62,7 @@ julia> p(0.1)
 
 Methods are added to the usual arithmetic operators so that they work on polynomials, and combinations of polynomials and scalars.
 
-```julia
+```jldoctest
 julia> p = Polynomial([1,2])
 Polynomial(1 + 2*x)
 
@@ -99,11 +99,11 @@ Polynomial(0.25 - 0.5*x)
 
 Operations involving polynomials with different variables will error.
 
-```julia
+```jldoctest
 julia> p = Polynomial([1, 2, 3], :x);
 julia> q = Polynomial([1, 2, 3], :s);
 julia> p + q
-ERROR: Polynomials must have same variable.
+ERROR: ArgumentError: Polynomials have different indeterminates
 ```
 
 #### Construction and Evaluation
@@ -179,7 +179,7 @@ Integrate the polynomial `p` term by term, optionally adding a constant
 term `k`. The degree of the resulting polynomial is one higher than the
 degree of `p` (for a nonzero polynomial).
 
-```julia
+```jldoctest
 julia> integrate(Polynomial([1, 0, -1]))
 Polynomial(1.0*x - 0.3333333333333333*x^3)
 
@@ -190,7 +190,7 @@ Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)
 Differentiate the polynomial `p` term by term. The degree of the
 resulting polynomial is one lower than the degree of `p`.
 
-```julia
+```jldoctest
 julia> derivative(Polynomial([1, 3, -1]))
 Polynomial(3 - 2*x)
 ```
@@ -201,19 +201,19 @@ Polynomial(3 - 2*x)
 Return the roots (zeros) of `p`, with multiplicity. The number of
 roots returned is equal to the degree of `p`. By design, this is not type-stable, the returned roots may be real or complex.
 
-```julia
+```jldoctest
 julia> roots(Polynomial([1, 0, -1]))
-2-element Array{Float64,1}:
+2-element Vector{Float64}:
  -1.0
   1.0
 
 julia> roots(Polynomial([1, 0, 1]))
-2-element Array{Complex{Float64},1}:
+2-element Vector{ComplexF64}:
  0.0 - 1.0im
  0.0 + 1.0im
 
 julia> roots(Polynomial([0, 0, 1]))
-2-element Array{Float64,1}:
+2-element Vector{Float64}:
  0.0
  0.0
 ```
@@ -222,7 +222,7 @@ julia> roots(Polynomial([0, 0, 1]))
 
 Fit a polynomial (of degree `deg` or less) to `x` and `y` using a least-squares approximation.
 
-```julia
+```jldoctest
 julia> xs = 0:4; ys = @. exp(-xs) + sin(xs);
 
 julia> fit(xs, ys) |> p -> round.(coeffs(p), digits=4) |> Polynomial

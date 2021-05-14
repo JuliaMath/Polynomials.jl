@@ -304,16 +304,16 @@ julia> using Polynomials;
 julia> z = variable(LaurentPolynomial, :z)
 LaurentPolynomial(z)
 
-julia> h = LaurentPolynomial([1,1], -1:0, :z)
+julia> h = LaurentPolynomial([1,1], -1, :z)
 LaurentPolynomial(z⁻¹ + 1)
 
-julia> Polynomials.paraconj(h)(z) ≈ 1 + z ≈ LaurentPolynomial([1,1], 0:1, :z)
+julia> Polynomials.paraconj(h)(z) ≈ 1 + z ≈ LaurentPolynomial([1,1], 0, :z)
 true
 
-julia> h = LaurentPolynomial([3,2im,1], -2:0, :z)
+julia> h = LaurentPolynomial([3,2im,1], -2, :z)
 LaurentPolynomial(3*z⁻² + 2im*z⁻¹ + 1)
 
-julia> Polynomials.paraconj(h)(z) ≈ 1 - 2im*z + 3z^2 ≈ LaurentPolynomial([1, -2im, 3], 0:2, :z)
+julia> Polynomials.paraconj(h)(z) ≈ 1 - 2im*z + 3z^2 ≈ LaurentPolynomial([1, -2im, 3], 0, :z)
 true
 
 julia> Polynomials.paraconj(h)(z) ≈ (conj ∘ h ∘ conj ∘ inv)(z)
@@ -459,11 +459,11 @@ The roots of a function (Laurent polynomial in this case) `a(z)` are the values 
 ```julia
 julia> using Polynomials;
 
-julia> p = LaurentPolynomial([24,10,-15,0,1],-2:1,:z)
+julia> p = LaurentPolynomial([24,10,-15,0,1],-2,:z)
 LaurentPolynomial(24*z⁻² + 10*z⁻¹ - 15 + z²)
 
-julia> roots(a)
-4-element Array{Float64,1}:
+julia> roots(p)
+4-element Vector{Float64}:
  -3.999999999999999
  -0.9999999999999994
   1.9999999999999998
