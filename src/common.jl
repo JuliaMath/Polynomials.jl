@@ -168,12 +168,35 @@ _wlstsq(vand, y, W::AbstractMatrix) = qr(vand' * W * vand) \ (vand' * W * y)
 """
     roots(::AbstractPolynomial; kwargs...)
 
-Returns the roots of the given polynomial. This is calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgeebra.eigvals` call.
+Returns the roots, or zeros, of the given polynomial. 
 
-!!! note
+This is calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgeebra.eigvals` call.
 
-        The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) provides an interface to FORTRAN code implementing an algorithm that can handle very large polynomials (it is  `O(n^2)` not `O(n^3)`. The [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package implements the algorithm in Julia, allowing the use of other  number types.
+!!! Note
 
+    The default `roots` implementation is for polynomials in the
+    standard basis. The companion matrix approach is reasonably fast
+    and accurate for modest-size polynomials. However, other packages
+    in the `Julia` ecosystem may be of interest:
+
+* The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative approach for finding complex roots to univariate polynomials that is a bit faster and a bit more accurate. It is based on an algorithm of Skowron and Gould.
+
+* The [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) package provides an interface to FORTRAN code implementing an algorithm that can handle very large polynomials (it is  `O(n^2)` not `O(n^3)`. The [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package implements the algorithm in Julia, allowing the use of other  number types. This is based on work of Aurentz, Mach, Robol, Vandrebril, and Watkins.
+
+* The [Hecke](https://github.com/thofma/Hecke.jl/tree/master/src) package has a `roots` function. The `Hecke` package utilizes the `Arb` library for fast high-precision numbers.
+
+Within this package, these cases have special algorithms:
+
+
+Polynomials with roots with multiplicities
+
+* The `Polynomials.multroot` function is available (Version v"1.2" or greater) for finding roots of polynomials, especially when the roots are repeated. This based on work of Zeng.
+
+To find the real roots of a polynomial with real coefficients:
+
+* The `Polynomials.real_roots` function is available. The related `Polynomials.isolating_intervals` function identifies isolating intervals for each real root. This uses methods from the `RealPolynomialRoots` package  based on work of Sagaraloff, Melhorn, Kobel, and Rouillier.
+
+* The package [IntervalRootFinding](https://github.com/JuliaIntervals/IntervalRootFinding.jl/) can be used to find isolating intervals for the real roots
 """
 function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: Number}
 
