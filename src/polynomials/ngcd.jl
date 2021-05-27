@@ -57,6 +57,12 @@ function ngcd(p::P, q::Q,
     
 end
 
+"""
+    square_free(p)
+
+Use `ngcd` to identify the square-free part of the polynomial `p`.
+"""
+square_free(p) = ngcd(p, derivative(p)).v
 
 ## ---- the work is done in this module
 
