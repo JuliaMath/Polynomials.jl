@@ -13,19 +13,19 @@ The structure is utilized for scalar multiplication, polynomial multiplication a
 julia> using Polynomials
 
 julia> p = FactoredPolynomial(Dict([0=>1, 1=>2, 3=>4]))
-FactoredPolynomial(1 * x * (x - 3)⁴ * (x - 1)²)
+FactoredPolynomial(x * (x - 3)⁴ * (x - 1)²)
 
 julia> q = fromroots(FactoredPolynomial, [0,1,2,3])
-FactoredPolynomial(1 * x * (x - 2) * (x - 3) * (x - 1))
+FactoredPolynomial(x * (x - 2) * (x - 3) * (x - 1))
 
 julia> p*q
-FactoredPolynomial(1 * x² * (x - 2) * (x - 3)⁵ * (x - 1)³)
+FactoredPolynomial(x² * (x - 2) * (x - 3)⁵ * (x - 1)³)
 
 julia> p^1000
-FactoredPolynomial(1 * x¹⁰⁰⁰ * (x - 3)⁴⁰⁰⁰ * (x - 1)²⁰⁰⁰)
+FactoredPolynomial(x¹⁰⁰⁰ * (x - 3)⁴⁰⁰⁰ * (x - 1)²⁰⁰⁰)
 
 julia> gcd(p,q)
-FactoredPolynomial(1 * x * (x - 3) * (x - 1))
+FactoredPolynomial(x * (x - 3) * (x - 1))
 
 julia> p = Polynomial([24, -50, 35, -10, 1])
 Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
