@@ -550,7 +550,7 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0
 """
     coeffs(::AbstractPolynomial)
 
-Return the coefficient vector `[a_0, a_1, ..., a_n]` of a polynomial.
+Return the coefficient vector. For a standard basis polynomial these are `[a_0, a_1, ..., a_n]`.
 """
 coeffs(p::AbstractPolynomial) = p.coeffs
 

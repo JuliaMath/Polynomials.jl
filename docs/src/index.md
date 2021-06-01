@@ -6,7 +6,7 @@ differentiation, evaluation, and root finding over dense univariate polynomials.
 To install the package, run
 
 ```julia
-(v1.2) pkg> add Polynomials
+(v1.6) pkg> add Polynomials
 ```
 
 The package can then be loaded into the current session using
@@ -138,9 +138,7 @@ Polynomial(3 - 2*x)
 
 ### Root-finding
 
-Return the roots (zeros) of `p`, with multiplicity. The number of
-roots returned is equal to the order of `p`. By design, this is not type-stable,
-the returned roots may be real or complex.
+Return the `d` roots (or zeros) of the degree `d` polynomial `p`.
 
 ```jldoctest
 julia> roots(Polynomial([1, 0, -1]))
@@ -159,10 +157,14 @@ julia> roots(Polynomial([0, 0, 1]))
  0.0
 ```
 
+By design, this is not type-stable; the returned roots may be real or complex.
+
 The default `roots` function uses the eigenvalues of the
 [companion](https://en.wikipedia.org/wiki/Companion_matrix) matrix for
-a polynomial. This is an `𝑶(n^3)` operation. For polynomials with `BigFloat` coefficients,
-the `GenericLinearAlgebra` package can be seamlessly used:
+a polynomial. This is an `𝑶(n^3)` operation. 
+
+For polynomials with `BigFloat` coefficients, the
+`GenericLinearAlgebra` package can be seamlessly used:
 
 ```
 julia> p = fromroots(Polynomial{BigFloat}, [1,2,3])
@@ -222,7 +224,7 @@ julia> AMRVW.roots(float.(coeffs(p)))
  0.9999999999999997 + 0.0im
  2.0000000000000036 + 0.0im
  2.9999999999999964 + 0.0im
- ```
+```
 
 The roots are returned as complex numbers. 
 
@@ -231,7 +233,7 @@ Both `PolynomialRoots` and `AMRVW` are generic and work with
 
 The `AMRVW` package works with much larger polynomials than either
 `roots` or `Polynomial.roots`. For example, the roots of this 1000
-degree ramdom polynomial are quickly and accurately solved for:
+degree random polynomial are quickly and accurately solved for:
 
 ```
 julia> filter(isreal, AMRVW.roots(rand(1001) .- 1/2))
@@ -269,11 +271,11 @@ julia> filter(isreal, Hecke._roots(p, 200)) # `_roots` not `roots`
  [0.007874015748031496052667730054749907629383970426203662570129818116411192289734968717460531379762086419 +/- 3.10e-103]
  [0.0078740157480314960733165219137540296086246589982151627453855179522742093785877068332663198273096875302 +/- 9.31e-104]
  [1.9066348541790688341521872066398429982632947292434604847312536201982593209326201234353468172497707769372732739429697289 +/- 7.14e-119]
- ```
+```
 
 ----
 
-To find just the real roots of a polynomial with real coefficients there are a few additional options to solving for all the roots and filtering.
+To find just the real roots of a polynomial with real coefficients there are a few additional options to solving for all the roots and filtering by `isreal`.
 
 * The package
   [IntervalRootFinding](https://github.com/JuliaIntervals/IntervalRootFinding.jl/)
@@ -385,7 +387,7 @@ julia> roots(p)
  2.0000004113969276
  2.9999995304339646
  3.0000004695656672
- ```
+```
 
 
 Whereas, the roots along with the multiplicity structure are correctly identified with `multroot`:
@@ -473,7 +475,7 @@ ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))
 
 ### Iteration
 
-If its basis is implicit, then a polynomial may be  seen as just a vector of  coefficients. Vectors or 1-based, but, for convenience, polynomial types are 0-based, for purposes of indexing (e.g. `getindex`, `setindex!`, `eachindex`). Iteration over a polynomial steps through the underlying coefficients.
+If its basis is implicit, then a polynomial may be  seen as just a vector of  coefficients. Vectors are 1-based, but, for convenience, most polynomial types are naturally 0-based, for purposes of indexing (e.g. `getindex`, `setindex!`, `eachindex`). Iteration over a polynomial steps through the underlying coefficients.
 
 ```jldoctest
 julia> as = [1,2,3,4,5]; p = Polynomial(as);
@@ -583,7 +585,7 @@ If `q` is non-constant, such as `variable(Polynomial, :y)`, then there would be 
 
 The same conversion is done for polynomial multiplication: constant polynomials are treated as numbers; non-constant polynomials must have their symbols match. 
 
-There is an oddity though the following two computations look the same, they are technically different:
+There is an oddity -- though the following two computations look the same, they are technically different:
 
 ```jldoctest natural_inclusion
 julia> one(Polynomial, :x) + one(Polynomial, :y)

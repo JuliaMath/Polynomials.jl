@@ -3,7 +3,7 @@ export FactoredPolynomial
 """
     FactoredPolynomial{T,X}
 
-A polynomial type that stores its data in a dictionary whose keys are the roots and whose values are the respecitive multiplicities along with a leading coefficient.
+A polynomial type that stores its data in a dictionary whose keys are the roots and whose values are the respective multiplicities along with a leading coefficient.
 
 The structure is utilized for scalar multiplication, polynomial multiplication and powers, the finding of roots, and the identification of a greatest common divisor. For other operations, say addition, the operation is done after converting to the `Polynomial` type then converting back. (This requires the identification of the roots, so is subject to numeric issues.)
 

@@ -215,7 +215,7 @@ By default, uses the Euclidean division algorithm (`method=:euclidean`), which i
 
 Passing `method=:noda_sasaki` uses scaling to circumvent some of these.
 
-Passing `method=:numerical` will call the internal method `NGCD.ngcd` for the numerical gcd. See the help page of [`Polynomials.NGCD.ngcd`](@ref) for details.
+Passing `method=:numerical` will call the internal method `NGCD.ngcd` for the numerical gcd. See the help page of [`Polynomials.NGCD.ngcd(p,q)`](@ref) for details.
 """
 function Base.gcd(p1::P, p2::Q, args...;
                   method=:euclidean,
@@ -487,6 +487,8 @@ Polynomials.norm(q-p, Inf) # 2.2168933355715126e-12 # promotes `q` to `Polynomia
 ```
 
 """
+polyfit, ArnoldiFit
+
 function polyfitA(x, y, n=length(x)-1; var=:x)
     m = length(x)
     T = eltype(y)
