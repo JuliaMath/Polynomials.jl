@@ -7,7 +7,7 @@ standard basis of degree `n` *or less*, using a vector of length
 
 * Unlike other polynomial types, this type allows trailing zeros in the coefficient vector. Call `chop!` to trim trailing zeros if desired.
 * Unlike other polynomial types, this does not copy the coefficients on construction
-* Unlike other polynomial types, this type broadcasts like a vector for in-place vector operations (scalare multiplication, polynomial addition/subtraction of the same size)
+* Unlike other polynomial types, this type broadcasts like a vector for in-place vector operations (scalar multiplication, polynomial addition/subtraction of the same size)
 * The method inplace `mul!(pq, p, q)` is defined to use precallocated storage for the product of `p` and `q`
 
 This type is useful for reducing copies and allocations in some algorithms.

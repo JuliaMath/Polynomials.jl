@@ -18,9 +18,15 @@ as well as with combinations of polynomials and scalars. However,
 operations involving two non-constant polynomials of different variables causes an
 error. Unlike other polynomials, `setindex!` is not defined for `ImmutablePolynomials`.
 
-As the coefficient size is a compile-time constant, several performance
-improvements are possible. For example, immutable polynomials can take advantage of 
-faster polynomial evaluation provided by `evalpoly` from Julia 1.4.
+As the degree of the polynomial (`+1`) is a compile-time constant,
+several performance improvements are possible. For example, immutable
+polynomials can take advantage of faster polynomial evaluation
+provided by `evalpoly` from Julia 1.4; similar methods are also used
+for addtion and multiplication.
+
+However, as the degree is included in the type, promotion between
+immutable polynomials can not promote to a common type. As such, they
+are precluded from use in rational functions.
 
 !!! note
     `ImmutablePolynomial` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first 
@@ -42,7 +48,7 @@ ImmutablePolynomial(1.0)
 ```
 
 !!! note
-    This was modeled after https://github.com/tkoolen/StaticUnivariatePolynomials.jl by @tkoolen.
+    This was modeled after [StaticUnivariatePolynomials](https://github.com/tkoolen/StaticUnivariatePolynomials.jl) by `@tkoolen`.
 
 """
 struct ImmutablePolynomial{T <: Number, X, N} <: StandardBasisPolynomial{T, X}

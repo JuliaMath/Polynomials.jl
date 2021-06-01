@@ -8,14 +8,39 @@ DocTestSetup = quote
 end
 ```
 
+## Polynomial
+
 ```@docs
 Polynomial
 ```
 
+## Immutable Polynomial
+
 ```@docs
 ImmutablePolynomial
+```
+
+## Sparse Polynomial
+
+```@docs
 SparsePolynomial
+```
+
+## Laurent Polynomial
+
+```@docs
 LaurentPolynomial
+```
+
+## Factored Polynomial
+
+```@docs
+FactoredPolynomial
+```
+
+## Rational Function
+```@docs
+RationalFunction
 ```
 
 

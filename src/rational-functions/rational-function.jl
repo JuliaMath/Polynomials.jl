@@ -2,11 +2,13 @@
     RationalFunction(p::AbstractPolynomial, q::AbstractPolynomial)
     p // q
 
-Create a rational expression (`p/q`) from the two polynomials. 
+Create a rational expression (`p//q`) from the two polynomials. 
 
-There is no attempt to cancel common factors. The [`lowest_terms`](@ref) function attempts to do that.
+Common factors are not cancelled by the constructor, as they are for
+the base `Rational` type. The [`lowest_terms(pq)`](@ref) function attempts
+that operation.
 
-For purposes of iteration, a rational function is treated like a tuple.
+For purposes of iteration, a rational function is treated like a two-element container.
 
 ## Examples
 ```
@@ -34,8 +36,11 @@ julia> derivative(pq)
 (-108 + 180*x - 111*x^2 + 30*x^3 - 3*x^4) // (576 - 1248*x + 1108*x^2 - 516*x^3 + 133*x^4 - 18*x^5 + x^6)
 ```
 
-!!! Note:
-    The [RationalFunctions.jl](https://github.com/aytekinar/RationalFunctions.jl) was a helpful source of ideas.
+!!! note
+    The [RationalFunctions.jl](https://github.com/aytekinar/RationalFunctions.jl) package was a helpful source of ideas. 
+
+!!! note
+    The `ImmutablePolynomial` type can not be used for rational functions, as the type requires the numerator and denominator to have the exact same type.
 
 
 """

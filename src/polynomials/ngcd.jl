@@ -1,7 +1,7 @@
 """
     ngcd(p,q, [k]; kwargs...)
 
-Find numerical GCD of polynomials `p` and `q`. Refer to [`NGCD.ngcd`](@ref) for details.
+Find numerical GCD of polynomials `p` and `q`. Refer to [`NGCD.ngcd(p,q)`](@ref) for details.
 
 
 In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call one step of the Euclidean gcd approach, and then call `ngcd` with relaxed tolerances.
@@ -57,6 +57,12 @@ function ngcd(p::P, q::Q,
     
 end
 
+"""
+    square_free(p)
+
+Use `ngcd` to identify the square-free part of the polynomial `p`.
+"""
+square_free(p) = ngcd(p, derivative(p)).v
 
 ## ---- the work is done in this module
 

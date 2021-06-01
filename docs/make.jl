@@ -7,7 +7,7 @@ makedocs(
     modules = [Polynomials],
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
     sitename = "Polynomials.jl",
-    authors = "Jameson Nash, Keno Fischer, and other contributors",
+    authors = "Jameson Nash, Keno Fischer, Miles Lucas, John Verzani, and other contributors",
     pages = [
         "Home" => "index.md",
         "Reference/API" => "reference.md",

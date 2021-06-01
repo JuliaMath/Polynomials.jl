@@ -29,8 +29,12 @@ julia> roots(p)
  1.4142350577588885 - 3.72273772278647e-5im
  1.4142350577588885 + 3.72273772278647e-5im
 
-julia> Polynomials.Multroot.multroot(p)
-(values = [0.9999999999999992, 1.4142135623730958], multiplicities = [2, 3], κ = 5.218455674370639, ϵ = 1.5700924586837747e-16)
+julia> m = Polynomials.Multroot.multroot(p);
+
+julia> Dict(m.values .=> m.multiplicities)
+Dict{Float64, Int64} with 2 entries:
+  1.41421 => 3
+  1.0     => 2
 ```
 
 The algorithm has two stages. First it uses `pejorative_manifold` to

@@ -215,7 +215,7 @@ By default, uses the Euclidean division algorithm (`method=:euclidean`), which i
 
 Passing `method=:noda_sasaki` uses scaling to circumvent some of these.
 
-Passing `method=:numerical` will call the internal method `NGCD.ngcd` for the numerical gcd. See the help page of [`Polynomials.NGCD.ngcd`](@ref) for details.
+Passing `method=:numerical` will call the internal method `NGCD.ngcd` for the numerical gcd. See the help page of [`Polynomials.NGCD.ngcd(p,q)`](@ref) for details.
 """
 function Base.gcd(p1::P, p2::Q, args...;
                   method=:euclidean,
@@ -398,7 +398,6 @@ function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, n::Int
     return A
 end
 
-
 ## as noted at https://github.com/jishnub/PolyFit.jl, using method from SpecialMatrices is faster
 ## https://github.com/JuliaMatrices/SpecialMatrices.jl/blob/master/src/vandermonde.jl
 ## This is Algorithm 2 of https://www.maths.manchester.ac.uk/~higham/narep/narep108.pdf
@@ -488,6 +487,8 @@ Polynomials.norm(q-p, Inf) # 2.2168933355715126e-12 # promotes `q` to `Polynomia
 ```
 
 """
+polyfit, ArnoldiFit
+
 function polyfitA(x, y, n=length(x)-1; var=:x)
     m = length(x)
     T = eltype(y)

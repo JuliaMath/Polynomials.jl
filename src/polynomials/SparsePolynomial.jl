@@ -5,8 +5,7 @@ export   SparsePolynomial
 
 Polynomials in the standard basis backed by a dictionary holding the
 non-zero coefficients. For polynomials of high degree, this might be
-advantageous. Addition and multiplication with constant polynomials
-are treated as having no symbol.
+advantageous. 
 
 # Examples:
 

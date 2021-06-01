@@ -147,3 +147,4 @@ julia> p .+ 2
  6
 ```
 
+The [`Polynomials.PnPolynomial`](@ref) type implements much of this.

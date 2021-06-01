@@ -14,10 +14,7 @@ Laurent polynomials and standard basis polynomials promote to  Laurent polynomia
 Integration will fail if there is a `x⁻¹` term in the polynomial.
 
 !!! note
-    `LaurentPolynomial` is not axis-aware by default, and it treats `coeffs` simply as a 
-    list of coefficients with the first index always corresponding to the constant term. 
-    In order to use the axis of `coeffs` as the exponents of the variable `var`, 
-    set `m` to `firstindex(coeff)` in the constructor.
+    `LaurentPolynomial` is axis-aware, unlike the other polynomial types in this package.
 
 # Examples:
 ```jldoctest laurent

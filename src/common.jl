@@ -168,11 +168,17 @@ _wlstsq(vand, y, W::AbstractMatrix) = qr(vand' * W * vand) \ (vand' * W * y)
 """
     roots(::AbstractPolynomial; kwargs...)
 
-Returns the roots of the given polynomial. This is calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgeebra.eigvals` call.
+Returns the roots, or zeros, of the given polynomial. 
 
-!!! note
+This is calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgeebra.eigvals` call.
 
-        The [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) package provides an alternative that is a bit faster and a bit more accurate; the [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) provides an interface to FORTRAN code implementing an algorithm that can handle very large polynomials (it is  `O(n^2)` not `O(n^3)`. The [AMRVW.jl](https://github.com/jverzani/AMRVW.jl) package implements the algorithm in Julia, allowing the use of other  number types.
+!!! Note
+
+    The default `roots` implementation is for polynomials in the
+    standard basis. The companion matrix approach is reasonably fast
+    and accurate for modest-size polynomials. However, other packages
+    in the `Julia` ecosystem may be of interest and are mentioned in the documentation.
+
 
 """
 function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: Number}
@@ -544,7 +550,7 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0
 """
     coeffs(::AbstractPolynomial)
 
-Return the coefficient vector `[a_0, a_1, ..., a_n]` of a polynomial.
+Return the coefficient vector. For a standard basis polynomial these are `[a_0, a_1, ..., a_n]`.
 """
 coeffs(p::AbstractPolynomial) = p.coeffs
 
