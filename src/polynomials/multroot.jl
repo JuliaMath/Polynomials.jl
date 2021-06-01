@@ -29,7 +29,7 @@ julia> roots(p)
  1.4142350577588885 - 3.72273772278647e-5im
  1.4142350577588885 + 3.72273772278647e-5im
 
-julia> m = Polynomials.Multroot.multroot(p)
+julia> m = Polynomials.Multroot.multroot(p);
 
 julia> Dict(m.values .=> m.multiplicities)
 Dict{Float64, Int64} with 2 entries:
