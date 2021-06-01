@@ -323,6 +323,27 @@ end
 
 Base.gcd(::Val{:numerical}, p, q, args...; kwargs...) = ngcd(p,q, args...; kwargs...).u
 
+uvw(p::P, q::Q, args...;
+    method=:euclidean,
+    kwargs...
+    ) where {T, P <: StandardBasisPolynomial{T}, Q <: StandardBasisPolynomial{T}} =
+        uvw(Val(method), p, q; kwargs...)
+
+function uvw(::Val{:numerical}, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
+    u,v,w,Θ,κ = ngcd(p,q; kwargs...)
+    u,v,w
+end
+
+function uvw(V::Val{:euclidean}, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
+    u = gcd(V,p,q; kwargs...)
+    u, p÷u, q÷u
+end
+
+function uvw(::Any, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
+    throw(ArgumentError("not defined"))
+end
+
+
 
 ## --------------------------------------------------
 

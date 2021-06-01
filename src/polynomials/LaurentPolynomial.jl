@@ -126,6 +126,7 @@ end
 # LaurentPolynomial is a wider collection than other standard basis polynomials.
 Base.promote_rule(::Type{P},::Type{Q}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: StandardBasisPolynomial{S, X}} = LaurentPolynomial{promote_type(T, S), X}
 
+
 Base.promote_rule(::Type{Q},::Type{P}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: StandardBasisPolynomial{S,X}} =
     LaurentPolynomial{promote_type(T, S),X}
 
@@ -145,10 +146,21 @@ function Base.convert(::Type{P}, p::LaurentPolynomial) where {P<:LaurentPolynomi
     LaurentPolynomial{S,Y}(p.coeffs, p.m[])
 end
 
-function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {T, P <:LaurentPolynomial{T},S}
-    v′ = _indeterminate(P)
-    X = v′ == nothing ? indeterminate(q) : v′
-    ⟒(P){T,X}([q[i] for i in 0:degree(q)], 0)
+# function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {T, P <:LaurentPolynomial{T},S}
+#     v′ = _indeterminate(P)
+#     X = v′ == nothing ? indeterminate(q) : v′
+#     ⟒(P){T,X}([q[i] for i in 0:degree(q)], 0)
+# end
+
+function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {P <:LaurentPolynomial,S}
+
+     T = _eltype(P, q)
+     X = indeterminate(P, q)
+     ⟒(P){T,X}([q[i] for i in 0:degree(q)], 0)
+ end
+
+function Base.convert(::Type{P}, q::AbstractPolynomial) where {P <:LaurentPolynomial}
+    convert(P, convert(Polynomial, q))
 end
 
 ##
@@ -161,6 +173,9 @@ function Base.inv(p::LaurentPolynomial{T, X}) where {T, X}
     cs = [1/p for p in p.coeffs]
     LaurentPolynomial{eltype(cs), X}(cs, -m)
 end
+
+Base.numerator(p::LaurentPolynomial) = numerator(convert(RationalFunction, p))
+Base.denominator(p::LaurentPolynomial) = denominator(convert(RationalFunction, p))
 
 ##
 ## changes to common.jl mostly as the range in the type is different

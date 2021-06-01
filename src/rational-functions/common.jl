@@ -52,11 +52,32 @@ function Base.convert(::Type{PQ}, p::Number) where {PQ <: AbstractRationalFuncti
    rational_function(PQ, p * one(P), one(P))
 end
 
-function Base.convert(::Type{PQ}, p::P) where {PQ <: AbstractRationalFunction, P<:AbstractPolynomial}
-    Q = eltype(PQ)
-    q = convert(Q, p)
-    rational_function(PQ, q, one(q))
+function Base.convert(::Type{PQ}, q::LaurentPolynomial) where {PQ <: AbstractRationalFunction}
+    m = firstindex(q)
+    if m >= 0
+        p = convert(Polynomial, q)
+        return convert(PQ, p)
+    else
+        z = variable(q)
+        zᵐ = z^(-m)
+        p = convert(Polynomial, zᵐ * q)
+        return rational_function(PQ, p, convert(Polynomial, zᵐ))
+    end
+
 end
+
+
+function Base.convert(::Type{PQ}, p::P) where {PQ <: AbstractRationalFunction, P<:AbstractPolynomial}
+    T′ = _eltype(_eltype((PQ)))
+    T =  T′ == nothing ? eltype(p) : T′
+    X = indeterminate(PQ, p)
+
+    𝐩 = convert(Polynomial{T,X}, p)
+    rational_function(PQ, 𝐩, one(𝐩))
+end
+
+
+
 
 function Base.convert(::Type{P}, pq::PQ) where {P<:AbstractPolynomial, PQ<:AbstractRationalFunction}
     p,q = pqs(pq)
@@ -68,6 +89,7 @@ function Base.convert(::Type{S}, pq::PQ) where {S<:Number, T,X,P,PQ<:AbstractRat
     !isconstant(pq) && throw(ArgumentError("Can't convert non-constant rational function to a number"))
     S(pq(0))
 end
+
 
 
 
@@ -137,7 +159,10 @@ Base.eltype(pq::Type{<:AbstractRationalFunction{T,X,P}}) where {T,X,P} = P
 Base.eltype(pq::Type{<:AbstractRationalFunction{T,X}}) where {T,X} = Polynomial{T,X}
 Base.eltype(pq::Type{<:AbstractRationalFunction{T}}) where {T} = Polynomial{T,:x}
 Base.eltype(pq::Type{<:AbstractRationalFunction}) = Polynomial{Float64,:x}
-
+_eltype(pq::Type{<:AbstractRationalFunction{T,X,P}}) where {T,X,P} = P
+_eltype(pq::Type{<:AbstractRationalFunction{T,X}}) where {T,X} = Polynomial{T,X}
+_eltype(pq::Type{<:AbstractRationalFunction{T}}) where {T} = Polynomial{T}
+_eltype(pq::Type{<:AbstractRationalFunction})  = Polynomial
 
 """
     pqs(pq) 
@@ -178,7 +203,9 @@ function indeterminate(::Type{PQ}, var=:x) where {PQ<:AbstractRationalFunction}
     X = X′ == nothing ? Symbol(var) : X′
     X
 end
-
+function indeterminate(PP::Type{P}, p::AbstractPolynomial{T,Y}) where {P <: AbstractRationalFunction, T,Y}
+    indeterminate(PP, Y)
+end
 function isconstant(pq::AbstractRationalFunction; kwargs...)
     p,q = pqs(lowest_terms(pq, kwargs...))
     isconstant(p) && isconstant(q)
@@ -395,22 +422,6 @@ function Base.divrem(pq::PQ; method=:numerical, kwargs...) where {PQ <: Abstract
 end
 
 
-# like Base.divgcd in rational.jl
-# divide p,q by u
-function _divgcd(V::Val{:euclidean}, pq; kwargs...)
-    p, q = pqs(pq)
-    u = gcd(V,p,q; kwargs...)
-    p÷u, q÷u
-end
-function _divgcd(V::Val{:noda_sasaki}, pq; kwargs...)
-    p, q = pqs(pq)
-    u = gcd(V,p,q; kwargs...)
-    p÷u, q÷u
-end
-function _divgcd(v::Val{:numerical}, pq; kwargs...)
-    u,v,w,θ,κ = ngcd(pqs(pq)...; kwargs...) # u⋅v=p, u⋅w=q
-    v, w
-end
 
 
 """
@@ -427,7 +438,8 @@ By default, `AbstractRationalFunction` types do not cancel common factors. This 
 function lowest_terms(pq::PQ; method=:numerical, kwargs...) where {T,X,
                                                                    P<:StandardBasisPolynomial{T,X},
                                                                    PQ<:AbstractRationalFunction{T,X,P}}
-    v,w = _divgcd(Val(method), pq; kwargs...)
+    p,q = pqs(pq)
+    u,v,w = uvw(p,q; method=method, kwargs...)
     rational_function(PQ, v/w[end], w/w[end])
 end
 

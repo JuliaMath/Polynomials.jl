@@ -1,6 +1,6 @@
 using LinearAlgebra
 using OffsetArrays
-
+import Polynomials: indeterminate
 ## Test standard basis polynomials with (nearly) the same tests
 
 #   compare upto trailing  zeros
@@ -9,7 +9,7 @@ function  upto_tz(as, bs)
     n == m || return false
     n == nothing &&  return true
     for i in 1:n
-        as[i] != bs[i] && return false
+        !(as[i] ≈ bs[i]) && return false
     end
     true
 end
@@ -20,7 +20,16 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 ==ᵗ⁰(a,b) = upto_tz(a,b)
 ==ᵗᶻ(a,b) = upto_z(a,b)
 
-Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
+==ᵟ(a,b) = (a == b)
+==ᵟ(a::FactoredPolynomial, b::FactoredPolynomial) = a ≈ b
+
+if VERSION >= v"2.1.2"
+    Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
+else
+    Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
+    @eval (:(struct FactoredPolynomial end))
+end
+
 isimmutable(p::P) where {P} = P <: ImmutablePolynomial
 isimmutable(::Type{<:ImmutablePolynomial}) = true
 
@@ -35,7 +44,7 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         p = P(coeff)
         @test coeffs(p) ==ᵗ⁰ coeff
         @test degree(p) == length(coeff) - 1
-        @test Polynomials.indeterminate(p) == :x
+        @test indeterminate(p) == :x
         P == Polynomial && @test length(p) == length(coeff)
         P == Polynomial && @test size(p) == size(coeff)
         P == Polynomial && @test size(p, 1) == size(coeff, 1)
@@ -179,12 +188,12 @@ end
 
         @test p3 == P([1,2,1])
         @test pN * 10 == P([2760, 30, 870, 150, 240])
-        @test pN / 10.0 == P([27.6, 0.3, 8.7, 1.5, 2.4])
-        @test 10 * pNULL + pN == pN
-        @test 10 * p0 + pN == pN
+        @test pN / 10.0 ==ᵟ P([27.6, 0.3, 8.7, 1.5, 2.4])
+        @test 10 * pNULL + pN ==ᵟ pN
+        @test 10 * p0 + pN ==ᵟ pN
         @test p5 + 2 * p1 == P([3,4,6,4,1])
-        @test 10 * pNULL - pN == -pN
-        @test p0 - pN == -pN
+        @test 10 * pNULL - pN ==ᵟ -pN
+        @test p0 - pN ==ᵟ -pN
         @test p5 - 2 * p1 == P([-1,4,6,4,1])
         @test p2 * p2 * p2 == p4
         @test p2^4 == p5
@@ -199,7 +208,7 @@ end
 
     for P in Ps # ensure promotion of scalar +,*,/
         p = P([1,2,3])
-        @test p + 0.5 == P([1.5, 2.0, 3.0])
+        @test p + 0.5 ==ᵟ P([1.5, 2.0, 3.0])
         @test p / 2  == P([1/2, 1.0, 3/2])
         @test p * 0.5 == P([1/2, 1.0, 3/2])
     end
@@ -208,7 +217,7 @@ end
     for P in Ps
         p,q = P([1,2,3]), P(im, :θ)
         @test p+q == P([1+im, 2, 3])
-        @test p*q == P(im*[1,2,3])
+        @test p*q ==ᵟ P(im*[1,2,3])
     end
 
     # LaurentPolynomial has an inverse for monomials
@@ -228,13 +237,13 @@ end
         pN = P([276,3,87,15,24,0])
         pR = P([3 // 4, -2 // 1, 1 // 1])
 
-        @test divrem(p4, p2) == (p3, zero(p3))
-        @test p3 % p2 == p3
+        @test all(divrem(p4, p2) .==ᵟ (p3, zero(p3)))
+        @test p3 % p2 ==ᵟ p3
         @test all((map(abs, coeffs(p2 ÷ p3 - P([1 / 9,2 / 3])))) .< eps())
-        @test divrem(p0, p1) == (p0, p0)
-        @test divrem(p1, p1) == (p1, p0)
-        @test divrem(p2, p2) == (p1, p0)
-        @test divrem(pR, pR) == (one(pR), zero(pR))
+        @test all(divrem(p0, p1) .==ᵟ (p0, p0))
+        @test all(divrem(p1, p1) .==ᵟ (p1, p0))
+        @test all(divrem(p2, p2) .==ᵟ (p1, p0))
+        @test all(divrem(pR, pR) .==ᵟ (one(pR), zero(pR)))
         @test_throws DivideError p1 ÷ p0
         @test_throws DivideError divrem(p0, p0)
 
@@ -257,6 +266,13 @@ end
         @test pX != pS1
         @test pS1 == pS2
         @test pS1 == pS3
+        
+        @test indeterminate(pS1 + pS1) == indeterminate(pS1)
+        @test indeterminate(pS1 - pS1) == indeterminate(pS1)
+        @test indeterminate(pS1 * pS1) == indeterminate(pS1)
+        @test indeterminate(pS1 ÷ pS1) == indeterminate(pS1)
+        @test indeterminate(pS1 % pS1) == indeterminate(pS1)
+
         @test_throws ArgumentError pS1 + pX
         @test_throws ArgumentError pS1 - pX
         @test_throws ArgumentError pS1 * pX
@@ -271,9 +287,9 @@ end
         # Check for isequal
         p1 = P([1.0, -0.0, 5.0, Inf])
         p2 = P([1.0,  0.0, 5.0, Inf])
-        p3 = P([0, NaN])
+        !(P ∈ (FactoredPolynomial, SparsePolynomial)) && (@test p1 == p2 && !isequal(p1, p2))  # SparsePolynomial doesn't store -0.0,  0.0.
 
-        P != SparsePolynomial && (@test p1 == p2 && !isequal(p1, p2))  # SparsePolynomial doesn't store -0.0,  0.0.
+        p3 = P([0, NaN])
         @test p3 === p3 && p3 ≠ p3 && isequal(p3, p3)
 
         p = fromroots(P, [1,2,3])
@@ -307,11 +323,11 @@ end
         @test (P([NaN]) ≈ NaN)                    == (false)
         @test (P([Inf]) ≈ P([Inf]))               == ([Inf] ≈ [Inf]) # true
         @test (P([Inf]) ≈ Inf)                    == (true)
-        @test (P([1,Inf]) ≈ P([0,Inf]))           == ([1,Inf] ≈ [0,Inf]) # false
-        @test (P([1,NaN,Inf]) ≈ P([0,NaN, Inf]))  == ([1,NaN,Inf] ≈ [0,NaN, Inf]) #false
+        !(P <: FactoredPolynomial) && @test (P([1,Inf]) ≈ P([0,Inf])) == ([1,Inf] ≈ [0,Inf]) # false
+        !(P <: FactoredPolynomial) && @test (P([1,NaN,Inf]) ≈ P([0,NaN, Inf])) == ([1,NaN,Inf] ≈ [0,NaN, Inf]) #false
         @test (P([eps(), eps()]) ≈ P([0,0]))      == ([eps(), eps()] ≈ [0,0]) # false
         @test (P([1,eps(), 1]) ≈ P([1,0,1]))      == ([1,eps(), 1] ≈ [1,0,1]) # true
-        @test (P([1,2]) ≈ P([1,2,eps()]))         == ([1,2,0] ≈ [1,2,eps()])
+        !(P <: FactoredPolynomial) && @test (P([1,2]) ≈ P([1,2,eps()])) == ([1,2,0] ≈ [1,2,eps()])
 
         # NaN poisons comparison
         @test !(P([NaN, 1.0, 2.0]) ≈ P([NaN, 1.0, 2.0]))
@@ -335,6 +351,7 @@ end
 
 @testset "Fitting" begin
     for P in Ps
+        P <: FactoredPolynomial && continue
         xs = range(0, stop = π, length = 10)
         ys = sin.(xs)
 
@@ -381,8 +398,7 @@ end
     fit(1:3,  rand(3))
 
     # weight test (PR #291)
-    # This should change with 2.0
-    # as for now we specify w^2.
+    # we specify w^2.
     x = range(0, stop=pi, length=30)
     y = sin.(x)
     wts = 1 ./ sqrt.(1 .+ x)
@@ -405,7 +421,7 @@ end
 
 
         @test fromroots(P, Int[])(2.) == 1.
-        @test pN(-.125) == 276.9609375
+        @test pN(-.125) ≈ 276.9609375
         @test pNULL(10) == 0
         @test p0(-10) == 0
         @test fromroots(P, [1 // 2, 3 // 2])(1 // 2) == 0 // 1
@@ -414,21 +430,23 @@ end
         p1 = P([Inf, Inf])
         p2 = P([0, Inf])
         @test p1(Inf) == Inf
-        @test isnan(p1(-Inf))
-        @test isnan(p1(0))
-        @test p2(-Inf) == -Inf
+        if !(P <: FactoredPolynomial)
+            @test isnan(p1(-Inf))
+            @test isnan(p1(0))
+            @test p2(-Inf) == -Inf
+        end
 
         # issue #189
         p = P([0,1,2,3])
         A = [0 1; 0  0];
-        @test  p(A) == A  + 2A^2 + 3A^3
+        @test  p(A) ==ᵟ A + 2A^2 + 3A^3
 
         # issue #209
         ps  = [P([0,1]), P([0,0,1])]
         @test Polynomials.evalpoly.(1/2, ps) ≈ [p(1/2)  for  p  in ps]
 
     end
-
+    
     
     # constant polynomials and type
     Ts = (Int, Float32, Float64, Complex{Int}, Complex{Float64})
@@ -521,18 +539,21 @@ end
 
         # From roots
         r = [2, 3]
-        @test fromroots(r) == Polynomial([6, -5, 1])
+        @test fromroots(r) ==ᵟ Polynomial([6, -5, 1])
         p = fromroots(P, r)
-        @test p == P([6, -5, 1])
+        @test p ==ᵟ P([6, -5, 1])
         @test sort(roots(p)) ≈ r
 
         @test roots(p0) == roots(p1) == roots(pNULL) == []
-        @test eltype(roots(p0)) == eltype(roots(p1)) == eltype(roots(pNULL)) == Float64
+        @test eltype(roots(p0)) == eltype(roots(p1)) == eltype(roots(pNULL))
+        !(P <: FactoredPolynomial) && @test eltype(roots(pNULL)) == Float64
         @test P == LaurentPolynomial ? roots(variable(P)) == [0.0] : roots(P([0,1,0])) == [0.0]
 
         @test roots(p2) == [-1]
-        a_roots = [c for c in coeffs(copy(pN))]
-        @test all(map(abs, sort(roots(fromroots(a_roots))) - sort(a_roots)) .< 1e6)
+        if !(P <: FactoredPolynomial)
+            a_roots = [c for c in coeffs(copy(pN))]
+            @test all(map(abs, sort(roots(fromroots(a_roots))) - sort(a_roots)) .< 1e6)
+        end
         @test length(roots(p5)) == 4
         @test roots(pNULL) == []
         @test sort(roots(pR)) == [1 // 2, 3 // 2]
@@ -595,7 +616,7 @@ end
 @testset "Integrals and Derivatives" begin
     # Integrals derivatives
     for P in Ps
-
+        P <: FactoredPolynomial && continue
         pNULL = P(Int[])
         p0 = P([0])
         p1 = P([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
@@ -621,19 +642,19 @@ end
         @test_throws ArgumentError derivative(pR, -1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
 
-        @test derivative(integrate(pN)) == convert(P{Float64}, pN)
-        @test integrate(pNULL, 1) == convert(P{Float64}, p1)
+        @test derivative(integrate(pN)) ==ᵟ pN
+        @test integrate(pNULL, 1) ==ᵟ p1
         rc = Rational{Int64}[1,2,3]
         @test integrate(P(rc)) == P{eltype(rc)}([0, 1, 1, 1])
 
+
+        P <: FactoredPolynomial && continue
 
         for i in 1:10
             p = P(rand(1:5, 6))
             @test degree(truncate(p - integrate(derivative(p)), atol=1e-13)) <= 0
             @test degree(truncate(p - derivative(integrate(p)), atol=1e-13)) <= 0
-        end
-
-
+            end
 
         # Handling of `NaN`s
         p     = P([NaN, 1, 5])
@@ -681,6 +702,7 @@ end
 @testset "Chop and Truncate" begin
     # chop and truncate
     for P in Ps
+        P <: FactoredPolynomial && continue
         if P == Polynomial
             p = P([1, 1, 1, 1])
             coeffs(p)[end] = 0
@@ -860,15 +882,16 @@ end
 @testset "Indexing" begin
     # Indexing
     for P in Ps
+
         # getindex
         p = P([-1, 3, 5, -2])
-        @test p[0] == -1
+        @test p[0] ≈ -1
         @test p[[1, 2]] ==ᵗ⁰ [3, 5]
         @test p[1:2] ==ᵗ⁰ [3, 5]
         @test p[:] ==ᵗ⁰ [-1, 3, 5, -2]
 
-        if !isimmutable(p)
-            # setindex
+        # setindex
+        if !(isimmutable(p) || (P <: FactoredPolynomial))
             p1  = P([1,2,1])
             p1[5] = 1
             @test p1[5] == 1
@@ -897,10 +920,10 @@ end
             @test isa(term, eltype(p1))
         end
 
-        @test eltype(p1) == Int
+        !(P <: FactoredPolynomial) && @test eltype(p1) == Int
         for P in Ps
             p1 = P([1,2,0,3])
-            @test eltype(collect(p1)) <: Int
+            @test eltype(collect(p1)) <: eltype(p1)
             @test eltype(collect(Float64, p1)) <: Float64
             @test_throws InexactError collect(Int, P([1.2]))
         end
@@ -1178,6 +1201,7 @@ end
         for i in 1:n-1
             T1,T2 = Ts[i],Ts[i+1]
             for P in Ps
+                P <: FactoredPolynomial && continue
                 if !isimmutable(P)
                     p = P{T2}(T1.(rand(1:3,3)))
                     @test typeof(p) == P{T2, :x}
@@ -1191,8 +1215,9 @@ end
         end
     end
 
-    # test P{T}(...) is P{T}
+    # test P{T}(...) is P{T} (not always the case for FactoredPolynomial)
     for P in Ps
+        P <: FactoredPolynomial && continue
         if !isimmutable(P)
             for  T in (Int32, Int64, BigInt)
                 p₁ =  P{T}(Float64.(rand(1:3,5)))

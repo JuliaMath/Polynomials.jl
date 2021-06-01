@@ -25,6 +25,7 @@ include("polynomials/ImmutablePolynomial.jl")
 include("polynomials/SparsePolynomial.jl")
 include("polynomials/LaurentPolynomial.jl")
 include("polynomials/pi_n_polynomial.jl")
+include("polynomials/factored_polynomial.jl")
 include("polynomials/ngcd.jl")
 include("polynomials/multroot.jl")
 

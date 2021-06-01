@@ -24,7 +24,7 @@ function ngcd(p::P, q::Q,
     degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
     degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
     degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
-    degree(q) == 0 && return (u=one(p), v=p, w=q,       θ=NaN, κ=NaN)
+    degree(q) == 0 && return (u=one(p), v=p, w=q,       Θ=NaN, κ=NaN)
     p ≈ q          && return (u=p,v=one(p),  w=one(p),  θ=NaN, κ=NaN)
     Polynomials.assert_same_variable(p,q)
 
@@ -637,7 +637,7 @@ end
 function solve_u(v::P,w,p,q, k) where {T,X,P<:PnPolynomial{T,X}}
     A = [convmtx(v,k+1); convmtx(w, k+1)]
     b = vcat(coeffs(p), coeffs(q))
-    u = P(A \ b)
+    u = P(qr(A) \ b)
     return u
 end
 
