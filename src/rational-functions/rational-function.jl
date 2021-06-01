@@ -55,6 +55,14 @@ end
 
 RationalFunction(p,q)  = RationalFunction(promote(p,q)...)
 RationalFunction(p::ImmutablePolynomial,q::ImmutablePolynomial) = throw(ArgumentError("Sorry, immutable #polynomials are not a valid polynomial type for RationalFunction"))
+function RationalFunction(p::LaurentPolynomial,q::LaurentPolynomial)
+    𝐩 = convert(RationalFunction, p)
+    𝐪 = convert(RationalFunction, q)
+    𝐩 // 𝐪
+end
+RationalFunction(p::LaurentPolynomial,q::Number) = convert(RationalFunction, p) // q
+RationalFunction(p::Number,q::LaurentPolynomial) = q // convert(RationalFunction, p)
+
 RationalFunction(p::AbstractPolynomial) = RationalFunction(p,one(p))
 
 # evaluation

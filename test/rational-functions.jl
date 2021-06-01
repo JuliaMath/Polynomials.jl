@@ -72,6 +72,13 @@ using LinearAlgebra
     x = variable(p)
     @test (x*p)//x ≈ p // one(p)
 
+    # issue 344 with LaurentPolynomials
+    p = LaurentPolynomial([24,10,-15,0,1],-2,:z)
+    q = ChebyshevT([1, 0, 3, 4],:z)
+    @test RationalFunction(p,1) == p
+    @test p //q == 1/ (q//p)
+    @test numerator(p) == p * variable(p)^2
+    @test denominator(p) == convert(Polynomial, variable(p)^2)
     
 end
 

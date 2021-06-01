@@ -52,11 +52,32 @@ function Base.convert(::Type{PQ}, p::Number) where {PQ <: AbstractRationalFuncti
    rational_function(PQ, p * one(P), one(P))
 end
 
-function Base.convert(::Type{PQ}, p::P) where {PQ <: AbstractRationalFunction, P<:AbstractPolynomial}
-    Q = eltype(PQ)
-    q = convert(Q, p)
-    rational_function(PQ, q, one(q))
+function Base.convert(::Type{PQ}, q::LaurentPolynomial) where {PQ <: AbstractRationalFunction}
+    m = firstindex(q)
+    if m >= 0
+        p = convert(Polynomial, q)
+        return convert(PQ, p)
+    else
+        z = variable(q)
+        zᵐ = z^(-m)
+        p = convert(Polynomial, zᵐ * q)
+        return rational_function(PQ, p, convert(Polynomial, zᵐ))
+    end
+
 end
+
+
+function Base.convert(::Type{PQ}, p::P) where {PQ <: AbstractRationalFunction, P<:AbstractPolynomial}
+    T′ = _eltype(_eltype((PQ)))
+    T =  T′ == nothing ? eltype(p) : T′
+    X = indeterminate(PQ, p)
+
+    𝐩 = convert(Polynomial{T,X}, p)
+    rational_function(PQ, 𝐩, one(𝐩))
+end
+
+
+
 
 function Base.convert(::Type{P}, pq::PQ) where {P<:AbstractPolynomial, PQ<:AbstractRationalFunction}
     p,q = pqs(pq)
@@ -68,6 +89,7 @@ function Base.convert(::Type{S}, pq::PQ) where {S<:Number, T,X,P,PQ<:AbstractRat
     !isconstant(pq) && throw(ArgumentError("Can't convert non-constant rational function to a number"))
     S(pq(0))
 end
+
 
 
 
@@ -137,7 +159,10 @@ Base.eltype(pq::Type{<:AbstractRationalFunction{T,X,P}}) where {T,X,P} = P
 Base.eltype(pq::Type{<:AbstractRationalFunction{T,X}}) where {T,X} = Polynomial{T,X}
 Base.eltype(pq::Type{<:AbstractRationalFunction{T}}) where {T} = Polynomial{T,:x}
 Base.eltype(pq::Type{<:AbstractRationalFunction}) = Polynomial{Float64,:x}
-
+_eltype(pq::Type{<:AbstractRationalFunction{T,X,P}}) where {T,X,P} = P
+_eltype(pq::Type{<:AbstractRationalFunction{T,X}}) where {T,X} = Polynomial{T,X}
+_eltype(pq::Type{<:AbstractRationalFunction{T}}) where {T} = Polynomial{T}
+_eltype(pq::Type{<:AbstractRationalFunction})  = Polynomial
 
 """
     pqs(pq) 
@@ -178,7 +203,9 @@ function indeterminate(::Type{PQ}, var=:x) where {PQ<:AbstractRationalFunction}
     X = X′ == nothing ? Symbol(var) : X′
     X
 end
-
+function indeterminate(PP::Type{P}, p::AbstractPolynomial{T,Y}) where {P <: AbstractRationalFunction, T,Y}
+    indeterminate(PP, Y)
+end
 function isconstant(pq::AbstractRationalFunction; kwargs...)
     p,q = pqs(lowest_terms(pq, kwargs...))
     isconstant(p) && isconstant(q)
