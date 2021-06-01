@@ -997,6 +997,14 @@ function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{T};
 end
 
 """
+    uvw(p,q; kwargs...)
+
+return `u` the gcd of `p` and `q`, and `v` and `w`, where `u*v = p` and `u*w = q`.
+"""
+uvw(p::AbstractPolynomial, q::AbstractPolynomial; kwargs...) = uvw(promote(p,q)...; kwargs...)
+uvw(p1::P, p2::P; kwargs...) where {P <:AbstractPolynomial} = throw(ArgumentError("uvw not defind"))
+
+"""
     div(::AbstractPolynomial, ::AbstractPolynomial)
 """
 Base.div(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[1]
@@ -1015,8 +1023,8 @@ Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && p[0] == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial{T,X},
-    p2::AbstractPolynomial{S,Y};
-    rtol::Real = (Base.rtoldefault(T, S, 0)),
+                       p2::AbstractPolynomial{S,Y};
+                       rtol::Real = (Base.rtoldefault(T, S, 0)),
                        atol::Real = 0,) where {T,X,S,Y}
     assert_same_variable(p1, p2)
     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons

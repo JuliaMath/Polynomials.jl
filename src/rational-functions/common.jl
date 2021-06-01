@@ -422,22 +422,6 @@ function Base.divrem(pq::PQ; method=:numerical, kwargs...) where {PQ <: Abstract
 end
 
 
-# like Base.divgcd in rational.jl
-# divide p,q by u
-function _divgcd(V::Val{:euclidean}, pq; kwargs...)
-    p, q = pqs(pq)
-    u = gcd(V,p,q; kwargs...)
-    p÷u, q÷u
-end
-function _divgcd(V::Val{:noda_sasaki}, pq; kwargs...)
-    p, q = pqs(pq)
-    u = gcd(V,p,q; kwargs...)
-    p÷u, q÷u
-end
-function _divgcd(v::Val{:numerical}, pq; kwargs...)
-    u,v,w,θ,κ = ngcd(pqs(pq)...; kwargs...) # u⋅v=p, u⋅w=q
-    v, w
-end
 
 
 """
@@ -454,7 +438,8 @@ By default, `AbstractRationalFunction` types do not cancel common factors. This 
 function lowest_terms(pq::PQ; method=:numerical, kwargs...) where {T,X,
                                                                    P<:StandardBasisPolynomial{T,X},
                                                                    PQ<:AbstractRationalFunction{T,X,P}}
-    v,w = _divgcd(Val(method), pq; kwargs...)
+    p,q = pqs(pq)
+    u,v,w = uvw(p,q; method=method, kwargs...)
     rational_function(PQ, v/w[end], w/w[end])
 end
 

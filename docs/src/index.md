@@ -159,6 +159,19 @@ julia> roots(Polynomial([0, 0, 1]))
  0.0
 ```
 
+For polynomials with multplicities, the non-exported `Polynomials.Multroot.multroot` method can avoid some numerical issues that `roots` will have. 
+
+The `FactoredPolynomial` type stores the roots (with multiplicities) and the leading coefficent of a polynomial. In this example, the `multroot` method is used internally to identify the roots of `p` below, in the conversion from the `Polynomial` type to the `FactoredPolynomial` type:
+
+```jldoctest
+julia> p = Polynomial([24, -50, 35, -10, 1])
+Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
+
+julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
+FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
+```
+
+
 ### Fitting arbitrary data
 
 Fit a polynomial (of degree `deg`) to `x` and `y` using polynomial interpolation or a (weighted) least-squares approximation.
@@ -274,6 +287,25 @@ julia> collect(Polynomials.monomials(p))
  Polynomial(4*u^3)
 ```
 
+The `map` function for polynomials is idiosyncratic, as iteration over
+polynomials is over the vector of coefficients, but `map` will also
+maintain the type of the polynomial. Here we use `map` to smooth out
+the round-off error coming from the root-finding algorithm used
+internally when converting to the `FactoredPolynomial` type:
+
+
+```jldoctest
+julia> p = Polynomial([24, -50, 35, -10, 1])
+Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
+
+julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
+FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
+
+julia> map(round, q, digits=10)
+FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
+```
+
+
 ## Relationship between the `T` and `P{T,X}`
 
 The addition of a polynomial and a scalar, such as
@@ -344,7 +376,7 @@ ERROR: ArgumentError: Polynomials have different indeterminates
 [...]
 ```
 
-an error thrown.
+an error is thrown.
 
 In general, arrays with mixtures of non-constant polynomials with *different* indeterminates will error. By default, an error will occur when constant polynomials with different indeterminates are used as components. However, for *typed* arrays, conversion will allow such constructs to be used.
 
@@ -387,6 +419,53 @@ julia> [1 p; p 1] + [1 2one(q); 3 4] # array{P{T,:x}} + array{P{T,:y}}
 
 Though were a non-constant polynomial with indeterminate `y` replacing
 `2one(q)` above, that addition would throw an error.
+
+## Rational functions
+
+The package provides support for rational functions -- fractions of polynomials (for most types). The construction of the basic type mirrors the construction of rational numbers.
+
+```jldoctest
+julia> P = FactoredPolynomial
+FactoredPolynomial
+
+julia> p,q = fromroots(P, [1,2,3,4]), fromroots(P, [2,2,3,5])
+(FactoredPolynomial((x - 4) * (x - 2) * (x - 3) * (x - 1)), FactoredPolynomial((x - 5) * (x - 2)² * (x - 3)))
+
+julia> pq = p // q
+((x - 4) * (x - 2) * (x - 3) * (x - 1)) // ((x - 5) * (x - 2)² * (x - 3))
+
+julia> lowest_terms(pq)
+((x - 4.0) * (x - 1.0)) // ((x - 5.0) * (x - 2.0))
+
+julia> d,r = residues(pq); r
+Dict{Float64, Vector{Float64}} with 2 entries:
+  5.0 => [1.33333]
+  2.0 => [0.666667]
+
+julia> x = variable(p);
+
+julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
+           for (i,rᵢ) ∈ enumerate(rs)
+               d += rᵢ//(x-λ)^i
+           end
+       end
+
+julia> d
+((x - 4.0) * (x - 1.0000000000000002)) // ((x - 5.0) * (x - 2.0))
+```
+
+A basic plot recipe is provided.
+
+```@example
+using Plots, Polynomials
+P = FactoredPolynomial
+p,q = fromroots(P, [1,2,3]), fromroots(P, [2,3,3,0])
+plot(p//q)
+savefig("rational_function.svg"); nothing # hide
+```
+
+![](rational_function.svg)
+
 
 ## Related Packages
 
