@@ -491,11 +491,18 @@ The residues are found using this formula:
 julia> s = variable(Polynomial, :s)
 Polynomial(1.0*s)
 
-julia> pq = (-s^2 + s + 1) // (s * (s+1)^2)
-(1.0 + 1.0*s - 1.0*s^2) // (1.0*s + 2.0*s^2 + 1.0*s^3)
+julia> pq = (-s^2 + s + 1) // ((s-1) * (s+1)^2)
+(1.0 + 1.0*s - 1.0*s^2) // (-1.0 - 1.0*s + 1.0*s^2 + 1.0*s^3)
 
-julia> d,r = residues(pq)
-(Polynomial(0.0), Dict(-1.0 => [-1.999999999999996, 1.0000000000000058], -3.9475890993172333e-19 => [1.0]))
+julia> d,r = residues(pq);
+
+julia> d
+Polynomial(0.0)
+
+julia> r
+Dict{Float64, Vector{Float64}} with 2 entries:
+  -1.0 => [-1.25, 0.5]
+  1.0  => [0.25]
 
 julia> iszero(d)
 true
@@ -509,10 +516,9 @@ julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
            end
        end
 
-julia> p′, q′ = lowest_terms(d)
-(0.9999999999999823 + 1.0000000000000204*s - 0.9999999999999962*s^2) // (1.095165368514998e-15 + 0.9999999999999856*s + 1.9999999999999905*s^2 + 1.0*s^3)
+julia> p′, q′ = lowest_terms(d);
 
-julia> q′ ≈ (s * (s+1)^2) # works, as q is monic
+julia> q′ ≈ (s-1) * (s+1)^2 # works, as q is monic
 true
 
 julia> p′ ≈ (-s^2 + s + 1) 
