@@ -487,7 +487,7 @@ Polynomials.norm(q-p, Inf) # 2.2168933355715126e-12 # promotes `q` to `Polynomia
 ```
 
 """
-polyfit, ArnoldiFit
+polyfit
 
 function polyfitA(x, y, n=length(x)-1; var=:x)
     m = length(x)
