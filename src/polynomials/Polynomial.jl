@@ -1,7 +1,7 @@
 export Polynomial
 
 """
-    Polynomial{T<:Number, X}(coeffs::AbstractVector{T}, [var = :x])
+    Polynomial{T<:RingLike, X}(coeffs::AbstractVector{T}, [var = :x])
 
 Construct a polynomial from its coefficients `coeffs`, lowest order first, optionally in
 terms of the given variable `var` which may be a character, symbol, or a string.
@@ -14,8 +14,8 @@ with combinations of polynomials and scalars. However, operations involving two
 polynomials of different variables causes an error except those involving a constant polynomial.
 
 !!! note
-    `Polynomial` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first 
-    index always corresponding to the constant term. In order to use the axis of `coeffs` as exponents, 
+    `Polynomial` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first
+    index always corresponding to the constant term. In order to use the axis of `coeffs` as exponents,
     consider using a [`LaurentPolynomial`](@ref) or possibly a [`SparsePolynomial`](@ref).
 
 # Examples
@@ -32,9 +32,9 @@ julia> one(Polynomial)
 Polynomial(1.0)
 ```
 """
-struct Polynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
+struct Polynomial{T <: RingLike, X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
-    function Polynomial{T, X}(coeffs::AbstractVector{S}) where {T <: Number, X, S}
+    function Polynomial{T, X}(coeffs::AbstractVector{S}) where {T <: RingLike, X, S}
         if Base.has_offset_axes(coeffs)
             @warn "ignoring the axis offset of the coefficient vector"
         end
@@ -44,7 +44,7 @@ struct Polynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
         new{T,X}(cs)
     end
     # non-copying alternative assuming !iszero(coeffs[end])
-    function Polynomial{T, X}(checked::Val{false}, coeffs::AbstractVector{T}) where {T <: Number, X}
+    function Polynomial{T, X}(checked::Val{false}, coeffs::AbstractVector{T}) where {T <: RingLike, X}
         new{T, X}(coeffs)
     end
 end
@@ -55,7 +55,7 @@ end
 
 
 # scalar +,* faster  than standard-basis/common versions as it avoids a copy
-function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}
+function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:RingLike}
     R = promote_type(T, S)
     Q = Polynomial{R,X}
     as = convert(Vector{R}, copy(coeffs(p)))
@@ -63,7 +63,7 @@ function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}
     iszero(as[end]) ? Q(as) : Q(Val(false), as)
 end
 
-function Base.:*(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Number}
+function Base.:*(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Union{T,Number}}
     R = promote_type(T,S)
     Q = Polynomial{R, X}
     as = R[aᵢ * c for aᵢ ∈ coeffs(p)]
@@ -88,9 +88,8 @@ function Base.:+(p1::P1, p2::P2) where {T,X, P1<:Polynomial{T,X},
 
     Q(Val(false), cs)
 end
-        
+
 function Base.:*(p::P, q::P) where {T,X, P<:Polynomial{T,X}}
     c = fastconv(p.coeffs, q.coeffs)
     return iszero(c[end]) ? P(c) : P(Val(false), c)
 end
-
