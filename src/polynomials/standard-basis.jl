@@ -71,7 +71,7 @@ function Base.:*(p::P, q::P) where {T,X, P<:StandardBasisPolynomial{T,X}}
     cs = ⊗(P, coeffs(p), coeffs(q))
     P(cs)
 end
-                                    
+
 ## put here, not with type defintion, in case reuse is possible
 function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
     R = promote_type(T,S)
@@ -97,7 +97,7 @@ end
 
     return quote
         Base.@_inline_meta
-        tuple($(exprs...))        
+        tuple($(exprs...))
     end
 
 end
@@ -136,9 +136,10 @@ function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPol
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
-    R = eltype(one(T)*1)
+    # R = eltype(one(T)*1)
+    R = typeof(one(T)*1)
     Q = ⟒(P){R,X}
-    
+
     order == 0 && return p
     hasnan(p) && return Q(R[NaN])
     order > length(p) && return zero(Q)
@@ -153,8 +154,9 @@ function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPol
 end
 
 function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
-    R = eltype(one(T)/1)
-    Q = ⟒(P){R,X}    
+    #R = eltype(one(T)/1)
+    R = typeof(one(T)/1)
+    Q = ⟒(P){R,X}
 
     hasnan(p) && return Q([NaN])
     iszero(p) && return zero(Q)
@@ -171,7 +173,7 @@ end
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
 
-    assert_same_variable(num, den) 
+    assert_same_variable(num, den)
     X = indeterminate(num)
 
 

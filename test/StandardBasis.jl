@@ -60,7 +60,7 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
     end
 
 end
-        
+
 
 @testset "Mapdomain" begin
     for P in Ps
@@ -144,8 +144,8 @@ end
 @testset "OffsetVector" begin
     as = ones(3:4)
     bs = parent(as)
-    
-    
+
+
     for P in Ps
         # LaurentPolynomial accepts OffsetArrays; others throw warning
         if P == LaurentPolynomial
@@ -154,11 +154,11 @@ end
             @test P(as) == P(bs)
             @test P{eltype(as)}(as) == P{eltype(as)}(bs)
             # (Or throw an error?)
-            # @test_throws ArgumentError P(as) 
+            # @test_throws ArgumentError P(as)
             # @test P{eltype(as)}(as) == P{eltype(as)}(bs)
         end
     end
-        
+
     a = [1,1]
     b = OffsetVector(a, axes(a))
     c = ZVector(a)
@@ -167,7 +167,7 @@ end
         if P == LaurentPolynomial && continue
             @test P(a) == P(b) == P(c) == P(d)
         end
-        
+
     end
 end
 
@@ -266,7 +266,7 @@ end
         @test pX != pS1
         @test pS1 == pS2
         @test pS1 == pS3
-        
+
         @test indeterminate(pS1 + pS1) == indeterminate(pS1)
         @test indeterminate(pS1 - pS1) == indeterminate(pS1)
         @test indeterminate(pS1 * pS1) == indeterminate(pS1)
@@ -446,8 +446,8 @@ end
         @test Polynomials.evalpoly.(1/2, ps) ≈ [p(1/2)  for  p  in ps]
 
     end
-    
-    
+
+
     # constant polynomials and type
     Ts = (Int, Float32, Float64, Complex{Int}, Complex{Float64})
     for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
@@ -761,21 +761,21 @@ end
     end
     meths = (Base.vect, Base.vcat, Base.hcat)
     for P in (Polynomial, ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
-        
+
         p,q = P([1,2], :x), P([1,2], :y)
         P′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
-        
+
         # * should promote to Polynomial type if mixed (save Laurent Polynomial)
         @testset "promote mixed polys" begin
             for m ∈ meths
-                @test _test(m(p,p), P, :x)            
+                @test _test(m(p,p), P, :x)
                 @test _test(m(p,r), P′′, :x)
             end
-            
+
             @test _test(Base.hvcat((2,1), p, r,[p r]), P′′, :x)
-            
+
         end
-        
+
         # * numeric constants should promote to a polynomial, when mixed
         @testset "promote numbers to poly" begin
             for m ∈ meths
@@ -784,20 +784,20 @@ end
                 @test _test(m(1,1,p), P, :x)
                 @test _test(m(p,1,1), P, :x)
             end
-            
-            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)        
+
+            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)
         end
-        
+
         # * non-constant polynomials must share the same indeterminate
         @testset "non constant polys share same X" begin
             for m ∈ meths
                 @test_throws ArgumentError m(p,q)
                 @test_throws ArgumentError m(p,s)
             end
-            
+
             @test_throws ArgumentError Base.hvcat((2,1), p, q,[p q])
         end
-        
+
 
         # * constant polynomials are treated as `P{T,X}`, not elements of `T`
          @testset "constant polys" begin
@@ -807,10 +807,10 @@ end
                 @test _test(m(1,1,one(p)), P, :x)
                 @test _test(m(one(p),1,1), P, :x)
             end
-            
-            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)        
+
+            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)
         end
-        
+
         # * Promotion can be forced to mix constant-polynomials
         @testset "Use typed constructor to mix constant polynomals" begin
             𝑷,𝑸 = P{Int,:x}, P{Int,:y} # not typeof(p),... as Immutable carries N
@@ -827,10 +827,10 @@ end
             @test eltype(𝑷[1 one(p); one(p) one(q)]) == 𝑷
             @test eltype(𝑸[1 one(p); one(p) one(q)]) == 𝑸
         end
-        
+
         @testset "hvcat" begin
             p,q = P([1,2],:x), P([1,2],:y)
-            
+
             q1 = [q 1]
             q11 = [one(q) 1]
 
@@ -843,10 +843,10 @@ end
             @test eltype(𝑷[1 p; q11]) == 𝑷
             @test eltype(Base.typed_hvcat(𝑷, (2, 1), 1, p, q11)) == 𝑷
         end
-        
+
     end
 
-    
+
 end
 
 @testset "Linear Algebra" begin
@@ -1143,7 +1143,7 @@ end
     p = Polynomial([1.234567890, 2.34567890])
     io=IOBuffer(); printpoly(io, p, compact=true); @test String(take!(io)) == "1.23457 + 2.34568*x"
     io=IOBuffer(); printpoly(io, p, compact=true, mulsymbol=""); @test String(take!(io)) == "1.23457 + 2.34568x"
-    
+
     ## issue 278 with complex
     @test printpoly_to_string(Polynomial([1 + im, 1, 2, im, 2im, 1+im, 1-im])) == "1 + im + x + 2*x^2 + im*x^3 + 2im*x^4 + (1 + im)x^5 + (1 - im)x^6"
 

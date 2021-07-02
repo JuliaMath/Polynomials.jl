@@ -20,8 +20,8 @@ export fromroots,
        ismonic
 
 """
-    fromroots(::AbstractVector{<:RingLike}; var=:x)
-    fromroots(::Type{<:AbstractPolynomial}, ::AbstractVector{<:RingLike}; var=:x)
+    fromroots(::AbstractVector{<:Number}; var=:x)
+    fromroots(::Type{<:AbstractPolynomial}, ::AbstractVector{<:Number}; var=:x)
 
 Construct a polynomial of the given type given the roots. If no type is given, defaults to `Polynomial`.
 
@@ -40,12 +40,12 @@ function fromroots(P::Type{<:AbstractPolynomial}, roots::AbstractVector; var::Sy
     p =  prod(x - r for r in roots)
     return truncate!(p)
 end
-fromroots(r::AbstractVector{<:RingLike}; var::SymbolLike = :x) =
+fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
     fromroots(Polynomial, r, var = var)
 
 """
-    fromroots(::AbstractMatrix{<:RingLike}; var=:x)
-    fromroots(::Type{<:AbstractPolynomial}, ::AbstractMatrix{<:RingLike}; var=:x)
+    fromroots(::AbstractMatrix{<:Number}; var=:x)
+    fromroots(::Type{<:AbstractPolynomial}, ::AbstractMatrix{<:Number}; var=:x)
 
 Construct a polynomial of the given type using the eigenvalues of the given matrix as the roots. If no type is given, defaults to `Polynomial`.
 
@@ -61,8 +61,8 @@ Polynomial(-1.9999999999999998 - 5.0*x + 1.0*x^2)
 """
 fromroots(P::Type{<:AbstractPolynomial},
     A::AbstractMatrix{T};
-    var::SymbolLike = :x,) where {T <: RingLike} = fromroots(P, eigvals(A), var = var)
-fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: RingLike} =
+    var::SymbolLike = :x,) where {T <: Number} = fromroots(P, eigvals(A), var = var)
+fromroots(A::AbstractMatrix{T}; var::SymbolLike = :x) where {T <: Number} =
     fromroots(Polynomial, eigvals(A), var = var)
 
 """
@@ -158,7 +158,7 @@ end
 
 
 # Weighted linear least squares
-_wlstsq(vand, y, W::RingLike) = _wlstsq(vand, y, fill!(similar(y), W))
+_wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
 function _wlstsq(vand, y, w::AbstractVector)
     W = Diagonal(sqrt.(w))
     qr(W * vand) \ (W * y)
@@ -181,7 +181,7 @@ This is calculated via the eigenvalues of the companion matrix. The `kwargs` are
 
 
 """
-function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: RingLike}
+function roots(q::AbstractPolynomial{T}; kwargs...) where {T}
 
     p = convert(Polynomial{T},  q)
     roots(p; kwargs...)
@@ -231,7 +231,7 @@ end
 
 Compute the definite integral of the given polynomial from `a` to `b`. Will throw an error if either `a` or `b` are out of the polynomial's domain.
 """
-function integrate(p::AbstractPolynomial, a::RingLike, b::RingLike)
+function integrate(p::AbstractPolynomial, a, b)
     P = integrate(p)
     return P(b) - P(a)
 end
@@ -428,8 +428,12 @@ LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 Conversions =#
 Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
 Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
-function Base.convert(::Type{S}, p::P) where {S <: RingLike,T, P<:Polynomials.AbstractPolynomial{T}}
-    Polynomials.isconstant(p) && return convert(S, Polynomials.constantterm(p))
+function Base.convert(::Type{S}, p::P) where {S <: Number,T, P<:AbstractPolynomial{T}}
+    isconstant(p) && return convert(S, constantterm(p))
+    throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
+end
+function Base.convert(::Type{T}, p::P) where {T, P<:AbstractPolynomial{T}}
+    isconstant(p) && return constantterm(p)
     throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
 end
 
@@ -537,8 +541,9 @@ Determine whether a polynomial is a monic polynomial, i.e., its leading coeffici
 ismonic(p::AbstractPolynomial) = isone(convert(Polynomial, p)[end])
 
 "`hasnan(p::AbstractPolynomial)` are any coefficients `NaN`"
-hasnan(p::AbstractPolynomial) = any(isnan, p)
-
+hasnan(p::AbstractPolynomial) = any(hasnan, p)
+hasnan(p::AbstractArray) = any(hasnan.(p))
+hasnan(x) = isnan(x)
 
 """
     isconstant(::AbstractPolynomial)
@@ -617,18 +622,18 @@ Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # getindex
-function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: RingLike}
+function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T}
     m,M = firstindex(p), lastindex(p)
     idx < m && throw(BoundsError(p, idx))
     idx > M && return zero(T)
     p.coeffs[idx - m + 1]
 end
-Base.getindex(p::AbstractPolynomial, idx::RingLike) = getindex(p, convert(Int, idx))
+Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
 Base.getindex(p::AbstractPolynomial, indices) = [p[i] for i in indices]
 Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 
 # setindex
-function Base.setindex!(p::AbstractPolynomial, value::RingLike, idx::Int)
+function Base.setindex!(p::AbstractPolynomial, value, idx::Int)
     n = length(coeffs(p))
     if n ≤ idx
         resize!(p.coeffs, idx + 1)
@@ -638,16 +643,18 @@ function Base.setindex!(p::AbstractPolynomial, value::RingLike, idx::Int)
     return p
 end
 
-Base.setindex!(p::AbstractPolynomial, value::RingLike, idx::RingLike) =
+Base.setindex!(p::AbstractPolynomial, value, idx::Number) =
     setindex!(p, value, convert(Int, idx))
-Base.setindex!(p::AbstractPolynomial, value::RingLike, indices) =
-    [setindex!(p, value, i) for i in indices]
+#Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
+#    [setindex!(p, value, i) for i in indices]
 Base.setindex!(p::AbstractPolynomial, values, indices) =
-    [setindex!(p, v, i) for (v, i) in zip(values, indices)]
-Base.setindex!(p::AbstractPolynomial, value::RingLike, ::Colon) =
-    setindex!(p, value, eachindex(p))
+    [setindex!(p, v, i) for (v, i) in tuple.(values, indices)]
+#    [setindex!(p, v, i) for (v, i) in zip(values, indices)]
+#Base.setindex!(p::AbstractPolynomial, value, ::Colon) =
+#    setindex!(p, value, eachindex(p))
 Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
-    [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
+#        [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
+    [setindex!(p, v, i) for (v, i) in tuple.(values, eachindex(p))]
 
 #=
 Iteration =#
@@ -827,14 +834,17 @@ basis(p::P, k::Int, _var=indeterminate(p); var=_var) where {P<:AbstractPolynomia
 #=
 arithmetic =#
 Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p))
-Base.:+(c::RingLike, p::AbstractPolynomial) = +(p, c)
-Base.:-(p::AbstractPolynomial, c::RingLike) = +(p, -c)
-Base.:-(c::RingLike, p::AbstractPolynomial) = +(-p, c)
-Base.:*(c::RingLike, p::AbstractPolynomial) = *(p, c)
+Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
+Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
+Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
+Base.:*(p::AbstractPolynomial, c::Number) = scalar_mult(p, c)
+Base.:*(c::Number, p::AbstractPolynomial) = scalar_mult(c, p)
+Base.:*(c::T, p::AbstractPolynomial{T}) where {T} = scalar_mult(c, p)
+Base.:*(p::AbstractPolynomial{T}, c::T) where {T} = scalar_mult(p, c)
 
 # scalar operations
 # no generic p+c, as polynomial addition falls back to scalar ops
-#function Base.:+(p::P, n::RingLike) where {P <: AbstractPolynomial}
+#function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
 #    p1, p2 = promote(p, n)
 #    return p1 + p2
 #end
@@ -846,7 +856,7 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 ## addition
 ## Fall back addition is possible as vector addition with padding by 0s
 ## Subtypes will likely want to implement both:
-## +(p::P,c::RingLike) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
+## +(p::P,c::Number) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
 ## though the default for poly+poly isn't terrible
 
 # polynomial + scalar
@@ -937,9 +947,28 @@ end
 ## -- multiplication
 
 ## scalar *, /
-function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
-    _convert(p, coeffs(p) .* c)
+#function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
+#    _convert(p, coeffs(p) .* c)
+#end
+#function Base.:*(c::S, p::P) where {P <: AbstractPolynomial,S}
+#    _convert(p, c .* coeffs(p))
+#end
+
+#Base.:*(p::P, c::T) where {T, P <: AbstractPolynomial{T}} = scalar_mult(p,c)
+
+# this fall back not efficient for sparse
+function scalar_mult(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T,X}}
+    R = Base.promote_op(*, T, S) # typeof(one(T)*one(S))?
+    𝐏 = ⟒(P){R,X}
+    𝐏([pᵢ * c for pᵢ ∈ coeffs(p)])
 end
+
+function scalar_mult(c::S, p::P) where {S, T, X, P<:AbstractPolynomial{T, X}}
+    R = Base.promote_op(*, T, S)
+    𝐏 = ⟒(P){R,X}
+    𝐏([c * pᵢ for pᵢ ∈ coeffs(p)])
+end
+
 
 function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) ./ c)
@@ -1025,8 +1054,8 @@ Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
 Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
     check_same_variable(p1,p2) && (coeffs(p1) == coeffs(p2))
-Base.:(==)(p::AbstractPolynomial, n::RingLike) = degree(p) <= 0 && p[0] == n
-Base.:(==)(n::RingLike, p::AbstractPolynomial) = p == n
+Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
+Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial{T,X},
                        p2::AbstractPolynomial{S,Y};

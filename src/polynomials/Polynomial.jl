@@ -1,7 +1,7 @@
 export Polynomial
 
 """
-    Polynomial{T<:RingLike, X}(coeffs::AbstractVector{T}, [var = :x])
+    Polynomial{T, X}(coeffs::AbstractVector{T}, [var = :x])
 
 Construct a polynomial from its coefficients `coeffs`, lowest order first, optionally in
 terms of the given variable `var` which may be a character, symbol, or a string.
@@ -32,9 +32,9 @@ julia> one(Polynomial)
 Polynomial(1.0)
 ```
 """
-struct Polynomial{T <: RingLike, X} <: StandardBasisPolynomial{T, X}
+struct Polynomial{T, X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
-    function Polynomial{T, X}(coeffs::AbstractVector{S}) where {T <: RingLike, X, S}
+    function Polynomial{T, X}(coeffs::AbstractVector{S}) where {T, X, S}
         if Base.has_offset_axes(coeffs)
             @warn "ignoring the axis offset of the coefficient vector"
         end
@@ -44,7 +44,7 @@ struct Polynomial{T <: RingLike, X} <: StandardBasisPolynomial{T, X}
         new{T,X}(cs)
     end
     # non-copying alternative assuming !iszero(coeffs[end])
-    function Polynomial{T, X}(checked::Val{false}, coeffs::AbstractVector{T}) where {T <: RingLike, X}
+    function Polynomial{T, X}(checked::Val{false}, coeffs::AbstractVector{T}) where {T, X}
         new{T, X}(coeffs)
     end
 end
@@ -55,16 +55,16 @@ end
 
 
 # scalar +,* faster  than standard-basis/common versions as it avoids a copy
-function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:RingLike}
-    R = promote_type(T, S)
+function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}
+    R = Base.promote_op(+, T, S)
     Q = Polynomial{R,X}
     as = convert(Vector{R}, copy(coeffs(p)))
     as[1] += c
     iszero(as[end]) ? Q(as) : Q(Val(false), as)
 end
 
-function Base.:*(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Union{T,Number}}
-    R = promote_type(T,S)
+function Base.:*(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Number}
+    R = Base.promote_op(*, T, S) #promote_type(T,S)
     Q = Polynomial{R, X}
     as = R[aᵢ * c for aᵢ ∈ coeffs(p)]
     iszero(as[end]) ? Q(as) : Q(Val(false), as)

@@ -40,7 +40,7 @@ function evalpoly(x::S, p::Tuple) where {S}
         N = length(p.parameters)
         ex = :(p[end]*_one(S))
         for i in N-1:-1:1
-            ex = :(_muladd(x, $ex, p[$i]))
+            ex = :(_muladd($ex, x, p[$i]))
         end
         ex
     else
@@ -54,7 +54,7 @@ function _evalpoly(x::S, p) where {S}
     N = length(p)
     ex = p[end]*_one(x)
     for i in N-1:-1:1
-        ex = _muladd(x, ex, p[i])
+        ex = _muladd(ex, x, p[i])
     end
     ex
 end
@@ -110,8 +110,8 @@ end
 
 ## modify muladd, as needed
 _muladd(a,b,c) = muladd(a,b,c)
-_muladd(a::Vector, b, c) = a.*b .+ c
-_muladd(a::Matrix, b, c) = a*(b*I) + c*I
+_muladd(a, b::Vector, c) = a.*b .+ c
+_muladd(a, b::Matrix, c) = (a*I)*b + c*I
 
 # try to get y = P(c::T)(x::S) = P{T}(c)(x::S) to
 # have y == one(T)*one(S)*x
@@ -129,4 +129,3 @@ end
 @generated function constructorof(::Type{T}) where T
     getfield(parentmodule(T), nameof(T))
 end
-

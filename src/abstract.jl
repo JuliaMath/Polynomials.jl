@@ -1,7 +1,7 @@
 export AbstractPolynomial
 
 
-const RingLike = Union{Number, Matrix} # need +,*, ??
+
 const SymbolLike = Union{AbstractString,Char,Symbol}
 
 """
@@ -13,6 +13,15 @@ An abstract container for various polynomials.
 - `coeffs` - The coefficients of the polynomial
 """
 abstract type AbstractPolynomial{T,X} end
+
+
+# T should be ring like:
+# scalar mult: Base.promote_op(*, ScalarType, T)
+# scalar add: Base.promote_op(+, ScalarType, T)
+# zero(T)
+# one(T) for variables (But what is one(T)???)
+# only allow implicit promotion of NUmber to P (p + c)
+# only allow implicit promotion of NUmber through P(c)
 
 # We want  ⟒(P{α…,T}) = P{α…}; this default
 # works for most cases
@@ -50,22 +59,22 @@ macro register(name)
         end
         Base.promote(p::P, q::Q) where {X, T, P <:$poly{T,X}, Q <: $poly{T,X}} = p,q
         Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{<:$poly{S,X}}) where {T,S,X} =  $poly{promote_type(T, S),X}
-        Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{S}) where {T,S<:RingLike,X} =
+        Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{S}) where {T,S<:Number,X} =
             $poly{promote_type(T, S),X}
         $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =
             $poly{T, Symbol(var)}(coeffs)
-        $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S<:RingLike} =
+        $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S} =
             $poly{T,Symbol(var)}(T.(x))
         function $poly(coeffs::G, var::SymbolLike=:x) where {G}
             !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
             cs = collect(coeffs)
             $poly{eltype(cs), Symbol(var)}(cs)
         end
-        $poly{T,X}(n::S) where {T, X, S<:RingLike} =
+        $poly{T,X}(n::S) where {T, X, S<:Number} =
             T(n) *  one($poly{T, X})
-        $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:RingLike} =
+        $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
             T(n) *  one($poly{T, Symbol(var)})
-        $poly(n::S, var::SymbolLike = :x)  where {S  <: RingLike} = n * one($poly{S, Symbol(var)})
+        $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S, Symbol(var)})
         $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T, Symbol(var)})
         $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
         (p::$poly)(x) = evalpoly(x, p)
@@ -82,7 +91,7 @@ macro registerN(name, params...)
         Base.promote(p::P, q::Q) where {$(αs...),T, X, P <:$poly{$(αs...),T,X}, Q <: $poly{$(αs...),T,X}} = p,q
         Base.promote_rule(::Type{<:$poly{$(αs...),T,X}}, ::Type{<:$poly{$(αs...),S,X}}) where {$(αs...),T,S,X} =
             $poly{$(αs...),promote_type(T, S),X}
-        Base.promote_rule(::Type{<:$poly{$(αs...),T,X}}, ::Type{S}) where {$(αs...),T,X,S<:RingLike} =
+        Base.promote_rule(::Type{<:$poly{$(αs...),T,X}}, ::Type{S}) where {$(αs...),T,X,S<:Number} =
             $poly{$(αs...),promote_type(T,S),X}
 
         function $poly{$(αs...),T}(x::AbstractVector{S}, var::SymbolLike = :x) where {$(αs...),T,S}
@@ -91,9 +100,9 @@ macro registerN(name, params...)
         $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
             $poly{$(αs...),T,Symbol(var)}(coeffs)
 
-        $poly{$(αs...),T,X}(n::RingLike) where {$(αs...),T,X} = T(n)*one($poly{$(αs...),T,X})
-        $poly{$(αs...),T}(n::RingLike, var::SymbolLike = :x) where {$(αs...),T} = T(n)*one($poly{$(αs...),T,Symbol(var)})
-        $poly{$(αs...)}(n::S, var::SymbolLike = :x) where {$(αs...), S<:RingLike} =
+        $poly{$(αs...),T,X}(n::Number) where {$(αs...),T,X} = T(n)*one($poly{$(αs...),T,X})
+        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = T(n)*one($poly{$(αs...),T,Symbol(var)})
+        $poly{$(αs...)}(n::S, var::SymbolLike = :x) where {$(αs...), S<:Number} =
             n*one($poly{$(αs...),S,Symbol(var)})
         $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T,Symbol(var)})
         $poly{$(αs...)}(var::SymbolLike=:x) where {$(αs...)} = variable($poly{$(αs...)},Symbol(var))
