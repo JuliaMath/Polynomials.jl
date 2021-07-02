@@ -171,7 +171,7 @@ end
 
         # implicit promotion
         @test p + s == Polynomial([a+s, b, c])
-        @test_throws MethodError p + d == Polynomial([a+d, b, c]) # can't fix
+        @test_throws Union{ArgumentError, MethodError} p + d == Polynomial([a+d, b, c]) # can't fix
         @test p + P([d]) == Polynomial([a+d,b,c])
 
         # evalution
