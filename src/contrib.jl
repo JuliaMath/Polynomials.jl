@@ -2,6 +2,7 @@
 
 using Base.Cartesian
 
+
 # direct version (do not check if threshold is satisfied)
 @generated function fastconv(E::Array{T,N}, k::Array{T,N}) where {T,N}
     quote

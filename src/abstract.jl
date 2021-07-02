@@ -7,22 +7,44 @@ const SymbolLike = Union{AbstractString,Char,Symbol}
 """
     AbstractPolynomial{T,X}
 
-An abstract container for various polynomials.
+An abstract type for various polynomials.
+
+A polynomial type holds an indeterminate `X`; coefficients of type `T`, stored in some container type; and an implicit basis, such as the standard basis.
 
 # Properties
 - `coeffs` - The coefficients of the polynomial
+
+# The type `T`
+
+`T` need not be `T <: Number`, at the moment it is not restricted
+
+Some `T`s will not be successful
+
+* scalar mult: `c::Number * p::Polynomial` should be defined
+* scalar mult: `c::T * p:Polynomial{T}` An  ambiguity when `T <: AbstractPolynomial`
+* scalar mult: `p:Polynomial{T} * c::T` need not commute
+
+* scalar add/sub: `p::Polynomial{T} + q::Polynomial{T}` should be defined
+* scalar sub: `p::Polynomial{T} - p::Polynomial{T}`  generally needs `zeros(T,1)` defined for `zero(Polynomial{T})`
+
+* poly mult: `p::Polynomial{T} * q::Polynomial{T}` Needs "`T * T`" defined (e.g. `Base.promote_op(*, Vector{Int}, Vector{Int}))` needs to be something.)
+* poly powers: `p::Polynomial{T}^2` needs "`T^2`" defined
+
+* implicit promotion: `p::Polynomial{T} + c::Number`  needs `convert(T, c)` defined
+* implicit promotion: `p::Polynomial{T} + c::T`  ambiguity if `T <: AbstractPolynomial`
+
+* evaluation: `p::Polynomial{T}(s::Number)`
+* evaluation `p::Polynomial{T}(c::T)`   needs `T*T` defined
+
+* derivatives: `derivative(p::Polynomial{T})`
+* integrals: `integrate(p::Polynomial{T})`
+
+
 """
 abstract type AbstractPolynomial{T,X} end
 
 
-# T should be ring like:
-# scalar mult: Base.promote_op(*, ScalarType, T)
-# scalar add: Base.promote_op(+, ScalarType, T)
-# zero(T)
-# one(T) for variables (But what is one(T)???)
-# only allow implicit promotion of NUmber to P (p + c)
-# only allow implicit promotion of NUmber through P(c)
-
+## -----
 # We want  ⟒(P{α…,T}) = P{α…}; this default
 # works for most cases
 ⟒(P::Type{<:AbstractPolynomial}) = constructorof(P)

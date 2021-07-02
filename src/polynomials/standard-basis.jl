@@ -75,6 +75,11 @@ function Base.:*(p::P, q::P) where {T,X, P<:StandardBasisPolynomial{T,X}}
     P(cs)
 end
 
+function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T<:Number,S<:Number}
+    R = promote_type(T,S)
+    fastconv(convert(Vector{R}, p), convert(Vector{R},q))
+end
+
 ## put here, not with type defintion, in case reuse is possible
 function conv(p::Vector{T}, q::Vector{S}) where {T,S}
         as = [p[1]*q[1]]
@@ -89,9 +94,8 @@ function conv(p::Vector{T}, q::Vector{S}) where {T,S}
     end
     as
 end
+
 function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
-    #R = promote_type(T,S)
-    #fastconv(convert(Vector{R}, p), convert(Vector{R},q))
     conv(p, q)
 end
 

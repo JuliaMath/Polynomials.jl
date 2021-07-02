@@ -90,9 +90,7 @@ function Base.:+(p1::P1, p2::P2) where {T,X, P1<:Polynomial{T,X},
 end
 
 # redundant, a bit faster
-function Base.:*(p::P, q::P) where {T,X, P<:Polynomial{T,X}}
-    #c = fastconv(p.coeffs, q.coeffs)
-    c = conv(p.coeffs, q.coeffs)
-
+function Base.:*(p::P, q::P) where {T <: Number,X, P<:Polynomial{T,X}}
+    c = fastconv(p.coeffs, q.coeffs)
     return iszero(c[end]) ? P(c) : P(Val(false), c)
 end
