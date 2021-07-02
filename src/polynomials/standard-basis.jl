@@ -137,7 +137,8 @@ function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPol
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
     # R = eltype(one(T)*1)
-    R = typeof(one(T)*1)
+    # R = typeof(one(T)*1)
+    R = typeof(constantterm(p)*1)
     Q = ⟒(P){R,X}
 
     order == 0 && return p
@@ -155,7 +156,8 @@ end
 
 function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
     #R = eltype(one(T)/1)
-    R = typeof(one(T)/1)
+    #R = typeof(one(T)/1)
+    R = typeof(constantterm(p)/1)
     Q = ⟒(P){R,X}
 
     hasnan(p) && return Q([NaN])
@@ -163,7 +165,7 @@ function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
 
     n = length(p)
     as = Vector{R}(undef, n + 1)
-    as[1] = zero(R)
+    as[1] = 0*constantterm(p)
     for (i, pᵢ) ∈ pairs(p)
         i′ = i + 1
         @inbounds as[i′+1] = pᵢ/i′

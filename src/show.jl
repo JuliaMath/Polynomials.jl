@@ -7,10 +7,10 @@ export printpoly
 ## which can be modified by users for other Ts
 
 _iszero(x::T) where {T} = (x == zero(T)) === true
-_iszero(x::AbstractMatrix{T}) where {T} = all(isequal.(x, zero(T)))
+_iszero(x::AbstractArray{T}) where {T} = all(isequal.(x, zero(T)))
 
 _isone(x::T) where {T} = (x == one(T)) === true
-_isone(x::AbstractMatrix{T}) where {T} = all(isequal.(x, one(T)))
+_isone(x::AbstractArray{T}) where {T} = all(isequal.(x, one(T)))
 
 "`hasneg(::T)` attribute is true if: `pj < zero(T)` is defined."
 hasneg(::Type{T}) where {T} = false
