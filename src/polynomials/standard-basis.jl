@@ -64,6 +64,9 @@ function variable(::Type{P}) where {P<:StandardBasisPolynomial}
     ⟒(P){T,X}([zero(T),one(T)])
 end
 
+# can bypass c*one(P)
+Base.:+(p::P, c::T) where {T, P<:StandardBasisPolynomial{T}} = p + P([c])
+
 ## multiplication algorithms for computing p * q.
 ## default multiplication between same type.
 ## subtypes might relax to match T,S to avoid one conversion
@@ -73,9 +76,23 @@ function Base.:*(p::P, q::P) where {T,X, P<:StandardBasisPolynomial{T,X}}
 end
 
 ## put here, not with type defintion, in case reuse is possible
+function conv(p::Vector{T}, q::Vector{S}) where {T,S}
+        as = [p[1]*q[1]]
+    z = 0 * as[1]
+    n,m = length(p)-1, length(q)-1
+    for i ∈ 1:n+m
+        Σ = z
+        for j ∈ max(0, i-m):min(i,n)
+            Σ += p[1+j]*q[1 + i-j]
+        end
+        push!(as, Σ)
+    end
+    as
+end
 function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
-    R = promote_type(T,S)
-    fastconv(convert(Vector{R}, p), convert(Vector{R},q))
+    #R = promote_type(T,S)
+    #fastconv(convert(Vector{R}, p), convert(Vector{R},q))
+    conv(p, q)
 end
 
 ## Static size of product makes generated functions  a good choice
