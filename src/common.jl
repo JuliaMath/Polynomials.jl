@@ -559,6 +559,8 @@ Return the coefficient vector. For a standard basis polynomial these are `[a_0, 
 """
 coeffs(p::AbstractPolynomial) = p.coeffs
 
+# hook in for offset coefficients of Laurent Polynomials
+_coeffs(p::AbstractPolynomial) = coeffs(p)
 
 
 # specialize this to p[0] when basis vector is 1
@@ -834,13 +836,16 @@ basis(p::P, k::Int, _var=indeterminate(p); var=_var) where {P<:AbstractPolynomia
 #=
 arithmetic =#
 Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p))
+
+Base.:*(p::AbstractPolynomial, c::Number) = scalar_mult(p, c)
+Base.:*(c::Number, p::AbstractPolynomial) = scalar_mult(c, p)
+Base.:*(c::T, p::P) where {T, P <: AbstractPolynomial{T}} = scalar_mult(c, p)
+Base.:*(p::P, c::T) where {T, P <: AbstractPolynomial{T}} = scalar_mult(p, c)
+
+# implicitly identify c::Number with a constant polynomials
 Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
 Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
 Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
-Base.:*(p::AbstractPolynomial, c::Number) = scalar_mult(p, c)
-Base.:*(c::Number, p::AbstractPolynomial) = scalar_mult(c, p)
-Base.:*(c::T, p::AbstractPolynomial{T}) where {T} = scalar_mult(c, p)
-Base.:*(p::AbstractPolynomial{T}, c::T) where {T} = scalar_mult(p, c)
 
 # scalar operations
 # no generic p+c, as polynomial addition falls back to scalar ops
@@ -859,7 +864,7 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 ## +(p::P,c::Number) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
 ## though the default for poly+poly isn't terrible
 
-# polynomial + scalar
+# polynomial + scalar; implicit identification of c with c*one(P)
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
 
 function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
@@ -946,17 +951,8 @@ end
 
 ## -- multiplication
 
-## scalar *, /
-#function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
-#    _convert(p, coeffs(p) .* c)
-#end
-#function Base.:*(c::S, p::P) where {P <: AbstractPolynomial,S}
-#    _convert(p, c .* coeffs(p))
-#end
 
-#Base.:*(p::P, c::T) where {T, P <: AbstractPolynomial{T}} = scalar_mult(p,c)
-
-# this fall back not efficient for sparse
+# this fall back not necessarily efficient (e.g., sparse)
 function scalar_mult(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T,X}}
     R = Base.promote_op(*, T, S) # typeof(one(T)*one(S))?
     𝐏 = ⟒(P){R,X}
@@ -983,7 +979,6 @@ function Base.:*(p1::P, p2::Q) where {T,X,P <: AbstractPolynomial{T,X},S,Y,Q <: 
     p1, p2 = promote(p1, p2)
     return p1 * p2
 end
-
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 

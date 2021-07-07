@@ -5,7 +5,7 @@ export LaurentPolynomial
 
 A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of the form `a_{m}x^m + ... + a_{n}x^n` where `m,n` are  integers (not necessarily positive) with ` m <= n`.
 
-The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`. 
+The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`.
 The argument `m` represents the lowest exponent of the variable in the series, and is taken to be zero by default.
 
 Laurent polynomials and standard basis polynomials promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`
@@ -69,12 +69,12 @@ julia> x^degree(p) * p(x⁻¹) # reverses  coefficients
 LaurentPolynomial(3.0 + 2.0*x + 1.0*x²)
 ```
 """
-struct LaurentPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
+struct LaurentPolynomial{T, X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
     m::Base.RefValue{Int}
     n::Base.RefValue{Int}
     function LaurentPolynomial{T,X}(coeffs::AbstractVector{S},
-                                    m::Union{Int, Nothing}=nothing) where {T <: Number, X, S}
+                                    m::Union{Int, Nothing}=nothing) where {T, X, S}
 
         fnz = findfirst(!iszero, coeffs)
         fnz == nothing && return  new{T,X}(zeros(T,1), Ref(0), Ref(0))
@@ -84,7 +84,7 @@ struct LaurentPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
             cs = convert(Vector{T}, coeffs[fnz:lnz])
             return new{T,X}(cs, Ref(fnz), Ref(lnz))
         else
-            
+
             c = convert(Vector{T}, coeffs[fnz:lnz])
 
             m′ = fnz - 1 + (m == nothing ? 0 : m)
@@ -100,16 +100,15 @@ end
 
 ## constructors
 function LaurentPolynomial{T}(coeffs::AbstractVector{S}, m::Int, var::SymbolLike=:x) where {
-    T <: Number, S <: Number}
+    T, S <: Number}
     LaurentPolynomial{T,Symbol(var)}(T.(coeffs), m)
 end
 
-function LaurentPolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {
-    T <: Number}
+function LaurentPolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T}
     LaurentPolynomial{T, Symbol(var)}(coeffs, 0)
 end
 
-function LaurentPolynomial(coeffs::AbstractVector{T}, m::Int, var::SymbolLike=:x) where {T <: Number}
+function LaurentPolynomial(coeffs::AbstractVector{T}, m::Int, var::SymbolLike=:x) where {T}
     LaurentPolynomial{T, Symbol(var)}(coeffs, m)
 end
 
@@ -133,21 +132,17 @@ function Base.convert(P::Type{<:Polynomial}, q::LaurentPolynomial)
     P([q[i] for i  in 0:n], indeterminate(q))
 end
 
-# need to add p.m[], so abstract.jl method isn't sufficent
-function Base.convert(::Type{P}, p::LaurentPolynomial) where {P<:LaurentPolynomial}
-    S′ = _eltype(P)
-    Y′ = _indeterminate(P)
-    S = S′ == nothing ? eltype(p) : S′
-    Y = Y′ == nothing ? indeterminate(p) : Y′
-    isconstant(p) && return LaurentPolynomial{S,Y}(constantterm(p))
-    LaurentPolynomial{S,Y}(p.coeffs, p.m[])
+
+# work around for non-applicable convert(::Type{<:P}, p::P{T,X}) in abstract.jl
+struct OffsetCoeffs{V}
+    coeffs::V
+    m::Int
 end
 
-# function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {T, P <:LaurentPolynomial{T},S}
-#     v′ = _indeterminate(P)
-#     X = v′ == nothing ? indeterminate(q) : v′
-#     ⟒(P){T,X}([q[i] for i in 0:degree(q)], 0)
-# end
+_coeffs(p::LaurentPolynomial) = OffsetCoeffs(p.coeffs, p.m[])
+function LaurentPolynomial{T,X}(p::OffsetCoeffs) where {T, X}
+    LaurentPolynomial{T,X}(p.coeffs, p.m)
+end
 
 function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {P <:LaurentPolynomial,S}
 
@@ -528,7 +523,7 @@ function integrate(p::P) where {T, X, P<: LaurentPolynomial{T, X}}
     !iszero(p[-1])  && throw(ArgumentError("Can't integrate Laurent  polynomial with  `x⁻¹` term"))
     R = eltype(one(T)/1)
     Q = ⟒(P){R, X}
-    
+
     if hasnan(p)
         return Q([NaN],0)
     end

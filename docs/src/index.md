@@ -161,7 +161,7 @@ By design, this is not type-stable; the returned roots may be real or complex.
 
 The default `roots` function uses the eigenvalues of the
 [companion](https://en.wikipedia.org/wiki/Companion_matrix) matrix for
-a polynomial. This is an `𝑶(n^3)` operation. 
+a polynomial. This is an `𝑶(n^3)` operation.
 
 For polynomials with `BigFloat` coefficients, the
 `GenericLinearAlgebra` package can be seamlessly used:
@@ -204,7 +204,7 @@ julia> PolynomialRoots.roots(coeffs(p))
  1.0000000000000002 + 0.0im
 ```
 
-The roots are always returned as complex numbers. 
+The roots are always returned as complex numbers.
 
 
 * The
@@ -226,7 +226,7 @@ julia> AMRVW.roots(float.(coeffs(p)))
  2.9999999999999964 + 0.0im
 ```
 
-The roots are returned as complex numbers. 
+The roots are returned as complex numbers.
 
 Both `PolynomialRoots` and `AMRVW` are generic and work with
 `BigFloat` coefficients, for example.
@@ -429,7 +429,7 @@ Fit a polynomial (of degree `deg`) to `x` and `y` using polynomial interpolation
 using Plots, Polynomials
 xs = range(0, 10, length=10)
 ys = @. exp(-xs)
-f = fit(xs, ys) # degree = length(xs) - 1 
+f = fit(xs, ys) # degree = length(xs) - 1
 f2 = fit(xs, ys, 2) # degree = 2
 
 scatter(xs, ys, markerstrokewidth=0, label="Data")
@@ -583,7 +583,7 @@ Polynomial(4 + 2*x + 3*x^2)
 
 If `q` is non-constant, such as `variable(Polynomial, :y)`, then there would be an error due to the mismatched symbols. (The mathematical result would need a multivariate polynomial, not a univariate polynomial, as this package provides.)
 
-The same conversion is done for polynomial multiplication: constant polynomials are treated as numbers; non-constant polynomials must have their symbols match. 
+The same conversion is done for polynomial multiplication: constant polynomials are treated as numbers; non-constant polynomials must have their symbols match.
 
 There is an oddity -- though the following two computations look the same, they are technically different:
 
@@ -595,7 +595,7 @@ julia> one(Polynomial, :y) + one(Polynomial, :x)
 Polynomial(2.0)
 ```
 
-Both are constant polynomials over `Int`, but the first has the indeterminate `:y`, the second `:x`. 
+Both are constant polynomials over `Int`, but the first has the indeterminate `:y`, the second `:x`.
 
 This technical difference causes no issues with polynomial addition or multiplication, as there constant polynomials are treated as numbers, but can be an issue when constant polynomials are used as array elements.
 
@@ -668,6 +668,56 @@ julia> [1 p; p 1] + [1 2one(q); 3 4] # array{P{T,:x}} + array{P{T,:y}}
 
 Though were a non-constant polynomial with indeterminate `y` replacing
 `2one(q)` above, that addition would throw an error.
+
+
+## Non-number types for `T`
+
+The coefficients of the polynomial may be non-number types, such as matrices or other polynomials, albeit not every operation is fully supported.
+
+For example, a polynomial with matrix coefficients, might be constructed with:
+
+```jldoctest
+a,b,c = [1 0;2 1], [1 0; 3 1], [1 0; 4 1]
+p = Polynomial([a,b,c])
+q = derivative(p)
+```
+
+Various operations are available, `derivative` was shown above, here are the vector-space operations:
+
+```jldoctest
+2p, p + q
+```
+
+polynomial multiplication:
+
+```jldoctest
+p * q
+```
+
+polynomial evaluation, here either with a scalar or a matrix:
+
+```jldoctest
+p(2), p(b)
+```
+
+But if the type `T` lacks support of some generic functions, such as `zero(T)` and `one(T)`, then there may be issues. For example,  when `T <: AbstractMatrix` the output of `p-p` is an error, as the implementation assumes `zero(T)` is defined. For static arrays, this isn't an issue, as there is support for `zero(T)`. Other polynomial types, such as `SparsePolynomial` have less support, as some specialized methods assume more of the generic interface be implemented.
+
+Similarly, using polynomials for `T` is a possibility:
+
+```jldoctest
+a,b,c = Polynomial([1],:y), Polynomial([0,1],:y), Polynomial([0,0,1],:y)
+p = Polynomial([a,b,c], :x)
+q = derivative(p)
+```
+
+Again, much works:
+
+```jldoctest
+2p, p+q, p*q, p(2), p(a)
+```
+
+But much doesn't. For example, implicit promotion can fail. For example, the scalar multiplication `p * b` will fail,  as the methods assume this is the fallback polynomial multiplication and not the intended scalar multiplication.
+
 
 ## Rational functions
 

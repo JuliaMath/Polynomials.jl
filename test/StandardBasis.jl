@@ -143,196 +143,208 @@ end
 @testset "Non-number type" begin
     conv = Polynomials.conv
     @testset "T=Polynomial{Int,:y}" begin
-        T = Polynomial{Int, :y}
-        a,b,c = T([1]), T([1,2]), T([1,2,3])
-        p = Polynomial([a,b,c])
-        q = Polynomial([a,b])
-        s = 2
-        d = c
-        P = typeof(p)
+        for P in (Polynomial,)
 
-        # scalar product
-        @test s*p == Polynomial([s*cᵢ for cᵢ ∈ [a,b,c]])
-        @test p*s == Polynomial([cᵢ*s for cᵢ ∈ [a,b,c]])
-        @test_throws ArgumentError d*p == Polynomial([d*cᵢ for cᵢ ∈ [a,b,c]]) # can't fix
-        @test_throws ArgumentError p*d == Polynomial([cᵢ*d for cᵢ ∈ [a,b,c]]) # can't fix
+            T = P{Int, :y}
+            a,b,c = T([1]), T([1,2]), T([1,2,3])
+            p = P([a,b,c])
+            q = P([a,b])
+            s = 2
+            d = c
 
-        # poly add
-        @test p + q == Polynomial([a+a,b+b,c])
-        @test p - q == Polynomial([a-a,b-b,c])
-        @test p - p == Polynomial([0*a])
+            # scalar product
+            @test s*p == P([s*cᵢ for cᵢ ∈ [a,b,c]])
+            @test p*s == P([cᵢ*s for cᵢ ∈ [a,b,c]])
+            @test_throws ArgumentError d*p == P([d*cᵢ for cᵢ ∈ [a,b,c]]) # can't fix
+            @test_throws ArgumentError p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]]) # can't fix
 
-        # poly mult
-        @test p * q == Polynomial(conv([a,b,c], [a,b]))
-        @test q * p == Polynomial(conv([a,b], [a,b, c]))
+            # poly add
+            @test p + q == P([a+a,b+b,c])
+            @test p - q == P([a-a,b-b,c])
+            @test p - p == P([0*a])
 
-        # poly powers
-        @test p^2 == p * p
+            # poly mult
+            @test p * q == P(conv([a,b,c], [a,b]))
+            @test q * p == P(conv([a,b], [a,b, c]))
 
-        # implicit promotion
-        @test p + s == Polynomial([a+s, b, c])
-        @test_throws Union{ArgumentError, MethodError} p + d == Polynomial([a+d, b, c]) # can't fix
-        @test p + P([d]) == Polynomial([a+d,b,c])
+            # poly powers
+            @test p^2 == p * p
 
-        # evalution
-        @test p(s) == a + b * s + c * s * s
-        @test p(c) == a + b * c + c * c * c
+            # evalution
+            @test p(s) == a + b * s + c * s * s
+            @test p(c) == a + b * c + c * c * c
 
-        # ∂, ∫
-        @test derivative(p) == Polynomial([b, 2c])
-        @test integrate(p) == Polynomial([0*a, a, b/2, c/3])
+            # ∂, ∫
+            @test derivative(p) == P([b, 2c])
+            @test integrate(p) == P([0*a, a, b/2, c/3])
 
-        # matrix element
-        pq = [p q]
-        @test pq[1] == p
-        @test pq[2] == q
-        ps = [p s]
-        @test ps[1] == p
-        @test ps[2] == s
+            # matrix element
+            pq = [p q]
+            @test pq[1] == p
+            @test pq[2] == q
+
+            # implicit promotion
+            @test p + s == P([a+s, b, c])
+            @test_throws Union{ArgumentError, MethodError} p + d == P([a+d, b, c]) # can't fix
+            @test p + P([d]) == P([a+d,b,c])
+
+            ps = [p s]
+            @test ps[1] == p
+            @test ps[2] == s
+        end
     end
 
     @testset "T=Matrix (2x2)" begin
-        a,b,c = [1 0; 1 1], [1 0; 2 1], [1 0; 3 1]
-        p = Polynomial([a,b,c])
-        q = Polynomial([a,b])
-        s = 2
-        d = [4 1; 1 0]
-        P = typeof(p)
+        for P ∈ (Polynomial, ImmutablePolynomial)
+            a,b,c = [1 0; 1 1], [1 0; 2 1], [1 0; 3 1]
+            p = P([a,b,c])
+            q = P([a,b])
+            s = 2
+            d = [4 1; 1 0]
 
-        # scalar product
-        @test s*p == Polynomial([s*cᵢ for cᵢ ∈ [a,b,c]])
-        @test p*s == Polynomial([cᵢ*s for cᵢ ∈ [a,b,c]])
-        @test d*p == Polynomial([d*cᵢ for cᵢ ∈ [a,b,c]])
-        @test p*d == Polynomial([cᵢ*d for cᵢ ∈ [a,b,c]])
+            # scalar product
+            @test s*p == P([s*cᵢ for cᵢ ∈ [a,b,c]])
+            @test p*s == P([cᵢ*s for cᵢ ∈ [a,b,c]])
+            @test d*p == P([d*cᵢ for cᵢ ∈ [a,b,c]])
+            @test p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]])
 
-        # poly add
-        @test p + q == Polynomial([a+a,b+b,c])
-        @test p - q == Polynomial([a-a,b-b,c])
-        @test_throws MethodError p - p == Polynomial([0*a])  # no zeros to make zero polynomial
+            # poly add
+            @test p + q == P([a+a,b+b,c])
+            @test p - q == P([a-a,b-b,c])
+            @test_throws MethodError p - p == P([0*a])  # no zeros to make zero polynomial
 
-        # poly mult
-        @test p * q == Polynomial(conv([a,b,c], [a,b]))
-        @test q * p == Polynomial(conv([a,b], [a,b, c]))
+            # poly mult
+            @test p * q == P(conv([a,b,c], [a,b]))
+            @test q * p == P(conv([a,b], [a,b, c]))
 
-        # poly powers
-        @test p^2 == p * p
+            # poly powers
+            @test p^2 == p * p
 
-        # implicit promotion
-        @test_throws MethodError p + s == Polynomial([a+s, b, c]) # OK, no a + s
-        @test p + d == Polynomial([a+d, b, c])
-        @test p + P([d]) == Polynomial([a+d,b,c])
+            # evalution
+            @test p(s) == a + b * s + c * s * s
+            @test p(c) == a + b * c + c * c * c
 
-        # evalution
-        @test p(s) == a + b * s + c * s * s
-        @test p(c) == a + b * c + c * c * c
+            # ∂, ∫
+            @test derivative(p) == P([b, 2c])
+            @test integrate(p) == P([0*a, a, b/2, c/3])
 
-        # ∂, ∫
-        @test derivative(p) == Polynomial([b, 2c])
-        @test integrate(p) == Polynomial([0*a, a, b/2, c/3])
+            # matrix element
+            @test [p q][1] == p
+            @test [p q][2] == q
 
-        # matrix element
-        @test [p q][1] == p
-        @test [p q][2] == q
-        @test_throws MethodError [p s][1] == p # no promotion T(s)
-        @test_throws MethodError [p s][2] == s
+            # implicit promotion
+            @test_throws MethodError p + s == P([a+s, b, c]) # OK, no a + s
+            @test p + d == P([a+d, b, c])
+            @test p + P([d]) == P([a+d,b,c])
+
+            @test_throws MethodError [p s][1] == p # no promotion T(s)
+            @test_throws MethodError [p s][2] == s
+        end
     end
+
 
     @testset "T=Vector{Int}" begin
-        a,b,c = [1,0,0], [1,1,0], [1,1,1]
-        p = Polynomial([a,b,c])
-        q = Polynomial([a,b])
-        s = 2
-        d = [1,2,3]
-        P = typeof(p)
+        for P ∈ (Polynomial, ImmutablePolynomial)
+            a,b,c = [1,0,0], [1,1,0], [1,1,1]
+            p = P([a,b,c])
+            q = P([a,b])
+            s = 2
+            d = [1,2,3]
 
-        # scalar product
-        @test s*p == Polynomial([s*cᵢ for cᵢ ∈ [a,b,c]])
-        @test p*s == Polynomial([cᵢ*s for cᵢ ∈ [a,b,c]])
-        @test_throws MethodError d*p == Polynomial([d*cᵢ for cᵢ ∈ [a,b,c]]) # Ok, no * for T
-        @test_throws MethodError p*d == Polynomial([cᵢ*d for cᵢ ∈ [a,b,c]]) # Ok, no * for T
+            # scalar product
+            @test s*p == P([s*cᵢ for cᵢ ∈ [a,b,c]])
+            @test p*s == P([cᵢ*s for cᵢ ∈ [a,b,c]])
+            @test_throws MethodError d*p == P([d*cᵢ for cᵢ ∈ [a,b,c]]) # Ok, no * for T
+            @test_throws MethodError p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]]) # Ok, no * for T
 
-        # poly add
-        @test p + q == Polynomial([a+a,b+b,c])
-        @test p - q == Polynomial([a-a,b-b,c])
-        @test_throws MethodError p - p == Polynomial([0*a])  # no zeros to make zero polynomial
+            # poly add
+            @test p + q == P([a+a,b+b,c])
+            @test p - q == P([a-a,b-b,c])
+            @test_throws MethodError p - p == P([0*a])  # no zero(T) to make zero polynomial
 
-        # poly mult
-        @test_throws MethodError p * q == Polynomial(conv([a,b,c], [a,b])) # Ok, no * for T
-        @test_throws MethodError q * p == Polynomial(conv([a,b], [a,b, c])) # Ok, no * for T
+            # poly mult
+            @test_throws MethodError p * q == P(conv([a,b,c], [a,b])) # Ok, no * for T
+            @test_throws MethodError q * p == P(conv([a,b], [a,b, c])) # Ok, no * for T
 
-        # poly powers
-        @test_throws MethodError p^2 == p * p # Ok, no * for T
+            # poly powers
+            @test_throws MethodError p^2 == p * p # Ok, no * for T
 
-        # implicit promotion
-        @test_throws MethodError p + s == Polynomial([a+s, b, c])  # OK, no a + s
-        @test  p + d == Polynomial([a+d, b, c])
-        @test p + P([d]) == Polynomial([a+d,b,c])
+            # evalution
+            @test p(s) == a + b * s + c * s * s
+            @test_throws MethodError p(c) == a + b * c + c * c * c # OK, no b * c
 
-        # evalution
-        @test p(s) == a + b * s + c * s * s
-        @test_throws MethodError p(c) == a + b * c + c * c * c # OK, no b * c
-
-        # ∂, ∫
-        @test derivative(p) == Polynomial([b, 2c])
-        @test integrate(p) == Polynomial([0*a, a, b/2, c/3])
+            # ∂, ∫
+            @test derivative(p) == P([b, 2c])
+            @test integrate(p) == P([0*a, a, b/2, c/3])
 
 
-        # matrix element
-        @test [p q][1] == p
-        @test [p q][2] == q
-        @test_throws MethodError [p s][1] == p # no promotion T(s)
-        @test_throws MethodError [p s][2] == s
+            # matrix element
+            @test [p q][1] == p
+            @test [p q][2] == q
+
+            # implicit promotion
+            @test_throws MethodError p + s == P([a+s, b, c])  # OK, no a + s
+            @test  p + d == P([a+d, b, c])
+            @test p + P([d]) == P([a+d,b,c])
+
+            @test_throws MethodError [p s][1] == p # no promotion T(s)
+            @test_throws MethodError [p s][2] == s
+        end
     end
 
-    #==
-    using StaticArrays
-    @testset "T=SA" begin
-        a,b,c = SA[1 0; 1 1], SA[1 0; 2 1], SA[1 0; 3 1]
-        p = Polynomial([a,b,c])
-        q = Polynomial([a,b])
-        s = 2
-        d = SA[4 1; 1 0]
-        P = typeof(p)
 
-        # scalar product
-        @test s*p == Polynomial([s*cᵢ for cᵢ ∈ [a,b,c]])
-        @test p*s == Polynomial([cᵢ*s for cᵢ ∈ [a,b,c]])
-        @test d*p == Polynomial([d*cᵢ for cᵢ ∈ [a,b,c]])
-        @test p*d == Polynomial([cᵢ*d for cᵢ ∈ [a,b,c]])
+    if VERSION >= v"1.5"
+        eval(quote
+             using StaticArrays
+             end)
+        @testset "T=SA" begin
+            for P ∈ (Polynomial, ImmutablePolynomial )
+                a,b,c = SA[1 0; 1 1], SA[1 0; 2 1], SA[1 0; 3 1]
+                p = P([a,b,c])
+                q = P([a,b])
+                s = 2
+                d = SA[4 1; 1 0]
 
-        # poly add
-        @test p + q == Polynomial([a+a,b+b,c])
-        @test p - p == Polynomial([0*a])
+                # scalar product
+                @test s*p == P([s*cᵢ for cᵢ ∈ [a,b,c]])
+                @test p*s == P([cᵢ*s for cᵢ ∈ [a,b,c]])
+                @test d*p == P([d*cᵢ for cᵢ ∈ [a,b,c]])
+                @test p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]])
 
-        # poly mult
-        @test p * q == Polynomial(conv([a,b,c], [a,b]))
-        @test q * p == Polynomial(conv([a,b], [a,b, c]))
+                # poly add
+                @test p + q == P([a+a,b+b,c])
+                @test p - p == P([0*a])
 
-        # poly powers
-        @test p^2 == p * p
+                # poly mult
+                @test p * q == P(conv([a,b,c], [a,b]))
+                @test q * p == P(conv([a,b], [a,b, c]))
 
-        # implicit promotion
-        @test p + s == Polynomial([a+s, b, c])
-        @test p + d == Polynomial([a+d, b, c])
-        @test p + P([d]) == Polynomial([a+d,b,c])
+                # poly powers
+                @test p^2 == p * p
 
-        # evalution
-        @test p(s) == a + b * s + c * s * s
-        @test p(c) == a + b * c + c * c * c
 
-        # ∂, ∫
-        @test derivative(p) == Polynomial([b, 2c])
-        @test integrate(p) == Polynomial([0*a, a, b/2, c/3])
+                # evalution
+                @test p(s) == a + b * s + c * s * s
+                @test p(c) == a + b * c + c * c * c
 
-        # matrix element
-        @test [p q][1] == p
-        @test [p q][2] == q
-        @test_throws MethodError [p s][1] == p # no promotion T(s)
-        @test_throws MethodError [p s][2] == s #
+                # ∂, ∫
+                @test derivative(p) == P([b, 2c])
+                @test integrate(p) == P([0*a, a, b/2, c/3])
+
+                # matrix element
+                @test [p q][1] == p
+                @test [p q][2] == q
+
+                # implicit promotion
+                # @test_broken p + s == P([a .+ s, b, c]) # should error, doesn't
+                @test p + d == P([a + d, b, c])
+                @test p + P([d]) == P([a + d,b,c])
+
+                @test_throws MethodError [p s][1] == p # no promotion T(s)
+                @test_throws MethodError [p s][2] == s #
+            end
+        end
     end
-    ==#
-
-
 end
 
 @testset "OffsetVector" begin

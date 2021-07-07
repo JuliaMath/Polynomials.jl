@@ -65,7 +65,7 @@ function variable(::Type{P}) where {P<:StandardBasisPolynomial}
 end
 
 # can bypass c*one(P)
-Base.:+(p::P, c::T) where {T, P<:StandardBasisPolynomial{T}} = p + P([c])
+Base.:+(p::P, c::T) where {T, P<:StandardBasisPolynomial{T}} = p + ⟒(P)([c])
 
 ## multiplication algorithms for computing p * q.
 ## default multiplication between same type.
@@ -81,6 +81,7 @@ function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) whe
 end
 
 ## put here, not with type defintion, in case reuse is possible
+## `conv` can be used with matrix entries, unlike `fastconv`
 function conv(p::Vector{T}, q::Vector{S}) where {T,S}
         as = [p[1]*q[1]]
     z = 0 * as[1]
@@ -150,6 +151,7 @@ function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var
     return P(reverse(c), var)
 end
 
+## ----
 
 function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPolynomial{T, X}}
     order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
@@ -157,8 +159,6 @@ function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPol
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
-    # R = eltype(one(T)*1)
-    # R = typeof(one(T)*1)
     R = typeof(constantterm(p)*1)
     Q = ⟒(P){R,X}
 
@@ -176,8 +176,7 @@ function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPol
 end
 
 function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
-    #R = eltype(one(T)/1)
-    #R = typeof(one(T)/1)
+
     R = typeof(constantterm(p)/1)
     Q = ⟒(P){R,X}
 
@@ -388,6 +387,52 @@ function companion(p::P) where {T, P <: StandardBasisPolynomial{T}}
     return comp
 end
 
+# block companion matrix
+function companion(p::P) where {T, M <: AbstractMatrix{T}, P<:StandardBasisPolynomial{M}}
+    C₀, C₁ = companion_pencil(p)
+    C₀ * inv(C₁) # could be more efficient
+end
+
+# the companion pencil is `C₀`, `C₁` where `λC₁ - C₀` is singular for
+# eigen values of the companion matrix: `vᵀ(λC₁ - C₀) = 0` => `vᵀλ = vᵀ(C₀C₁⁻¹)`, where `C₀C₁⁻¹`
+# is the companion matrix.
+function companion_pencil(p::P) where {T, P<:StandardBasisPolynomial{T}}
+    n = degree(p)
+    C₁ = diagm(0 => ones(T, n))
+    C₁[end,end] = p[end]
+
+    C₀ = diagm(-1 => ones(T, n-1))
+    for i ∈ 0:n-1
+        C₀[1+i,end] = -p[i]
+    end
+    C₀, C₁
+end
+
+# block version
+function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:StandardBasisPolynomial{M}}
+
+    m,m′ = size(p[0])
+    @assert m == m′  # square matrix
+
+    n = degree(p)
+
+    C₀ = zeros(T, n*m, n*m)
+    C₁ = zeros(T, n*m, n*m)
+
+
+    Δ = 1:m
+    for i ∈ 1:n-1
+        C₁[(i-1)*m .+ Δ, (i-1)*m .+ Δ] .= I(m)
+        C₀[i*m .+ Δ, (i-1)*m .+ Δ] .= I(m)
+    end
+    C₁[(n-1)*m .+ Δ, (n-1)*m .+ Δ] .= p[end]
+    for i ∈ 0:n-1
+        C₀[i*m .+ Δ, (n-1)*m .+ Δ] .= -p[i]
+    end
+
+    C₀, C₁
+end
+
 function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
 
     R = eltype(one(T)/one(T))
@@ -406,7 +451,7 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
 
     k  == K && return zeros(R, k-1)
 
-    # find eigenvalues of the  companion matrix
+    # find eigenvalues of the companion matrix of the 0-deflated polynomial
     comp  = companion(⟒(P)(as[k:K], indeterminate(p)))
     L = eigvals(comp; kwargs...)
     append!(L, zeros(eltype(L), k-1))

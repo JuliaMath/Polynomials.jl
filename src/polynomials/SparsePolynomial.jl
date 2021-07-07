@@ -5,7 +5,7 @@ export   SparsePolynomial
 
 Polynomials in the standard basis backed by a dictionary holding the
 non-zero coefficients. For polynomials of high degree, this might be
-advantageous. 
+advantageous.
 
 # Examples:
 
@@ -38,31 +38,31 @@ julia> p(1)
 ```
 
 """
-struct SparsePolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
+struct SparsePolynomial{T, X} <: StandardBasisPolynomial{T, X}
     coeffs::Dict{Int, T}
-    function SparsePolynomial{T, X}(coeffs::AbstractDict{Int, S}) where {T <: Number, X, S}
+    function SparsePolynomial{T, X}(coeffs::AbstractDict{Int, S}) where {T, X, S}
         c = Dict{Int, T}(coeffs)
         for (k,v)  in coeffs
             iszero(v) && pop!(c,  k)
         end
         new{T, X}(c)
     end
-    function SparsePolynomial{T,X}(checked::Val{false}, coeffs::AbstractDict{Int, T}) where {T <: Number, X}
+    function SparsePolynomial{T,X}(checked::Val{false}, coeffs::AbstractDict{Int, T}) where {T, X}
         new{T,X}(coeffs)
     end
 end
 
 @register SparsePolynomial
 
-function SparsePolynomial{T}(coeffs::AbstractDict{Int, S}, var::SymbolLike=:x) where {T <: Number, S}
+function SparsePolynomial{T}(coeffs::AbstractDict{Int, S}, var::SymbolLike=:x) where {T, S}
     SparsePolynomial{T, Symbol(var)}(convert(Dict{Int,T}, coeffs))
 end
 
-function SparsePolynomial(coeffs::AbstractDict{Int, T}, var::SymbolLike=:x) where {T <: Number}
+function SparsePolynomial(coeffs::AbstractDict{Int, T}, var::SymbolLike=:x) where {T}
     SparsePolynomial{T, Symbol(var)}(coeffs)
 end
 
-function SparsePolynomial{T,X}(coeffs::AbstractVector{S}) where {T <: Number, X, S}
+function SparsePolynomial{T,X}(coeffs::AbstractVector{S}) where {T, X, S}
 
     if Base.has_offset_axes(coeffs)
         @warn "ignoring the axis offset of the coefficient vector"
@@ -109,11 +109,11 @@ function coeffs(p::SparsePolynomial{T})  where {T}
         cs[k+1]=v
     end
     cs
-    
+
 end
 
 # get/set index
-function Base.getindex(p::SparsePolynomial{T}, idx::Int) where {T <: Number}
+function Base.getindex(p::SparsePolynomial{T}, idx::Int) where {T}
     get(p.coeffs, idx, zero(T))
 end
 
@@ -151,16 +151,16 @@ end
 ##
 ## ----
 ##
-    
+
 function evalpoly(x::S, p::SparsePolynomial{T}) where {T,S}
 
-    tot = zero(T) * EvalPoly._one(x) 
+    tot = zero(T) * EvalPoly._one(x)
     for (k,v) in p.coeffs
         tot = EvalPoly._muladd(x^k, v, tot)
     end
-    
+
     return tot
-    
+
 end
 
 #  map: over values -- not keys
@@ -186,7 +186,7 @@ function Base.:+(p::SparsePolynomial{T,X}, c::S) where {T, X, S <: Number}
     iszero(D[0]) && pop!(D,0)
 
     return P(Val(false), D)
-    
+
 end
 
 # Implement over fallback. A bit faster as it covers T != S
@@ -195,27 +195,41 @@ function Base.:+(p1::P1, p2::P2) where {T,X, P1<:SparsePolynomial{T,X},
 
     R = promote_type(T,S)
     Q = SparsePolynomial{R,X}
-    
+
     d1, d2 = degree(p1), degree(p2)
     cs = d1 > d2 ? ⊕(P1, p1.coeffs, p2.coeffs) : ⊕(P1, p2.coeffs, p1.coeffs)
 
     return d1 != d2 ? Q(Val(false), cs) : Q(cs)
-    
+
 end
 
 ## Multiplication
-function Base.:*(p::P, c::S) where {T, X, P <: SparsePolynomial{T,X}, S <: Number}
+function scalar_mult(p::P, c::S) where {T, X, P <: SparsePolynomial{T,X}, S<:Number}
 
-    R = promote_type(T,S)
+    R1 = promote_type(T,S)
+    R = typeof(zero(c)*zero(T))
     Q = ⟒(P){R,X}
-    
-    q  = zero(Q)
+    q = zero(Q)
     for (k,pₖ) ∈ pairs(p)
         q[k] = pₖ * c
     end
-    
+
     return q
 end
+
+function scalar_mult(c::S, p::P) where {T, X, P <: SparsePolynomial{T,X}, S<:Number}
+
+    R1 = promote_type(T,S)
+    R = typeof(zero(c)*zero(T))
+    Q = ⟒(P){R,X}
+    q = zero(Q)
+    for (k,pₖ) ∈ pairs(p)
+        q[k] = c * pₖ
+    end
+
+    return q
+end
+
 
 function Base.:*(p::P, q::Q) where {T,X,P<:SparsePolynomial{T,X},
                                     S,  Q<:SparsePolynomial{S,X}}
@@ -225,7 +239,7 @@ end
 
 
 function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
-    
+
     order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
     order == 0 && return p
 
@@ -247,7 +261,7 @@ end
 
 
 function integrate(p::P) where {T, X, P<:SparsePolynomial{T,X}}
-    
+
     R = eltype(one(T)/1)
     Q = SparsePolynomial{R,X}
 
@@ -263,4 +277,3 @@ function integrate(p::P) where {T, X, P<:SparsePolynomial{T,X}}
     return ∫p
 
 end
-
