@@ -140,6 +140,7 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
     end
 end
 
+if VERSION >= v"1.5"
 @testset "Non-number type" begin
     conv = Polynomials.conv
     @testset "T=Polynomial{Int,:y}" begin
@@ -345,6 +346,7 @@ end
             end
         end
     end
+end
 end
 
 @testset "OffsetVector" begin
