@@ -676,7 +676,7 @@ The coefficients of the polynomial may be non-number types, such as matrices or 
 
 For example, a polynomial with matrix coefficients, might be constructed with:
 
-```jldoctest
+```jldoctest non_number
 julia> using Polynomials
 
 julia> a,b,c = [1 0;2 1], [1 0; 3 1], [1 0; 4 1]
@@ -692,7 +692,7 @@ Polynomial([1 0; 3 1] + [2 0; 8 2]*x)
 
 Various operations are available, `derivative` was shown above, here are the vector-space operations:
 
-```jldoctest
+```jldoctest non_number
 julia> 2p
 Polynomial([2 0; 4 2] + [2 0; 6 2]*x + [2 0; 8 2]*x^2)
 
@@ -702,7 +702,7 @@ Polynomial([2 0; 5 2] + [3 0; 11 3]*x + [1 0; 4 1]*x^2)
 
 polynomial multiplication:
 
-```jldoctest
+```jldoctest non_number
 julia> p * q
 Polynomial([1 0; 5 1] + [3 0; 18 3]*x + [3 0; 21 3]*x^2 + [2 0; 16 2]*x^3)
 
@@ -710,7 +710,7 @@ Polynomial([1 0; 5 1] + [3 0; 18 3]*x + [3 0; 21 3]*x^2 + [2 0; 16 2]*x^3)
 
 polynomial evaluation, here either with a scalar or a matrix:
 
-```jldoctest
+```jldoctest non_number
 p(2), p(b)
 ```
 
@@ -718,7 +718,7 @@ But if the type `T` lacks support of some generic functions, such as `zero(T)` a
 
 Similarly, using polynomials for `T` is a possibility:
 
-```jldoctest
+```jldoctest non_number
 julia> a,b,c = Polynomial([1],:y), Polynomial([0,1],:y), Polynomial([0,0,1],:y)
 (Polynomial(1), Polynomial(y), Polynomial(y^2))
 
@@ -731,7 +731,7 @@ Polynomial(Polynomial(y) + Polynomial(2*y^2)*x)
 
 Again, much works:
 
-```jldoctest
+```jldoctest non_number
 julia> 2p
 Polynomial(Polynomial(2) + Polynomial(2*y)*x + Polynomial(2*y^2)*x^2)
 
