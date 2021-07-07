@@ -677,21 +677,35 @@ The coefficients of the polynomial may be non-number types, such as matrices or 
 For example, a polynomial with matrix coefficients, might be constructed with:
 
 ```jldoctest
-a,b,c = [1 0;2 1], [1 0; 3 1], [1 0; 4 1]
-p = Polynomial([a,b,c])
-q = derivative(p)
+julia> using Polynomials
+
+julia> a,b,c = [1 0;2 1], [1 0; 3 1], [1 0; 4 1]
+([1 0; 2 1], [1 0; 3 1], [1 0; 4 1])
+
+julia> p = Polynomial([a,b,c])
+
+Polynomial([1 0; 2 1] + [1 0; 3 1]*x + [1 0; 4 1]*x^2)
+
+julia> q = derivative(p)
+Polynomial([1 0; 3 1] + [2 0; 8 2]*x)
 ```
 
 Various operations are available, `derivative` was shown above, here are the vector-space operations:
 
 ```jldoctest
-2p, p + q
+julia> 2p
+Polynomial([2 0; 4 2] + [2 0; 6 2]*x + [2 0; 8 2]*x^2)
+
+julia> p + q
+Polynomial([2 0; 5 2] + [3 0; 11 3]*x + [1 0; 4 1]*x^2)
 ```
 
 polynomial multiplication:
 
 ```jldoctest
-p * q
+julia> p * q
+Polynomial([1 0; 5 1] + [3 0; 18 3]*x + [3 0; 21 3]*x^2 + [2 0; 16 2]*x^3)
+
 ```
 
 polynomial evaluation, here either with a scalar or a matrix:
@@ -705,15 +719,30 @@ But if the type `T` lacks support of some generic functions, such as `zero(T)` a
 Similarly, using polynomials for `T` is a possibility:
 
 ```jldoctest
-a,b,c = Polynomial([1],:y), Polynomial([0,1],:y), Polynomial([0,0,1],:y)
-p = Polynomial([a,b,c], :x)
-q = derivative(p)
+julia> a,b,c = Polynomial([1],:y), Polynomial([0,1],:y), Polynomial([0,0,1],:y)
+(Polynomial(1), Polynomial(y), Polynomial(y^2))
+
+julia> p = Polynomial([a,b,c], :x)
+Polynomial(Polynomial(1) + Polynomial(y)*x + Polynomial(y^2)*x^2)
+
+julia> q = derivative(p)
+Polynomial(Polynomial(y) + Polynomial(2*y^2)*x)
 ```
 
 Again, much works:
 
 ```jldoctest
-2p, p+q, p*q, p(2), p(a)
+julia> 2p
+Polynomial(Polynomial(2) + Polynomial(2*y)*x + Polynomial(2*y^2)*x^2)
+
+julia> p + q
+Polynomial(Polynomial(1 + y) + Polynomial(y + 2*y^2)*x + Polynomial(y^2)*x^2)
+
+julia> p(2)
+Polynomial(1 + 2*y + 4*y^2)
+
+julia> p(b)
+Polynomial(1 + y^2 + y^4)
 ```
 
 But much doesn't. For example, implicit promotion can fail. For example, the scalar multiplication `p * b` will fail,  as the methods assume this is the fallback polynomial multiplication and not the intended scalar multiplication.
