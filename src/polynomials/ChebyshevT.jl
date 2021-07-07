@@ -1,7 +1,7 @@
 export ChebyshevT
 
 """
-    ChebyshevT{T<:Number, X}(coeffs::AbstractVector)
+    ChebyshevT{T, X}(coeffs::AbstractVector)
 
 Chebyshev polynomial of the first kind.
 
@@ -9,7 +9,7 @@ Construct a polynomial from its coefficients `coeffs`, lowest order first, optio
 terms of the given variable `var`, which can be a character, symbol, or string.
 
 !!! note
-    `ChebyshevT` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first 
+    `ChebyshevT` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first
     index always corresponding to the coefficient of `T_0(x)`.
 
 # Examples
@@ -39,9 +39,9 @@ The latter shows how to evaluate a `ChebyshevT` polynomial outside of its domain
     The Chebyshev polynomials are also implemented in `ApproxFun`, `ClassicalOrthogonalPolynomials.jl`, `FastTransforms.jl`, and `SpecialPolynomials.jl`.
 
 """
-struct ChebyshevT{T <: Number, X} <: AbstractPolynomial{T, X}
+struct ChebyshevT{T, X} <: AbstractPolynomial{T, X}
     coeffs::Vector{T}
-    function ChebyshevT{T, X}(coeffs::AbstractVector{S}) where {T <: Number,X, S}
+    function ChebyshevT{T, X}(coeffs::AbstractVector{S}) where {T, X, S}
 
         if Base.has_offset_axes(coeffs)
             @warn "ignoring the axis offset of the coefficient vector"
@@ -264,8 +264,12 @@ end
 function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, mimetype) where {N, T,X}
     iszero(pj) && return false
     !first &&  print(io, " ")
-    print(io, hasneg(T)  && isneg(pj) ? "- " :  (!first ? "+ " : ""))
-    print(io, "$(abs(pj))⋅T_$j($var)")
+    if hasneg(T)
+        print(io, isneg(pj) ? "- " :  (!first ? "+ " : ""))
+        print(io, "$(abs(pj))⋅T_$j($var)")
+    else
+        print(io, "+ ", "$(pj)⋅T_$j($var)")
+    end
     return true
 end
 

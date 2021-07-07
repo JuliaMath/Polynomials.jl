@@ -60,7 +60,6 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
     end
 
 end
-        
 
 @testset "Mapdomain" begin
     for P in Ps
@@ -141,11 +140,220 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
     end
 end
 
+if VERSION >= v"1.5"
+@testset "Non-number type" begin
+    conv = Polynomials.conv
+    @testset "T=Polynomial{Int,:y}" begin
+        for P in (Polynomial,)
+
+            T = P{Int, :y}
+            a,b,c = T([1]), T([1,2]), T([1,2,3])
+            p = P([a,b,c])
+            q = P([a,b])
+            s = 2
+            d = c
+
+            # scalar product
+            @test s*p == P([s*cᵢ for cᵢ ∈ [a,b,c]])
+            @test p*s == P([cᵢ*s for cᵢ ∈ [a,b,c]])
+            @test_throws ArgumentError d*p == P([d*cᵢ for cᵢ ∈ [a,b,c]]) # can't fix
+            @test_throws ArgumentError p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]]) # can't fix
+
+            # poly add
+            @test p + q == P([a+a,b+b,c])
+            @test p - q == P([a-a,b-b,c])
+            @test p - p == P([0*a])
+
+            # poly mult
+            @test p * q == P(conv([a,b,c], [a,b]))
+            @test q * p == P(conv([a,b], [a,b, c]))
+
+            # poly powers
+            @test p^2 == p * p
+
+            # evalution
+            @test p(s) == a + b * s + c * s * s
+            @test p(c) == a + b * c + c * c * c
+
+            # ∂, ∫
+            @test derivative(p) == P([b, 2c])
+            @test integrate(p) == P([0*a, a, b/2, c/3])
+
+            # matrix element
+            pq = [p q]
+            @test pq[1] == p
+            @test pq[2] == q
+
+            # implicit promotion
+            @test p + s == P([a+s, b, c])
+            @test_throws Union{ArgumentError, MethodError} p + d == P([a+d, b, c]) # can't fix
+            @test p + P([d]) == P([a+d,b,c])
+
+            ps = [p s]
+            @test ps[1] == p
+            @test ps[2] == s
+        end
+    end
+
+    @testset "T=Matrix (2x2)" begin
+        for P ∈ (Polynomial, ImmutablePolynomial)
+            a,b,c = [1 0; 1 1], [1 0; 2 1], [1 0; 3 1]
+            p = P([a,b,c])
+            q = P([a,b])
+            s = 2
+            d = [4 1; 1 0]
+
+            # scalar product
+            @test s*p == P([s*cᵢ for cᵢ ∈ [a,b,c]])
+            @test p*s == P([cᵢ*s for cᵢ ∈ [a,b,c]])
+            @test d*p == P([d*cᵢ for cᵢ ∈ [a,b,c]])
+            @test p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]])
+
+            # poly add
+            @test p + q == P([a+a,b+b,c])
+            @test p - q == P([a-a,b-b,c])
+            @test_throws MethodError p - p == P([0*a])  # no zeros to make zero polynomial
+
+            # poly mult
+            @test p * q == P(conv([a,b,c], [a,b]))
+            @test q * p == P(conv([a,b], [a,b, c]))
+
+            # poly powers
+            @test p^2 == p * p
+
+            # evalution
+            @test p(s) == a + b * s + c * s * s
+            @test p(c) == a + b * c + c * c * c
+
+            # ∂, ∫
+            @test derivative(p) == P([b, 2c])
+            @test integrate(p) == P([0*a, a, b/2, c/3])
+
+            # matrix element
+            @test [p q][1] == p
+            @test [p q][2] == q
+
+            # implicit promotion
+            @test_throws MethodError p + s == P([a+s, b, c]) # OK, no a + s
+            @test p + d == P([a+d, b, c])
+            @test p + P([d]) == P([a+d,b,c])
+
+            @test_throws MethodError [p s][1] == p # no promotion T(s)
+            @test_throws MethodError [p s][2] == s
+        end
+    end
+
+
+    @testset "T=Vector{Int}" begin
+        for P ∈ (Polynomial, ImmutablePolynomial)
+            a,b,c = [1,0,0], [1,1,0], [1,1,1]
+            p = P([a,b,c])
+            q = P([a,b])
+            s = 2
+            d = [1,2,3]
+
+            # scalar product
+            @test s*p == P([s*cᵢ for cᵢ ∈ [a,b,c]])
+            @test p*s == P([cᵢ*s for cᵢ ∈ [a,b,c]])
+            @test_throws MethodError d*p == P([d*cᵢ for cᵢ ∈ [a,b,c]]) # Ok, no * for T
+            @test_throws MethodError p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]]) # Ok, no * for T
+
+            # poly add
+            @test p + q == P([a+a,b+b,c])
+            @test p - q == P([a-a,b-b,c])
+            @test_throws MethodError p - p == P([0*a])  # no zero(T) to make zero polynomial
+
+            # poly mult
+            @test_throws MethodError p * q == P(conv([a,b,c], [a,b])) # Ok, no * for T
+            @test_throws MethodError q * p == P(conv([a,b], [a,b, c])) # Ok, no * for T
+
+            # poly powers
+            @test_throws MethodError p^2 == p * p # Ok, no * for T
+
+            # evalution
+            @test p(s) == a + b * s + c * s * s
+            @test_throws MethodError p(c) == a + b * c + c * c * c # OK, no b * c
+
+            # ∂, ∫
+            @test derivative(p) == P([b, 2c])
+            @test integrate(p) == P([0*a, a, b/2, c/3])
+
+
+            # matrix element
+            @test [p q][1] == p
+            @test [p q][2] == q
+
+            # implicit promotion
+            @test_throws MethodError p + s == P([a+s, b, c])  # OK, no a + s
+            @test  p + d == P([a+d, b, c])
+            @test p + P([d]) == P([a+d,b,c])
+
+            @test_throws MethodError [p s][1] == p # no promotion T(s)
+            @test_throws MethodError [p s][2] == s
+        end
+    end
+
+
+    if VERSION >= v"1.5"
+        eval(quote
+             using StaticArrays
+             end)
+        @testset "T=SA" begin
+            for P ∈ (Polynomial, ImmutablePolynomial )
+                a,b,c = SA[1 0; 1 1], SA[1 0; 2 1], SA[1 0; 3 1]
+                p = P([a,b,c])
+                q = P([a,b])
+                s = 2
+                d = SA[4 1; 1 0]
+
+                # scalar product
+                @test s*p == P([s*cᵢ for cᵢ ∈ [a,b,c]])
+                @test p*s == P([cᵢ*s for cᵢ ∈ [a,b,c]])
+                @test d*p == P([d*cᵢ for cᵢ ∈ [a,b,c]])
+                @test p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]])
+
+                # poly add
+                @test p + q == P([a+a,b+b,c])
+                @test p - p == P([0*a])
+
+                # poly mult
+                @test p * q == P(conv([a,b,c], [a,b]))
+                @test q * p == P(conv([a,b], [a,b, c]))
+
+                # poly powers
+                @test p^2 == p * p
+
+
+                # evalution
+                @test p(s) == a + b * s + c * s * s
+                @test p(c) == a + b * c + c * c * c
+
+                # ∂, ∫
+                @test derivative(p) == P([b, 2c])
+                @test integrate(p) == P([0*a, a, b/2, c/3])
+
+                # matrix element
+                @test [p q][1] == p
+                @test [p q][2] == q
+
+                # implicit promotion
+                # @test_broken p + s == P([a .+ s, b, c]) # should error, doesn't
+                @test p + d == P([a + d, b, c])
+                @test p + P([d]) == P([a + d,b,c])
+
+                @test_throws MethodError [p s][1] == p # no promotion T(s)
+                @test_throws MethodError [p s][2] == s #
+            end
+        end
+    end
+end
+end
+
 @testset "OffsetVector" begin
     as = ones(3:4)
     bs = parent(as)
-    
-    
+
+
     for P in Ps
         # LaurentPolynomial accepts OffsetArrays; others throw warning
         if P == LaurentPolynomial
@@ -154,11 +362,11 @@ end
             @test P(as) == P(bs)
             @test P{eltype(as)}(as) == P{eltype(as)}(bs)
             # (Or throw an error?)
-            # @test_throws ArgumentError P(as) 
+            # @test_throws ArgumentError P(as)
             # @test P{eltype(as)}(as) == P{eltype(as)}(bs)
         end
     end
-        
+
     a = [1,1]
     b = OffsetVector(a, axes(a))
     c = ZVector(a)
@@ -167,7 +375,7 @@ end
         if P == LaurentPolynomial && continue
             @test P(a) == P(b) == P(c) == P(d)
         end
-        
+
     end
 end
 
@@ -266,7 +474,7 @@ end
         @test pX != pS1
         @test pS1 == pS2
         @test pS1 == pS3
-        
+
         @test indeterminate(pS1 + pS1) == indeterminate(pS1)
         @test indeterminate(pS1 - pS1) == indeterminate(pS1)
         @test indeterminate(pS1 * pS1) == indeterminate(pS1)
@@ -446,8 +654,8 @@ end
         @test Polynomials.evalpoly.(1/2, ps) ≈ [p(1/2)  for  p  in ps]
 
     end
-    
-    
+
+
     # constant polynomials and type
     Ts = (Int, Float32, Float64, Complex{Int}, Complex{Float64})
     for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
@@ -761,21 +969,21 @@ end
     end
     meths = (Base.vect, Base.vcat, Base.hcat)
     for P in (Polynomial, ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
-        
+
         p,q = P([1,2], :x), P([1,2], :y)
         P′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
-        
+
         # * should promote to Polynomial type if mixed (save Laurent Polynomial)
         @testset "promote mixed polys" begin
             for m ∈ meths
-                @test _test(m(p,p), P, :x)            
+                @test _test(m(p,p), P, :x)
                 @test _test(m(p,r), P′′, :x)
             end
-            
+
             @test _test(Base.hvcat((2,1), p, r,[p r]), P′′, :x)
-            
+
         end
-        
+
         # * numeric constants should promote to a polynomial, when mixed
         @testset "promote numbers to poly" begin
             for m ∈ meths
@@ -784,20 +992,20 @@ end
                 @test _test(m(1,1,p), P, :x)
                 @test _test(m(p,1,1), P, :x)
             end
-            
-            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)        
+
+            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)
         end
-        
+
         # * non-constant polynomials must share the same indeterminate
         @testset "non constant polys share same X" begin
             for m ∈ meths
                 @test_throws ArgumentError m(p,q)
                 @test_throws ArgumentError m(p,s)
             end
-            
+
             @test_throws ArgumentError Base.hvcat((2,1), p, q,[p q])
         end
-        
+
 
         # * constant polynomials are treated as `P{T,X}`, not elements of `T`
          @testset "constant polys" begin
@@ -807,10 +1015,10 @@ end
                 @test _test(m(1,1,one(p)), P, :x)
                 @test _test(m(one(p),1,1), P, :x)
             end
-            
-            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)        
+
+            @test _test(Base.hvcat((3,1), 1, p, r,[1 p r]), P′′, :x)
         end
-        
+
         # * Promotion can be forced to mix constant-polynomials
         @testset "Use typed constructor to mix constant polynomals" begin
             𝑷,𝑸 = P{Int,:x}, P{Int,:y} # not typeof(p),... as Immutable carries N
@@ -827,10 +1035,10 @@ end
             @test eltype(𝑷[1 one(p); one(p) one(q)]) == 𝑷
             @test eltype(𝑸[1 one(p); one(p) one(q)]) == 𝑸
         end
-        
+
         @testset "hvcat" begin
             p,q = P([1,2],:x), P([1,2],:y)
-            
+
             q1 = [q 1]
             q11 = [one(q) 1]
 
@@ -843,10 +1051,10 @@ end
             @test eltype(𝑷[1 p; q11]) == 𝑷
             @test eltype(Base.typed_hvcat(𝑷, (2, 1), 1, p, q11)) == 𝑷
         end
-        
+
     end
 
-    
+
 end
 
 @testset "Linear Algebra" begin
@@ -1143,7 +1351,7 @@ end
     p = Polynomial([1.234567890, 2.34567890])
     io=IOBuffer(); printpoly(io, p, compact=true); @test String(take!(io)) == "1.23457 + 2.34568*x"
     io=IOBuffer(); printpoly(io, p, compact=true, mulsymbol=""); @test String(take!(io)) == "1.23457 + 2.34568x"
-    
+
     ## issue 278 with complex
     @test printpoly_to_string(Polynomial([1 + im, 1, 2, im, 2im, 1+im, 1-im])) == "1 + im + x + 2*x^2 + im*x^3 + 2im*x^4 + (1 + im)x^5 + (1 - im)x^6"
 

@@ -81,7 +81,7 @@ is [`Polynomial`](@ref).
 
 ## Weights
 
-Weights may be assigned to the points by specifying a vector or matrix of weights. 
+Weights may be assigned to the points by specifying a vector or matrix of weights.
 
 When specified as a vector, `[w₁,…,wₙ]`, the weights should be
 non-negative as the minimization problem is `argmin_β Σᵢ wᵢ |yᵢ - Σⱼ
@@ -89,9 +89,9 @@ Vᵢⱼ βⱼ|² = argmin_β || √(W)⋅(y - V(x)β)||²`, where, `W` the digon
 matrix formed from `[w₁,…,wₙ]`, is used for the solution, `V` being
 the Vandermonde matrix of `x` corresponding to the specified
 degree. This parameterization of the weights is different from that of
-`numpy.polyfit`, where the weights would be specified through 
-`[ω₁,ω₂,…,ωₙ] = [√w₁, √w₂,…,√wₙ]` 
-with the answer solving 
+`numpy.polyfit`, where the weights would be specified through
+`[ω₁,ω₂,…,ωₙ] = [√w₁, √w₂,…,√wₙ]`
+with the answer solving
 `argminᵦ | (ωᵢ⋅yᵢ- ΣⱼVᵢⱼ(ω⋅x) βⱼ) |^2`.
 
 When specified as a matrix, `W`, the solution is through the normal
@@ -131,8 +131,8 @@ fit′(P::Type{<:AbstractPolynomial},
      x::AbstractVector{T},
      y::AbstractVector{T},
      args...; kwargs...) where {T} = fit(P,x,y,args...;  kwargs...)
-         
-         
+
+
 fit(x::AbstractVector,
     y::AbstractVector,
     deg::Integer = length(x) - 1;
@@ -168,7 +168,7 @@ _wlstsq(vand, y, W::AbstractMatrix) = qr(vand' * W * vand) \ (vand' * W * y)
 """
     roots(::AbstractPolynomial; kwargs...)
 
-Returns the roots, or zeros, of the given polynomial. 
+Returns the roots, or zeros, of the given polynomial.
 
 This is calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgeebra.eigvals` call.
 
@@ -181,7 +181,7 @@ This is calculated via the eigenvalues of the companion matrix. The `kwargs` are
 
 
 """
-function roots(q::AbstractPolynomial{T}; kwargs...) where {T <: Number}
+function roots(q::AbstractPolynomial{T}; kwargs...) where {T}
 
     p = convert(Polynomial{T},  q)
     roots(p; kwargs...)
@@ -231,7 +231,7 @@ end
 
 Compute the definite integral of the given polynomial from `a` to `b`. Will throw an error if either `a` or `b` are out of the polynomial's domain.
 """
-function integrate(p::AbstractPolynomial, a::Number, b::Number)
+function integrate(p::AbstractPolynomial, a, b)
     P = integrate(p)
     return P(b) - P(a)
 end
@@ -328,8 +328,8 @@ function chop!(ps::Vector{T};
     tol = norm(ps) * rtol + atol
     for i = lastindex(ps):-1:1
         val = ps[i]
-        if abs(val) > tol 
-            resize!(ps, i); 
+        if abs(val) > tol
+            resize!(ps, i);
             return nothing
         end
     end
@@ -428,8 +428,12 @@ LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 Conversions =#
 Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
 Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
-function Base.convert(::Type{S}, p::P) where {S <: Number,T, P<:Polynomials.AbstractPolynomial{T}}
-    Polynomials.isconstant(p) && return convert(S, Polynomials.constantterm(p))
+function Base.convert(::Type{S}, p::P) where {S <: Number,T, P<:AbstractPolynomial{T}}
+    isconstant(p) && return convert(S, constantterm(p))
+    throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
+end
+function Base.convert(::Type{T}, p::P) where {T, P<:AbstractPolynomial{T}}
+    isconstant(p) && return constantterm(p)
     throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
 end
 
@@ -537,8 +541,9 @@ Determine whether a polynomial is a monic polynomial, i.e., its leading coeffici
 ismonic(p::AbstractPolynomial) = isone(convert(Polynomial, p)[end])
 
 "`hasnan(p::AbstractPolynomial)` are any coefficients `NaN`"
-hasnan(p::AbstractPolynomial) = any(isnan, p)
-
+hasnan(p::AbstractPolynomial) = any(hasnan, p)
+hasnan(p::AbstractArray) = any(hasnan.(p))
+hasnan(x) = isnan(x)
 
 """
     isconstant(::AbstractPolynomial)
@@ -554,6 +559,8 @@ Return the coefficient vector. For a standard basis polynomial these are `[a_0, 
 """
 coeffs(p::AbstractPolynomial) = p.coeffs
 
+# hook in for offset coefficients of Laurent Polynomials
+_coeffs(p::AbstractPolynomial) = coeffs(p)
 
 
 # specialize this to p[0] when basis vector is 1
@@ -570,7 +577,7 @@ constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
 Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
 has a nonzero coefficient. The degree of the zero polynomial is defined to be -1. The default method assumes the basis polynomial, `βₖ` has degree `k`.
 """
-degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p) 
+degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p)
 
 
 """
@@ -617,7 +624,7 @@ Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # getindex
-function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T <: Number}
+function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T}
     m,M = firstindex(p), lastindex(p)
     idx < m && throw(BoundsError(p, idx))
     idx > M && return zero(T)
@@ -628,7 +635,7 @@ Base.getindex(p::AbstractPolynomial, indices) = [p[i] for i in indices]
 Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 
 # setindex
-function Base.setindex!(p::AbstractPolynomial, value::Number, idx::Int)
+function Base.setindex!(p::AbstractPolynomial, value, idx::Int)
     n = length(coeffs(p))
     if n ≤ idx
         resize!(p.coeffs, idx + 1)
@@ -638,16 +645,18 @@ function Base.setindex!(p::AbstractPolynomial, value::Number, idx::Int)
     return p
 end
 
-Base.setindex!(p::AbstractPolynomial, value::Number, idx::Number) =
+Base.setindex!(p::AbstractPolynomial, value, idx::Number) =
     setindex!(p, value, convert(Int, idx))
-Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
-    [setindex!(p, value, i) for i in indices]
+#Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
+#    [setindex!(p, value, i) for i in indices]
 Base.setindex!(p::AbstractPolynomial, values, indices) =
-    [setindex!(p, v, i) for (v, i) in zip(values, indices)]
-Base.setindex!(p::AbstractPolynomial, value::Number, ::Colon) =
-    setindex!(p, value, eachindex(p))
+    [setindex!(p, v, i) for (v, i) in tuple.(values, indices)]
+#    [setindex!(p, v, i) for (v, i) in zip(values, indices)]
+#Base.setindex!(p::AbstractPolynomial, value, ::Colon) =
+#    setindex!(p, value, eachindex(p))
 Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
-    [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
+#        [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
+    [setindex!(p, v, i) for (v, i) in tuple.(values, eachindex(p))]
 
 #=
 Iteration =#
@@ -826,11 +835,17 @@ basis(p::P, k::Int, _var=indeterminate(p); var=_var) where {P<:AbstractPolynomia
 
 #=
 arithmetic =#
-Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p)) 
+Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p))
+
+Base.:*(p::AbstractPolynomial, c::Number) = scalar_mult(p, c)
+Base.:*(c::Number, p::AbstractPolynomial) = scalar_mult(c, p)
+Base.:*(c::T, p::P) where {T, P <: AbstractPolynomial{T}} = scalar_mult(c, p)
+Base.:*(p::P, c::T) where {T, P <: AbstractPolynomial{T}} = scalar_mult(p, c)
+
+# implicitly identify c::Number with a constant polynomials
 Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
 Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
 Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
-Base.:*(c::Number, p::AbstractPolynomial) = *(p, c)
 
 # scalar operations
 # no generic p+c, as polynomial addition falls back to scalar ops
@@ -849,7 +864,7 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 ## +(p::P,c::Number) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
 ## though the default for poly+poly isn't terrible
 
-# polynomial + scalar
+# polynomial + scalar; implicit identification of c with c*one(P)
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
 
 function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
@@ -887,7 +902,7 @@ function ⊕(P::Type{<:AbstractPolynomial}, p1::Vector{T}, p2::Vector{S}) where 
     for i in 1:n2
         cs[i] += p2[i]
     end
-    
+
     return cs
 end
 
@@ -914,10 +929,10 @@ function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) wh
 
     R = promote_type(T,S)
     p = Dict{Int, R}()
-                     
+
 
     # this allocates in the union
-#    for i in union(eachindex(p1), eachindex(p2)) 
+#    for i in union(eachindex(p1), eachindex(p2))
 #        p[i] = p1[i] + p2[i]
 #    end
 
@@ -929,17 +944,27 @@ function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) wh
             @inbounds p[i] = get(p1, i, zero(R)) + pi
         end
     end
-    
+
     return  p
 
 end
 
 ## -- multiplication
 
-## scalar *, /
-function Base.:*(p::P, c::S) where {P <: AbstractPolynomial,S}
-    _convert(p, coeffs(p) .* c)
+
+# this fall back not necessarily efficient (e.g., sparse)
+function scalar_mult(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T,X}}
+    R = Base.promote_op(*, T, S) # typeof(one(T)*one(S))?
+    𝐏 = ⟒(P){R,X}
+    𝐏([pᵢ * c for pᵢ ∈ coeffs(p)])
 end
+
+function scalar_mult(c::S, p::P) where {S, T, X, P<:AbstractPolynomial{T, X}}
+    R = Base.promote_op(*, T, S)
+    𝐏 = ⟒(P){R,X}
+    𝐏([c * pᵢ for pᵢ ∈ coeffs(p)])
+end
+
 
 function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) ./ c)
@@ -954,7 +979,6 @@ function Base.:*(p1::P, p2::Q) where {T,X,P <: AbstractPolynomial{T,X},S,Y,Q <: 
     p1, p2 = promote(p1, p2)
     return p1 * p2
 end
-
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
@@ -1025,7 +1049,7 @@ Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
 Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
     check_same_variable(p1,p2) && (coeffs(p1) == coeffs(p2))
-Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && p[0] == n
+Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial{T,X},
@@ -1050,7 +1074,7 @@ function Base.isapprox(p1::AbstractPolynomial{T},
                        n::S;
                        rtol::Real = (Base.rtoldefault(T, S, 0)),
                        atol::Real = 0,) where {T,S}
-    return isapprox(p1, _convert(p1, [n])) 
+    return isapprox(p1, _convert(p1, [n]))
 end
 
 Base.isapprox(n::S,

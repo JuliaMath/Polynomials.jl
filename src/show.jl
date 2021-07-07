@@ -7,7 +7,10 @@ export printpoly
 ## which can be modified by users for other Ts
 
 _iszero(x::T) where {T} = (x == zero(T)) === true
+_iszero(x::AbstractArray{T}) where {T} = all(isequal.(x, zero(T)))
+
 _isone(x::T) where {T} = (x == one(T)) === true
+_isone(x::AbstractArray{T}) where {T} = all(isequal.(x, one(T)))
 
 "`hasneg(::T)` attribute is true if: `pj < zero(T)` is defined."
 hasneg(::Type{T}) where {T} = false
@@ -216,7 +219,7 @@ julia> Polynomial([Dual(1,2), Dual(3,4)])
 Polynomial(1 + 2ɛ + 3 + 4ɛ*x)
 ```
 
-```jldoctest 
+```jldoctest
 julia> using DualNumbers, Polynomials
 
 julia> function Base.show_unquoted(io::IO, pj::Dual, indent::Int, prec::Int)

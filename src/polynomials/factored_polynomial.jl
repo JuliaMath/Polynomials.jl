@@ -142,7 +142,7 @@ function printpoly(io::IO, p::FactoredPolynomial{T,X}, mimetype=nothing) where {
                 print(io, "(")
                 print(io, x)
                 if hasneg(T)
-                    isneg(k) ?  print(io, " + ", -k) : print(io, " - ", k) 
+                    isneg(k) ?  print(io, " + ", -k) : print(io, " - ", k)
                 else
                     print(io, " - ", k)
                 end
@@ -191,13 +191,13 @@ function Base.isapprox(p1::FactoredPolynomial{T,X},
     # # sorting roots below works only with real roots...
     # isapprox(p1.c, p2.c, rtol=rtol, atol=atol) || return false
     # k1,k2 = sort(collect(keys(p1.coeffs)),by = x -> (real(x), imag(x))), sort(collect(keys(p2.coeffs)),by = x -> (real(x), imag(x)))
-    
+
     # length(k1) == length(k2) || return false
     # for (k₁, k₂) ∈ zip(k1, k2)
     #     isapprox(k₁, k₂, atol=atol, rtol=rtol) || return false
     #     p1.coeffs[k₁] == p2.coeffs[k₂] || return false
     # end
-    
+
     # return true
 end
 
@@ -247,7 +247,7 @@ roots(p::FactoredPolynomial{T}) where {T} = Base.typed_vcat(T,[repeat([k],v) for
 # unary subtraction
 Base.:-(p::P) where {T,X,P<:FactoredPolynomial{T,X}} = (-1)*p
 
-# addition 
+# addition
 function Base.:+(p::P, q::P) where {T,X,P<:FactoredPolynomial{T,X}}
     𝑷 = Polynomial{T,X}
     𝒑,𝒒 = convert(𝑷, p), convert(𝑷, q)
@@ -264,7 +264,7 @@ function Base.:*(p::P, q::P) where {T,X, P<:FactoredPolynomial{T,X}}
 end
 
 # scalar mult
-function Base.:*(p::P, c::S) where {S<:Number, T, X, P <: FactoredPolynomial{T, X}}
+function scalar_mult(p::P, c::S) where {S<:Number, T, X, P <: FactoredPolynomial{T, X}}
     R = promote_type(T,S)
     d = Dict{R, Int}() # wident
     copy!(d, p.coeffs)
@@ -304,7 +304,7 @@ function uvw(p::P, q::P; kwargs...) where {T, X, P<:FactoredPolynomial{T,X}}
     du, dv, dw = Dict{T,Int}(), Dict{T,Int}(), Dict{T,Int}()
     dp,dq = p.coeffs, q.coeffs
     kp,kq = keys(dp), keys(dq)
-    
+
     for k ∈ setdiff(kp, kq)
         dv[k] = dp[k]
     end
@@ -315,7 +315,7 @@ function uvw(p::P, q::P; kwargs...) where {T, X, P<:FactoredPolynomial{T,X}}
         pₖ,qₖ = dp[k], dq[k]
         m = min(pₖ, qₖ)
         du[k] = m
-        dv[k] = pₖ - m; 
+        dv[k] = pₖ - m;
         dw[k] = qₖ - m
     end
     P(du), P(dv, p.c), P(dw, q.c)
@@ -332,7 +332,7 @@ function Base.divrem(p::P, q::P) where {T, X, P<:FactoredPolynomial{T,X}}
 
     return (d, u*r)
 
-end    
+end
 
 ## ----
 
@@ -349,4 +349,3 @@ function derivative(p::P,n::Int) where {P <: FactoredPolynomial}
     𝒑⁽ⁿ⁾ = derivative(𝒑, n)
     convert(P, 𝒑⁽ⁿ⁾)
 end
-
