@@ -683,7 +683,6 @@ julia> a,b,c = [1 0;2 1], [1 0; 3 1], [1 0; 4 1]
 ([1 0; 2 1], [1 0; 3 1], [1 0; 4 1])
 
 julia> p = Polynomial([a,b,c])
-
 Polynomial([1 0; 2 1] + [1 0; 3 1]*x + [1 0; 4 1]*x^2)
 
 julia> q = derivative(p)
@@ -705,13 +704,20 @@ polynomial multiplication:
 ```jldoctest non_number
 julia> p * q
 Polynomial([1 0; 5 1] + [3 0; 18 3]*x + [3 0; 21 3]*x^2 + [2 0; 16 2]*x^3)
-
 ```
 
 polynomial evaluation, here either with a scalar or a matrix:
 
 ```jldoctest non_number
-p(2), p(b)
+julia> p(2)
+2×2 Matrix{Int64}:
+  7  0
+ 24  7
+
+julia> p(b)
+2×2 Matrix{Int64}:
+  3  0
+ 18  3
 ```
 
 But if the type `T` lacks support of some generic functions, such as `zero(T)` and `one(T)`, then there may be issues. For example,  when `T <: AbstractMatrix` the output of `p-p` is an error, as the implementation assumes `zero(T)` is defined. For static arrays, this isn't an issue, as there is support for `zero(T)`. Other polynomial types, such as `SparsePolynomial` have less support, as some specialized methods assume more of the generic interface be implemented.
