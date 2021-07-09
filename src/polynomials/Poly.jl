@@ -63,7 +63,7 @@ Base.one(::Type{P}) where {P <: Poly} = Poly{_eltype(P), Polynomials.indetermina
 Base.one(::Type{P},var::Polynomials.SymbolLike) where {P <: Poly} = Poly(ones(_eltype(P),1), var)
 Polynomials.variable(::Type{P}) where {P <: Poly} = Poly{_eltype(P), Polynomials.indeterminate(P)}([0,1])
 Polynomials.variable(::Type{P},var::Polynomials.SymbolLike) where {P <: Poly} = Poly(_eltype(P)[0,1], var)
-function Polynomials.basis(P::Type{<:Poly}, k::Int, _var::Polynomials.SymbolLike=:x; var=_var) 
+function Polynomials.basis(P::Type{<:Poly}, k::Int, _var::Polynomials.SymbolLike=:x; var=_var)
     zs = zeros(Int, k+1)
     zs[end] = 1
     Polynomials.constructorof(P){_eltype(P), Symbol(var)}(zs)
