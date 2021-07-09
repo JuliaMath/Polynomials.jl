@@ -428,6 +428,12 @@ end
         @test p*q ==ᵟ P(im*[1,2,3])
     end
 
+    # Laurent polynomials and scalar operations
+    cs = [1,2,3,4]
+    p = LaurentPolynomial(cs, -3)
+    @test p*3 == LaurentPolynomial(cs .* 3, -3)
+    @test 3*p == LaurentPolynomial(3 .* cs, -3)
+
     # LaurentPolynomial has an inverse for monomials
     x = variable(LaurentPolynomial)
     @test Polynomials.isconstant(x * inv(x))

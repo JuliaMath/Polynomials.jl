@@ -132,6 +132,12 @@ function Base.convert(P::Type{<:Polynomial}, q::LaurentPolynomial)
     P([q[i] for i  in 0:n], indeterminate(q))
 end
 
+# need to add p.m[], so abstract.jl method isn't sufficent
+# XXX unlike abstract.jl, this uses Y variable in conversion; no error
+# Used in DSP.jl
+function Base.convert(::Type{LaurentPolynomial{S,Y}}, p::LaurentPolynomial{T,X}) where {T,X,S,Y}
+    LaurentPolynomial{S,Y}(p.coeffs, p.m[])
+end
 
 # work around for non-applicable convert(::Type{<:P}, p::P{T,X}) in abstract.jl
 struct OffsetCoeffs{V}
@@ -449,6 +455,13 @@ function Base.:*(p1::P, p2::P) where {T,X,P<:LaurentPolynomial{T,X}}
     chop!(p)
 
     return p
+end
+
+function scalar_mult(p::LaurentPolynomial{T,X}, c::Number) where {T,X}
+    LaurentPolynomial(p.coeffs .* c, p.m[], X)
+end
+function scalar_mult(c::Number, p::LaurentPolynomial{T,X}) where {T,X}
+    LaurentPolynomial(c .* p.coeffs, p.m[], X)
 end
 
 ##
