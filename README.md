@@ -3,7 +3,7 @@
 Basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate [polynomials](https://en.wikipedia.org/wiki/Polynomial).
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMath.github.io/Polynomials.jl/stable)
-[![Build Status](https://travis-ci.org/JuliaMath/Polynomials.jl.svg?branch=master)](https://travis-ci.org/JuliaMath/Polynomials.jl)
+[![CI](https://github.com/JuliaMath/Polynomials.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/JuliaMath/Polynomials.jl/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/JuliaMath/Polynomials.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMath/Polynomials.jl)
 
 
