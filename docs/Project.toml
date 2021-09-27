@@ -1,8 +1,10 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
+GR_jll = "d2c73de3-f751-5644-a686-071e5b155ba9"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
-DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 
 [compat]
 Documenter = "0.24"
+GR_jll = "< 0.58"
