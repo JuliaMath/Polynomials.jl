@@ -1,6 +1,11 @@
 using Documenter
 using Polynomials
 
+
+ENV["PLOTS_TEST"] = "true"
+ENV["GKSwstype"] = "100"
+
+
 DocMeta.setdocmeta!(Polynomials, :DocTestSetup, :(using Polynomials); recursive = true)
 
 makedocs(

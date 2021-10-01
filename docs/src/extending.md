@@ -30,11 +30,11 @@ As always, if the default implementation does not work or there are more efficie
 | `one`| | Convenience to find constant in new basis |
 | `variable`| | Convenience to find monomial `x` in new  basis|
 
-Check out both the [`Polynomial`](@ref) and [`ChebyshevT`](@ref) for examples of this interface being extended. 
+Check out both the [`Polynomial`](@ref) and [`ChebyshevT`](@ref) for examples of this interface being extended.
 
 ## Example
 
-The following shows a minimal example where the polynomial aliases the vector defining the coefficients. 
+The following shows a minimal example where the polynomial aliases the vector defining the coefficients.
 The constructor ensures that there are no trailing zeros. The `@register` call ensures a common interface. This example subtypes `StandardBasisPolynomial`, not `AbstractPolynomial`, and consequently inherits the methods above that otherwise would have been required. For other bases, more methods may be necessary to define (again, refer to [`ChebyshevT`](@ref) for an example).
 
 ```jldoctest AliasPolynomial
@@ -75,7 +75,7 @@ julia> p(3)
 142
 ```
 
-For the `Polynomial` type, the default on operations is to copy the array. For this type, it might seem reasonable -- to avoid allocations -- to update the coefficients in place for scalar addition and scalar multiplication. 
+For the `Polynomial` type, the default on operations is to copy the array. For this type, it might seem reasonable -- to avoid allocations -- to update the coefficients in place for scalar addition and scalar multiplication.
 
 Scalar addition, `p+c`, defaults to `p + c*one(p)`, or polynomial addition, which is not inplace without addition work. As such, we create a new method and an infix operator
 
@@ -134,7 +134,7 @@ julia> p ./= 2
 AliasPolynomial(3 + 2*x + 3*x^2 + 4*x^3)
 ```
 
-Trying to divide again would throw an error, as the result would not fit with the integer type of `p`. 
+Trying to divide again would throw an error, as the result would not fit with the integer type of `p`.
 
 Now `p` is treated as the vector `p.coeffs`, as regards broadcasting, so some things may be surprising, for example this expression returns a vector, not a polynomial:
 
@@ -147,4 +147,4 @@ julia> p .+ 2
  6
 ```
 
-The [`Polynomials.PnPolynomial`](@ref) type implements much of this.
+The unexported `Polynomials.PnPolynomial` type implements much of this.

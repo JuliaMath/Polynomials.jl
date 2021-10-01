@@ -12,7 +12,7 @@ Default methods for basic arithmetic operations are provided.
 
 Numeric methods to cancel common factors, compute the poles, and return the residues are provided.
 
-!!! Note:
+!!! note
     Requires `VERSION >= v"1.2.0"`
 """
 abstract type AbstractRationalFunction{T,X,P} end
@@ -131,8 +131,8 @@ end
 
 Base.://(p::AbstractPolynomial,q::Number) = p // (q*one(p))
 Base.://(p::Number, q::AbstractPolynomial) = (p*one(q)) // q
-    
-    
+
+
 function Base.copy(pq::PQ) where {PQ <: AbstractRationalFunction}
     p,q = pqs(pq)
     rational_function(PQ, p, q)
@@ -165,7 +165,7 @@ _eltype(pq::Type{<:AbstractRationalFunction{T}}) where {T} = Polynomial{T}
 _eltype(pq::Type{<:AbstractRationalFunction})  = Polynomial
 
 """
-    pqs(pq) 
+    pqs(pq)
 
 Return `(p,q)`, where `pq=p/q`, as polynomials.
 """
@@ -178,7 +178,7 @@ function Base.isinf(pq::AbstractRationalFunction)
     p,q=pqs(pq)
     iszero(q) && !iszero(p)
 end
-function Base.isnan(pq::AbstractRationalFunction) 
+function Base.isnan(pq::AbstractRationalFunction)
     p,q= pqs(pq)
     iszero(p) && iszero(q)
 end
@@ -191,7 +191,7 @@ function Base.isone(pq::AbstractRationalFunction)
     isconstant(p) && isconstant(q) && p == q
 end
 
-                                                             
+
 
 ## -----
 
@@ -236,7 +236,7 @@ function variable(::Type{PQ}) where {PQ <: AbstractRationalFunction}
     rational_function(PQ, x, one(x))
 end
 
-    
+
 # use degree as largest degree of p,q after reduction
 function degree(pq::AbstractRationalFunction)
     pq′ = lowest_terms(pq)
@@ -355,7 +355,7 @@ function Base.:/(p::R,  q::Number) where {R <: AbstractRationalFunction}
     rational_function(R, p0, (p1*q))
 end
 Base.:/(p::AbstractPolynomial, q::PQ) where {PQ <: AbstractRationalFunction} = rational_function(PQ, p,one(p)) / q
-function Base.:/(p::PQ,  q::AbstractPolynomial) where {PQ <: AbstractRationalFunction} 
+function Base.:/(p::PQ,  q::AbstractPolynomial) where {PQ <: AbstractRationalFunction}
     p0,p1 = pqs(p)
     rational_function(PQ,p0, p1*q)
 end
@@ -418,7 +418,7 @@ function Base.divrem(pq::PQ; method=:numerical, kwargs...) where {PQ <: Abstract
 
     d,r = divrem(p,q)
     (d, rational_function(PQ, r, q))
-    
+
 end
 
 
@@ -426,9 +426,9 @@ end
 
 """
     lowest_terms(pq::AbstractRationalFunction, method=:numerical)
-    
+
 Find GCD of `(p,q)`, `u`, and return `(p÷u)//(q÷u)`. Commonly referred to as lowest terms.
-    
+
 * `method`: passed to `gcd(p,q)`
 * `kwargs`: passed to `gcd(p,q)`
 
@@ -475,11 +475,11 @@ end
 
 If `p/q =d + r/q`, returns `d` and the residues of a rational fraction `r/q`.
 
-First expresses `p/q =d + r/q` with `r` of lower degree than `q` through `divrem`. 
+First expresses `p/q =d + r/q` with `r` of lower degree than `q` through `divrem`.
 Then finds the poles of `r/q`.
-For a pole, `λj` of multiplicity `k` there are `k` residues, 
+For a pole, `λj` of multiplicity `k` there are `k` residues,
 `rⱼ[k]/(z-λⱼ)^k`, `rⱼ[k-1]/(z-λⱼ)^(k-1)`, `rⱼ[k-2]/(z-λⱼ)^(k-2)`, …, `rⱼ[1]/(z-λⱼ)`.
-The residues are found using this formula: 
+The residues are found using this formula:
 `1/j! * dʲ/dsʲ (F(s)(s - λⱼ)^k` evaluated at `λⱼ` ([5-28](https://stanford.edu/~boyd/ee102/rational.pdf)).
 
 
@@ -521,19 +521,19 @@ julia> p′, q′ = lowest_terms(d);
 julia> q′ ≈ (s-1) * (s+1)^2 # works, as q is monic
 true
 
-julia> p′ ≈ (-s^2 + s + 1) 
+julia> p′ ≈ (-s^2 + s + 1)
 true
 ```
 
 
 
-!!! Note:
+!!! note
     There are several areas where numerical issues can arise. The `divrem`, the identification of multiple roots (`multroot`), the evaluation of the derivatives, ...
 
 """
 function residues(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
 
-    
+
     d,r′ = divrem(pq)
     r = lowest_terms(r′; method=method, kwargs...)
     b,a = pqs(r)
@@ -590,15 +590,3 @@ function partial_fraction(::Val{:residue}, r, s::PQ) where {PQ}
     terms
 
 end
-            
-            
-            
-            
-    
-
-    
-
-
-
-
-
