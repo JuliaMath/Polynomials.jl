@@ -35,7 +35,7 @@ julia> Polynomials.evalpoly(5.0, p, false) # bypasses the domain check done in p
 
 The latter shows how to evaluate a `ChebyshevT` polynomial outside of its domain, which is `[-1,1]`. (For newer versions of `Julia`, `evalpoly` is an exported function from Base with methods extended in this package, so the module qualification is unnecessary.
 
-!!! Note:
+!!! note
     The Chebyshev polynomials are also implemented in `ApproxFun`, `ClassicalOrthogonalPolynomials.jl`, `FastTransforms.jl`, and `SpecialPolynomials.jl`.
 
 """

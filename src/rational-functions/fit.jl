@@ -11,15 +11,14 @@ Fit a rational function of the form `pq = (a₀ + a₁x¹ + … + aₘxᵐ) / (1
 
 
 
-!!! Note: 
-
+!!! note
     This uses a simple implementation of the Gauss-Newton method
-    to solve the non-linear least squares problem: 
-    `minᵦ Σ(yᵢ - pq(xᵢ,β)²`, where `β=(a₀,a₁,…,aₘ,b₁,…,bₙ)`. 
+    to solve the non-linear least squares problem:
+    `minᵦ Σ(yᵢ - pq(xᵢ,β)²`, where `β=(a₀,a₁,…,aₘ,b₁,…,bₙ)`.
 
     A more rapidly convergent method is used in the `LsqFit.jl`
     package, and if performance is important, re-expressing the
-    problem for use with that package is suggested. 
+    problem for use with that package is suggested.
 
     Further, if an accurate rational function fit of adaptive degrees
     is of interest, the `BaryRational.jl` package provides an
@@ -69,7 +68,7 @@ julia> u(variable(pq)) # to see which polynomial is used
 """
 function Polynomials.fit(::Type{PQ}, xs::AbstractVector{S}, ys::AbstractVector{T}, m, n; var=:x) where {T,S, PQ<:RationalFunction}
 
-    
+
     β₁,β₂ = gauss_newton(collect(xs), convert(Vector{float(T)}, ys), m, n)
     P = eltype(PQ)
     T′ = Polynomials._eltype(P) == nothing ? eltype(β₁) : eltype(P)
@@ -132,10 +131,10 @@ function pade_fit(p::Polynomial{T}, m::Integer, n::Integer; var=:x) where {T}
     d = degree(p)
     @assert (0 <= m) && (1 <= n) && (m + n <= d)
 
-    # could be much more perfomant                
+    # could be much more perfomant
     c = convert(LaurentPolynomial, p) # for better indexing
     cs = [c[m+j-i] for j ∈ 1:n, i ∈ 0:n]
-    
+
     qs′ = cs[:, 2:end] \ cs[:,1]
     qs = vcat(1, -qs′)
 
@@ -198,15 +197,15 @@ function J!(Jᵣ, xs::Vector{T}, β, n) where {T}
     end
     nothing
 end
-    
-    
+
+
 function gauss_newton(xs, ys::Vector{T}, n, m, tol=sqrt(eps(T))) where {T}
 
     β = initial_guess(xs, ys, n, m)
     model = make_model(n)
 
     Jᵣ = zeros(T, length(xs), 1 + n + m)
-    
+
     Δ = norm(ys, Inf) * tol
 
     ϵₘ = norm(ys - model(xs, β), Inf)
@@ -216,7 +215,7 @@ function gauss_newton(xs, ys::Vector{T}, n, m, tol=sqrt(eps(T))) where {T}
 
     while no_steps < 25
         no_steps += 1
-        
+
         r = ys - model(xs, β)
         ϵ = norm(r, Inf)
         ϵ < Δ && return (β[1:n+1], β[n+2:end])
@@ -227,12 +226,12 @@ function gauss_newton(xs, ys::Vector{T}, n, m, tol=sqrt(eps(T))) where {T}
         J!(Jᵣ, xs, β, n)
         Δᵦ = pinv(Jᵣ' * Jᵣ) * (Jᵣ' * r)
         β .-= Δᵦ
-        
+
     end
 
     @warn "no convergence; returning best fit of many steps"
     return (βₘ[1:n+1], βₘ[n+2:end])
 end
-        
-    
-end    
+
+
+end

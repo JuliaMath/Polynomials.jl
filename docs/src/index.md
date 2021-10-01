@@ -1,7 +1,7 @@
 # Polynomials.jl
 
 Polynomials.jl is a Julia package that provides basic arithmetic, integration,
-differentiation, evaluation, and root finding over dense univariate polynomials.
+differentiation, evaluation, and root finding for univariate polynomials.
 
 To install the package, run
 
@@ -57,6 +57,8 @@ julia> p(1)
 
 ```
 
+The `Polynomial` constructor stores all coefficients using the standard basis with a vector. Other types (e.g. `ImmutablePolynomial`, `SparsePolynomial`, or `FactoredPolynomial`) use different back-end containers which may have advantage for some uses.
+
 ### Arithmetic
 
 The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.
@@ -101,7 +103,7 @@ ERROR: ArgumentError: Polynomials have different indeterminates
 [...]
 ```
 
-Except for operations  involving constant polynomials.
+Except for operations involving constant polynomials.
 
 ```jldoctest
 julia> p = Polynomial([1, 2, 3], :x)
@@ -358,7 +360,7 @@ Most of the root finding algorithms have issues when the roots have
 multiplicities. For example, both `ANewDsc` and `Hecke.roots` assume a
 square free polynomial. For non-square free polynomials:
 
-* The `Polynomials.Multroot.multroot` function is available (version v"1.2" or greater) for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng.
+* The `Polynomials.Multroot.multroot` function is available (version `v"1.2"` or greater) for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng.
 
 Here we see `IntervalRootsFindings.roots` having trouble isolating the roots due to the multiplicites:
 

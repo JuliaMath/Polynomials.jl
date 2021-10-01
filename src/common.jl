@@ -170,10 +170,9 @@ _wlstsq(vand, y, W::AbstractMatrix) = qr(vand' * W * vand) \ (vand' * W * y)
 
 Returns the roots, or zeros, of the given polynomial.
 
-This is calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgeebra.eigvals` call.
+For non-factored, standard basis polynomials the roots are calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgeebra.eigvals` call.
 
-!!! Note
-
+!!! note
     The default `roots` implementation is for polynomials in the
     standard basis. The companion matrix approach is reasonably fast
     and accurate for modest-size polynomials. However, other packages
