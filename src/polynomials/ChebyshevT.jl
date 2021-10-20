@@ -75,7 +75,12 @@ function Base.convert(P::Type{<:Polynomial}, ch::ChebyshevT)
     end
     return c0 + c1 * x
 end
-Base.convert(C::Type{<:ChebyshevT}, p::Polynomial) = p(variable(C))
+
+function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
+    x = variable(C)
+    isconstant(p) || assert_same_variable(indeterminate(x),indeterminate(p))
+    p(x)
+end
 
 Base.promote_rule(::Type{P},::Type{Q}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: ChebyshevT{S, X}} = LaurentPolynomial{promote_type(T, S), X}
 
