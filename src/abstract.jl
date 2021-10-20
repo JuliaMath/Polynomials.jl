@@ -124,9 +124,9 @@ macro registerN(name, params...)
         end
         $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
             $poly{$(αs...),T,Symbol(var)}(coeffs)
-        $poly{$(as...),T,X}(c::AbstractPolynomial{S,Y}) where {$(as...),T,X,S,Y} = convert($poly{$(as...),T,X}, c)
-        $poly{$(as...),T}(c::AbstractPolynomial{S,Y}) where {$(as...),T,S,Y} = convert($poly{$(as...),T}, c)
-        $poly{$(as...),}(c::AbstractPolynomial{S,Y}) where {$(as...),S,Y} = convert($poly{$(as...),}, c)
+        $poly{$(αs...),T,X}(c::AbstractPolynomial{S,Y}) where {$(αs...),T,X,S,Y} = convert($poly{$(αs...),T,X}, c)
+        $poly{$(αs...),T}(c::AbstractPolynomial{S,Y}) where {$(αs...),T,S,Y} = convert($poly{$(αs...),T}, c)
+        $poly{$(αs...),}(c::AbstractPolynomial{S,Y}) where {$(αs...),S,Y} = convert($poly{$(αs...),}, c)
 
         $poly{$(αs...),T,X}(n::Number) where {$(αs...),T,X} = T(n)*one($poly{$(αs...),T,X})
         $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = T(n)*one($poly{$(αs...),T,Symbol(var)})
