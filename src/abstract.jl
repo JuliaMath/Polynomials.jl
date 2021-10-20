@@ -92,6 +92,9 @@ macro register(name)
             cs = collect(coeffs)
             $poly{eltype(cs), Symbol(var)}(cs)
         end
+        $poly{T,X}(c::AbstractPolynomial{S,Y}) where {T,X,S,Y} = convert($poly{T,X}, c)
+        $poly{T}(c::AbstractPolynomial{S,Y}) where {T,S,Y} = convert($poly{T}, c)
+        $poly(c::AbstractPolynomial{S,Y}) where {S,Y} = convert($poly, c)
         $poly{T,X}(n::S) where {T, X, S<:Number} =
             T(n) *  one($poly{T, X})
         $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
@@ -121,6 +124,9 @@ macro registerN(name, params...)
         end
         $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
             $poly{$(αs...),T,Symbol(var)}(coeffs)
+        $poly{$(as...),T,X}(c::AbstractPolynomial{S,Y}) where {$(as...),T,X,S,Y} = convert($poly{$(as...),T,X}, c)
+        $poly{$(as...),T}(c::AbstractPolynomial{S,Y}) where {$(as...),T,S,Y} = convert($poly{$(as...),T}, c)
+        $poly{$(as...),}(c::AbstractPolynomial{S,Y}) where {$(as...),S,Y} = convert($poly{$(as...),}, c)
 
         $poly{$(αs...),T,X}(n::Number) where {$(αs...),T,X} = T(n)*one($poly{$(αs...),T,X})
         $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = T(n)*one($poly{$(αs...),T,Symbol(var)})

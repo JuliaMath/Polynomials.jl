@@ -736,6 +736,15 @@ end
     # issue #287
     p = LaurentPolynomial([1], -5)
     @test p ≈ convert(LaurentPolynomial{Float64}, p)
+
+    # issue #358 `P(p::AbstractPolynomial)` should be `convert(P, p)` not `P(pᵢ for pᵢ ∈ p))`
+    x² = Polynomial([0,0,1], :x)
+    for P ∈ (ImmutablePolynomial, SparsePolynomial, ChebyshevT)
+        @test P(x²) == convert(P, x²)
+        Q = P{Float64}
+        @test Q(x²) == convert(Q, x²)
+    end
+
 end
 
 @testset "Roots" begin
