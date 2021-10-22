@@ -14,7 +14,7 @@ end
 """
     add_conv(out::Vector{T}, E::Vector{T}, k::Vector{T})
 Returns the vector `out + fastconv(E, k)`. Note that only
-`MA.mutable_buffered_operate!` is implemented.
+`MA.buffered_operate!` is implemented.
 """
 function add_conv end
 
@@ -24,7 +24,7 @@ function add_conv end
 function MA.buffer_for(::typeof(add_conv), ::Type{Vector{T}}, ::Type{Vector{T}}, ::Type{Vector{T}}) where {T}
     return MA.buffer_for(MA.add_mul, T, T, T)
 end
-function MA.mutable_buffered_operate!(buffer, ::typeof(add_conv), out::Vector{T}, E::Vector{T}, k::Vector{T}) where {T}
+function MA.buffered_operate!(buffer, ::typeof(add_conv), out::Vector{T}, E::Vector{T}, k::Vector{T}) where {T}
     for x in eachindex(E)
         for i in eachindex(k)
             j = x + i - 1
@@ -56,11 +56,11 @@ macro register_mutable_arithmetic(name)
             return MA.buffer_for(add_conv, V, V, V)
         end
 
-        function MA.mutable_buffered_operate!(buffer, ::typeof(MA.add_mul),
+        function MA.buffered_operate!(buffer, ::typeof(MA.add_mul),
                                               p::$poly, q::$poly, r::$poly)
             ps, qs, rs = coeffs(p), coeffs(q), coeffs(r)
             _resize_zeros!(ps, length(qs) + length(rs) - 1)
-            MA.mutable_buffered_operate!(buffer, add_conv, ps, qs, rs)
+            MA.buffered_operate!(buffer, add_conv, ps, qs, rs)
             return p
         end
     end
