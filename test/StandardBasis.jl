@@ -1476,8 +1476,8 @@ end
     buffer = MA.buffer_for(MA.add_mul, typeof(c), typeof(A), typeof(b))
     @test buffer isa BigInt
     c = [z(2d - 1) for i in 1:m]
-    MA.mutable_buffered_operate!(buffer, MA.add_mul, c, A, b)
+    MA.buffered_operate!(buffer, MA.add_mul, c, A, b)
     @test c == A * b
     @test c == MA.operate(*, A, b)
-    @test 0 == @allocated MA.mutable_buffered_operate!(buffer, MA.add_mul, c, A, b)
+    @test 0 == @allocated MA.buffered_operate!(buffer, MA.add_mul, c, A, b)
 end
