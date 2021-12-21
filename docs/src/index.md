@@ -1,6 +1,7 @@
 # Polynomials.jl
 
-Polynomials.jl is a Julia package that provides basic arithmetic, integration,
+[Polynomials.jl](https://github.com/JuliaMath/Polynomials.jl)
+is a Julia package that provides basic arithmetic, integration,
 differentiation, evaluation, and root finding for univariate polynomials.
 
 To install the package, run
