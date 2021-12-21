@@ -92,6 +92,7 @@ Evaluate the Pade approximant at the given point.
 ```jldoctest pade
 julia> using Polynomials, Polynomials.PolyCompat, SpecialFunctions
 
+
 julia> p = Polynomial(@.(1 // BigInt(gamma(1:17))));
 
 julia> pade = Pade(p, 8, 8);

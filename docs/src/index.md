@@ -664,7 +664,7 @@ Also, mixing types can result in unspecific symbols, as this example shows:
 
 ```jldoctest natural_inclusion
 julia> [1 p; p 1] + [1 2one(q); 3 4] # array{P{T,:x}} + array{P{T,:y}}
-2×2 Matrix{Polynomial{Int64, X} where X}:
+2×2 Matrix{Polynomial{Int64}}:
  Polynomial(2)        Polynomial(3 + 2*x)
  Polynomial(4 + 2*x)  Polynomial(5)
 ```
