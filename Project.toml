@@ -2,7 +2,7 @@ name = "Polynomials"
 uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 license = "MIT"
 author = "JuliaMath"
-version = "2.0.18"
+version = "2.0.19"
 
 [deps]
 Intervals = "d8418881-c3e1-53bb-8760-2df7ec849ed5"
@@ -17,6 +17,7 @@ RecipesBase = "0.7, 0.8, 1"
 julia = "1"
 
 [extras]
+DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
@@ -24,4 +25,4 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["LinearAlgebra", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]
+test = ["DualNumbers", "LinearAlgebra", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]

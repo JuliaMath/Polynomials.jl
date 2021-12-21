@@ -487,7 +487,10 @@ The residues are found using this formula:
 
 (From page 5-33 of above pdf)
 
-```jldoctest
+```jldoctest rational_functions
+julia> using Polynomials
+
+
 julia> s = variable(Polynomial, :s)
 Polynomial(1.0*s)
 
@@ -495,6 +498,7 @@ julia> pq = (-s^2 + s + 1) // ((s-1) * (s+1)^2)
 (1.0 + 1.0*s - 1.0*s^2) // (-1.0 - 1.0*s + 1.0*s^2 + 1.0*s^3)
 
 julia> d,r = residues(pq);
+
 
 julia> d
 Polynomial(0.0)
@@ -516,7 +520,9 @@ julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
            end
        end
 
+
 julia> p′, q′ = lowest_terms(d);
+
 
 julia> q′ ≈ (s-1) * (s+1)^2 # works, as q is monic
 true
