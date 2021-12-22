@@ -57,7 +57,8 @@ end
 @register ChebyshevT
 
 function Base.convert(P::Type{<:Polynomial}, ch::ChebyshevT)
-    T = eltype(P)
+
+    T = _eltype(P,ch)
     X = indeterminate(P,ch)
     Q = ⟒(P){T,X}
 
