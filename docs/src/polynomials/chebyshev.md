@@ -31,7 +31,7 @@ ChebyshevT(1⋅T_0(x) + 3⋅T_2(x) + 4⋅T_3(x))
 
 
 julia> p = convert(Polynomial, c)
-Polynomial(-2.0 - 12.0*x + 6.0*x^2 + 16.0*x^3)
+Polynomial(-2 - 12*x + 6*x^2 + 16*x^3)
 
 julia> convert(ChebyshevT, p)
 ChebyshevT(1.0⋅T_0(x) + 3.0⋅T_2(x) + 4.0⋅T_3(x))

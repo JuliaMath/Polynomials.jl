@@ -166,7 +166,7 @@ end
     # issue 326 evaluate outside of domain
     @test Polynomials.evalpoly(2, c1, false) ≈ fn(2)
     @test Polynomials.evalpoly(3, c1, false) ≈ fn(3)
-    
+
     # GCD
     c1 = ChebyshevT([1, 2, 3])
     c2 = ChebyshevT([3, 2, 1])
@@ -221,6 +221,12 @@ end
     # issue #295
     x = BigFloat[-2/3, -1/3, 1/3, 2/4]
     y = BigFloat[1, 2, 3, 4]
-    fit(ChebyshevT, x, y, 1) 
+    fit(ChebyshevT, x, y, 1)
+
+    # issue #372
+    xs = [0,0,1]
+    @test eltype(convert(Polynomial, ChebyshevT{Float64}(xs))) == Float64
+    @test eltype(convert(Polynomial, ChebyshevT{BigFloat}(xs))) == BigFloat
+    @test eltype(convert(Polynomial{BigFloat}, ChebyshevT(xs))) == BigFloat
 
 end
