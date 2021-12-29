@@ -42,7 +42,7 @@ julia> p.(0:3)
 evalpoly(x, p::StandardBasisPolynomial) = EvalPoly.evalpoly(x, p.coeffs) # allows  broadcast  issue #209
 constantterm(p::StandardBasisPolynomial) = p[0]
 
-domain(::Type{<:StandardBasisPolynomial}) = (-Inf, Inf)
+domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 
 function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial)
@@ -608,7 +608,7 @@ struct ArnoldiFit{T, M<:AbstractArray{T,2}, X}  <: AbstractPolynomial{T,X}
 end
 export ArnoldiFit
 @register ArnoldiFit
-domain(::Type{<:ArnoldiFit}) = (-Inf, Inf)
+domain(::Type{<:ArnoldiFit}) = Interval(-Inf, Inf)
 
 Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "ArnoldiFit of degree $(length(p.coeffs)-1)")
 

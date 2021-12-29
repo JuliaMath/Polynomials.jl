@@ -120,6 +120,7 @@ _one(P::Type{<:Matrix}) = one(eltype(P))*I
 _one(x::Matrix) = one(eltype(x))*I
 _one(x) = one(x)
 end
+
 ## get type of parametric composite type without type parameters
 ## this is needed when the underlying type changes, e.g. with integration
 ## where T=Int might become T=Float64
@@ -133,3 +134,62 @@ end
 
 # https://discourse.julialang.org/t/how-do-a-i-get-a-type-stripped-of-parameters/73465/11
 constructorof(::Type{T}) where T = Base.typename(T).wrapper
+
+
+# Used to remove Intervals.jl as a dependency
+# That is a heavy one, but having an Interval type is nice
+# as a type returned by Polynomials.domain
+abstract type Bound end
+abstract type Bounded <: Bound end
+struct Closed <: Bounded end
+struct Open <: Bounded end
+struct Unbounded <: Bound end
+
+"""
+    Interval{T, L <: Bound, R <: Bound}
+
+Very bare bones Interval following `Intervals.jl` assuming `T<:Real`.
+"""
+
+struct Interval{T, L <: Bound, R <: Bound}
+    first::T
+    last::T
+    function Interval{T,L,R}(f::T, l::T) where {T, L <: Bound, R <: Bound}
+        f < l && return new{T,L,R}(f, l)
+        throw(ArgumentError("first not less than last"))
+    end
+end
+function Base.show(io::IO, I::Interval{T,L,R}) where {T,L,R}
+    l,r = extrema(I)
+    print(io, L == Closed ? "[" : "(")
+    print(io, l, ", ", r)
+    print(io, R == Closed ? "]" : ")")
+end
+
+# type is "[], (), (] or [)"
+const _interval_types =
+    Dict("[]" => (Closed, Closed), "()" => (Open,Open),
+         "[)" => (Closed, Open),   "(]" => (Open, Closed))
+
+function Interval(f,l, typ="[]")
+    𝐟,𝐥 = promote(f,l)
+    L,R = _interval_types[typ]
+    𝐋 = isinf(𝐟) ? Unbounded : L
+    𝐑 = isinf(𝐥) ? Unbounded : R
+    Interval{typeof(𝐟),𝐋,𝐑}(f,l)
+end
+
+intervaltype(I::Interval{T,L,R}) where {T,L,R} = (L,R)
+
+Base.first(I::Interval) = I.first
+Base.last(I::Interval) = I.last
+Base.extrema(I::Interval) = (first(I), last(I))
+
+function Base.in(x, I::Interval{T,L,R}) where {T, L, R}
+    a, b = extrema(I)
+    (L == Open ? a < x : a <= x) && (R == Open ? x < b : x <= b)
+end
+
+Base.isopen(I::Interval{T,L,R}) where {T,L,R} = (L != Closed && R != Closed)
+isclosed(I::Interval{T,L,R}) where {T,L,R} = (L == Closed && R == Closed)
+isbounded(I::Interval{T,L,R}) where {T,L,R} = (L != Unbounded && R != Unbounded)
