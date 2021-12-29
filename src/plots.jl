@@ -32,9 +32,15 @@ end
 
 poly_label(p::AbstractPolynomial) = sprint(printpoly, p)
 
-@recipe function f(p::AbstractPolynomial, x = poly_interval(p))
+#@recipe function f(p::AbstractPolynomial, x = poly_interval(p))
+#    label --> poly_label(p)
+#    x, p.(x)
+#end
+
+@recipe function f(p::AbstractPolynomial)
     label --> poly_label(p)
-    x, p.(x)
+    xlims --> extrema(poly_interval(p))
+    x -> p(x)
 end
 
 @recipe function f(p::AbstractPolynomial, a, b)
