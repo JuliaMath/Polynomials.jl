@@ -136,9 +136,8 @@ end
 constructorof(::Type{T}) where T = Base.typename(T).wrapper
 
 
-# Used to remove Intervals.jl as a dependency
-# That is a heavy one, but having an Interval type is nice
-# as a type returned by Polynomials.domain
+# Define our own minimal Interval type, inspired by Intervals.jl.
+# We vendor it in to avoid adding the heavy Intervals.jl dependency.
 abstract type Bound end
 abstract type Bounded <: Bound end
 struct Closed <: Bounded end
@@ -170,7 +169,11 @@ end
 const _interval_types =
     Dict("[]" => (Closed, Closed), "()" => (Open,Open),
          "[)" => (Closed, Open),   "(]" => (Open, Closed))
+"""
+    Polynomials.Interval(f, l, typ="[]")
 
+Constructor for return type of `Polynomials.domain`. Default is a closed interval, unless values are infinite.
+"""
 function Interval(f,l, typ="[]")
     𝐟,𝐥 = promote(f,l)
     L,R = _interval_types[typ]
