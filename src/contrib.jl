@@ -127,6 +127,9 @@ end
 ## trick from [ConstructionBase.jl](https://github.com/JuliaObjects/ConstructionBase.jl/blob/b5686b755bd3bee29b181b3cb18fe2effa0f10a2/src/ConstructionBase.jl#L25)
 ## as noted in https://discourse.julialang.org/t/get-new-type-with-different-parameter/37253/4
 ##
-@generated function constructorof(::Type{T}) where T
-    getfield(parentmodule(T), nameof(T))
-end
+#@generated function constructorof(::Type{T}) where T
+#    getfield(parentmodule(T), nameof(T))
+#end
+
+# https://discourse.julialang.org/t/how-do-a-i-get-a-type-stripped-of-parameters/73465/11
+constructorof(::Type{T}) where T = Base.typename(T).wrapper
