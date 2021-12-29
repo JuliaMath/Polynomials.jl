@@ -1386,7 +1386,7 @@ end
 
     p = ChebyshevT([1,1,1])
     rec = apply_recipe(Dict{Symbol,Any}(), p)
-    @test all(contains.(rec[1].plotattributes[:label], ("T_0", "T_1", "T_2")))
+    @test match(r"T_0", rec[1].plotattributes[:label]) !== nothing
     @test rec[1].plotattributes[:xlims] == (-1.0, 1.0) # uses domain(p)
 end
 
