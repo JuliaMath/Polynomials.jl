@@ -85,7 +85,7 @@ end
 
 Base.promote_rule(::Type{P},::Type{Q}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: ChebyshevT{S, X}} = LaurentPolynomial{promote_type(T, S), X}
 
-domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
+domain(::Type{<:ChebyshevT}) = (-1, 1)
 function Base.one(::Type{P}) where {P<:ChebyshevT}
     T,X = eltype(P), indeterminate(P)
     ChebyshevT{T,X}(ones(T,1))

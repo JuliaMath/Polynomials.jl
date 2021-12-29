@@ -5,7 +5,7 @@ export fromroots,
        chop!,
        coeffs,
        degree,
-       domain,
+    #domain,
        mapdomain,
        order,
        hasnan,
@@ -580,7 +580,7 @@ degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p)
 
 
 """
-    domain(::Type{<:AbstractPolynomial})
+    Polynomials.domain(::Type{<:AbstractPolynomial})
 
 Returns the domain of the polynomial.
 """
