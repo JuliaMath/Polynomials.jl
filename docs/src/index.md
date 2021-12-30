@@ -10,6 +10,8 @@ To install the package, run
 (v1.6) pkg> add Polynomials
 ```
 
+As of version `v3.0.0` Julia version `1.6` or higher is required.
+
 The package can then be loaded into the current session using
 
 ```julia

@@ -1,5 +1,5 @@
 using LinearAlgebra
-using OffsetArrays
+using OffsetArrays, StaticArrays
 import Polynomials: indeterminate
 ## Test standard basis polynomials with (nearly) the same tests
 
@@ -23,12 +23,7 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 ==ᵟ(a,b) = (a == b)
 ==ᵟ(a::FactoredPolynomial, b::FactoredPolynomial) = a ≈ b
 
-if VERSION >= v"2.1.2"
-    Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
-else
-    Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
-    @eval (:(struct FactoredPolynomial end))
-end
+Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
 
 isimmutable(p::P) where {P} = P <: ImmutablePolynomial
 isimmutable(::Type{<:ImmutablePolynomial}) = true
@@ -140,7 +135,6 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
     end
 end
 
-if VERSION >= v"1.5"
 @testset "Non-number type" begin
     conv = Polynomials.conv
     @testset "T=Polynomial{Int,:y}" begin
@@ -294,10 +288,9 @@ if VERSION >= v"1.5"
     end
 
 
-    if VERSION >= v"1.5"
-        eval(quote
-             using StaticArrays
-             end)
+    # eval(quote
+    #      using StaticArrays
+    #      end)
         @testset "T=SA" begin
             for P ∈ (Polynomial, ImmutablePolynomial )
                 a,b,c = SA[1 0; 1 1], SA[1 0; 2 1], SA[1 0; 3 1]
@@ -345,8 +338,6 @@ if VERSION >= v"1.5"
                 @test_throws MethodError [p s][2] == s #
             end
         end
-    end
-end
 end
 
 @testset "OffsetVector" begin
@@ -803,36 +794,34 @@ end
 end
 
 @testset "multroot" begin
-    if VERSION >= v"1.2.0" # same restriction as ngcd
-        for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
-            rts = [1.0, sqrt(2), sqrt(3)]
-            ls = [2, 3, 4]
-            x = variable(P{Float64})
-            p = prod((x-z)^l for (z,l) in zip(rts, ls))
-            out = Polynomials.Multroot.multroot(p)
-            @test all(out.values .≈ rts)
-            @test all(out.multiplicities .≈ ls)
-            @test out.ϵ <= sqrt(eps())
-            @test out.κ * out.ϵ < sqrt(eps())  # small forward error
-            # one for which the multiplicities are not correctly identified
-            n = 4
-            q = p^n
-            out = Polynomials.Multroot.multroot(q)
-            @test out.κ * out.ϵ > sqrt(eps())  # large  forward error, l misidentified
-            # with right manifold it does yield a small forward error
-            zs′ = Polynomials.Multroot.pejorative_root(q, rts .+ 1e-4*rand(3), n*ls)
-            @test prod(Polynomials.Multroot.stats(q, zs′, n*ls))  < sqrt(eps())
-            # bug with monomial
-            T = Float64
-            x = variable(P{T})
-            out = Polynomials.Multroot.multroot(x^3)
-            @test out.values == zeros(T,1)
-            @test out.multiplicities == [3]
-            # bug with constant
-            out = Polynomials.Multroot.multroot(P(1))
-            @test isempty(out.values)
-            @test isempty(out.multiplicities)
-        end
+    for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
+        rts = [1.0, sqrt(2), sqrt(3)]
+        ls = [2, 3, 4]
+        x = variable(P{Float64})
+        p = prod((x-z)^l for (z,l) in zip(rts, ls))
+        out = Polynomials.Multroot.multroot(p)
+        @test all(out.values .≈ rts)
+        @test all(out.multiplicities .≈ ls)
+        @test out.ϵ <= sqrt(eps())
+        @test out.κ * out.ϵ < sqrt(eps())  # small forward error
+        # one for which the multiplicities are not correctly identified
+        n = 4
+        q = p^n
+        out = Polynomials.Multroot.multroot(q)
+        @test out.κ * out.ϵ > sqrt(eps())  # large  forward error, l misidentified
+        # with right manifold it does yield a small forward error
+        zs′ = Polynomials.Multroot.pejorative_root(q, rts .+ 1e-4*rand(3), n*ls)
+        @test prod(Polynomials.Multroot.stats(q, zs′, n*ls))  < sqrt(eps())
+        # bug with monomial
+        T = Float64
+        x = variable(P{T})
+        out = Polynomials.Multroot.multroot(x^3)
+        @test out.values == zeros(T,1)
+        @test out.multiplicities == [3]
+        # bug with constant
+        out = Polynomials.Multroot.multroot(P(1))
+        @test isempty(out.values)
+        @test isempty(out.multiplicities)
     end
 end
 
@@ -1219,92 +1208,89 @@ end
 
 
     # issue 240
-    if VERSION >= v"1.2.0" # rank with keywords; require_one_based_indexing
+    P = Polynomial
 
-        P = Polynomial
+    a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
+    b = P([0.5410010714904849, 0.533604905984294]);
+    d = P([0.5490673726445683, 0.15991109487875477]);
+    @test degree(gcd(a*d,b*d)) == 0
+    @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
+    @test  degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
+    @test_skip degree(gcd(a*d,b*d, method=:numerical)) == degree(d) # issues on some architectures
+    l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
+    u,v,w = fromroots.(rand.((l,m,n)))
+    @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
 
-        a = P([0.8457170323029561, 0.47175077674705257,  0.9775441940117577]);
-        b = P([0.5410010714904849, 0.533604905984294]);
-        d = P([0.5490673726445683, 0.15991109487875477]);
-        @test degree(gcd(a*d,b*d)) == 0
-        @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
-        @test  degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
-        @test_skip degree(gcd(a*d,b*d, method=:numerical)) == degree(d) # issues on some architectures
-        l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
-        u,v,w = fromroots.(rand.((l,m,n)))
-        @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
+    # Example of Zeng
+    x = variable(P{Float64})
+    p = (x+10)*(x^9 + x^8/3 + 1)
+    q = (x+10)*(x^9 + x^8/7 - 6//7)
 
-        # Example of Zeng
-        x = variable(P{Float64})
-        p = (x+10)*(x^9 + x^8/3 + 1)
-        q = (x+10)*(x^9 + x^8/7 - 6//7)
+    @test degree(gcd(p,q)) == 0
+    (@test degree(gcd(p,q, method=:noda_sasaki)) == 1)
+    @test degree(gcd(p,q, method=:numerical)) == 1
 
-        @test degree(gcd(p,q)) == 0
-        (@test degree(gcd(p,q, method=:noda_sasaki)) == 1)
-        @test degree(gcd(p,q, method=:numerical)) == 1
+    # more bits don't help Euclidean
+    x = variable(P{BigFloat})
+    p = (x+10)*(x^9 + x^8/3 + 1)
+    q = (x+10)*(x^9 + x^8/7 - 6//7)
+    @test degree(gcd(p,q)) == 0
 
-        # more bits don't help Euclidean
-        x = variable(P{BigFloat})
-        p = (x+10)*(x^9 + x^8/3 + 1)
-        q = (x+10)*(x^9 + x^8/7 - 6//7)
-        @test degree(gcd(p,q)) == 0
+    # Test 1 of Zeng
+    x =  variable(P{Float64})
+    alpha(j,n) = cos(j*pi/n)
+    beta(j,n) = sin(j*pi/n)
+    r1, r2 = 1/2, 3/2
+    U(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in 1:n)
+    V(n) = prod( (x-r2*alpha(j,n))^2 + r2^2*beta(j,n)^2 for j in 1:n)
+    W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
+    for n in 2:2:20
+        p = U(n) * V(n); q = U(n) * W(n)
+        @test degree(gcd(p,q, method=:numerical)) == degree(U(n))
+    end
 
-        # Test 1 of Zeng
-        x =  variable(P{Float64})
-        alpha(j,n) = cos(j*pi/n)
-        beta(j,n) = sin(j*pi/n)
-        r1, r2 = 1/2, 3/2
-        U(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in 1:n)
-        V(n) = prod( (x-r2*alpha(j,n))^2 + r2^2*beta(j,n)^2 for j in 1:n)
-        W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
-        for n in 2:2:20
-            p = U(n) * V(n); q = U(n) * W(n)
-            @test degree(gcd(p,q, method=:numerical)) == degree(U(n))
-        end
+    # Test 5 of Zeng
+    x =  variable(P{Float64})
+    for ms in ((2,1,1,0), (3,2,1,0), (4,3,2,1), (5,3,2,1), (9,6,4,2),
+               (20, 14, 10, 5), (80,60,40,20), (100,60,40,20)
+               )
 
-        # Test 5 of Zeng
-        x =  variable(P{Float64})
-        for ms in ((2,1,1,0), (3,2,1,0), (4,3,2,1), (5,3,2,1), (9,6,4,2),
-                   (20, 14, 10, 5), (80,60,40,20), (100,60,40,20)
-                  )
+        p = prod((x-i)^j for (i,j) in enumerate(ms))
+        dp = derivative(p)
+        @test degree(gcd(p,dp, method=:numerical)) == sum(max.(ms .- 1, 0))
+    end
 
-            p = prod((x-i)^j for (i,j) in enumerate(ms))
-            dp = derivative(p)
-            @test degree(gcd(p,dp, method=:numerical)) == sum(max.(ms .- 1, 0))
-        end
+    # fussy pair
+    x =  variable(P{Float64})
+    for n in (2,5,10,20,50, 100)
+        p = (x-1)^n * (x-2)^n * (x-3)
+        q = (x-1) * (x-2) * (x-4)
+        @test degree(gcd(p,q, method=:numerical)) == 2
+    end
 
-        # fussy pair
-        x =  variable(P{Float64})
-        for n in (2,5,10,20,50, 100)
-            p = (x-1)^n * (x-2)^n * (x-3)
-            q = (x-1) * (x-2) * (x-4)
-            @test degree(gcd(p,q, method=:numerical)) == 2
-        end
+    # check for fixed k
+    p = fromroots(P, [2,3,4])
+    q = fromroots(P, [3,4,5])
+    out = Polynomials.ngcd(p,q)
+    out1 = Polynomials.ngcd(p,q,1)
+    out3 = Polynomials.ngcd(p,q,3)
+    @test out.Θ <= out1.Θ
+    @test out.Θ <= out3.Θ
 
-        # check for fixed k
-        p = fromroots(P, [2,3,4])
-        q = fromroots(P, [3,4,5])
-        out = Polynomials.ngcd(p,q)
-        out1 = Polynomials.ngcd(p,q,1)
-        out3 = Polynomials.ngcd(p,q,3)
-        @test out.Θ <= out1.Θ
-        @test out.Θ <= out3.Θ
+    # check for correct output if degree p < degree q
+    x = variable(P{Float64})
+    p = -18.0 - 37.0*x - 54.0*x^2 - 36.0*x^3 - 16.0*x^4
+    q = 2.0 + 5.0*x + 8.0*x^2 + 7.0*x^3 + 4.0*x^4 + 1.0*x^5
+    out = Polynomials.ngcd(p,q)
+    @test out.u * out.v ≈ p
 
-        # check for correct output if degree p < degree q
-        x = variable(P{Float64})
-        p = -18.0 - 37.0*x - 54.0*x^2 - 36.0*x^3 - 16.0*x^4
-        q = 2.0 + 5.0*x + 8.0*x^2 + 7.0*x^3 + 4.0*x^4 + 1.0*x^5
-        out = Polynomials.ngcd(p,q)
-        @test out.u * out.v ≈ p
-
-        # check for canceling of x^k terms
-        x = variable(P{Float64})
-        p,q = x^2 + 1, x^2 - 1
-        for j ∈ 0:2
-            for k ∈ 0:j
-                out = Polynomials.ngcd(x^j*p, x^k*q)
-                @test out.u == x^k
-            end
+    # check for canceling of x^k terms
+    x = variable(P{Float64})
+    p,q = x^2 + 1, x^2 - 1
+    for j ∈ 0:2
+        for k ∈ 0:j
+            out = Polynomials.ngcd(x^j*p, x^k*q)
+            @test out.u == x^k
         end
     end
 end
