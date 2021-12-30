@@ -584,7 +584,10 @@ degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p)
 Returns the domain of the polynomial.
 """
 domain(::Type{<:AbstractPolynomial})
-domain(::P) where {P <: AbstractPolynomial} = domain(P)
+function domain(::P) where {P <: AbstractPolynomial}
+    Base.depwarn("An exported `domain` will be removed; use `Polynomials.domain`.", :domain)
+    domain(P)
+end
 
 """
     mapdomain(::Type{<:AbstractPolynomial}, x::AbstractArray)
