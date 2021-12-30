@@ -40,12 +40,15 @@ FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 struct FactoredPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Dict{T,Int}
     c::T
+    function FactoredPolynomial{T, X}(checked::Val{false}, cs::Dict{T,Int}, c::T) where {T, X}
+        new{T,X}(cs,T(c))
+    end
     function FactoredPolynomial{T, X}(cs::Dict{T,Int}, c=one(T)) where {T, X}
         D = Dict{T,Int}()
         for (k,v) ∈ cs
             v > 0 && (D[k] = v)
         end
-        new{T,X}(D,T(c))
+        FactoredPolynomial{T,X}(Val(false), D,T(c))
     end
     function FactoredPolynomial(cs::Dict{T,Int}, c::S=1, var::SymbolLike=:x) where {T,S}
         X = Symbol(var)
@@ -61,9 +64,12 @@ end
 # * the handling of Inf and NaN, when a specified coefficient, is to just return a constant poly (Inf or NaN)
 function FactoredPolynomial{T,X}(coeffs::AbstractVector{S}) where {T,S,X}
     p = Polynomial{T,X}(T.(coeffs))
-    iszero(p) && return zero(FactoredPolynomial{T,X})
-    hasnan(p) && return FactoredPolynomial(one(T)*NaN, X)
-    any(isinf, coeffs) && return FactoredPolynomial(one(T)*Inf, X)
+    P = FactoredPolynomial{T,X}
+    iszero(p)     && return zero(P)
+    isconstant(p) && return FactoredPolynomial{T,X}(Val(false), Dict{T,Int}(), T(coeffs[1]))
+    any(isnan, p) && return FactoredPolynomial{T,X}(Val(false), Dict{T,Int}(), T(NaN))
+    any(isinf, p) && return FactoredPolynomial{T,X}(Val(false), Dict{T,Int}(), T(Inf))
+
     zs = Multroot.multroot(p)
     c = p[end]
     D = Dict(zip(zs.values, zs.multiplicities))
@@ -248,6 +254,12 @@ roots(p::FactoredPolynomial{T}) where {T} = Base.typed_vcat(T,[repeat([k],v) for
 Base.:-(p::P) where {T,X,P<:FactoredPolynomial{T,X}} = (-1)*p
 
 # addition
+function Base.:+(p::P, c::S) where {S<:Number, T,X, P<:FactoredPolynomial{T,X}}
+    R = promote_type(S,T)
+    𝑷 = Polynomial{R,X}
+    𝒑,𝒒 = convert(𝑷, p), convert(𝑷, c)
+    convert(P, 𝒑 + 𝒒)
+end
 function Base.:+(p::P, q::P) where {T,X,P<:FactoredPolynomial{T,X}}
     𝑷 = Polynomial{T,X}
     𝒑,𝒒 = convert(𝑷, p), convert(𝑷, q)

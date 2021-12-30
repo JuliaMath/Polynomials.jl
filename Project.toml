@@ -12,7 +12,7 @@ RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 [compat]
 MutableArithmetics = "0.3"
 RecipesBase = "0.7, 0.8, 1"
-julia = "1"
+julia = "1.6"
 
 [extras]
 DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"

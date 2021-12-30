@@ -11,9 +11,6 @@ Abstract type for holding ratios of polynomials of type `P{T,X}`.
 Default methods for basic arithmetic operations are provided.
 
 Numeric methods to cancel common factors, compute the poles, and return the residues are provided.
-
-!!! note
-    Requires `VERSION >= v"1.2.0"`
 """
 abstract type AbstractRationalFunction{T,X,P} end
 
