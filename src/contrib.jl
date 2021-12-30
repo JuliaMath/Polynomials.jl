@@ -120,6 +120,7 @@ _one(P::Type{<:Matrix}) = one(eltype(P))*I
 _one(x::Matrix) = one(eltype(x))*I
 _one(x) = one(x)
 end
+
 ## get type of parametric composite type without type parameters
 ## this is needed when the underlying type changes, e.g. with integration
 ## where T=Int might become T=Float64
@@ -133,3 +134,58 @@ end
 
 # https://discourse.julialang.org/t/how-do-a-i-get-a-type-stripped-of-parameters/73465/11
 constructorof(::Type{T}) where T = Base.typename(T).wrapper
+
+
+# Define our own minimal Interval type, inspired by Intervals.jl.
+# We vendor it in to avoid adding the heavy Intervals.jl dependency.
+# likely this is needed to use outside of this package:
+# import Polynomials: domain, Interval, Open, Closed, bounds_types
+abstract type Bound end
+abstract type Bounded <: Bound end
+struct Closed <: Bounded end
+struct Open <: Bounded end
+struct Unbounded <: Bound end
+
+"""
+    Interval{T, L <: Bound, R <: Bound}
+
+Very bare bones Interval following `Intervals.jl` assuming `T<:Real`.
+"""
+struct Interval{T, L <: Bound, R <: Bound}
+    first::T
+    last::T
+    function Interval{T,L,R}(f::T, l::T) where {T, L <: Bound, R <: Bound}
+        f > l && throw(ArgumentError("first not less than last"))
+        𝐋 = isinf(f) ? Unbounded : L
+        𝐑 = isinf(l) ? Unbounded : R
+        return new{T,𝐋,𝐑}(f, l)
+    end
+    function Interval{L,R}(f, l) where {L <: Bound, R <: Bound}
+        𝒇, 𝒍 = promote(f,l)
+        T = eltype(𝒇)
+        new{T,L,R}(𝒇, 𝒍)
+    end
+    Interval(f, l) = Interval{Closed, Closed}(f, l)
+end
+
+bounds_types(x::Interval{T,L,R}) where {T,L,R} = (L, R)
+
+Base.broadcastable(I::Interval) = Ref(I)
+
+function Base.show(io::IO, I::Interval{T,L,R}) where {T,L,R}
+    l,r = extrema(I)
+    print(io, L == Closed ? "[" : "(")
+    print(io, l, ", ", r)
+    print(io, R == Closed ? "]" : ")")
+end
+
+Base.first(I::Interval) = I.first
+Base.last(I::Interval) = I.last
+Base.extrema(I::Interval) = (first(I), last(I))
+
+function Base.in(x, I::Interval{T,L,R}) where {T, L, R}
+    a, b = extrema(I)
+    (L == Open ? a < x : a <= x) && (R == Open ? x < b : x <= b)
+end
+
+Base.isopen(I::Interval{T,L,R}) where {T,L,R} = (L != Closed && R != Closed)

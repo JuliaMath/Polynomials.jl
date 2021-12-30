@@ -19,7 +19,7 @@ coeffs
 degree
 length
 size
-domain
+Polynomials.domain
 mapdomain
 chop
 chop!
