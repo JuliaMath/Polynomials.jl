@@ -462,7 +462,7 @@ end
 ## ---- QR factorization
 
 function qrsolve!(y::Vector{T}, A, b) where {T}
-    y .= qr(A) \ b
+    y .= A \ b
 end
 
 # # Fast least-squares solver for full column rank Hessenberg-like matrices
@@ -637,7 +637,7 @@ end
 function solve_u(v::P,w,p,q, k) where {T,X,P<:PnPolynomial{T,X}}
     A = [convmtx(v,k+1); convmtx(w, k+1)]
     b = vcat(coeffs(p), coeffs(q))
-    u = P(qr(A) \ b)
+    u = A \ b
     return u
 end
 
