@@ -13,9 +13,11 @@ Basic arithmetic, integration, differentiation, evaluation, and root finding ove
 (v1.6) pkg> add Polynomials
 ```
 
+This package supports Julia v1.6 and later.
+
 ## Available Types of Polynomials
 
-* `Polynomial` –⁠ standard basis polynomials, `a(x) = a₀ + a₁ x + a₂ x² + … + aₙ xⁿ`,  `n ∈ ℕ`
+* `Polynomial` –⁠ standard basis polynomials, `a(x) = a₀ + a₁ x + a₂ x² + … + aₙ xⁿ`,  `n ≥ 0`
 * `ImmutablePolynomial` –⁠ standard basis polynomials backed by a [Tuple type](https://docs.julialang.org/en/v1/manual/functions/#Tuples-1) for faster evaluation of values
 * `SparsePolynomial` –⁠ standard basis polynomial backed by a [dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1) to hold  sparse high-degree  polynomials
 * `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), `a(x) = aₘ xᵐ + … + aₙ xⁿ` `m ≤ n`, `m,n ∈ ℤ` backed by an [offset array](https://github.com/JuliaArrays/OffsetArrays.jl); for example, if `m<0` and `n>0`, `a(x) = aₘ xᵐ + … + a₋₁ x⁻¹ + a₀ + a₁ x + … +  aₙ xⁿ`
@@ -99,7 +101,7 @@ julia> q ÷ p # `div`, also `rem` and `divrem`
 Polynomial(0.25 - 0.5*x)
 ```
 
-Operations involving polynomials with different variables will error.
+Most operations involving polynomials with different variables will error.
 
 ```jldoctest
 julia> p = Polynomial([1, 2, 3], :x);
@@ -189,8 +191,9 @@ julia> integrate(Polynomial([1, 0, -1]), 2)
 Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)
 ```
 
-Differentiate the polynomial `p` term by term. The degree of the
-resulting polynomial is one lower than the degree of `p`.
+Differentiate the polynomial `p` term by term. For non-zero
+polynomials the degree of the resulting polynomial is one lower than
+the degree of `p`.
 
 ```jldoctest
 julia> derivative(Polynomial([1, 3, -1]))
@@ -242,16 +245,17 @@ Visual example:
 
 Polynomial objects also have other methods:
 
-* 0-based indexing is used to extract the coefficients of `[a0, a1, a2, ...]`, coefficients may be changed using indexing
-  notation.
+* For standard basis polynomials, 0-based indexing is used to extract
+  the coefficients of `[a0, a1, a2, ...]`; for mutable polynomials,
+  coefficients may be changed using indexing notation.
 
-* `coeffs`: returns the entire coefficient vector
+* `coeffs`: returns the coefficients
 
 * `degree`: returns the polynomial degree, `length` is number of stored coefficients
 
-* `variable`: returns the polynomial symbol as polynomial in the underlying type
+* `variable`: returns the polynomial symbol as a polynomial in the underlying type
 
-* `norm`: find the `p`-norm of a polynomial
+* `LinearAlgebra.norm`: find the `p`-norm of a polynomial
 
 * `conj`: finds the conjugate of a polynomial over a complex field
 
@@ -283,7 +287,7 @@ Polynomial objects also have other methods:
 
 * [CommutativeAlgebra.jl](https://github.com/KlausC/CommutativeRings.jl) the start of a computer algebra system specialized to discrete calculations with support for polynomials.
 
-* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) and [AMRVW](https://github.com/jverzani/AMRVW.jl).
+* [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl) for a fast complex polynomial root finder. For larger degree problems, also [FastPolynomialRoots](https://github.com/andreasnoack/FastPolynomialRoots.jl) and [AMRVW](https://github.com/jverzani/AMRVW.jl). For real roots only [RealPolynomialRoots](https://github.com/jverzani/RealPolynomialRoots.jl).
 
 
 * [SpecialPolynomials.jl](https://github.com/jverzani/SpecialPolynomials.jl) A package providing various polynomial types beyond the standard basis polynomials in `Polynomials.jl`. Includes interpolating polynomials, Bernstein polynomials, and classical orthogonal polynomials.

@@ -54,7 +54,7 @@ function ngcd(p::P, q::Q,
         u *= variable(u)^(nz-1)
     end
     (u=u,v=v,w=w, Θ=out.Θ, κ = out.κ)
-    
+
 end
 
 """
@@ -81,9 +81,9 @@ given pair of polynomials has an exact greatest common divisor, ``u``, of
 degree ``k``, defined up to constant factors. Let ``Ρᵏmn`` be the manifold of
 all such ``(p,q)`` pairs with exact gcd of degree ``k``. A given pair ``(p,q)`` with exact gcd of degree ``j`` will
 have some distance ``Θᵏ`` from ``Pᵏ``.  For a given threshold ``ϵ > 0`` a numerical GCD
-of ``(p,q)`` within ``ϵ`` is an exact GCD of a pair ``(p̂,q̂)`` in ``Ρᵏ`` with 
+of ``(p,q)`` within ``ϵ`` is an exact GCD of a pair ``(p̂,q̂)`` in ``Ρᵏ`` with
 
-``‖ (p,q) - (p̂,q̂) ‖ <= Θᵏ``, where ``k`` is the largest value for which ``Θᵏ < ϵ``. 
+``‖ (p,q) - (p̂,q̂) ‖ <= Θᵏ``, where ``k`` is the largest value for which ``Θᵏ < ϵ``.
 
 (In the ``ϵ → 0`` limit, this would be the exact GCD.)
 
@@ -97,7 +97,7 @@ Suppose ``(p,q)`` is an ``ϵ`` pertubation from ``(p̂,q̂)`` where ``(p̂,q̂)`
 
 The Zeng algorithm proposes a degree for ``u`` and *if* a triple ``(u,v,w)`` with ``u`` of degree ``k`` and ``(u⋅v, u⋅w)`` in ``Ρᵏmn`` can be found satisfying ``‖ (u⋅v, u⋅w) - (p,q) ‖ < ϵ`` then ``(u,v,w)`` is returned; otherwise the proposed degree is reduced and the process repeats. If not terminated, at degree ``0`` a constant gcd is returned.
 
-The initial proposed degree is the first ``j``,  ``j=min(m,n):-1:1``, where ``Sⱼ`` is believed to have a singular value of ``0`` (``Sⱼ`` being related to the Sylvester matrix of `ps` and `qs`). The verification of the proposed degree is done using a Gauss-Newton iteration scheme holding the degree of ``u`` constant. 
+The initial proposed degree is the first ``j``,  ``j=min(m,n):-1:1``, where ``Sⱼ`` is believed to have a singular value of ``0`` (``Sⱼ`` being related to the Sylvester matrix of `ps` and `qs`). The verification of the proposed degree is done using a Gauss-Newton iteration scheme holding the degree of ``u`` constant.
 
 ## Scaling:
 
@@ -109,10 +109,10 @@ There are two places where tolerances are utilized:
 
 * in the identification of the rank of ``Sⱼ`` a value ``σ₁ = ‖Rx‖`` is identified. To test if this is zero a tolerance of `max(satol, ‖R‖ₒₒ ⋅ srtol)` is used.
 
-* to test if ``(u ⋅ v, u ⋅ w) ≈ (p,q)`` a tolerance of `max(atol, λ⋅rtol)` is used with `λ` chosen to be  ``(‖(p,q)‖⋅n⋅m)⋅κ′⋅‖A‖ₒₒ`` to reflect the scale of ``p`` and ``q`` and an estimate for the condition number of ``A`` (a Jacobian involved in the solution). 
+* to test if ``(u ⋅ v, u ⋅ w) ≈ (p,q)`` a tolerance of `max(atol, λ⋅rtol)` is used with `λ` chosen to be  ``(‖(p,q)‖⋅n⋅m)⋅κ′⋅‖A‖ₒₒ`` to reflect the scale of ``p`` and ``q`` and an estimate for the condition number of ``A`` (a Jacobian involved in the solution).
 
 
-This seems to work well for a reasaonable range of polynomials, however there can be issues: when the degree of ``p`` is much larger than the degree of ``q``, these choices can fail; when a higher rank is proposed, then too large a tolerance for `rtol` or `atol` can lead to a false verification; when a tolerance for `atol` or `rtol` is too strict, then a degree may not be verified. 
+This seems to work well for a reasaonable range of polynomials, however there can be issues: when the degree of ``p`` is much larger than the degree of ``q``, these choices can fail; when a higher rank is proposed, then too large a tolerance for `rtol` or `atol` can lead to a false verification; when a tolerance for `atol` or `rtol` is too strict, then a degree may not be verified.
 
 !!! note:
     These tolerances are adjusted from those proposed in [1].
@@ -146,12 +146,12 @@ by Zhonggang Zeng;
 [url](http://homepages.neiu.edu/~zzeng/uvgcd.pdf);
 [doi](https://doi.org/10.1090/conm/556/11014)
 
-Note: Based on work by Andreas Varga; Requires `VERSION >= v"1.2"`.
+Note: Based on work by Andreas Varga
 
 """
 function ngcd(p::PnPolynomial{T,X},
               q::PnPolynomial{T,X};
-              scale::Bool=false, 
+              scale::Bool=false,
               atol = eps(real(T)),
               rtol = Base.rtoldefault(real(T)),
               satol = eps(real(T))^(5/6),
@@ -184,10 +184,10 @@ function ngcd(p::PnPolynomial{T,X},
 
     uv = copy(p)
     uw = copy(q)
-    
+
     local x::Vector{T}
 
-    F = qr(Sₓ) 
+    F = qr(Sₓ)
     nr, nc = size(Sₓ) # m+1, m-n+2
     Q[1:nr, 1:nr] .= F.Q
     R[1:nc, 1:nc] .= F.R
@@ -210,7 +210,7 @@ function ngcd(p::PnPolynomial{T,X},
                 return (u=u, v=v, w=w, Θ=ρ₁, κ=σ₂) # (u,v,w) verified
             end
         end
-        
+
         # reduce possible degree of u and try again with Sⱼ₋₁
         # unless we hit specified minimum, in which case return it
         if j == minⱼ
@@ -253,7 +253,7 @@ function ngcd(p::P,
     u,v,w = initial_uvw(Val(:k), flag, k, p, q, x)
     flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, copy(p), copy(q), copy(p), copy(q),
                                  T(Inf), T(Inf)) # no tolerances
-    return (u=u, v=v, w=w, Θ=ρ₁, κ=κ) 
+    return (u=u, v=v, w=w, Θ=ρ₁, κ=κ)
 
 end
 
@@ -268,7 +268,7 @@ function smallest_singular_value(V::AbstractArray{T,2},
 
     R = UpperTriangular(V)
     k = size(R)[1]/2
-    if iszero(det(R)) 
+    if iszero(det(R))
         return (:iszero, zero(T), T[])
     end
 
@@ -283,7 +283,7 @@ function smallest_singular_value(V::AbstractArray{T,2},
     y = zeros(T, m)
     σ₀ = σ₁ = Inf*one(real(T))
     steps, minᵢ = 1, 5
-    
+
     while true
         y .= R' \ x # use iteration to converge on singular value
         x .= R  \ y
@@ -303,7 +303,7 @@ function smallest_singular_value(V::AbstractArray{T,2},
     else
         return (:constant, σ₁, x)
     end
-    
+
 end
 
 
@@ -325,13 +325,13 @@ function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,
     # p194 3.9 C_k(v) u = p or Ck(w) u = q; this uses 10.2
     u = solve_u(v,w,p,q,j)
     return u,v,w
-    
+
 end
 
 function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,
                                                               P<:PnPolynomial{T,X},
                                                               Q<:PnPolynomial{T,X}}
-    
+
     m,n = length(p)-1, length(q)-1
     S = [convmtx(p, n-j+1) convmtx(q, m-j+1)]
 
@@ -367,7 +367,7 @@ function initial_uvw(::Val{:k}, flag, k, p::P, q, x) where {T,X,P<:PnPolynomial{
     u = solve_u(v,w,p,q,k)
     return (u,v,w)
 end
-    
+
 
 
 # find estimate for σ₂, used in a condition number (κ = 1/σ)
@@ -376,14 +376,14 @@ function σ₂(J)
     flag, σ, x = smallest_singular_value(F.R)
     σ
 end
-    
+
 ## attempt to refine u,v,w
 ## check that [u * v; u * w] ≈ [p; q]
 function refine_uvw!(u::U, v::V, w::W, p, q, uv, uw, atol, rtol) where {T,X,
                                                                         U<:PnPolynomial{T,X},
                                                                         V<:PnPolynomial{T,X},
                                                                         W<:PnPolynomial{T,X}}
-    
+
     m,n,l = length(u)-1, length(v)-1, length(w)-1
 
     mul!(uv, u, v)
@@ -415,17 +415,17 @@ function refine_uvw!(u::U, v::V, w::W, p, q, uv, uw, atol, rtol) where {T,X,
         # m + n = degree(p)
         # m + l = degree(q)
         # b has length degree(p)+degree(q) + 3
-        Δv = view(Δf, Δvᵢ) 
-        Δw = view(Δf, Δwᵢ) 
+        Δv = view(Δf, Δvᵢ)
+        Δw = view(Δf, Δwᵢ)
         Δu = view(Δf, Δuᵢ)
-        
+
         u .-= Δu
         v .-= Δv
         w .-= Δw
 
         mul!(uv, u, v)
         mul!(uv, u, w)
-        
+
         ρ₀, ρ′ = ρ₁, residual_error(p, q, uv, uw)
 
         # don't worry about first few, but aftewards each step must be productive
@@ -440,7 +440,7 @@ function refine_uvw!(u::U, v::V, w::W, p, q, uv, uw, atol, rtol) where {T,X,
         # update A,b for next iteration
         JF!(A, h, u, v, w)
         Fmp!(b,  dot(h,u) - β, p, q, uv, uw)
-        
+
     end
 
 
@@ -456,21 +456,21 @@ function refine_uvw!(u::U, v::V, w::W, p, q, uv, uw, atol, rtol) where {T,X,
     else
         return :no_convergence, ρ₁, κ, ρ
     end
-    
+
 end
 
 ## ---- QR factorization
 
 function qrsolve!(y::Vector{T}, A, b) where {T}
-    y .= qr(A) \ b
+    y .= A \ b
 end
 
 # # Fast least-squares solver for full column rank Hessenberg-like matrices
 # # By Andreas Varga
 function qrsolve!(y::Vector{T}, A, b) where {T <: Float64}
     Base.require_one_based_indexing(A)
-    m, n = size(A) 
-    m < n && error("Column dimension exceeds row dimension") 
+    m, n = size(A)
+    m < n && error("Column dimension exceeds row dimension")
     _, τ = LinearAlgebra.LAPACK.geqrf!(A)
     T <: Complex ? tran = 'C' : tran = 'T'
     LinearAlgebra.LAPACK.ormqr!('L', tran, A, τ, view(b,:,1:1))
@@ -483,7 +483,7 @@ function extend_QR!(Q,R, nr, nc, A0)
 
 
     #old Q is m x m, old R is n x n; we add to these
-    n = nc-2 
+    n = nc-2
     m = nr - 1
     k,l = size(A0)
 
@@ -492,7 +492,7 @@ function extend_QR!(Q,R, nr, nc, A0)
     R[nr-k+1:nr, (nc-1):nc] = A0
     R[1:nr-1, (nc-1):nc] = (view(Q, 1:nr-1, 1:nr-1))' *  R[1:nr-1, (nc-1):nc]
 
-    # extend Q with row and column with identity 
+    # extend Q with row and column with identity
     Q[nr,nr] = 1
 
     # Make R upper triangular using Givens rotations
@@ -557,7 +557,7 @@ function JF!(M, h,  u::P, v, w) where {T,X,P<:AbstractPolynomial{T,X}}
     convmtx!(J22, u, dw+1)
     convmtx!(J23, w, du+1)
     M[end, end-du:end] = coeffs(h)'
-    
+
     return nothing
 end
 
@@ -597,13 +597,13 @@ end
     convmtx_size(v,n)
 
 Convolution matrix.
-C = convmtx(v,n) returns the convolution matrix C for a vector v. 
-If q is a column vector of length n, then C*q is the same as conv(v,q). 
+C = convmtx(v,n) returns the convolution matrix C for a vector v.
+If q is a column vector of length n, then C*q is the same as conv(v,q).
 
 """
 function convmtx!(C, v::AbstractVector{T}, n::Int) where T
 
-    #   Form C as the Toeplitz matrix 
+    #   Form C as the Toeplitz matrix
     #   C = Toeplitz([v; zeros(n-1)],[v[1]; zeros(n-1));  put Toeplitz code inline
 
     nv = length(v)-1
@@ -637,10 +637,8 @@ end
 function solve_u(v::P,w,p,q, k) where {T,X,P<:PnPolynomial{T,X}}
     A = [convmtx(v,k+1); convmtx(w, k+1)]
     b = vcat(coeffs(p), coeffs(q))
-    u = P(qr(A) \ b)
+    u = A \ b
     return u
 end
 
 end
-
-

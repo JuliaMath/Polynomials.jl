@@ -149,7 +149,7 @@ function _fit(P::Type{<:AbstractPolynomial},
     if weights !== nothing
         coeffs = _wlstsq(vand, y, weights)
     else
-        coeffs = qr(vand) \ y
+        coeffs = vand \ y
     end
     R = float(T)
     return P(R.(coeffs), var)
@@ -160,9 +160,9 @@ end
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
 function _wlstsq(vand, y, w::AbstractVector)
     W = Diagonal(sqrt.(w))
-    qr(W * vand) \ (W * y)
+    (W * vand) \ (W * y)
 end
-_wlstsq(vand, y, W::AbstractMatrix) = qr(vand' * W * vand) \ (vand' * W * y)
+_wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 
 """
     roots(::AbstractPolynomial; kwargs...)
@@ -584,7 +584,10 @@ degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p)
 Returns the domain of the polynomial.
 """
 domain(::Type{<:AbstractPolynomial})
-domain(::P) where {P <: AbstractPolynomial} = domain(P)
+function domain(::P) where {P <: AbstractPolynomial}
+    Base.depwarn("An exported `domain` will be removed; use `Polynomials.domain`.", :domain)
+    domain(P)
+end
 
 """
     mapdomain(::Type{<:AbstractPolynomial}, x::AbstractArray)

@@ -105,10 +105,9 @@ chebs = [
   ChebyshevT([0, 0, 0, 0, 1]),
 ]
 colors = ["#4063D8", "#389826", "#CB3C33", "#9558B2"]
-itr = zip(chebs, colors)
-(cheb,col), state = iterate(itr)
-p = plot(cheb, c=col,  lw=5, legend=false, label="")
-for (cheb, col) in Base.Iterators.rest(itr, state)
+
+p = plot(legend=false, label="")
+for (cheb, col) in zip(chebs, colors)
   plot!(cheb, c=col, lw=5)
 end
 savefig("chebs.svg"); nothing # hide

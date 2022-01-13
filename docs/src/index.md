@@ -10,6 +10,8 @@ To install the package, run
 (v1.6) pkg> add Polynomials
 ```
 
+As of version `v3.0.0` Julia version `1.6` or higher is required.
+
 The package can then be loaded into the current session using
 
 ```julia
@@ -132,7 +134,8 @@ Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)
 ```
 
 Differentiate the polynomial `p` term by term. The degree of the
-resulting polynomial is one lower than the degree of `p`.
+resulting polynomial is one lower than the degree of `p`, unless `p`
+is a zero polynomial.
 
 ```jldoctest
 julia> derivative(Polynomial([1, 3, -1]))
@@ -361,9 +364,9 @@ Most of the root finding algorithms have issues when the roots have
 multiplicities. For example, both `ANewDsc` and `Hecke.roots` assume a
 square free polynomial. For non-square free polynomials:
 
-* The `Polynomials.Multroot.multroot` function is available (version `v"1.2"` or greater) for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng.
+* The `Polynomials.Multroot.multroot` function is available  for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng.
 
-Here we see `IntervalRootsFindings.roots` having trouble isolating the roots due to the multiplicites:
+Here we see `IntervalRootFinding.roots` having trouble isolating the roots due to the multiplicites:
 
 ```
 julia> p = fromroots(Polynomial, [1,2,2,3,3])
