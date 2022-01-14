@@ -314,7 +314,6 @@ end
 function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,
                                                               P<:PnPolynomial{T,X},
                                                               Q<:PnPolynomial{T,X}}
-
     # Sk*[w;-v] = 0, so pick out v,w after applying permutation
     m,n = length(p)-1, length(q)-1
     vᵢ = vcat(2:m-n+2, m-n+4:2:length(x))
@@ -638,7 +637,5 @@ function solve_u(v::P,w,p,q, k) where {T,X,P<:PnPolynomial{T,X}}
     A = [convmtx(v,k+1); convmtx(w, k+1)]
     b = vcat(coeffs(p), coeffs(q))
     u = A \ b
-    return u
-end
-
+    return P(u)
 end

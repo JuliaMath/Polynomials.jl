@@ -32,7 +32,8 @@ end
 ## Code from Julia 1.4   (https://github.com/JuliaLang/julia/blob/master/base/math.jl#L101 on 4/8/20)
 ## cf. https://github.com/JuliaLang/julia/pull/32753
 ## Slight modification when `x` is a matrix
-## Remove once dependencies for Julia 1.0.0 are dropped
+## Need to keep as we use _one and _muladd to work with x a vector or matrix
+## e.g. 1 => I
 module EvalPoly
 using LinearAlgebra
 function evalpoly(x::S, p::Tuple) where {S}
@@ -137,13 +138,15 @@ constructorof(::Type{T}) where T = Base.typename(T).wrapper
 
 
 # Define our own minimal Interval type, inspired by Intervals.jl.
-# We vendor it in to avoid adding the heavy Intervals.jl dependency.
-# likely this is needed to use outside of this package:
+# We vendor it in to avoid adding the heavy Intervals.jl dependency and
+# using IntervalSets leads to many needs for type piracy that may interfere
+# with uses by its many dependent packages.
+# likely this command will be needed to use outside of this package:
 # import Polynomials: domain, Interval, Open, Closed, bounds_types
+
 abstract type Bound end
-abstract type Bounded <: Bound end
-struct Closed <: Bounded end
-struct Open <: Bounded end
+struct Closed <: Bound end
+struct Open <: Bound end
 struct Unbounded <: Bound end
 
 """
