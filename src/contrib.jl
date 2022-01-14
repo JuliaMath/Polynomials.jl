@@ -32,7 +32,8 @@ end
 ## Code from Julia 1.4   (https://github.com/JuliaLang/julia/blob/master/base/math.jl#L101 on 4/8/20)
 ## cf. https://github.com/JuliaLang/julia/pull/32753
 ## Slight modification when `x` is a matrix
-## Remove once dependencies for Julia 1.0.0 are dropped
+## Need to keep as we use _one and _muladd to work with x a vector or matrix
+## e.g. 1 => I
 module EvalPoly
 using LinearAlgebra
 function evalpoly(x::S, p::Tuple) where {S}

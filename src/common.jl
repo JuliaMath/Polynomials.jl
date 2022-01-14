@@ -646,15 +646,9 @@ end
 
 Base.setindex!(p::AbstractPolynomial, value, idx::Number) =
     setindex!(p, value, convert(Int, idx))
-#Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
-#    [setindex!(p, value, i) for i in indices]
 Base.setindex!(p::AbstractPolynomial, values, indices) =
     [setindex!(p, v, i) for (v, i) in tuple.(values, indices)]
-#    [setindex!(p, v, i) for (v, i) in zip(values, indices)]
-#Base.setindex!(p::AbstractPolynomial, value, ::Colon) =
-#    setindex!(p, value, eachindex(p))
 Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
-#        [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
     [setindex!(p, v, i) for (v, i) in tuple.(values, eachindex(p))]
 
 #=
@@ -738,7 +732,6 @@ Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(coeffs(p)))
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(indeterminate(p), hash(coeffs(p), h))
 
 # get symbol of polynomial. (e.g. `:x` from 1x^2 + 2x^3...
-#_indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T, X}} = X
 _indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
 _indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
 function indeterminate(::Type{P}) where {P <: AbstractPolynomial}
@@ -848,10 +841,6 @@ Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
 
 # scalar operations
 # no generic p+c, as polynomial addition falls back to scalar ops
-#function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
-#    p1, p2 = promote(p, n)
-#    return p1 + p2
-#end
 
 
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)

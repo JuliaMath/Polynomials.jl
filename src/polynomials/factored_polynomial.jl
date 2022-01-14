@@ -194,17 +194,6 @@ function Base.isapprox(p1::FactoredPolynomial{T,X},
     𝒑,𝒒 = convert(𝑷,p1), convert(𝑷,p2)
     return isapprox(𝒑, 𝒒, atol=atol, rtol=rtol)
 
-    # # sorting roots below works only with real roots...
-    # isapprox(p1.c, p2.c, rtol=rtol, atol=atol) || return false
-    # k1,k2 = sort(collect(keys(p1.coeffs)),by = x -> (real(x), imag(x))), sort(collect(keys(p2.coeffs)),by = x -> (real(x), imag(x)))
-
-    # length(k1) == length(k2) || return false
-    # for (k₁, k₂) ∈ zip(k1, k2)
-    #     isapprox(k₁, k₂, atol=atol, rtol=rtol) || return false
-    #     p1.coeffs[k₁] == p2.coeffs[k₂] || return false
-    # end
-
-    # return true
 end
 
 
