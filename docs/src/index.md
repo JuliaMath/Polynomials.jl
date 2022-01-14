@@ -821,7 +821,7 @@ savefig("rational_function.svg"); nothing # hide
 
 * [AbstractAlgebra.jl](https://github.com/wbhart/AbstractAlgebra.jl), [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series, [Hecke.jl](https://github.com/thofma/Hecke.jl) for algebraic number theory.
 
-* [LaurentPolynomials.jl](https://github.com/jmichel7/LaurentPolynomials.jl) A package for Laurent polynom
+* [LaurentPolynomials.jl](https://github.com/jmichel7/LaurentPolynomials.jl) A package for Laurent polynomials.
 
 * [CommutativeAlgebra.jl](https://github.com/KlausC/CommutativeRings.jl) the start of a computer algebra system specialized to discrete calculations with support for polynomials.
 

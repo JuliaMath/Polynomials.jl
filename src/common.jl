@@ -371,7 +371,7 @@ end
     chop(::AbstractPolynomial{T};
         rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
 
-Removes any leading coefficients that are approximately 0 (using `rtol` and `atol`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's.
+Removes any leading coefficients that are approximately 0 (using `rtol` and `atol` with `norm(p)`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's.
 """
 function Base.chop(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
@@ -504,6 +504,7 @@ You can implement `real`, etc., to a `Polynomial` by using `map`.
 """
 Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial} = _convert(p, map(fn, coeffs(p), args...))
 
+
 """
     isreal(p::AbstractPolynomial)
 
@@ -584,10 +585,7 @@ degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p)
 Returns the domain of the polynomial.
 """
 domain(::Type{<:AbstractPolynomial})
-function domain(::P) where {P <: AbstractPolynomial}
-    Base.depwarn("An exported `domain` will be removed; use `Polynomials.domain`.", :domain)
-    domain(P)
-end
+domain(::P) where {P <: AbstractPolynomial} = domain(P)
 
 """
     mapdomain(::Type{<:AbstractPolynomial}, x::AbstractArray)

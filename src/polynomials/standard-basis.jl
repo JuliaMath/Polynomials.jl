@@ -55,6 +55,10 @@ function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolyno
     end
 end
 
+# treat p as a *vector* of coefficients
+Base.similar(p::StandardBasisPolynomial, args...) = similar(coeffs(p), args...)
+
+
 function Base.one(::Type{P}) where {P<:StandardBasisPolynomial}
     T,X = eltype(P), indeterminate(P)
     ⟒(P){T,X}(ones(T,1))
