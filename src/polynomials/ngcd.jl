@@ -639,3 +639,5 @@ function solve_u(v::P,w,p,q, k) where {T,X,P<:PnPolynomial{T,X}}
     u = A \ b
     return P(u)
 end
+
+end
