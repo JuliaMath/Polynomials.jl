@@ -408,6 +408,14 @@ end
         @test pNULL^3 == pNULL
         @test pNULL * pNULL == pNULL
 
+        if P === Polynomial
+            # type stability of multiplication
+            @inferred 10 * pNULL
+            @inferred 10 * p0
+            @inferred p2 * p2
+            @inferred p2 * p2
+        end
+
         @test pNULL + 2 == p0 + 2 == 2 + p0 == P([2])
         @test p2 - 2 == -2 + p2 == P([-1,1])
         @test 2 - p2 == P([1,-1])
