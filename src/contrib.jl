@@ -4,14 +4,11 @@ using Base.Cartesian
 
 
 # direct version (do not check if threshold is satisfied)
-@generated function fastconv(E::Array{T,N}, k::Array{T,N}) where {T,N}
-    quote
-        retsize = [size(E)...] + [size(k)...] .- 1
-        retsize = tuple(retsize...)
-        ret = zeros(T, retsize)
-        convn!(ret, E, k)
-        return ret
-    end
+function fastconv(E::Array{T,N}, k::Array{T,N}) where {T,N}
+    retsize = ntuple(n -> size(E, n) + size(k, n) - 1, Val{N}())
+    ret = zeros(T, retsize)
+    convn!(ret, E, k)
+    return ret
 end
 
 # in place helper operation to speedup memory allocations
