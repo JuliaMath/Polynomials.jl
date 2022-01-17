@@ -393,6 +393,10 @@ end
         pN = P([276,3,87,15,24,0])
         pR = P([3 // 4, -2 // 1, 1 // 1])
 
+        # type stability of the default constructor without variable name
+        if P !== ImmutablePolynomial
+            @inferred P([1, 2, 3])
+        end
 
         @test p3 == P([1,2,1])
         @test pN * 10 == P([2760, 30, 870, 150, 240])
