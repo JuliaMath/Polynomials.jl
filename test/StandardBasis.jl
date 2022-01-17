@@ -384,6 +384,10 @@ end
         pN = P([276,3,87,15,24,0])
         pR = P([3 // 4, -2 // 1, 1 // 1])
 
+        # type stability of the default constructor without variable name
+        if P !== ImmutablePolynomial
+            @inferred P([1, 2, 3])
+        end
 
         @test p3 == P([1,2,1])
         @test pN * 10 == P([2760, 30, 870, 150, 240])
@@ -398,6 +402,14 @@ end
         @test p2^4 == p5
         @test pNULL^3 == pNULL
         @test pNULL * pNULL == pNULL
+
+        if P === Polynomial
+            # type stability of multiplication
+            @inferred 10 * pNULL
+            @inferred 10 * p0
+            @inferred p2 * p2
+            @inferred p2 * p2
+        end
 
         @test pNULL + 2 == p0 + 2 == 2 + p0 == P([2])
         @test p2 - 2 == -2 + p2 == P([-1,1])

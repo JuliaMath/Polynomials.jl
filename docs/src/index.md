@@ -556,7 +556,7 @@ Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
 FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
 
-julia> map(round, q, digits=10)
+julia> map(x -> round(x, digits=10), q)
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 
