@@ -83,7 +83,9 @@ macro register(name)
         Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{<:$poly{S,X}}) where {T,S,X} =  $poly{promote_type(T, S),X}
         Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{S}) where {T,S<:Number,X} =
             $poly{promote_type(T, S),X}
-        $poly(coeffs::AbstractVector{T}, var::SymbolLike = :x) where {T} =
+        $poly(coeffs::AbstractVector{T}) where {T} =
+            $poly{T, :x}(coeffs)
+        $poly(coeffs::AbstractVector{T}, var::SymbolLike) where {T} =
             $poly{T, Symbol(var)}(coeffs)
         $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S} =
             $poly{T,Symbol(var)}(T.(x))
