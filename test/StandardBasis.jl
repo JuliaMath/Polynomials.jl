@@ -385,7 +385,7 @@ end
         pR = P([3 // 4, -2 // 1, 1 // 1])
 
         # type stability of the default constructor without variable name
-        if !(P ∈ (ImmutablePolynomial, FactoredPolynomial))
+        if !(P ∈ (LaurentPolynomial, ImmutablePolynomial, FactoredPolynomial))
             @inferred P([1, 2, 3])
         end
 

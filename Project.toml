@@ -10,7 +10,7 @@ MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 
 [compat]
-MutableArithmetics = "0.3"
+MutableArithmetics = "0.3,1"
 RecipesBase = "0.7, 0.8, 1"
 julia = "1.6"
 
