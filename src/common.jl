@@ -775,7 +775,7 @@ function Base.zero(::Type{P}) where {P<:AbstractPolynomial}
     T,X = eltype(P), indeterminate(P)
     ⟒(P){T,X}(zeros(T,1))
 end
-Base.zero(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = zero(⟒(P){eltype(P), Symbol(var)}) #default 0⋅b₀
+Base.zero(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = zero(⟒(P){eltype(P),Symbol(var)}) #default 0⋅b₀
 Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, var)
 """
     one(::Type{<:AbstractPolynomial})
@@ -816,7 +816,7 @@ julia> roots((x - 3) * (x + 2))
 ```
 """
 variable(::Type{P}) where {P <: AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default
-variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P), Symbol(var)})
+variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P),Symbol(var)})
 variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
