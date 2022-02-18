@@ -3,6 +3,7 @@ module PolyCompat
 using ..Polynomials
 indeterminate = Polynomials.indeterminate
 
+
 #=
 Compat support for old code. This will be opt-in by v1.0, through "using Polynomials.PolyCompat"
 =#
