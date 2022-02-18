@@ -393,9 +393,10 @@ end
         pN = P([276,3,87,15,24,0])
         pR = P([3 // 4, -2 // 1, 1 // 1])
 
-        # type stability of the default constructor without variable name
+        # type stability of the default constructor with/without variable name
         if P !== ImmutablePolynomial
             @inferred P([1, 2, 3])
+            @inferred P([1,2,3], Val(:x))
         end
 
         @test p3 == P([1,2,1])
@@ -450,6 +451,11 @@ end
     x = variable(LaurentPolynomial)
     @test Polynomials.isconstant(x * inv(x))
     @test_throws ArgumentError inv(x + x^2)
+
+    # issue #395
+    p = Polynomial([2,1], :s)
+    @inferred -p # issue #395
+
 end
 
 @testset "Divrem" begin

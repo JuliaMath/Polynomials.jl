@@ -2,7 +2,8 @@ export AbstractPolynomial
 
 
 
-const SymbolLike = Union{AbstractString,Char,Symbol}
+const SymbolLike = Union{AbstractString,Char,Symbol, Val{T} where T}
+Base.Symbol(::Val{T}) where {T} = Symbol(T)
 
 """
     AbstractPolynomial{T,X}
@@ -51,7 +52,7 @@ abstract type AbstractPolynomial{T,X} end
 
 # convert `as` into polynomial of type P based on instance, inheriting variable
 # (and for LaurentPolynomial the offset)
-_convert(p::P, as) where {T,X,P <: AbstractPolynomial{T,X}} = ⟒(P)(as, X)
+_convert(p::P, as) where {T,X,P <: AbstractPolynomial{T,X}} = ⟒(P)(as, Val(X))
 
 
 """
