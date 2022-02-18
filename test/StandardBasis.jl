@@ -60,7 +60,7 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
 
         ## issue #395
         v = [1,2,3]
-        @test P(v) == P(v,:x) == P(v,'x') == P(v,"x") == P(v, Val(:x))
+        @test P(v) == P(v,:x) == P(v,'x') == P(v,"x") == P(v, Polynomials.Var(:x))
     end
 
 end
@@ -400,7 +400,7 @@ end
         # type stability of the default constructor with/without variable name
         if P !== ImmutablePolynomial
             @inferred P([1, 2, 3])
-            @inferred P([1,2,3], Val(:x))
+            @inferred P([1,2,3], Polynomials.Var(:x))
         end
 
         @test p3 == P([1,2,1])

@@ -24,7 +24,7 @@ struct Poly{T <: Number,X} <: Polynomials.StandardBasisPolynomial{T,X}
     coeffs::Vector{T}
     function Poly(a::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {T <: Number}
         # if a == [] we replace it with a = [0]
-        X = Polynomials.varsymbol(var)
+        X = Symbol(var)
         if length(a) == 0
             return new{T,X}(zeros(T, 1))
         else
