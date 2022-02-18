@@ -57,6 +57,10 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         @test_throws InexactError P{Int}([1+im, 1], :x)
         @test_throws InexactError P{Int,:x}(1+im)
         @test_throws InexactError P{Int}(1+im)
+
+        ## issue #395
+        v = [1,2,3]
+        @test P(v) == P(v,:x) == P(v,'x') == P(v,"x") == P(v, Val(:x))
     end
 
 end

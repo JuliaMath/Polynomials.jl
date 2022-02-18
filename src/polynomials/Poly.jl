@@ -3,6 +3,7 @@ module PolyCompat
 using ..Polynomials
 indeterminate = Polynomials.indeterminate
 
+
 #=
 Compat support for old code. This will be opt-in by v1.0, through "using Polynomials.PolyCompat"
 =#
@@ -23,7 +24,7 @@ struct Poly{T <: Number,X} <: Polynomials.StandardBasisPolynomial{T,X}
     coeffs::Vector{T}
     function Poly(a::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {T <: Number}
         # if a == [] we replace it with a = [0]
-        X = Symbol(var)
+        X = Polynomials.varsymbol(var)
         if length(a) == 0
             return new{T,X}(zeros(T, 1))
         else

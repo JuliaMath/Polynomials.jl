@@ -3,7 +3,8 @@ export AbstractPolynomial
 
 
 const SymbolLike = Union{AbstractString,Char,Symbol, Val{T} where T}
-Base.Symbol(::Val{T}) where {T} = Symbol(T)
+varsymbol(x) = Symbol(x)
+varsymbol(::Val{T}) where {T} = Symbol(T)
 
 """
     AbstractPolynomial{T,X}
@@ -87,13 +88,13 @@ macro register(name)
         $poly(coeffs::AbstractVector{T}) where {T} =
             $poly{T, :x}(coeffs)
         $poly(coeffs::AbstractVector{T}, var::SymbolLike) where {T} =
-            $poly{T, Symbol(var)}(coeffs)
+            $poly{T, varsymbol(var)}(coeffs)
         $poly{T}(x::AbstractVector{S}, var::SymbolLike = :x) where {T,S} =
-            $poly{T,Symbol(var)}(T.(x))
+            $poly{T,varsymbol(var)}(T.(x))
         function $poly(coeffs::G, var::SymbolLike=:x) where {G}
             !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
             cs = collect(coeffs)
-            $poly{eltype(cs), Symbol(var)}(cs)
+            $poly{eltype(cs), varsymbol(var)}(cs)
         end
         $poly{T,X}(c::AbstractPolynomial{S,Y}) where {T,X,S,Y} = convert($poly{T,X}, c)
         $poly{T}(c::AbstractPolynomial{S,Y}) where {T,S,Y} = convert($poly{T}, c)
@@ -101,10 +102,10 @@ macro register(name)
         $poly{T,X}(n::S) where {T, X, S<:Number} =
             T(n) *  one($poly{T, X})
         $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
-            T(n) *  one($poly{T, Symbol(var)})
-        $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S, Symbol(var)})
-        $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T, Symbol(var)})
-        $poly(var::SymbolLike=:x) = variable($poly, Symbol(var))
+            T(n) *  one($poly{T, varsymbol(var)})
+        $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S, varsymbol(var)})
+        $poly{T}(var::SymbolLike=:x) where {T} = variable($poly{T, varsymbol(var)})
+        $poly(var::SymbolLike=:x) = variable($poly, varsymbol(var))
         (p::$poly)(x) = evalpoly(x, p)
     end
 end
@@ -123,20 +124,20 @@ macro registerN(name, params...)
             $poly{$(αs...),promote_type(T,S),X}
 
         function $poly{$(αs...),T}(x::AbstractVector{S}, var::SymbolLike = :x) where {$(αs...),T,S}
-            $poly{$(αs...),T, Symbol(var)}(T.(x))
+            $poly{$(αs...),T, varsymbol(var)}(T.(x))
         end
         $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
-            $poly{$(αs...),T,Symbol(var)}(coeffs)
+            $poly{$(αs...),T, varsymbol(var)}(coeffs)
         $poly{$(αs...),T,X}(c::AbstractPolynomial{S,Y}) where {$(αs...),T,X,S,Y} = convert($poly{$(αs...),T,X}, c)
         $poly{$(αs...),T}(c::AbstractPolynomial{S,Y}) where {$(αs...),T,S,Y} = convert($poly{$(αs...),T}, c)
         $poly{$(αs...),}(c::AbstractPolynomial{S,Y}) where {$(αs...),S,Y} = convert($poly{$(αs...),}, c)
 
         $poly{$(αs...),T,X}(n::Number) where {$(αs...),T,X} = T(n)*one($poly{$(αs...),T,X})
-        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = T(n)*one($poly{$(αs...),T,Symbol(var)})
+        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = T(n)*one($poly{$(αs...),T,varsymbol(var)})
         $poly{$(αs...)}(n::S, var::SymbolLike = :x) where {$(αs...), S<:Number} =
-            n*one($poly{$(αs...),S,Symbol(var)})
-        $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T,Symbol(var)})
-        $poly{$(αs...)}(var::SymbolLike=:x) where {$(αs...)} = variable($poly{$(αs...)},Symbol(var))
+            n*one($poly{$(αs...),S, varsymbol(var)})
+        $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T,varsymbol(var)})
+        $poly{$(αs...)}(var::SymbolLike=:x) where {$(αs...)} = variable($poly{$(αs...)},varsymbol(var))
         (p::$poly)(x) = evalpoly(x, p)
     end
 end
