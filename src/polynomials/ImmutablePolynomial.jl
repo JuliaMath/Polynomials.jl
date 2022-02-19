@@ -103,14 +103,14 @@ function ImmutablePolynomial(coeffs::Tuple, var::SymbolLike=:x)
     ImmutablePolynomial{T, Symbol(var)}(cs)
 end
 
-
 ##
 ## ----
 ##
 # overrides from common.jl due to  coeffs being non mutable, N in type parameters
 
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p))
-
+Base.similar(p::ImmutablePolynomial, args...) =
+    similar(collect(oeffs(p)), args...)
 # degree, isconstant
 degree(p::ImmutablePolynomial{T,X, N}) where {T,X,N} = N - 1 # no trailing zeros
 isconstant(p::ImmutablePolynomial{T,X,N}) where {T,X,N}  = N <= 1

@@ -54,11 +54,11 @@ end
 
 @register SparsePolynomial
 
-function SparsePolynomial{T}(coeffs::AbstractDict{Int, S}, var::SymbolLike=:x) where {T, S}
+function SparsePolynomial{T}(coeffs::AbstractDict{Int, S}, var::SymbolLike=Var(:x)) where {T, S}
     SparsePolynomial{T, Symbol(var)}(convert(Dict{Int,T}, coeffs))
 end
 
-function SparsePolynomial(coeffs::AbstractDict{Int, T}, var::SymbolLike=:x) where {T}
+function SparsePolynomial(coeffs::AbstractDict{Int, T}, var::SymbolLike=Var(:x)) where {T}
     SparsePolynomial{T, Symbol(var)}(coeffs)
 end
 

@@ -216,6 +216,7 @@ parentheses.
 julia> using Polynomials, DualNumbers
 
 
+
 julia> Polynomial([Dual(1,2), Dual(3,4)])
 Polynomial(1 + 2ɛ + 3 + 4ɛ*x)
 ```

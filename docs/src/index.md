@@ -10,7 +10,9 @@ To install the package, run
 (v1.6) pkg> add Polynomials
 ```
 
-The package can then be loaded into the current session using
+As of version `v3.0.0` Julia version `1.6` or higher is required.
+
+The package can then be loaded into the current session through
 
 ```julia
 using Polynomials
@@ -132,7 +134,8 @@ Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)
 ```
 
 Differentiate the polynomial `p` term by term. The degree of the
-resulting polynomial is one lower than the degree of `p`.
+resulting polynomial is one lower than the degree of `p`, unless `p`
+is a zero polynomial.
 
 ```jldoctest
 julia> derivative(Polynomial([1, 3, -1]))
@@ -361,9 +364,9 @@ Most of the root finding algorithms have issues when the roots have
 multiplicities. For example, both `ANewDsc` and `Hecke.roots` assume a
 square free polynomial. For non-square free polynomials:
 
-* The `Polynomials.Multroot.multroot` function is available (version `v"1.2"` or greater) for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng.
+* The `Polynomials.Multroot.multroot` function is available  for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng.
 
-Here we see `IntervalRootsFindings.roots` having trouble isolating the roots due to the multiplicites:
+Here we see `IntervalRootFinding.roots` having trouble isolating the roots due to the multiplicites:
 
 ```
 julia> p = fromroots(Polynomial, [1,2,2,3,3])
@@ -553,7 +556,7 @@ Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
 FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
 
-julia> map(round, q, digits=10)
+julia> map(x -> round(x, digits=10), q)
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 
@@ -818,7 +821,7 @@ savefig("rational_function.svg"); nothing # hide
 
 * [AbstractAlgebra.jl](https://github.com/wbhart/AbstractAlgebra.jl), [Nemo.jl](https://github.com/wbhart/Nemo.jl) for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series, [Hecke.jl](https://github.com/thofma/Hecke.jl) for algebraic number theory.
 
-* [LaurentPolynomials.jl](https://github.com/jmichel7/LaurentPolynomials.jl) A package for Laurent polynom
+* [LaurentPolynomials.jl](https://github.com/jmichel7/LaurentPolynomials.jl) A package for Laurent polynomials.
 
 * [CommutativeAlgebra.jl](https://github.com/KlausC/CommutativeRings.jl) the start of a computer algebra system specialized to discrete calculations with support for polynomials.
 

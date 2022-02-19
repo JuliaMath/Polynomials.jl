@@ -33,19 +33,22 @@ Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
 FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
 
-julia> map(round, q, digits=12) # map works over factors and leading coefficient -- not coefficients in the standard basis
+julia> map(x->round(x, digits=12), q) # map works over factors and leading coefficient -- not coefficients in the standard basis
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 """
 struct FactoredPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     coeffs::Dict{T,Int}
     c::T
+    function FactoredPolynomial{T, X}(checked::Val{false}, cs::Dict{T,Int}, c::T) where {T, X}
+        new{T,X}(cs,T(c))
+    end
     function FactoredPolynomial{T, X}(cs::Dict{T,Int}, c=one(T)) where {T, X}
         D = Dict{T,Int}()
         for (k,v) ∈ cs
             v > 0 && (D[k] = v)
         end
-        new{T,X}(D,T(c))
+        FactoredPolynomial{T,X}(Val(false), D,T(c))
     end
     function FactoredPolynomial(cs::Dict{T,Int}, c::S=1, var::SymbolLike=:x) where {T,S}
         X = Symbol(var)
@@ -61,9 +64,12 @@ end
 # * the handling of Inf and NaN, when a specified coefficient, is to just return a constant poly (Inf or NaN)
 function FactoredPolynomial{T,X}(coeffs::AbstractVector{S}) where {T,S,X}
     p = Polynomial{T,X}(T.(coeffs))
-    iszero(p) && return zero(FactoredPolynomial{T,X})
-    hasnan(p) && return FactoredPolynomial(one(T)*NaN, X)
-    any(isinf, coeffs) && return FactoredPolynomial(one(T)*Inf, X)
+    P = FactoredPolynomial{T,X}
+    iszero(p)     && return zero(P)
+    isconstant(p) && return FactoredPolynomial{T,X}(Val(false), Dict{T,Int}(), T(coeffs[1]))
+    any(isnan, p) && return FactoredPolynomial{T,X}(Val(false), Dict{T,Int}(), T(NaN))
+    any(isinf, p) && return FactoredPolynomial{T,X}(Val(false), Dict{T,Int}(), T(Inf))
+
     zs = Multroot.multroot(p)
     c = p[end]
     D = Dict(zip(zs.values, zs.multiplicities))
@@ -115,13 +121,13 @@ end
 
 ## ----
 ## apply map to factors and the leading coefficient, not the coefficients
-function Base.map(fn, p::P, args...; kwargs...)  where {T,X,P<:FactoredPolynomial{T,X}}
+function Base.map(fn, p::P, args...)  where {T,X,P<:FactoredPolynomial{T,X}}
     𝒅 = Dict{T, Int}()
     for (k,v) ∈ p.coeffs
-        𝒌 = fn(k, args...; kwargs...)
+        𝒌 = fn(k, args...)
         𝒅[𝒌] = v
     end
-    𝒄 = fn(p.c, args...; kwargs...)
+    𝒄 = fn(p.c, args...)
     P(𝒅,𝒄)
 end
 
@@ -188,17 +194,6 @@ function Base.isapprox(p1::FactoredPolynomial{T,X},
     𝒑,𝒒 = convert(𝑷,p1), convert(𝑷,p2)
     return isapprox(𝒑, 𝒒, atol=atol, rtol=rtol)
 
-    # # sorting roots below works only with real roots...
-    # isapprox(p1.c, p2.c, rtol=rtol, atol=atol) || return false
-    # k1,k2 = sort(collect(keys(p1.coeffs)),by = x -> (real(x), imag(x))), sort(collect(keys(p2.coeffs)),by = x -> (real(x), imag(x)))
-
-    # length(k1) == length(k2) || return false
-    # for (k₁, k₂) ∈ zip(k1, k2)
-    #     isapprox(k₁, k₂, atol=atol, rtol=rtol) || return false
-    #     p1.coeffs[k₁] == p2.coeffs[k₂] || return false
-    # end
-
-    # return true
 end
 
 
@@ -248,6 +243,12 @@ roots(p::FactoredPolynomial{T}) where {T} = Base.typed_vcat(T,[repeat([k],v) for
 Base.:-(p::P) where {T,X,P<:FactoredPolynomial{T,X}} = (-1)*p
 
 # addition
+function Base.:+(p::P, c::S) where {S<:Number, T,X, P<:FactoredPolynomial{T,X}}
+    R = promote_type(S,T)
+    𝑷 = Polynomial{R,X}
+    𝒑,𝒒 = convert(𝑷, p), convert(𝑷, c)
+    convert(P, 𝒑 + 𝒒)
+end
 function Base.:+(p::P, q::P) where {T,X,P<:FactoredPolynomial{T,X}}
     𝑷 = Polynomial{T,X}
     𝒑,𝒒 = convert(𝑷, p), convert(𝑷, q)

@@ -5,7 +5,6 @@ export fromroots,
        chop!,
        coeffs,
        degree,
-       domain,
        mapdomain,
        order,
        hasnan,
@@ -150,7 +149,7 @@ function _fit(P::Type{<:AbstractPolynomial},
     if weights !== nothing
         coeffs = _wlstsq(vand, y, weights)
     else
-        coeffs = qr(vand) \ y
+        coeffs = vand \ y
     end
     R = float(T)
     return P(R.(coeffs), var)
@@ -161,9 +160,9 @@ end
 _wlstsq(vand, y, W::Number) = _wlstsq(vand, y, fill!(similar(y), W))
 function _wlstsq(vand, y, w::AbstractVector)
     W = Diagonal(sqrt.(w))
-    qr(W * vand) \ (W * y)
+    (W * vand) \ (W * y)
 end
-_wlstsq(vand, y, W::AbstractMatrix) = qr(vand' * W * vand) \ (vand' * W * y)
+_wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 
 """
     roots(::AbstractPolynomial; kwargs...)
@@ -372,7 +371,7 @@ end
     chop(::AbstractPolynomial{T};
         rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
 
-Removes any leading coefficients that are approximately 0 (using `rtol` and `atol`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's.
+Removes any leading coefficients that are approximately 0 (using `rtol` and `atol` with `norm(p)`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's.
 """
 function Base.chop(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
@@ -505,6 +504,7 @@ You can implement `real`, etc., to a `Polynomial` by using `map`.
 """
 Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial} = _convert(p, map(fn, coeffs(p), args...))
 
+
 """
     isreal(p::AbstractPolynomial)
 
@@ -580,15 +580,12 @@ degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p)
 
 
 """
-    domain(::Type{<:AbstractPolynomial})
+    Polynomials.domain(::Type{<:AbstractPolynomial})
 
 Returns the domain of the polynomial.
 """
 domain(::Type{<:AbstractPolynomial})
-function domain(::P) where {P <: AbstractPolynomial}
-    Base.depwarn("An exported `domain` will be removed; use `Polynomials.domain`.", :domain)
-    domain(P)
-end
+domain(::P) where {P <: AbstractPolynomial} = domain(P)
 
 """
     mapdomain(::Type{<:AbstractPolynomial}, x::AbstractArray)
@@ -649,15 +646,9 @@ end
 
 Base.setindex!(p::AbstractPolynomial, value, idx::Number) =
     setindex!(p, value, convert(Int, idx))
-#Base.setindex!(p::AbstractPolynomial, value::Number, indices) =
-#    [setindex!(p, value, i) for i in indices]
 Base.setindex!(p::AbstractPolynomial, values, indices) =
     [setindex!(p, v, i) for (v, i) in tuple.(values, indices)]
-#    [setindex!(p, v, i) for (v, i) in zip(values, indices)]
-#Base.setindex!(p::AbstractPolynomial, value, ::Colon) =
-#    setindex!(p, value, eachindex(p))
 Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
-#        [setindex!(p, v, i) for (v, i) in zip(values, eachindex(p))]
     [setindex!(p, v, i) for (v, i) in tuple.(values, eachindex(p))]
 
 #=
@@ -741,7 +732,6 @@ Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(coeffs(p)))
 Base.hash(p::AbstractPolynomial, h::UInt) = hash(indeterminate(p), hash(coeffs(p), h))
 
 # get symbol of polynomial. (e.g. `:x` from 1x^2 + 2x^3...
-#_indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T, X}} = X
 _indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
 _indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
 function indeterminate(::Type{P}) where {P <: AbstractPolynomial}
@@ -851,10 +841,6 @@ Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
 
 # scalar operations
 # no generic p+c, as polynomial addition falls back to scalar ops
-#function Base.:+(p::P, n::Number) where {P <: AbstractPolynomial}
-#    p1, p2 = promote(p, n)
-#    return p1 + p2
-#end
 
 
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)

@@ -3,7 +3,7 @@ using RecipesBase
 function poly_interval(p::AbstractPolynomial)
 
     # use  restricted domain, if finite
-    A,B =  domain(p).first, domain(p).last
+    A,B =  first(domain(p)), last(domain(p))
     if !isinf(A) && !isinf(B)
         if isopen(domain(p))
             Delta = (B-A)/100

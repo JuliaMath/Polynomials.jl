@@ -42,7 +42,7 @@ julia> p.(0:3)
 evalpoly(x, p::StandardBasisPolynomial) = EvalPoly.evalpoly(x, p.coeffs) # allows  broadcast  issue #209
 constantterm(p::StandardBasisPolynomial) = p[0]
 
-domain(::Type{<:StandardBasisPolynomial}) = Interval(-Inf, Inf)
+domain(::Type{<:StandardBasisPolynomial}) = Interval{Open,Open}(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 
 function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial)
@@ -54,6 +54,10 @@ function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolyno
         return ⟒(P){T,X}([q[i] for i in 0:degree(q)])
     end
 end
+
+# treat p as a *vector* of coefficients
+Base.similar(p::StandardBasisPolynomial, args...) = similar(coeffs(p), args...)
+
 
 function Base.one(::Type{P}) where {P<:StandardBasisPolynomial}
     T,X = eltype(P), indeterminate(P)
@@ -137,7 +141,7 @@ function ⊗(P::Type{<:StandardBasisPolynomial}, p::Dict{Int,T}, q::Dict{Int,S})
 end
 
 ## ---
-function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
+function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)
     c[1] = one(T)
@@ -608,7 +612,7 @@ struct ArnoldiFit{T, M<:AbstractArray{T,2}, X}  <: AbstractPolynomial{T,X}
 end
 export ArnoldiFit
 @register ArnoldiFit
-domain(::Type{<:ArnoldiFit}) = Interval(-Inf, Inf)
+domain(::Type{<:ArnoldiFit}) = Interval{Open,Open}(-Inf, Inf)
 
 Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "ArnoldiFit of degree $(length(p.coeffs)-1)")
 
