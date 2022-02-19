@@ -1,9 +1,16 @@
 export AbstractPolynomial
 
 
+# *internal* means to pass variable symbol to constructor through 2nd position and keep type stability
+struct Var{T} end
+Var(x::Symbol) = Var{x}()
+Symbol(::Var{T}) where {T} = T
 
 const SymbolLike = Union{AbstractString,Char,Symbol, Val{T} where T}
 Base.Symbol(::Val{T}) where {T} = Symbol(T)
+
+const SymbolLike = Union{AbstractString,Char,Symbol, Var{T} where T}
+
 """
     AbstractPolynomial{T,X}
 
@@ -51,7 +58,7 @@ abstract type AbstractPolynomial{T,X} end
 
 # convert `as` into polynomial of type P based on instance, inheriting variable
 # (and for LaurentPolynomial the offset)
-_convert(p::P, as) where {T,X,P <: AbstractPolynomial{T,X}} = ⟒(P)(as, X)
+_convert(p::P, as) where {T,X,P <: AbstractPolynomial{T,X}} = ⟒(P)(as, Var(X))
 
 
 """
@@ -147,7 +154,7 @@ macro registerN(name, params...)
             $poly{$(αs...),promote_type(T,S),X}
 
         function $poly{$(αs...),T}(x::AbstractVector{S}, var::SymbolLike = :x) where {$(αs...),T,S}
-            $poly{$(αs...),T, Symbol(var)}(T.(x))
+            $poly{$(αs...),T,Symbol(var)}(T.(x))
         end
         $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
             $poly{$(αs...),T,Symbol(var)}(coeffs)

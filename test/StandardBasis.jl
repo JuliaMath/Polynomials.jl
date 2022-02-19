@@ -52,6 +52,10 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
         @test_throws InexactError P{Int}([1+im, 1], :x)
         @test_throws InexactError P{Int,:x}(1+im)
         @test_throws InexactError P{Int}(1+im)
+
+        ## issue #395
+        v = [1,2,3]
+        @test P(v) == P(v,:x) == P(v,'x') == P(v,"x") == P(v, Polynomials.Var(:x))
     end
 
 end
@@ -387,6 +391,7 @@ end
         # type stability of the default constructor without variable name
         if !(P ∈ (LaurentPolynomial, ImmutablePolynomial, FactoredPolynomial))
             @inferred P([1, 2, 3])
+            @inferred P([1,2,3], Polynomials.Var(:x))
         end
 
         @test p3 == P([1,2,1])
@@ -441,6 +446,11 @@ end
     x = variable(LaurentPolynomial)
     @test Polynomials.isconstant(x * inv(x))
     @test_throws ArgumentError inv(x + x^2)
+
+    # issue #395
+    p = Polynomial([2,1], :s)
+    @inferred -p # issue #395
+
 end
 
 @testset "Divrem" begin
