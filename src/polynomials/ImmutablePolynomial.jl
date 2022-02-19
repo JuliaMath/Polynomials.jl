@@ -103,7 +103,6 @@ function ImmutablePolynomial(coeffs::Tuple, var::SymbolLike=:x)
     ImmutablePolynomial{T, Symbol(var)}(cs)
 end
 
-
 ##
 ## ----
 ##

@@ -99,16 +99,16 @@ end
 @register LaurentPolynomial
 
 ## constructors
-function LaurentPolynomial{T}(coeffs::AbstractVector{S}, m::Int, var::SymbolLike=:x) where {
+function LaurentPolynomial{T}(coeffs::AbstractVector{S}, m::Int, var::SymbolLike=Var(:x)) where {
     T, S <: Number}
     LaurentPolynomial{T,Symbol(var)}(T.(coeffs), m)
 end
 
-function LaurentPolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {T}
+function LaurentPolynomial{T}(coeffs::AbstractVector{T}, var::SymbolLike=Var(:x)) where {T}
     LaurentPolynomial{T, Symbol(var)}(coeffs, 0)
 end
 
-function LaurentPolynomial(coeffs::AbstractVector{T}, m::Int, var::SymbolLike=:x) where {T}
+function LaurentPolynomial(coeffs::AbstractVector{T}, m::Int, var::SymbolLike=Var(:x)) where {T}
     LaurentPolynomial{T, Symbol(var)}(coeffs, m)
 end
 
@@ -220,7 +220,7 @@ Base.lastindex(p::LaurentPolynomial) = p.n[]
 Base.eachindex(p::LaurentPolynomial) = degreerange(p)
 degreerange(p::LaurentPolynomial) = firstindex(p):lastindex(p)
 
-_convert(p::P, as) where {T,X,P <: LaurentPolynomial{T,X}} = ⟒(P)(as, firstindex(p), X)
+_convert(p::P, as) where {T,X,P <: LaurentPolynomial{T,X}} = ⟒(P)(as, firstindex(p), Var(X))
 
 ## chop!
 # trim  from *both* ends
@@ -458,10 +458,10 @@ function Base.:*(p1::P, p2::P) where {T,X,P<:LaurentPolynomial{T,X}}
 end
 
 function scalar_mult(p::LaurentPolynomial{T,X}, c::Number) where {T,X}
-    LaurentPolynomial(p.coeffs .* c, p.m[], X)
+    LaurentPolynomial(p.coeffs .* c, p.m[], Var(X))
 end
 function scalar_mult(c::Number, p::LaurentPolynomial{T,X}) where {T,X}
-    LaurentPolynomial(c .* p.coeffs, p.m[], X)
+    LaurentPolynomial(c .* p.coeffs, p.m[], Var(X))
 end
 
 ##
