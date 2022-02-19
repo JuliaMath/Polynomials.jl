@@ -141,7 +141,7 @@ function ⊗(P::Type{<:StandardBasisPolynomial}, p::Dict{Int,T}, q::Dict{Int,S})
 end
 
 ## ---
-function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = :x) where {T <: Number}
+function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)
     c[1] = one(T)

@@ -448,8 +448,15 @@ end
     @test_throws ArgumentError inv(x + x^2)
 
     # issue #395
-    p = Polynomial([2,1], :s)
-    @inferred -p # issue #395
+    for P ∈ Ps
+        P ∈ (FactoredPolynomial, ImmutablePolynomial) && continue
+        p = P([2,1], :s)
+        @inferred -p # issue #395
+        @inferred 2p
+        @inferred p + p
+        @inferred p * p
+        @inferred p^3
+    end
 
 end
 

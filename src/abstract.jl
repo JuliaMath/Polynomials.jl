@@ -6,10 +6,9 @@ struct Var{T} end
 Var(x::Symbol) = Var{x}()
 Symbol(::Var{T}) where {T} = T
 
-const SymbolLike = Union{AbstractString,Char,Symbol, Val{T} where T}
+const SymbolLike = Union{AbstractString,Char,Symbol, Var{T} where T}
 Base.Symbol(::Val{T}) where {T} = Symbol(T)
 
-const SymbolLike = Union{AbstractString,Char,Symbol, Var{T} where T}
 
 """
     AbstractPolynomial{T,X}
@@ -91,34 +90,20 @@ macro register(name)
         Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{S}) where {T,S<:Number,X} =
             $poly{promote_type(T, S),X}
 
-        $poly(coeffs::AbstractVector{T}, var::SymbolLike) where {T} =
+        $poly(coeffs::AbstractVector{T}, var::SymbolLike=Var(:x)) where {T} =
             $poly{T, Symbol(var)}(coeffs)
-        $poly(coeffs::AbstractVector{T}) where {T} =
-            $poly{T, :x}(coeffs)
-        $poly{T}(x::AbstractVector{S}, var::SymbolLike) where {T,S} =
+        $poly{T}(x::AbstractVector{S}, var::SymbolLike=Var(:x)) where {T,S} =
             $poly{T,Symbol(var)}(T.(x))
-        $poly{T}(x::AbstractVector{S}) where {T,S} =
-            $poly{T,:x}(T.(x))
 
-        function $poly{T}(coeffs::G, var::SymbolLike) where {T,G}
+        function $poly{T}(coeffs::G, var::SymbolLike=Var(x)) where {T,G}
             !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
             cs = collect(T, coeffs)
             $poly{T, Symbol(var)}(cs)
         end
-        function $poly{T}(coeffs::G) where {T,G}
-            !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
-            cs = collect(T, coeffs)
-            $poly{T, :x}(cs)
-        end
-        function $poly(coeffs::G, var::SymbolLike) where {G}
+        function $poly(coeffs::G, var::SymbolLike=Var(:x)) where {G}
             !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
             cs = collect(coeffs)
             $poly{eltype(cs), Symbol(var)}(cs)
-        end
-        function $poly(coeffs::G) where {G}
-            !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
-            cs = collect(coeffs)
-            $poly{eltype(cs), :x}(cs)
         end
 
         $poly{T,X}(c::AbstractPolynomial{S,Y}) where {T,X,S,Y} = convert($poly{T,X}, c)
@@ -127,14 +112,12 @@ macro register(name)
 
         $poly{T,X}(n::S) where {T, X, S<:Number} =
             T(n) *  one($poly{T, X})
-        $poly{T}(n::S, var::SymbolLike = :x) where {T, S<:Number} =
+        $poly{T}(n::S, var::SymbolLike = Var(:x)) where {T, S<:Number} =
             T(n) *  one($poly{T, Symbol(var)})
-        $poly(n::S, var::SymbolLike = :x)  where {S  <: Number} = n * one($poly{S, Symbol(var)})
+        $poly(n::S, var::SymbolLike = Var(:x))  where {S  <: Number} = n * one($poly{S, Symbol(var)})
 
-        $poly{T}(var::SymbolLike) where {T} = variable($poly{T, Symbol(var)})
-        $poly{T}() where {T} = variable($poly{T, :x})
-        $poly(var::SymbolLike) = variable($poly, Symbol(var))
-        $poly() = variable($poly{Float64,:x})
+        $poly{T}(var::SymbolLike=Var(:x)) where {T} = variable($poly{T, Symbol(var)})
+        $poly(var::SymbolLike=Var(:x)) = variable($poly, Symbol(var))
 
         (p::$poly)(x) = evalpoly(x, p)
     end
@@ -153,21 +136,22 @@ macro registerN(name, params...)
         Base.promote_rule(::Type{<:$poly{$(αs...),T,X}}, ::Type{S}) where {$(αs...),T,X,S<:Number} =
             $poly{$(αs...),promote_type(T,S),X}
 
-        function $poly{$(αs...),T}(x::AbstractVector{S}, var::SymbolLike = :x) where {$(αs...),T,S}
+        function $poly{$(αs...),T}(x::AbstractVector{S}, var::SymbolLike = Var(:x)) where {$(αs...),T,S}
             $poly{$(αs...),T,Symbol(var)}(T.(x))
         end
-        $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=:x) where {$(αs...),T} =
+        $poly{$(αs...)}(coeffs::AbstractVector{T}, var::SymbolLike=Var(:x)) where {$(αs...),T} =
             $poly{$(αs...),T,Symbol(var)}(coeffs)
         $poly{$(αs...),T,X}(c::AbstractPolynomial{S,Y}) where {$(αs...),T,X,S,Y} = convert($poly{$(αs...),T,X}, c)
         $poly{$(αs...),T}(c::AbstractPolynomial{S,Y}) where {$(αs...),T,S,Y} = convert($poly{$(αs...),T}, c)
         $poly{$(αs...),}(c::AbstractPolynomial{S,Y}) where {$(αs...),S,Y} = convert($poly{$(αs...),}, c)
 
         $poly{$(αs...),T,X}(n::Number) where {$(αs...),T,X} = T(n)*one($poly{$(αs...),T,X})
-        $poly{$(αs...),T}(n::Number, var::SymbolLike = :x) where {$(αs...),T} = T(n)*one($poly{$(αs...),T,Symbol(var)})
-        $poly{$(αs...)}(n::S, var::SymbolLike = :x) where {$(αs...), S<:Number} =
+        $poly{$(αs...),T}(n::Number, var::SymbolLike = Var(:x)) where {$(αs...),T} = T(n)*one($poly{$(αs...),T,Symbol(var)})
+        $poly{$(αs...)}(n::S, var::SymbolLike = Var(:x)) where {$(αs...), S<:Number} =
             n*one($poly{$(αs...),S,Symbol(var)})
-        $poly{$(αs...),T}(var::SymbolLike=:x) where {$(αs...), T} = variable($poly{$(αs...),T,Symbol(var)})
-        $poly{$(αs...)}(var::SymbolLike=:x) where {$(αs...)} = variable($poly{$(αs...)},Symbol(var))
+        $poly{$(αs...),T}(var::SymbolLike=Var(:x)) where {$(αs...), T} =
+            variable($poly{$(αs...),T,Symbol(var)})
+        $poly{$(αs...)}(var::SymbolLike=Var(:x)) where {$(αs...)} = variable($poly{$(αs...)},Symbol(var))
         (p::$poly)(x) = evalpoly(x, p)
     end
 end
