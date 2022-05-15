@@ -49,14 +49,21 @@ end
 
 evalpoly(x, p::AbstractVector) = _evalpoly(x, p)
 
+# https://discourse.julialang.org/t/i-have-a-much-faster-version-of-evalpoly-why-is-it-faster/79899; improvement *and* closes #313
 function _evalpoly(x::S, p) where {S}
-    N = length(p)
-    ex = p[end]*_one(x)
-    for i in N-1:-1:1
-        ex = _muladd(ex, x, p[i])
+    i = lastindex(p)
+
+    @inbounds out = p[i]*_one(x)
+    i -= 1
+
+    while i >= firstindex(p)
+	@inbounds out = _muladd(out, x, p[i])
+		i -= 1
     end
-    ex
+
+    return out
 end
+
 
 function evalpoly(z::Complex, p::Tuple)
     if @generated
