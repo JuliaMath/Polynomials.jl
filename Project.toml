@@ -2,7 +2,7 @@ name = "Polynomials"
 uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 license = "MIT"
 author = "JuliaMath"
-version = "3.0.0"
+version = "3.0.1"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
