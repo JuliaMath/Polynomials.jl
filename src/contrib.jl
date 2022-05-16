@@ -48,7 +48,7 @@ function evalpoly(x::S, p::Tuple) where {S}
 end
 
 evalpoly(x, p::AbstractVector) = _evalpoly(x, p)
-
+# by @Luapulu
 # https://discourse.julialang.org/t/i-have-a-much-faster-version-of-evalpoly-why-is-it-faster/79899; improvement *and* closes #313
 function _evalpoly(x::S, p) where {S}
     i = lastindex(p)
