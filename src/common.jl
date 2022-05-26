@@ -430,7 +430,7 @@ function Base.convert(::Type{S}, p::P) where {S <: Number,T, P<:AbstractPolynomi
     isconstant(p) && return convert(S, constantterm(p))
     throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
 end
-function Base.convert(::Type{T}, p::P) where {T, P<:AbstractPolynomial{T}}
+function Base.convert(::Type{T}, p::AbstractPolynomial{T,X}) where {T,X}
     isconstant(p) && return constantterm(p)
     throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
 end
