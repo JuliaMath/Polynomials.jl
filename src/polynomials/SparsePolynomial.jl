@@ -127,11 +127,6 @@ function Base.setindex!(p::SparsePolynomial, value::Number, idx::Int)
     return p
 end
 
-
-Base.firstindex(p::SparsePolynomial) = sort(collect(keys(p.coeffs)), by=x->x[1])[1]
-Base.lastindex(p::SparsePolynomial) = sort(collect(keys(p.coeffs)), by=x->x[1])[end]
-Base.eachindex(p::SparsePolynomial) = sort(collect(keys(p.coeffs)), by=x->x[1])
-
 # pairs iterates only over non-zero
 # inherits order for underlying dictionary
 function Base.iterate(v::PolynomialKeys{SparsePolynomial{T,X}}, state...) where {T,X}
@@ -146,7 +141,7 @@ function Base.iterate(v::PolynomialValues{SparsePolynomial{T,X}}, state...) wher
     return (y[1][2], y[2])
 end
 
-
+Base.length(S::SparsePolynomial) = isempty(S.coeffs) ? 0 : maximum(keys(S.coeffs)) + 1
 
 ##
 ## ----

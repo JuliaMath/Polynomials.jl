@@ -28,36 +28,39 @@ Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, Fact
 isimmutable(p::P) where {P} = P <: ImmutablePolynomial
 isimmutable(::Type{<:ImmutablePolynomial}) = true
 
-@testset "Construction" for coeff in [
-                                      Int64[1, 1, 1, 1],
-                                      Float32[1, -4, 2],
-                                      ComplexF64[1 - 1im, 2 + 3im],
-                                      [3 // 4, -2 // 1, 1 // 1]
-                                     ]
+@testset "Construction" begin
+    @testset for coeff in Any[
+          Int64[1, 1, 1, 1],
+          Float32[1, -4, 2],
+          ComplexF64[1 - 1im, 2 + 3im],
+          [3 // 4, -2 // 1, 1 // 1]
+         ]
 
-    for P in Ps
-        p = P(coeff)
-        @test coeffs(p) ==ᵗ⁰ coeff
-        @test degree(p) == length(coeff) - 1
-        @test indeterminate(p) == :x
-        P == Polynomial && @test length(p) == length(coeff)
-        P == Polynomial && @test size(p) == size(coeff)
-        P == Polynomial && @test size(p, 1) == size(coeff, 1)
-        P == Polynomial && @test typeof(p).parameters[1] == eltype(coeff)
-        @test eltype(p) == eltype(coeff)
-        @test all([-200, -0.3, 1, 48.2] .∈ Polynomials.domain(p))
+        @testset for P in Ps
+            p = P(coeff)
+            @test coeffs(p) ==ᵗ⁰ coeff
+            @test degree(p) == length(coeff) - 1
+            @test indeterminate(p) == :x
+            P == Polynomial && @test length(p) == length(coeff)
+            P == Polynomial && @test size(p) == size(coeff)
+            P == Polynomial && @test size(p, 1) == size(coeff, 1)
+            P == Polynomial && @test typeof(p).parameters[1] == eltype(coeff)
+            if !(eltype(coeff) <: Real && P == FactoredPolynomial) # roots may be complex
+                @test eltype(p) == eltype(coeff)
+            end
+            @test all([-200, -0.3, 1, 48.2] .∈ Polynomials.domain(p))
 
-        ## issue #316
-        @test_throws InexactError P{Int,:x}([1+im, 1])
-        @test_throws InexactError P{Int}([1+im, 1], :x)
-        @test_throws InexactError P{Int,:x}(1+im)
-        @test_throws InexactError P{Int}(1+im)
+            ## issue #316
+            @test_throws InexactError P{Int,:x}([1+im, 1])
+            @test_throws InexactError P{Int}([1+im, 1], :x)
+            @test_throws InexactError P{Int,:x}(1+im)
+            @test_throws InexactError P{Int}(1+im)
 
-        ## issue #395
-        v = [1,2,3]
-        @test P(v) == P(v,:x) == P(v,'x') == P(v,"x") == P(v, Polynomials.Var(:x))
+            ## issue #395
+            v = [1,2,3]
+            @test P(v) == P(v,:x) == P(v,'x') == P(v,"x") == P(v, Polynomials.Var(:x))
+        end
     end
-
 end
 
 @testset "Mapdomain" begin
@@ -1492,4 +1495,14 @@ end
     @test c == A * b
     @test c == MA.operate(*, A, b)
     @test 0 == @allocated MA.buffered_operate!(buffer, MA.add_mul, c, A, b)
+end
+
+@testset "empty SparsePolynomial" begin
+    p = SparsePolynomial(Float64[0])
+    @test eltype(p) == Float64
+    @test eltype(keys(p)) == Int
+    @test eltype(values(p)) == Float64
+    @test collect(p) == Float64[]
+    @test collect(keys(p)) == Int[]
+    @test collect(values(p)) == Float64[]
 end
