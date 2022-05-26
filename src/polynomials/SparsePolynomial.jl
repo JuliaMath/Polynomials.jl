@@ -128,9 +128,9 @@ function Base.setindex!(p::SparsePolynomial, value::Number, idx::Int)
 end
 
 
-Base.firstindex(p::SparsePolynomial) = sort(collect(keys(p.coeffs)), by=x->x[1])[1]
-Base.lastindex(p::SparsePolynomial) = sort(collect(keys(p.coeffs)), by=x->x[1])[end]
-Base.eachindex(p::SparsePolynomial) = sort(collect(keys(p.coeffs)), by=x->x[1])
+Base.firstindex(p::SparsePolynomial) = sort!(collect(keys(p.coeffs)), by=x->x[1])[1]
+Base.lastindex(p::SparsePolynomial) = sort!(collect(keys(p.coeffs)), by=x->x[1])[end]
+Base.eachindex(p::SparsePolynomial) = sort!(collect(keys(p.coeffs)), by=x->x[1])
 
 # pairs iterates only over non-zero
 # inherits order for underlying dictionary

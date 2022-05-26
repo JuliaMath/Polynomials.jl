@@ -664,47 +664,34 @@ Iteration =#
 # `pairs(p)`: `i => pᵢ` possibly skipping over values of `i` with `pᵢ == 0` (SparsePolynomial)
 #    and possibly non ordered (SparsePolynomial)
 # `monomials(p)`: iterates over pᵢ ⋅ basis(p, i) i  ∈ keys(p)
-function Base.iterate(p::AbstractPolynomial, state=nothing)
-    i = firstindex(p)
-    if state == nothing
-        return (p[i], i)
-    else
-        j = lastindex(p)
-        if i <= state < j
-            return (p[state+1], state+1)
-        end
-        return nothing
-    end
+function _iterate(p, state)
+    firstindex(p) <= state <= lastindex(p) || return nothing
+    return p[state], state+1
 end
+Base.iterate(p::AbstractPolynomial, state = firstindex(p)) = _iterate(p, state)
 
 # pairs map i -> aᵢ *possibly* skipping over ai == 0
 # cf. abstractdict.jl
-struct PolynomialKeys{P}
+struct PolynomialKeys{P} <: AbstractSet{Int}
     p::P
 end
-struct PolynomialValues{P}
+struct PolynomialValues{P, T} <: AbstractSet{T}
     p::P
+
+    PolynomialValues{P}(p::P) where {P} = new{P, eltype(p)}(p)
+    PolynomialValues(p::P) where {P} = new{P, eltype(p)}(p)
 end
 Base.keys(p::AbstractPolynomial) =  PolynomialKeys(p)
 Base.values(p::AbstractPolynomial) =  PolynomialValues(p)
 Base.length(p::PolynomialValues) = length(p.p.coeffs)
 Base.length(p::PolynomialKeys) = length(p.p.coeffs)
 Base.size(p::Union{PolynomialValues, PolynomialKeys}) = (length(p),)
-function Base.iterate(v::PolynomialKeys, state=nothing)
-    i = firstindex(v.p)
-    state==nothing && return (i, i)
-    j = lastindex(v.p)
-    i <= state < j && return (state+1, state+1)
-    return nothing
+function Base.iterate(v::PolynomialKeys, state = firstindex(v.p))
+    firstindex(v.p) <= state <= lastindex(v.p) || return nothing
+    return state, state+1
 end
 
-function Base.iterate(v::PolynomialValues, state=nothing)
-    i = firstindex(v.p)
-    state==nothing && return (v.p[i], i)
-    j = lastindex(v.p)
-    i <= state < j && return (v.p[state+1], state+1)
-    return nothing
-end
+Base.iterate(v::PolynomialValues, state = firstindex(v.p)) = _iterate(v.p, state)
 
 
 # iterate over monomials of the polynomial

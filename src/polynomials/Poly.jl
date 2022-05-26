@@ -47,13 +47,9 @@ _eltype(::Type{<:Poly{T}}) where  {T} = T
 _eltype(::Type{Poly}) =  Float64
 
 # when interating over poly return monomials
-function Base.iterate(p::Poly, state=nothing)
-    i = 0
-    state == nothing && return (p[i]*one(p), i)
-    j = degree(p)
-    s = state + 1
-    i <= state < j && return (p[s]*Polynomials.basis(p,s), s)
-    return nothing
+function Base.iterate(p::Poly, state = firstindex(p))
+    firstindex(p) <= state <= lastindex(p) || return nothing
+    return p[state] * Polynomials.basis(p,state), state+1
 end
 Base.collect(p::Poly) = [pᵢ for pᵢ ∈ p]
 
