@@ -426,13 +426,9 @@ LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 Conversions =#
 Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
 Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
-function Base.convert(::Type{S}, p::P) where {S <: Number,T, P<:AbstractPolynomial{T}}
-    isconstant(p) && return convert(S, constantterm(p))
-    throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
-end
-function Base.convert(::Type{T}, p::P) where {T, P<:AbstractPolynomial{T}}
-    isconstant(p) && return constantterm(p)
-    throw(ArgumentError("Can't convert a nonconstant polynomial to type $S"))
+function Base.convert(::Type{T}, p::AbstractPolynomial{T,X}) where {T <: Number,X}
+    isconstant(p) && return T(constantterm(p))
+    throw(ArgumentError("Can't convert a nonconstant polynomial to type $T"))
 end
 
 # Methods to ensure that matrices of polynomials behave as desired
