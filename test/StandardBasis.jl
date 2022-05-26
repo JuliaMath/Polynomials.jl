@@ -45,7 +45,7 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
             P == Polynomial && @test size(p) == size(coeff)
             P == Polynomial && @test size(p, 1) == size(coeff, 1)
             P == Polynomial && @test typeof(p).parameters[1] == eltype(coeff)
-            if P != FactoredPolynomial
+            if !(eltype(coeff) <: Real && P == FactoredPolynomial) # roots may be complex
                 @test eltype(p) == eltype(coeff)
             end
             @test all([-200, -0.3, 1, 48.2] .∈ Polynomials.domain(p))

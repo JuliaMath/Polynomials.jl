@@ -141,7 +141,7 @@ function Base.iterate(v::PolynomialValues{SparsePolynomial{T,X}}, state...) wher
     return (y[1][2], y[2])
 end
 
-
+Base.length(S::SparsePolynomial) = isempty(S.coeffs) ? 0 : maximum(keys(S.coeffs)) + 1
 
 ##
 ## ----

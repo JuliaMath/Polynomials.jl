@@ -460,8 +460,8 @@ Base.length(p::AbstractPolynomial) = length(coeffs(p))
 
 Returns the size of the polynomials coefficients, along axis `i` if provided.
 """
-Base.size(p::AbstractPolynomial) = size(coeffs(p))
-Base.size(p::AbstractPolynomial, i::Integer) = size(coeffs(p), i)
+Base.size(p::AbstractPolynomial) = (length(p),)
+Base.size(p::AbstractPolynomial, i::Integer) =  i <= 1 ? size(p)[i] : 1
 Base.eltype(p::AbstractPolynomial{T}) where {T} = T
 # in  analogy  with  polynomial as a Vector{T} with different operations defined.
 Base.eltype(::Type{<:AbstractPolynomial}) = Float64
@@ -470,7 +470,7 @@ _eltype(::Type{<:AbstractPolynomial}) = nothing
 _eltype(::Type{<:AbstractPolynomial{T}}) where {T} = T
 function _eltype(P::Type{<:AbstractPolynomial}, p::AbstractPolynomial)
     T′ = _eltype(P)
-    T = T′ == nothing ? eltype(p) : T′
+    T = T′ === nothing ? eltype(p) : T′
     T
 end
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
@@ -706,7 +706,7 @@ Returns an iterator over the terms, `pᵢ⋅basis(p,i)`, of the polynomial for e
 monomials(p) = Monomials(p)
 function Base.iterate(v::Monomials, state...)
     y = iterate(pairs(v.p), state...)
-    y == nothing && return nothing
+    y === nothing && return nothing
     kv, s = y
     return (kv[2]*basis(v.p, kv[1]), s)
 end
@@ -723,18 +723,18 @@ _indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
 _indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
 function indeterminate(::Type{P}) where {P <: AbstractPolynomial}
     X = _indeterminate(P)
-    X == nothing ? :x : X
+    X === nothing ? :x : X
 end
 indeterminate(p::P) where {P <: AbstractPolynomial} = _indeterminate(P)
 function indeterminate(PP::Type{P}, p::AbstractPolynomial{T,Y}) where {P <: AbstractPolynomial, T,Y}
     X = _indeterminate(PP)
-    X == nothing && return Y
+    X === nothing && return Y
     assert_same_variable(X,Y)
     return X
-    #X = _indeterminate(PP) == nothing ? indeterminate(p) :  _indeterminate(PP)
+    #X = _indeterminate(PP) === nothing ? indeterminate(p) :  _indeterminate(PP)
 end
 function indeterminate(PP::Type{P}, x::Symbol) where {P <: AbstractPolynomial}
-    X = _indeterminate(PP) == nothing ? x :  _indeterminate(PP)
+    X = _indeterminate(PP) === nothing ? x :  _indeterminate(PP)
 end
 
 #=
@@ -761,7 +761,7 @@ Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, 
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}) where {P<:AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default method
-Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var == nothing ? :x : var)})
+Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var === nothing ? :x : var)})
 Base.one(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = one(P, var)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
