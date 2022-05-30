@@ -584,6 +584,11 @@ end
         @test_throws ArgumentError variable(P, :x) ≈ variable(P, :y)
 
     end
+
+    ## Issue 408
+    p = Polynomial([1,2,3])
+    q = ChebyshevT([1,2,3])
+    @test p != q
 end
 
 @testset "Fitting" begin
