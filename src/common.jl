@@ -571,7 +571,7 @@ constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
 Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
 has a nonzero coefficient. The degree of the zero polynomial is defined to be -1. The default method assumes the basis polynomial, `βₖ` has degree `k`.
 """
-degree(p::AbstractPolynomial) = iszero(coeffs(p)) ? -1 : length(coeffs(p)) - 1 + minimumexponent(p)
+degree(p::AbstractPolynomial) = iszero(coeffs(p)) ? -1 : length(coeffs(p)) - 1 + min(0, minimumexponent(p))
 
 
 """
@@ -612,6 +612,8 @@ mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, 
 
 #=
 indexing =#
+# minimumexponent returns min(0, minimum(keys(p)))
+# For most polynomial types, this is statically known to be zero
 minimumexponent(p::AbstractPolynomial) = minimumexponent(typeof(p))
 minimumexponent(::Type{<:AbstractPolynomial}) = 0
 Base.firstindex(p::AbstractPolynomial) = minimumexponent(p)
@@ -1020,8 +1022,12 @@ Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 #=
 Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
-Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
-    check_same_variable(p1,p2) && (coeffs(p1) == coeffs(p2))
+function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
+    check_same_variable(p1,p2) || return false
+    iszero(p1) && iszero(p2) && return true
+    eachindex(p1) == eachindex(p2) || return false
+    coeffs(p1) == coeffs(p2)
+end
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 

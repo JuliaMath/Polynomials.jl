@@ -380,7 +380,7 @@ end
 
 @testset "Arithmetic" begin
 
-    for  P in Ps
+    @testset for  P in Ps
         pNULL = P(Int[])
         p0 = P([0])
         p1 = P([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
@@ -425,7 +425,7 @@ end
 
     end
 
-    for P in Ps # ensure promotion of scalar +,*,/
+    @testset for P in Ps # ensure promotion of scalar +,*,/
         p = P([1,2,3])
         @test p + 0.5 ==ᵟ P([1.5, 2.0, 3.0])
         @test p / 2  == P([1/2, 1.0, 3/2])
@@ -433,7 +433,7 @@ end
     end
 
     # ensure  promotion of +,*; issue 215
-    for P in Ps
+    @testset for P in Ps
         p,q = P([1,2,3]), P(im, :θ)
         @test p+q == P([1+im, 2, 3])
         @test p*q ==ᵟ P(im*[1,2,3])
@@ -451,7 +451,7 @@ end
     @test_throws ArgumentError inv(x + x^2)
 
     # issue #395
-    for P ∈ Ps
+    @testset for P ∈ Ps
         P ∈ (FactoredPolynomial, ImmutablePolynomial) && continue
         p = P([2,1], :s)
         @inferred -p # issue #395
@@ -460,7 +460,6 @@ end
         @inferred p * p
         @inferred p^3
     end
-
 end
 
 @testset "Divrem" begin
@@ -495,7 +494,7 @@ end
 end
 
 @testset "Comparisons" begin
-    for P in Ps
+    @testset for P in Ps
         pX = P([1, 2, 3, 4, 5])
         pS1 = P([1, 2, 3, 4, 5], "s")
         pS2 = P([1, 2, 3, 4, 5], 's')
@@ -826,7 +825,7 @@ end
 end
 
 @testset "multroot" begin
-    for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
+    @testset for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
         rts = [1.0, sqrt(2), sqrt(3)]
         ls = [2, 3, 4]
         x = variable(P{Float64})
@@ -1506,6 +1505,7 @@ end
         @test collect(p) == Float64[]
         @test collect(keys(p)) == Int[]
         @test collect(values(p)) == Float64[]
+        @test p == Polynomial(0)
     end
     @testset "negative indices" begin
         d = Dict(-2=>4, 5=>10)
@@ -1514,5 +1514,7 @@ end
         @test firstindex(p) == -2
         @test lastindex(p) == 5
         @test eachindex(p) == -2:5
+        q = LaurentPolynomial(p)
+        @test p == q
     end
 end
