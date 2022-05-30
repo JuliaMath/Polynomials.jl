@@ -73,8 +73,7 @@ function SparsePolynomial{T,X}(coeffs::AbstractVector{S}) where {T, X, S}
     return SparsePolynomial{T,X}(p)
 end
 
-
-
+minimumexponent(p::SparsePolynomial) = isempty(p.coeffs) ? 0 : minimum(keys(p.coeffs))
 
 # conversion
 function Base.convert(P::Type{<:Polynomial}, q::SparsePolynomial)
@@ -141,7 +140,10 @@ function Base.iterate(v::PolynomialValues{SparsePolynomial{T,X}}, state...) wher
     return (y[1][2], y[2])
 end
 
-Base.length(S::SparsePolynomial) = isempty(S.coeffs) ? 0 : maximum(keys(S.coeffs)) + 1
+Base.length(S::SparsePolynomial) = isempty(S.coeffs) ? 0 : begin
+    minkey, maxkey = extrema(keys(S.coeffs))
+    maxkey - minkey + 1
+end
 
 ##
 ## ----

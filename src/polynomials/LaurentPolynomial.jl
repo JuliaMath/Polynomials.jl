@@ -215,9 +215,8 @@ function Base.setindex!(p::LaurentPolynomial{T}, value::Number, idx::Int) where 
 
 end
 
-Base.firstindex(p::LaurentPolynomial) = p.m[]
-Base.lastindex(p::LaurentPolynomial) = p.n[]
-Base.eachindex(p::LaurentPolynomial) = degreerange(p)
+minimumexponent(p::LaurentPolynomial) = p.m[]
+degree(p::LaurentPolynomial) = p.n[]
 degreerange(p::LaurentPolynomial) = firstindex(p):lastindex(p)
 
 _convert(p::P, as) where {T,X,P <: LaurentPolynomial{T,X}} = ⟒(P)(as, firstindex(p), Var(X))

@@ -1497,12 +1497,22 @@ end
     @test 0 == @allocated MA.buffered_operate!(buffer, MA.add_mul, c, A, b)
 end
 
-@testset "empty SparsePolynomial" begin
-    p = SparsePolynomial(Float64[0])
-    @test eltype(p) == Float64
-    @test eltype(keys(p)) == Int
-    @test eltype(values(p)) == Float64
-    @test collect(p) == Float64[]
-    @test collect(keys(p)) == Int[]
-    @test collect(values(p)) == Float64[]
+@testset "SparsePolynomial" begin
+    @testset "empty" begin
+        p = SparsePolynomial(Float64[0])
+        @test eltype(p) == Float64
+        @test eltype(keys(p)) == Int
+        @test eltype(values(p)) == Float64
+        @test collect(p) == Float64[]
+        @test collect(keys(p)) == Int[]
+        @test collect(values(p)) == Float64[]
+    end
+    @testset "negative indices" begin
+        d = Dict(-2=>4, 5=>10)
+        p = SparsePolynomial(d)
+        @test length(p) == 8
+        @test firstindex(p) == -2
+        @test lastindex(p) == 5
+        @test eachindex(p) == -2:5
+    end
 end

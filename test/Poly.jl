@@ -1,4 +1,13 @@
 ## Tests for compatiability with the old form
+# Create a separate module so that include(file) doesn't import PolyCompat to Main
+module PolyTests
+
+using LinearAlgebra
+using Test
+using SparseArrays
+using ..Polynomials
+using ..SpecialFunctions
+
 # test for not loaded
 @test_throws UndefVarError Poly([1,2,3])
 @test_throws UndefVarError poly([1,2,3])
@@ -29,7 +38,7 @@ p = Polynomial([1,2,3])
 @test_throws ErrorException polyder(p)
 
 
-        
+
 
 
 ## ---------
@@ -280,15 +289,15 @@ repr(p)
 
 ## changes to show
 p = Poly([1,2,3,1])  # leading coefficient of 1
-@test repr(p) == "Poly(1 + 2*x + 3*x^2 + x^3)"
+@test repr(p) == "$Poly(1 + 2*x + 3*x^2 + x^3)"
 p = Poly([1.0, 2.0, 3.0, 1.0])
-@test repr(p) == "Poly(1.0 + 2.0*x + 3.0*x^2 + 1.0*x^3)"
+@test repr(p) == "$Poly(1.0 + 2.0*x + 3.0*x^2 + 1.0*x^3)"
 p = Poly([1, im])
-@test repr(p) == "Poly(1 + im*x)"
+@test repr(p) == "$Poly(1 + im*x)"
 p = Poly([1+im, 1-im, -1+im, -1 - im])# minus signs
-@test repr(p) == "Poly(1 + im + (1 - im)x - (1 - im)x^2 - (1 + im)x^3)"
+@test repr(p) == "$Poly(1 + im + (1 - im)x - (1 - im)x^2 - (1 + im)x^3)"
 p = Poly([1.0, 0 + NaN*im, NaN, Inf, 0 - Inf*im]) # handle NaN or Inf appropriately
-@test repr(p) == "Poly(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
+@test repr(p) == "$Poly(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
 
 p = Poly([1,2,3])
 @test repr("text/latex", p) == "\$1 + 2\\cdot x + 3\\cdot x^{2}\$"
@@ -497,3 +506,5 @@ end
     PQexpint = Pade(d, 30, 30)
     @test Float64(PQexpint(1.0)) ≈ exp(1) * (-γ - sum([(-1)^k / k / gamma(k + 1) for k = 1:20]))
 end
+
+end # module

@@ -407,7 +407,6 @@ Calculates the p-norm of the polynomial's coefficients
 """
 function LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2)
     vs = values(q)
-    isempty(vs) && return zero(eltype(q))
     return norm(vs, p) # if vs=() must be handled in special type
 end
 
@@ -572,7 +571,7 @@ constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
 Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
 has a nonzero coefficient. The degree of the zero polynomial is defined to be -1. The default method assumes the basis polynomial, `βₖ` has degree `k`.
 """
-degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p)
+degree(p::AbstractPolynomial) = iszero(coeffs(p)) ? -1 : length(coeffs(p)) - 1 + minimumexponent(p)
 
 
 """
@@ -613,9 +612,11 @@ mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, 
 
 #=
 indexing =#
-Base.firstindex(p::AbstractPolynomial) = 0
-Base.lastindex(p::AbstractPolynomial) = length(p) - 1
-Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
+minimumexponent(p::AbstractPolynomial) = minimumexponent(typeof(p))
+minimumexponent(::Type{<:AbstractPolynomial}) = 0
+Base.firstindex(p::AbstractPolynomial) = minimumexponent(p)
+Base.lastindex(p::AbstractPolynomial) = length(p) - 1 + firstindex(p)
+Base.eachindex(p::AbstractPolynomial) = firstindex(p):lastindex(p)
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # getindex
@@ -671,7 +672,7 @@ Base.iterate(p::AbstractPolynomial, state = firstindex(p)) = _iterate(p, state)
 struct PolynomialKeys{P} <: AbstractSet{Int}
     p::P
 end
-struct PolynomialValues{P, T} <: AbstractSet{T}
+struct PolynomialValues{P, T}
     p::P
 
     PolynomialValues{P}(p::P) where {P} = new{P, eltype(p)}(p)
@@ -680,6 +681,7 @@ end
 Base.keys(p::AbstractPolynomial) =  PolynomialKeys(p)
 Base.values(p::AbstractPolynomial) =  PolynomialValues(p)
 Base.length(p::PolynomialValues) = length(p.p.coeffs)
+Base.eltype(p::PolynomialValues{<:Any,T}) where {T} = T
 Base.length(p::PolynomialKeys) = length(p.p.coeffs)
 Base.size(p::Union{PolynomialValues, PolynomialKeys}) = (length(p),)
 function Base.iterate(v::PolynomialKeys, state = firstindex(v.p))
