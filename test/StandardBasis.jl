@@ -1407,6 +1407,10 @@ end
 
     ## issue #320 (fix was broken)
     @test printpoly_to_string(Polynomial(BigInt[1,0,1], :y)) == "1 + y^2"
+
+    # negative indices
+    @test printpoly_to_string(LaurentPolynomial([-1:3;], -2)) == "-x⁻² + 1 + 2*x + 3*x²"
+    @test printpoly_to_string(SparsePolynomial(Dict(.=>(-2:2, -1:3)))) == "-x^-2 + 1 + 2*x + 3*x^2"
 end
 
 @testset "Plotting" begin
@@ -1540,4 +1544,10 @@ end
         @test SparsePolynomial(q) == p
         @test_throws ArgumentError Polynomial(p)
     end
+end
+
+@testset "LaurentPolynomial" begin
+    @test Polynomials.minimumexponent(LaurentPolynomial) == typemin(Int)
+    @test Polynomials.minimumexponent(LaurentPolynomial{Float64}) == typemin(Int)
+    @test Polynomials.minimumexponent(LaurentPolynomial{Float64, :y}) == typemin(Int)
 end
