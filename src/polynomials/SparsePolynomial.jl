@@ -38,7 +38,7 @@ julia> p(1)
 ```
 
 """
-struct SparsePolynomial{T, X} <: StandardBasisPolynomial{T, X}
+struct SparsePolynomial{T, X} <: LaurentBasisPolynomial{T, X}
     coeffs::Dict{Int, T}
     function SparsePolynomial{T, X}(coeffs::AbstractDict{Int, S}) where {T, X, S}
         c = Dict{Int, T}(coeffs)
@@ -73,18 +73,9 @@ function SparsePolynomial{T,X}(coeffs::AbstractVector{S}) where {T, X, S}
     return SparsePolynomial{T,X}(p)
 end
 
-
-
-
-# conversion
-function Base.convert(P::Type{<:Polynomial}, q::SparsePolynomial)
-    ⟒(P)(coeffs(q), indeterminate(q))
-end
-
-function Base.convert(P::Type{<:SparsePolynomial}, q::StandardBasisPolynomial{T}) where {T}
-    R = promote_type(eltype(P), T)
-    ⟒(P){R,indeterminate(P,q)}(coeffs(q))
-end
+minimumexponent(::Type{<:SparsePolynomial}) = typemin(Int)
+minimumexponent(p::SparsePolynomial) = isempty(p.coeffs) ? 0 : min(0, minimum(keys(p.coeffs)))
+Base.firstindex(p::SparsePolynomial) = minimumexponent(p)
 
 ## changes to common
 degree(p::SparsePolynomial) = isempty(p.coeffs) ? -1 : maximum(keys(p.coeffs))
@@ -93,6 +84,8 @@ function isconstant(p::SparsePolynomial)
     (n > 1 || (n==1 && iszero(p[0]))) && return false
     return true
 end
+
+Base.convert(::Type{T}, p::StandardBasisPolynomial) where {T<:SparsePolynomial} = T(Dict(pairs(p)))
 
 function basis(P::Type{<:SparsePolynomial}, n::Int)
     T,X = eltype(P), indeterminate(P)
@@ -104,9 +97,10 @@ end
 function coeffs(p::SparsePolynomial{T})  where {T}
 
     n = degree(p)
-    cs = zeros(T, n+1)
+    cs = zeros(T, length(p))
+    keymin = firstindex(p)
     for (k,v) in p.coeffs
-        cs[k+1]=v
+        cs[k - keymin + 1] = v
     end
     cs
 
@@ -118,7 +112,6 @@ function Base.getindex(p::SparsePolynomial{T}, idx::Int) where {T}
 end
 
 function Base.setindex!(p::SparsePolynomial, value::Number, idx::Int)
-    idx < 0  && return p
     if iszero(value)
         haskey(p.coeffs, idx) && pop!(p.coeffs, idx)
     else
@@ -141,7 +134,10 @@ function Base.iterate(v::PolynomialValues{SparsePolynomial{T,X}}, state...) wher
     return (y[1][2], y[2])
 end
 
-Base.length(S::SparsePolynomial) = isempty(S.coeffs) ? 0 : maximum(keys(S.coeffs)) + 1
+Base.length(S::SparsePolynomial) = isempty(S.coeffs) ? 0 : begin
+    minkey, maxkey = extrema(keys(S.coeffs))
+    maxkey - min(0, minkey) + 1
+end
 
 ##
 ## ----
@@ -198,6 +194,8 @@ function Base.:+(p1::P1, p2::P2) where {T,X, P1<:SparsePolynomial{T,X},
 
 end
 
+Base.:-(a::SparsePolynomial) = typeof(a)(Dict(k=>-v for (k,v) in a.coeffs))
+
 ## Multiplication
 function scalar_mult(p::P, c::S) where {T, X, P <: SparsePolynomial{T,X}, S<:Number}
 
@@ -225,7 +223,6 @@ function scalar_mult(c::S, p::P) where {T, X, P <: SparsePolynomial{T,X}, S<:Num
     return q
 end
 
-
 function Base.:*(p::P, q::Q) where {T,X,P<:SparsePolynomial{T,X},
                                     S,  Q<:SparsePolynomial{S,X}}
     R = promote_type(T,S)
@@ -243,32 +240,12 @@ function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
     hasnan(p) && return P{R,X}(Dict(0 => R(NaN)))
 
     n = degree(p)
-    order > n && return zero(P{R,X})
 
     dpn = zero(P{R,X})
-    @inbounds for k in eachindex(p)
-        dpn[k-order] =  reduce(*, (k - order + 1):k, init = p[k])
+    @inbounds for (k,v) in pairs(p)
+        dpn[k-order] =  reduce(*, (k - order + 1):k, init = v)
     end
 
     return dpn
-
-end
-
-
-function integrate(p::P) where {T, X, P<:SparsePolynomial{T,X}}
-
-    R = eltype(one(T)/1)
-    Q = SparsePolynomial{R,X}
-
-    if hasnan(p)
-        return Q(Dict(0 => NaN))
-    end
-
-    ∫p = zero(Q)
-    for k in eachindex(p)
-        ∫p[k + 1] = p[k] / (k+1)
-    end
-
-    return ∫p
 
 end

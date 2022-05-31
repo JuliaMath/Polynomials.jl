@@ -1,4 +1,5 @@
 abstract type StandardBasisPolynomial{T,X} <: AbstractPolynomial{T,X} end
+abstract type LaurentBasisPolynomial{T,X} <: StandardBasisPolynomial{T,X} end
 
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T}
 
@@ -49,9 +50,11 @@ function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolyno
     if isa(q, P)
         return q
     else
+        minimumexponent(P) <= minimumexponent(q) ||
+            throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
         T = _eltype(P,q)
         X = indeterminate(P,q)
-        return ⟒(P){T,X}([q[i] for i in 0:degree(q)])
+        return ⟒(P){T,X}([q[i] for i in eachindex(q)])
     end
 end
 
@@ -195,6 +198,22 @@ function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
         @inbounds as[i′+1] = pᵢ/i′
     end
     return Q(as)
+end
+
+function integrate(p::P) where {T, X, P <: LaurentBasisPolynomial{T, X}}
+    R = typeof(constantterm(p)/1)
+    Q = ⟒(P){R,X}
+
+    hasnan(p) && return Q([NaN])
+    iszero(p) && return zero(Q)
+
+    ∫p = zero(Q)
+    for (k, pₖ) ∈ pairs(p)
+        iszero(pₖ) && continue
+        k == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
+        ∫p[k+1] = pₖ/(k+1)
+    end
+    ∫p
 end
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}

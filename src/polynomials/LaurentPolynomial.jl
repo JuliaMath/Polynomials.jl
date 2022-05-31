@@ -51,7 +51,7 @@ julia> integrate(q)
 LaurentPolynomial(1.0*x + 0.5*x² + 0.3333333333333333*x³)
 
 julia> integrate(p)  # x⁻¹  term is an issue
-ERROR: ArgumentError: Can't integrate Laurent  polynomial with  `x⁻¹` term
+ERROR: ArgumentError: Can't integrate Laurent polynomial with  `x⁻¹` term
 
 julia> integrate(P([1,1,1], -5))
 LaurentPolynomial(-0.25*x⁻⁴ - 0.3333333333333333*x⁻³ - 0.5*x⁻²)
@@ -69,7 +69,7 @@ julia> x^degree(p) * p(x⁻¹) # reverses  coefficients
 LaurentPolynomial(3.0 + 2.0*x + 1.0*x²)
 ```
 """
-struct LaurentPolynomial{T, X} <: StandardBasisPolynomial{T, X}
+struct LaurentPolynomial{T, X} <: LaurentBasisPolynomial{T, X}
     coeffs::Vector{T}
     m::Base.RefValue{Int}
     n::Base.RefValue{Int}
@@ -126,12 +126,6 @@ Base.promote_rule(::Type{P},::Type{Q}) where {T, X, P <: LaurentPolynomial{T,X},
 Base.promote_rule(::Type{Q},::Type{P}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: StandardBasisPolynomial{S,X}} =
     LaurentPolynomial{promote_type(T, S),X}
 
-function Base.convert(P::Type{<:Polynomial}, q::LaurentPolynomial)
-    m,n = (extrema∘degreerange)(q)
-    m < 0 && throw(ArgumentError("Can't convert a Laurent polynomial with m < 0"))
-    P([q[i] for i  in 0:n], indeterminate(q))
-end
-
 # need to add p.m[], so abstract.jl method isn't sufficent
 # XXX unlike abstract.jl, this uses Y variable in conversion; no error
 # Used in DSP.jl
@@ -154,7 +148,7 @@ function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {P <:Laure
 
      T = _eltype(P, q)
      X = indeterminate(P, q)
-     ⟒(P){T,X}([q[i] for i in 0:degree(q)], 0)
+     ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
  end
 
 function Base.convert(::Type{P}, q::AbstractPolynomial) where {P <:LaurentPolynomial}
@@ -215,10 +209,11 @@ function Base.setindex!(p::LaurentPolynomial{T}, value::Number, idx::Int) where 
 
 end
 
-Base.firstindex(p::LaurentPolynomial) = p.m[]
-Base.lastindex(p::LaurentPolynomial) = p.n[]
-Base.eachindex(p::LaurentPolynomial) = degreerange(p)
-degreerange(p::LaurentPolynomial) = firstindex(p):lastindex(p)
+minimumexponent(::Type{<:LaurentPolynomial}) = typemin(Int)
+minimumexponent(p::LaurentPolynomial) = p.m[]
+Base.firstindex(p::LaurentPolynomial) = minimumexponent(p)
+degree(p::LaurentPolynomial) = p.n[]
+
 
 _convert(p::P, as) where {T,X,P <: LaurentPolynomial{T,X}} = ⟒(P)(as, firstindex(p), Var(X))
 
@@ -517,12 +512,13 @@ function derivative(p::P, order::Integer = 1) where {T, X, P<:LaurentPolynomial{
     n = n - order
     as =  zeros(T, length(m:n))
 
-    for k in eachindex(p)
+    for (k, pₖ) in pairs(p)
+        iszero(pₖ) && continue
         idx = 1 + k - order - m
         if 0 ≤ k ≤ order - 1
             as[idx] = zero(T)
         else
-            as[idx] = reduce(*, (k - order + 1):k, init = p[k])
+            as[idx] = reduce(*, (k - order + 1):k, init = pₖ)
         end
     end
 
@@ -530,38 +526,6 @@ function derivative(p::P, order::Integer = 1) where {T, X, P<:LaurentPolynomial{
 
 end
 
-
-function integrate(p::P) where {T, X, P<: LaurentPolynomial{T, X}}
-
-    !iszero(p[-1])  && throw(ArgumentError("Can't integrate Laurent  polynomial with  `x⁻¹` term"))
-    R = eltype(one(T)/1)
-    Q = ⟒(P){R, X}
-
-    if hasnan(p)
-        return Q([NaN],0)
-    end
-
-
-    m,n = (extrema ∘ degreerange)(p)
-    if  n < 0
-        n = 0
-    else
-        n += 1
-    end
-    if m < 0
-        m += 1
-    else
-        m = 0
-    end
-    as = zeros(R,  length(m:n))
-
-    for k in eachindex(p)
-        as[1 + k+1-m]  =  p[k]/(k+1)
-    end
-
-    return Q(as, m)
-
-end
 
 function Base.gcd(p::LaurentPolynomial{T,X}, q::LaurentPolynomial{T,Y}, args...; kwargs...) where {T,X,Y}
     mp, Mp = (extrema ∘ degreerange)(p)
