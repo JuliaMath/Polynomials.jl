@@ -1025,8 +1025,7 @@ Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 #=
 Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
-function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
-    check_same_variable(p1,p2) || return false
+function Base.:(==)(p1::P, p2::P) where {P <: AbstractPolynomial}
     iszero(p1) && iszero(p2) && return true
     eachindex(p1) == eachindex(p2) || return false
     # coeffs(p1) == coeffs(p2), but non-allocating
@@ -1034,14 +1033,33 @@ function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
     p2val = (p2[i] for i in eachindex(p2))
     all(((a,b),) -> a == b, zip(p1val, p2val))
 end
+function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
+    if isconstant(p1)
+        isconstant(p2) && return constantterm(p1) == constantterm(p2)
+        return false
+    elseif isconstant(p2)
+        return false # p1 is not constant
+    end
+    check_same_variable(p1, p2) || return false
+    ==(promote(p1,p2)...)
+end
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
+function Base.isapprox(p1::AbstractPolynomial, p2::AbstractPolynomial; kwargs...)
+    if isconstant(p1)
+        isconstant(p2) && return constantterm(p1) == constantterm(p2)
+        return false
+    elseif isconstant(p2)
+        return false
+    end
+    isapprox(promote(p1, p2)...; kwargs...)
+end
+
 function Base.isapprox(p1::AbstractPolynomial{T,X},
-                       p2::AbstractPolynomial{S,Y};
-                       rtol::Real = (Base.rtoldefault(T, S, 0)),
-                       atol::Real = 0,) where {T,X,S,Y}
-    assert_same_variable(p1, p2)
+                       p2::AbstractPolynomial{T,X};
+                       rtol::Real = (Base.rtoldefault(T,T,0)),
+                       atol::Real = 0,) where {T,X}
     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
     # copy over from abstractarray.jl
     Δ  = norm(p1-p2)
