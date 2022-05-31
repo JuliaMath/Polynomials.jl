@@ -407,7 +407,6 @@ Calculates the p-norm of the polynomial's coefficients
 """
 function LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2)
     vs = values(q)
-    isempty(vs) && return zero(eltype(q))
     return norm(vs, p) # if vs=() must be handled in special type
 end
 
@@ -572,7 +571,7 @@ constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
 Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
 has a nonzero coefficient. The degree of the zero polynomial is defined to be -1. The default method assumes the basis polynomial, `βₖ` has degree `k`.
 """
-degree(p::AbstractPolynomial) = iszero(p) ? -1 : lastindex(p)
+degree(p::AbstractPolynomial) = iszero(coeffs(p)) ? -1 : length(coeffs(p)) - 1 + min(0, minimumexponent(p))
 
 
 """
@@ -613,9 +612,15 @@ mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, 
 
 #=
 indexing =#
+# minimumexponent(p) returns min(0, minimum(keys(p)))
+# For most polynomial types, this is statically known to be zero
+# For polynomials that support negative indices, minimumexponent(typeof(p))
+# should return typemin(Int)
+minimumexponent(p::AbstractPolynomial) = minimumexponent(typeof(p))
+minimumexponent(::Type{<:AbstractPolynomial}) = 0
 Base.firstindex(p::AbstractPolynomial) = 0
-Base.lastindex(p::AbstractPolynomial) = length(p) - 1
-Base.eachindex(p::AbstractPolynomial) = 0:length(p) - 1
+Base.lastindex(p::AbstractPolynomial) = length(p) - 1 + firstindex(p)
+Base.eachindex(p::AbstractPolynomial) = firstindex(p):lastindex(p)
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 
 # getindex
@@ -671,7 +676,7 @@ Base.iterate(p::AbstractPolynomial, state = firstindex(p)) = _iterate(p, state)
 struct PolynomialKeys{P} <: AbstractSet{Int}
     p::P
 end
-struct PolynomialValues{P, T} <: AbstractSet{T}
+struct PolynomialValues{P, T}
     p::P
 
     PolynomialValues{P}(p::P) where {P} = new{P, eltype(p)}(p)
@@ -680,6 +685,7 @@ end
 Base.keys(p::AbstractPolynomial) =  PolynomialKeys(p)
 Base.values(p::AbstractPolynomial) =  PolynomialValues(p)
 Base.length(p::PolynomialValues) = length(p.p.coeffs)
+Base.eltype(p::PolynomialValues{<:Any,T}) where {T} = T
 Base.length(p::PolynomialKeys) = length(p.p.coeffs)
 Base.size(p::Union{PolynomialValues, PolynomialKeys}) = (length(p),)
 function Base.iterate(v::PolynomialKeys, state = firstindex(v.p))
@@ -1018,8 +1024,15 @@ Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 #=
 Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
-Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) =
-    check_same_variable(p1,p2) && (coeffs(p1) == coeffs(p2))
+function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
+    check_same_variable(p1,p2) || return false
+    iszero(p1) && iszero(p2) && return true
+    eachindex(p1) == eachindex(p2) || return false
+    # coeffs(p1) == coeffs(p2), but non-allocating
+    p1val = (p1[i] for i in eachindex(p1))
+    p2val = (p2[i] for i in eachindex(p2))
+    all(((a,b),) -> a == b, zip(p1val, p2val))
+end
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 

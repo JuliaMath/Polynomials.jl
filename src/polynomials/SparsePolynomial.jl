@@ -73,18 +73,9 @@ function SparsePolynomial{T,X}(coeffs::AbstractVector{S}) where {T, X, S}
     return SparsePolynomial{T,X}(p)
 end
 
-
-
-
-# conversion
-function Base.convert(P::Type{<:Polynomial}, q::SparsePolynomial)
-    ⟒(P)(coeffs(q), indeterminate(q))
-end
-
-function Base.convert(P::Type{<:SparsePolynomial}, q::StandardBasisPolynomial{T}) where {T}
-    R = promote_type(eltype(P), T)
-    ⟒(P){R,indeterminate(P,q)}(coeffs(q))
-end
+minimumexponent(::Type{<:SparsePolynomial}) = typemin(Int)
+minimumexponent(p::SparsePolynomial) = isempty(p.coeffs) ? 0 : min(0, minimum(keys(p.coeffs)))
+Base.firstindex(p::SparsePolynomial) = minimumexponent(p)
 
 ## changes to common
 degree(p::SparsePolynomial) = isempty(p.coeffs) ? -1 : maximum(keys(p.coeffs))
@@ -93,6 +84,8 @@ function isconstant(p::SparsePolynomial)
     (n > 1 || (n==1 && iszero(p[0]))) && return false
     return true
 end
+
+Base.convert(::Type{T}, p::StandardBasisPolynomial) where {T<:SparsePolynomial} = T(Dict(pairs(p)))
 
 function basis(P::Type{<:SparsePolynomial}, n::Int)
     T,X = eltype(P), indeterminate(P)
@@ -104,9 +97,10 @@ end
 function coeffs(p::SparsePolynomial{T})  where {T}
 
     n = degree(p)
-    cs = zeros(T, n+1)
+    cs = zeros(T, length(p))
+    keymin = firstindex(p)
     for (k,v) in p.coeffs
-        cs[k+1]=v
+        cs[k - keymin + 1] = v
     end
     cs
 
@@ -141,7 +135,10 @@ function Base.iterate(v::PolynomialValues{SparsePolynomial{T,X}}, state...) wher
     return (y[1][2], y[2])
 end
 
-Base.length(S::SparsePolynomial) = isempty(S.coeffs) ? 0 : maximum(keys(S.coeffs)) + 1
+Base.length(S::SparsePolynomial) = isempty(S.coeffs) ? 0 : begin
+    minkey, maxkey = extrema(keys(S.coeffs))
+    maxkey - min(0, minkey) + 1
+end
 
 ##
 ## ----
@@ -198,6 +195,8 @@ function Base.:+(p1::P1, p2::P2) where {T,X, P1<:SparsePolynomial{T,X},
 
 end
 
+Base.:-(a::SparsePolynomial) = typeof(a)(Dict(k=>-v for (k,v) in a.coeffs))
+
 ## Multiplication
 function scalar_mult(p::P, c::S) where {T, X, P <: SparsePolynomial{T,X}, S<:Number}
 
@@ -224,7 +223,6 @@ function scalar_mult(c::S, p::P) where {T, X, P <: SparsePolynomial{T,X}, S<:Num
 
     return q
 end
-
 
 function Base.:*(p::P, q::Q) where {T,X,P<:SparsePolynomial{T,X},
                                     S,  Q<:SparsePolynomial{S,X}}
