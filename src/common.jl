@@ -1018,17 +1018,31 @@ Base.rem(n::AbstractPolynomial, d::AbstractPolynomial) = divrem(n, d)[2]
 #=
 Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractPolynomial} = hash(p1) == hash(p2)
-Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial) = ==(promote(p1,p2)...)
+function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
+    if isconstant(p1)
+        isconstant(p2) && return constantterm(p1) == constantterm(p2)
+        return false
+    end
+    indeterminate(p1) == indeterminate(p2) || return false
+    ==(promote(p1,p2)...)
+end
 Base.:(==)(p1::P, p2::P) where {P <: AbstractPolynomial} =
     check_same_variable(p1,p2) && (coeffs(p1) == coeffs(p2))
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
+function Base.isapprox(p1::AbstractPolynomial, p2::AbstractPolynomial; kwargs...)
+    if isconstant(p1)
+        isconstant(p2) && return constantterm(p1) == constantterm(p2)
+        return false
+    end
+    isapprox(promote(p1, p2)...; kwargs...)
+end
+
 function Base.isapprox(p1::AbstractPolynomial{T,X},
-                       p2::AbstractPolynomial{S,Y};
-                       rtol::Real = (Base.rtoldefault(T, S, 0)),
-                       atol::Real = 0,) where {T,X,S,Y}
-    assert_same_variable(p1, p2)
+                       p2::AbstractPolynomial{T,X};
+                       rtol::Real = (Base.rtoldefault(T,T,0)),
+                       atol::Real = 0,) where {T,X}
     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
     # copy over from abstractarray.jl
     Δ  = norm(p1-p2)
