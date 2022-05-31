@@ -148,7 +148,7 @@ function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {P <:Laure
 
      T = _eltype(P, q)
      X = indeterminate(P, q)
-     ⟒(P){T,X}([q[i] for i in eachindex(q)], minimumexponent(q))
+     ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
  end
 
 function Base.convert(::Type{P}, q::AbstractPolynomial) where {P <:LaurentPolynomial}
