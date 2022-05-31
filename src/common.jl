@@ -622,6 +622,7 @@ Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1 + firstindex(p)
 Base.eachindex(p::AbstractPolynomial) = firstindex(p):lastindex(p)
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
+degreerange(p::AbstractPolynomial) = firstindex(p):lastindex(p)
 
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T}

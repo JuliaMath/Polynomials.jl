@@ -38,7 +38,7 @@ julia> p(1)
 ```
 
 """
-struct SparsePolynomial{T, X} <: StandardBasisPolynomial{T, X}
+struct SparsePolynomial{T, X} <: LaurentBasisPolynomial{T, X}
     coeffs::Dict{Int, T}
     function SparsePolynomial{T, X}(coeffs::AbstractDict{Int, S}) where {T, X, S}
         c = Dict{Int, T}(coeffs)
@@ -112,7 +112,6 @@ function Base.getindex(p::SparsePolynomial{T}, idx::Int) where {T}
 end
 
 function Base.setindex!(p::SparsePolynomial, value::Number, idx::Int)
-    idx < 0  && return p
     if iszero(value)
         haskey(p.coeffs, idx) && pop!(p.coeffs, idx)
     else
@@ -241,32 +240,12 @@ function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
     hasnan(p) && return P{R,X}(Dict(0 => R(NaN)))
 
     n = degree(p)
-    order > n && return zero(P{R,X})
 
     dpn = zero(P{R,X})
-    @inbounds for k in eachindex(p)
-        dpn[k-order] =  reduce(*, (k - order + 1):k, init = p[k])
+    @inbounds for (k,v) in pairs(p)
+        dpn[k-order] =  reduce(*, (k - order + 1):k, init = v)
     end
 
     return dpn
-
-end
-
-
-function integrate(p::P) where {T, X, P<:SparsePolynomial{T,X}}
-
-    R = eltype(one(T)/1)
-    Q = SparsePolynomial{R,X}
-
-    if hasnan(p)
-        return Q(Dict(0 => NaN))
-    end
-
-    ∫p = zero(Q)
-    for k in eachindex(p)
-        ∫p[k + 1] = p[k] / (k+1)
-    end
-
-    return ∫p
 
 end
