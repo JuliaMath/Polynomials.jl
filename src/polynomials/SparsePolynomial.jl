@@ -112,7 +112,6 @@ function Base.getindex(p::SparsePolynomial{T}, idx::Int) where {T}
 end
 
 function Base.setindex!(p::SparsePolynomial, value::Number, idx::Int)
-    idx < 0  && return p
     if iszero(value)
         haskey(p.coeffs, idx) && pop!(p.coeffs, idx)
     else
@@ -241,11 +240,10 @@ function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
     hasnan(p) && return P{R,X}(Dict(0 => R(NaN)))
 
     n = degree(p)
-    order > n && return zero(P{R,X})
 
     dpn = zero(P{R,X})
-    @inbounds for k in eachindex(p)
-        dpn[k-order] =  reduce(*, (k - order + 1):k, init = p[k])
+    @inbounds for (k,v) in pairs(p)
+        dpn[k-order] =  reduce(*, (k - order + 1):k, init = v)
     end
 
     return dpn
@@ -263,7 +261,8 @@ function integrate(p::P) where {T, X, P<:SparsePolynomial{T,X}}
     end
 
     ∫p = zero(Q)
-    for k in eachindex(p)
+    for (k,v) in pairs(p)
+        k == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
         ∫p[k + 1] = p[k] / (k+1)
     end
 
