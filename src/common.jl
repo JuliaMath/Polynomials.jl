@@ -1028,7 +1028,7 @@ function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
     check_same_variable(p1,p2) || return false
     iszero(p1) && iszero(p2) && return true
     eachindex(p1) == eachindex(p2) || return false
-    coeffs(p1) == coeffs(p2)
+    mapreduce(==, &, coeffs(p1), coeffs(p2))
 end
 Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n

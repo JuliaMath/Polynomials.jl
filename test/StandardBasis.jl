@@ -774,6 +774,17 @@ end
     @test s2 == s
     s3 = SparsePolynomial{Float64}(s)
     @test s3 isa SparsePolynomial{Float64,indeterminate(s)}
+
+    # conversions between pairs of polynomial types
+    c = [1:5;]
+    Psexact = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
+    @testset for P1 in Ps
+        p = P1(c)
+        @testset for P2 in Psexact
+            @test convert(P2, p) == p
+        end
+        @test convert(FactoredPolynomial, p) ≈ p
+    end
 end
 
 @testset "Roots" begin
