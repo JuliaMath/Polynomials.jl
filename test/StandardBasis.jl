@@ -1199,7 +1199,7 @@ end
 @testset "Iteration" begin
     p, ip, lp, sp = ps = (Polynomial([1,2,0,4]), ImmutablePolynomial((1,2,0,4)),
                           LaurentPolynomial([1,2,0,4], -2), SparsePolynomial(Dict(0=>1, 1=>2, 3=>4)))
-    @test for pp ∈ ps
+    @testset for pp ∈ ps
         # iteration
         @test all(collect(pp) .== coeffs(pp))
 
