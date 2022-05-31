@@ -1,4 +1,5 @@
 abstract type StandardBasisPolynomial{T,X} <: AbstractPolynomial{T,X} end
+abstract type LaurentBasisPolynomial{T,X} <: StandardBasisPolynomial{T,X} end
 
 function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T}
 
@@ -197,6 +198,22 @@ function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
         @inbounds as[i′+1] = pᵢ/i′
     end
     return Q(as)
+end
+
+function integrate(p::P) where {T, X, P <: LaurentBasisPolynomial{T, X}}
+    R = typeof(constantterm(p)/1)
+    Q = ⟒(P){R,X}
+
+    hasnan(p) && return Q([NaN])
+    iszero(p) && return zero(Q)
+
+    ∫p = zero(Q)
+    for (k, pₖ) ∈ pairs(p)
+        iszero(pₖ) && continue
+        k == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
+        ∫p[k+1] = pₖ/(k+1)
+    end
+    ∫p
 end
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}

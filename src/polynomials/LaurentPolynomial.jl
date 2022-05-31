@@ -69,7 +69,7 @@ julia> x^degree(p) * p(x⁻¹) # reverses  coefficients
 LaurentPolynomial(3.0 + 2.0*x + 1.0*x²)
 ```
 """
-struct LaurentPolynomial{T, X} <: StandardBasisPolynomial{T, X}
+struct LaurentPolynomial{T, X} <: LaurentBasisPolynomial{T, X}
     coeffs::Vector{T}
     m::Base.RefValue{Int}
     n::Base.RefValue{Int}
@@ -213,7 +213,7 @@ minimumexponent(::Type{<:LaurentPolynomial}) = typemin(Int)
 minimumexponent(p::LaurentPolynomial) = p.m[]
 Base.firstindex(p::LaurentPolynomial) = minimumexponent(p)
 degree(p::LaurentPolynomial) = p.n[]
-degreerange(p::LaurentPolynomial) = firstindex(p):lastindex(p)
+
 
 _convert(p::P, as) where {T,X,P <: LaurentPolynomial{T,X}} = ⟒(P)(as, firstindex(p), Var(X))
 
@@ -512,12 +512,13 @@ function derivative(p::P, order::Integer = 1) where {T, X, P<:LaurentPolynomial{
     n = n - order
     as =  zeros(T, length(m:n))
 
-    for k in eachindex(p)
+    for (k, pₖ) in pairs(p)
+        iszero(pₖ) && continue
         idx = 1 + k - order - m
         if 0 ≤ k ≤ order - 1
             as[idx] = zero(T)
         else
-            as[idx] = reduce(*, (k - order + 1):k, init = p[k])
+            as[idx] = reduce(*, (k - order + 1):k, init = pₖ)
         end
     end
 
@@ -525,38 +526,6 @@ function derivative(p::P, order::Integer = 1) where {T, X, P<:LaurentPolynomial{
 
 end
 
-
-function integrate(p::P) where {T, X, P<: LaurentPolynomial{T, X}}
-
-    !iszero(p[-1])  && throw(ArgumentError("Can't integrate Laurent  polynomial with  `x⁻¹` term"))
-    R = eltype(one(T)/1)
-    Q = ⟒(P){R, X}
-
-    if hasnan(p)
-        return Q([NaN],0)
-    end
-
-
-    m,n = (extrema ∘ degreerange)(p)
-    if  n < 0
-        n = 0
-    else
-        n += 1
-    end
-    if m < 0
-        m += 1
-    else
-        m = 0
-    end
-    as = zeros(R,  length(m:n))
-
-    for k in eachindex(p)
-        as[1 + k+1-m]  =  p[k]/(k+1)
-    end
-
-    return Q(as, m)
-
-end
 
 function Base.gcd(p::LaurentPolynomial{T,X}, q::LaurentPolynomial{T,Y}, args...; kwargs...) where {T,X,Y}
     mp, Mp = (extrema ∘ degreerange)(p)

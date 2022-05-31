@@ -933,6 +933,14 @@ end
         # Issue with overflow and polyder Issue #159
         @test derivative(P(BigInt[0, 1])^100, 100) == P(factorial(big(100)))
     end
+
+    # Sparse and Laurent test issue #409
+    pₛ, pₗ = SparsePolynomial(Dict(-1=>1, 1=>1)), LaurentPolynomial([1,0,1], -1)
+    @test pₛ == pₗ && derivative(pₛ) == derivative(pₗ)
+    @test_throws ArgumentError integrate(pₛ)
+    @test_throws ArgumentError integrate(pₗ)
+    qₛ, qₗ = SparsePolynomial(Dict(-2=>1, 1=>1)), LaurentPolynomial([1,0,0,1], -2)
+    @test qₛ == qₗ && integrate(qₛ) == integrate(qₗ)
 end
 
 @testset "Elementwise Operations" begin

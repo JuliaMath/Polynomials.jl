@@ -38,7 +38,7 @@ julia> p(1)
 ```
 
 """
-struct SparsePolynomial{T, X} <: StandardBasisPolynomial{T, X}
+struct SparsePolynomial{T, X} <: LaurentBasisPolynomial{T, X}
     coeffs::Dict{Int, T}
     function SparsePolynomial{T, X}(coeffs::AbstractDict{Int, S}) where {T, X, S}
         c = Dict{Int, T}(coeffs)
@@ -247,25 +247,5 @@ function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
     end
 
     return dpn
-
-end
-
-
-function integrate(p::P) where {T, X, P<:SparsePolynomial{T,X}}
-
-    R = eltype(one(T)/1)
-    Q = SparsePolynomial{R,X}
-
-    if hasnan(p)
-        return Q(Dict(0 => NaN))
-    end
-
-    ∫p = zero(Q)
-    for (k,v) in pairs(p)
-        k == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
-        ∫p[k + 1] = p[k] / (k+1)
-    end
-
-    return ∫p
 
 end
