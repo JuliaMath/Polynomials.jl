@@ -199,6 +199,12 @@ end
         @test degree(truncate(p - integrate(derivative(p)), atol=1e-8)) <= 0
         @test degree(truncate(p - derivative(integrate(p)), atol=1e-8)) <= 0
     end
+
+    ## issue SpeicalPolynomials #56
+    coeffs  = [3 // 4, -2 // 1, 1 // 1]
+    p = ChebyshevT(coeffs)
+    @test derivative(p) ≈ convert(ChebyshevT, derivative(convert(Polynomial, p)))
+    @test derivative(p, 2) ≈ convert(ChebyshevT, derivative(convert(Polynomial, p), 2))
 end
 
 @testset "z-series" for i in 0:5
