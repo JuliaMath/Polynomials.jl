@@ -73,17 +73,9 @@ function SparsePolynomial{T,X}(coeffs::AbstractVector{S}) where {T, X, S}
     return SparsePolynomial{T,X}(p)
 end
 
+minimumexponent(::Type{<:SparsePolynomial}) = typemin(Int)
 minimumexponent(p::SparsePolynomial) = isempty(p.coeffs) ? 0 : min(0, minimum(keys(p.coeffs)))
-
-# conversion
-function Base.convert(P::Type{<:Polynomial}, q::SparsePolynomial)
-    ⟒(P)(coeffs(q), indeterminate(q))
-end
-
-function Base.convert(P::Type{<:SparsePolynomial}, q::StandardBasisPolynomial{T}) where {T}
-    R = promote_type(eltype(P), T)
-    ⟒(P){R,indeterminate(P,q)}(coeffs(q))
-end
+Base.firstindex(p::SparsePolynomial) = minimumexponent(p)
 
 ## changes to common
 degree(p::SparsePolynomial) = isempty(p.coeffs) ? -1 : maximum(keys(p.coeffs))
@@ -92,6 +84,8 @@ function isconstant(p::SparsePolynomial)
     (n > 1 || (n==1 && iszero(p[0]))) && return false
     return true
 end
+
+Base.convert(::Type{T}, p::StandardBasisPolynomial) where {T<:SparsePolynomial} = T(Dict(pairs(p)))
 
 function basis(P::Type{<:SparsePolynomial}, n::Int)
     T,X = eltype(P), indeterminate(P)

@@ -126,12 +126,6 @@ Base.promote_rule(::Type{P},::Type{Q}) where {T, X, P <: LaurentPolynomial{T,X},
 Base.promote_rule(::Type{Q},::Type{P}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: StandardBasisPolynomial{S,X}} =
     LaurentPolynomial{promote_type(T, S),X}
 
-function Base.convert(P::Type{<:Polynomial}, q::LaurentPolynomial)
-    m,n = (extrema∘degreerange)(q)
-    m < 0 && throw(ArgumentError("Can't convert a Laurent polynomial with m < 0"))
-    P([q[i] for i  in 0:n], indeterminate(q))
-end
-
 # need to add p.m[], so abstract.jl method isn't sufficent
 # XXX unlike abstract.jl, this uses Y variable in conversion; no error
 # Used in DSP.jl
@@ -215,7 +209,9 @@ function Base.setindex!(p::LaurentPolynomial{T}, value::Number, idx::Int) where 
 
 end
 
+minimumexponent(::Type{<:LaurentPolynomial}) = typemin(Int)
 minimumexponent(p::LaurentPolynomial) = p.m[]
+Base.firstindex(p::LaurentPolynomial) = minimumexponent(p)
 degree(p::LaurentPolynomial) = p.n[]
 degreerange(p::LaurentPolynomial) = firstindex(p):lastindex(p)
 

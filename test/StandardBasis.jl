@@ -734,7 +734,7 @@ end
 @testset "Conversion" begin
 
     X = :x
-    for P in Ps
+    @testset for P in Ps
         if !isimmutable(P)
             p = P([0,one(Float64)])
             @test P{Complex{Float64},X} == typeof(p + 1im)
@@ -761,12 +761,19 @@ end
 
     # issue #358 `P(p::AbstractPolynomial)` should be `convert(P, p)` not `P(pᵢ for pᵢ ∈ p))`
     x² = Polynomial([0,0,1], :x)
-    for P ∈ (ImmutablePolynomial, SparsePolynomial, ChebyshevT)
+    @testset for P ∈ (ImmutablePolynomial, SparsePolynomial, ChebyshevT)
         @test P(x²) == convert(P, x²)
         Q = P{Float64}
         @test Q(x²) == convert(Q, x²)
     end
 
+    # preserve eltype in SparsePolynomial
+    s = SparsePolynomial(Dict(1=>3, 2=>4))
+    s2 = SparsePolynomial(s)
+    @test s2 isa typeof(s)
+    @test s2 == s
+    s3 = SparsePolynomial{Float64}(s)
+    @test s3 isa SparsePolynomial{Float64,indeterminate(s)}
 end
 
 @testset "Roots" begin
@@ -1516,5 +1523,7 @@ end
         @test eachindex(p) == -2:5
         q = LaurentPolynomial(p)
         @test p == q
+        @test SparsePolynomial(q) == p
+        @test_throws ArgumentError Polynomial(p)
     end
 end

@@ -612,11 +612,13 @@ mapdomain(::P, x::AbstractArray) where {P <: AbstractPolynomial} = mapdomain(P, 
 
 #=
 indexing =#
-# minimumexponent returns min(0, minimum(keys(p)))
+# minimumexponent(p) returns min(0, minimum(keys(p)))
 # For most polynomial types, this is statically known to be zero
+# For polynomials that support negative indices, minimumexponent(typeof(p))
+# should return typemin(Int)
 minimumexponent(p::AbstractPolynomial) = minimumexponent(typeof(p))
 minimumexponent(::Type{<:AbstractPolynomial}) = 0
-Base.firstindex(p::AbstractPolynomial) = minimumexponent(p)
+Base.firstindex(p::AbstractPolynomial) = 0
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1 + firstindex(p)
 Base.eachindex(p::AbstractPolynomial) = firstindex(p):lastindex(p)
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
