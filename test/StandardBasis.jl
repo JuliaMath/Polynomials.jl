@@ -1515,6 +1515,9 @@ end
 end
 
 @testset "SparsePolynomial" begin
+    @test Polynomials.minimumexponent(SparsePolynomial) == typemin(Int)
+    @test Polynomials.minimumexponent(SparsePolynomial{Float64}) == typemin(Int)
+    @test Polynomials.minimumexponent(SparsePolynomial{Float64, :y}) == typemin(Int)
     @testset "empty" begin
         p = SparsePolynomial(Float64[0])
         @test eltype(p) == Float64
