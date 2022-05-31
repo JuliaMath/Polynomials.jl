@@ -1199,7 +1199,7 @@ end
 @testset "Iteration" begin
     p, ip, lp, sp = ps = (Polynomial([1,2,0,4]), ImmutablePolynomial((1,2,0,4)),
                           LaurentPolynomial([1,2,0,4], -2), SparsePolynomial(Dict(0=>1, 1=>2, 3=>4)))
-    for pp ∈ ps
+    @test for pp ∈ ps
         # iteration
         @test all(collect(pp) .== coeffs(pp))
 
@@ -1222,6 +1222,18 @@ end
         else
             @test first(Polynomials.monomials(pp)) ∈ [pp[i] * Polynomials.basis(pp,i) for i ∈ keys(pp)]
         end
+    end
+
+    @testset "PolynomialKeys/PolynomialValues" begin
+        p = Polynomial(Float64[1,2,3])
+        pv = Polynomials.PolynomialValues{typeof(p)}(p)
+        @test length(pv) == length(p)
+        @test size(pv) == size(p)
+        @test eltype(pv) == eltype(p)
+        pk = Polynomials.PolynomialKeys{typeof(p)}(p)
+        @test eltype(pk) == Int
+        @test length(pv) == length(p)
+        @test size(pv) == size(p)
     end
 
 end
