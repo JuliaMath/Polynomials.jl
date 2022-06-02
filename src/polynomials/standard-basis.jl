@@ -125,8 +125,7 @@ end
     end
 
     return quote
-        # Base.@_inline_meta 1.8 deprecation
-        Base.@inline
+        Base.@_inline_meta # 1.8 deprecation
         tuple($(exprs...))
     end
 

@@ -240,8 +240,8 @@ LinearAlgebra.norm(q::ImmutablePolynomial, p::Real) = _norm(q.coeffs, p)
     end
 
     return quote
-        # $(Expr(:meta, :inline)) # 1.8 deprecation
-        Base.@inline
+        $(Expr(:meta, :inline)) # 1.8 deprecation
+        #Base.@inline
         @inbounds return sqrt($expr)
     end
 
@@ -260,8 +260,8 @@ _norm_p0(x) = iszero(x) ? zero(x) : one(x)
     end
 
     return quote
-        # $(Expr(:meta, :inline)) 1.8 deprecation
-        Base.@inline
+        $(Expr(:meta, :inline)) # 1.8 deprecation
+        #Base.@inline
         if p == Inf
             return mapreduce(abs, max, a)
         elseif p == 1
