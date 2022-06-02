@@ -17,17 +17,17 @@ This package supports Julia v1.6 and later.
 
 ## Available Types of Polynomials
 
-* `Polynomial` –⁠ standard basis polynomials, `a(x) = a₀ + a₁ x + a₂ x² + … + aₙ xⁿ`,  `n ≥ 0`
+* `Polynomial` –⁠ standard basis polynomials, $a(x) = a_0 + a_1 x + a_2 x^2 + … + a_n  x^n$ for $n ≥ 0$.
 * `ImmutablePolynomial` –⁠ standard basis polynomials backed by a [Tuple type](https://docs.julialang.org/en/v1/manual/functions/#Tuples-1) for faster evaluation of values
 * `SparsePolynomial` –⁠ standard basis polynomial backed by a [dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1) to hold  sparse high-degree  polynomials
-* `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), `a(x) = aₘ xᵐ + … + aₙ xⁿ` `m ≤ n`, `m,n ∈ ℤ` backed by an [offset array](https://github.com/JuliaArrays/OffsetArrays.jl); for example, if `m<0` and `n>0`, `a(x) = aₘ xᵐ + … + a₋₁ x⁻¹ + a₀ + a₁ x + … +  aₙ xⁿ`
+* `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), $a(x) = a_m x^m + … + a_n x^n$ for $m ≤ n$ and $m,n ∈ ℤ$. This is backed by an [offset array](https://github.com/JuliaArrays/OffsetArrays.jl); for example, if $m<0$ and $n>0$, we obtain $a(x) = a_m x^m + … + a_{-1} x^{-1} + a_0 + a_1 x + … +  a_n x^n$
 * `FactoredPolynomial` –⁠ standard basis polynomials, storing the roots, with multiplicity, and leading coefficient of a polynomial
 * `ChebyshevT` –⁠ [Chebyshev polynomials](https://en.wikipedia.org/wiki/Chebyshev_polynomials) of the first kind
 * `RationalFunction` - a type for ratios of polynomials.
 
 ## Usage
 
-```jldoctest
+```julia
 julia> using Polynomials
 ```
 
@@ -35,28 +35,28 @@ julia> using Polynomials
 
 Construct a polynomial from an array (a vector) of its coefficients, lowest order first.
 
-```jldoctest
+```julia
 julia> Polynomial([1,0,3,4])
 Polynomial(1 + 3*x^2 + 4*x^3)
 ```
 
 Optionally, the variable of the polynomial can be specified.
 
-```jldoctest
+```julia
 julia> Polynomial([1,2,3], :s)
 Polynomial(1 + 2*s + 3*s^2)
 ```
 
 Construct a polynomial from its roots.
 
-```jldoctest
+```julia
 julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
 Polynomial(-6 + 11*x - 6*x^2 + x^3)
 ```
 
 Evaluate the polynomial `p` at `x`.
 
-```jldoctest
+```julia
 julia> p = Polynomial([1, 0, -1]);
 julia> p(0.1)
 0.99
@@ -66,7 +66,7 @@ julia> p(0.1)
 
 Methods are added to the usual arithmetic operators so that they work on polynomials, and combinations of polynomials and scalars.
 
-```jldoctest
+```julia
 julia> p = Polynomial([1,2])
 Polynomial(1 + 2*x)
 
@@ -103,7 +103,7 @@ Polynomial(0.25 - 0.5*x)
 
 Most operations involving polynomials with different variables will error.
 
-```jldoctest
+```julia
 julia> p = Polynomial([1, 2, 3], :x);
 julia> q = Polynomial([1, 2, 3], :s);
 julia> p + q
@@ -183,7 +183,7 @@ Integrate the polynomial `p` term by term, optionally adding a constant
 term `k`. The degree of the resulting polynomial is one higher than the
 degree of `p` (for a nonzero polynomial).
 
-```jldoctest
+```julia
 julia> integrate(Polynomial([1, 0, -1]))
 Polynomial(1.0*x - 0.3333333333333333*x^3)
 
@@ -195,7 +195,7 @@ Differentiate the polynomial `p` term by term. For non-zero
 polynomials the degree of the resulting polynomial is one lower than
 the degree of `p`.
 
-```jldoctest
+```julia
 julia> derivative(Polynomial([1, 3, -1]))
 Polynomial(3 - 2*x)
 ```
@@ -206,7 +206,7 @@ Polynomial(3 - 2*x)
 Return the roots (zeros) of `p`, with multiplicity. The number of
 roots returned is equal to the degree of `p`. By design, this is not type-stable, the returned roots may be real or complex.
 
-```jldoctest
+```julia
 julia> roots(Polynomial([1, 0, -1]))
 2-element Vector{Float64}:
  -1.0
@@ -227,7 +227,7 @@ julia> roots(Polynomial([0, 0, 1]))
 
 Fit a polynomial (of degree `deg` or less) to `x` and `y` using a least-squares approximation.
 
-```jldoctest
+```julia
 julia> xs = 0:4; ys = @. exp(-xs) + sin(xs);
 
 julia> fit(xs, ys) |> p -> round.(coeffs(p), digits=4) |> Polynomial
