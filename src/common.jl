@@ -1053,6 +1053,7 @@ function Base.isapprox(p1::AbstractPolynomial, p2::AbstractPolynomial; kwargs...
     elseif isconstant(p2)
         return false
     end
+    assert_same_variable(p1, p2) || return false
     isapprox(promote(p1, p2)...; kwargs...)
 end
 
