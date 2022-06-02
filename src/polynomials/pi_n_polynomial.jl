@@ -28,7 +28,10 @@ Polynomials.@register PnPolynomial
 # change broadcast semantics
 Base.broadcastable(p::PnPolynomial) = p.coeffs;
 Base.ndims(::Type{<:PnPolynomial}) = 1
-Base.copyto!(p::PnPolynomial, x) = copyto!(p.coeffs, x);
+Base.copyto!(p::PnPolynomial{T, X}, x::S) where
+{T, X,
+ S<:Union{AbstractVector, Base.AbstractBroadcasted, Tuple} # to avoid an invalidation. Might need to be more general?
+ } = copyto!(p.coeffs, x)
 
 function Polynomials.degree(p::PnPolynomial)
     i = findlast(!iszero, p.coeffs)
@@ -43,9 +46,8 @@ function LinearAlgebra.mul!(pq, p::PnPolynomial{T,X}, q) where {T,X}
     for i ∈ 0:m
         for j ∈ 0:n
             k = i + j
-            pq.coeffs[1+k] += p.coeffs[1+i] * q.coeffs[1+j]
+            @inbounds pq.coeffs[1+k] += p.coeffs[1+i] * q.coeffs[1+j]
         end
     end
     nothing
 end
-

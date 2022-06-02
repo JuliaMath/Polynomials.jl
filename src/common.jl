@@ -897,6 +897,7 @@ end
 
     return quote
         Base.@_inline_meta
+        #Base.@inline
         tuple($(exprs...))
     end
 
