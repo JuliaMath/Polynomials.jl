@@ -17,7 +17,7 @@ This package supports Julia v1.6 and later.
 
 ## Available Types of Polynomials
 
-* `Polynomial` –⁠ standard basis polynomials, $a(x) = a_0 + a_1 x + a_2 x^2 + … + a_n  x^n$,  `n ≥ 0`
+* `Polynomial` –⁠ standard basis polynomials, $a(x) = a_0 + a_1 x + a_2 x^2 + … + a_n  x^n$ for $n ≥ 0$.
 * `ImmutablePolynomial` –⁠ standard basis polynomials backed by a [Tuple type](https://docs.julialang.org/en/v1/manual/functions/#Tuples-1) for faster evaluation of values
 * `SparsePolynomial` –⁠ standard basis polynomial backed by a [dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1) to hold  sparse high-degree  polynomials
 * `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), $a(x) = a_m x^m + … + a_n x^n$ for $m ≤ n$ and $m,n ∈ ℤ$. This is backed by an [offset array](https://github.com/JuliaArrays/OffsetArrays.jl); for example, if $m<0$ and $n>0$, we obtain $a(x) = a_m x^m + … + a_{-1} x^{-1} + a_0 + a_1 x + … +  a_n x^n$
