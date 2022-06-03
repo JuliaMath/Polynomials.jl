@@ -1458,7 +1458,7 @@ end
 
     # Test different types work together
     @testset for P₁ in Ps
-        for   P₂ in Ps
+        @testset for   P₂ in Ps
             p₁, p₂ = P₁(rand(1:5, 4)), P₂(rand(1:5, 5))
             p₁ + p₂
             p₁ * p₂
@@ -1503,13 +1503,13 @@ end
     @testset for P in Ps
         P <: FactoredPolynomial && continue
         if !isimmutable(P)
-            for  T in (Int32, Int64, BigInt)
+            @testset for T in (Int32, Int64, BigInt)
                 p₁ =  P{T}(Float64.(rand(1:3,5)))
                 @test typeof(p₁) == P{T,:x} # conversion works
                 @test_throws InexactError  P{T}(rand(5))
             end
         else
-            for  T in (Int32, Int64, BigInt)
+            @testset for T in (Int32, Int64, BigInt)
                 N = 5
                 p₁ =  P{T}(Float64.(rand(1:3,5)))
                 @test typeof(p₁) == P{T,:x,5} # conversion works
