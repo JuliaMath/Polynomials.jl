@@ -485,7 +485,7 @@ Base.all(pred, p::AbstractPolynomial) = all(pred, values(p))
 
 Test whether any coefficient of an `AbstractPolynomial` satisfies predicate `pred`.
 """
-Base.any(pred::Function, p::AbstractPolynomial) = any(pred, values(p))
+Base.any(pred, p::AbstractPolynomial) = any(pred, values(p))
 
 
 

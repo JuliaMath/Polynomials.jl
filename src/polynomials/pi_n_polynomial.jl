@@ -13,7 +13,7 @@ standard basis of degree `n` *or less*, using a vector of length
 This type is useful for reducing copies and allocations in some algorithms.
 
 """
-struct PnPolynomial{T,X} <: Polynomials.StandardBasisPolynomial{T, X}
+struct PnPolynomial{T,X} <: StandardBasisPolynomial{T, X}
     coeffs::Vector{T}
     function PnPolynomial{T, X}(coeffs::AbstractVector{T}) where {T, X}
         N = length(coeffs) - 1
