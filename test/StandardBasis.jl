@@ -64,7 +64,7 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
 end
 
 @testset "Mapdomain" begin
-    for P in Ps
+    @testset for P in Ps
         x = -30:20
         mx = mapdomain(P, x)
         @test mx == x
@@ -90,7 +90,7 @@ Base.axes(z::ZVector) = (OffsetArrays.IdentityUnitRange(0:size(z,1)-1),)
 Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
 
 @testset "Other Construction" begin
-    for P in Ps
+    @testset for P in Ps
 
         # Leading 0s
         p = P([1, 2, 0, 0])
@@ -145,7 +145,7 @@ end
 @testset "Non-number type" begin
     conv = Polynomials.conv
     @testset "T=Polynomial{Int,:y}" begin
-        for P in (Polynomial,)
+        @testset for P in (Polynomial,)
 
             T = P{Int, :y}
             a,b,c = T([1]), T([1,2]), T([1,2,3])
@@ -197,7 +197,7 @@ end
     end
 
     @testset "T=Matrix (2x2)" begin
-        for P ∈ (Polynomial, ImmutablePolynomial)
+        @testset for P ∈ (Polynomial, ImmutablePolynomial)
             a,b,c = [1 0; 1 1], [1 0; 2 1], [1 0; 3 1]
             p = P([a,b,c])
             q = P([a,b])
@@ -246,7 +246,7 @@ end
 
 
     @testset "T=Vector{Int}" begin
-        for P ∈ (Polynomial, ImmutablePolynomial)
+        @testset for P ∈ (Polynomial, ImmutablePolynomial)
             a,b,c = [1,0,0], [1,1,0], [1,1,1]
             p = P([a,b,c])
             q = P([a,b])
@@ -299,7 +299,7 @@ end
     #      using StaticArrays
     #      end)
         @testset "T=SA" begin
-            for P ∈ (Polynomial, ImmutablePolynomial )
+            @testset for P ∈ (Polynomial, ImmutablePolynomial )
                 a,b,c = SA[1 0; 1 1], SA[1 0; 2 1], SA[1 0; 3 1]
                 p = P([a,b,c])
                 q = P([a,b])
@@ -352,7 +352,7 @@ end
     bs = parent(as)
 
 
-    for P in Ps
+    @testset for P in Ps
         # LaurentPolynomial accepts OffsetArrays; others throw warning
         if P == LaurentPolynomial
             @test LaurentPolynomial(as) == LaurentPolynomial(bs, 3)
@@ -369,7 +369,7 @@ end
     b = OffsetVector(a, axes(a))
     c = ZVector(a)
     d = ZVector(b)
-    for P in Ps
+    @testset for P in Ps
         if P == LaurentPolynomial && continue
             @test P(a) == P(b) == P(c) == P(d)
         end
@@ -380,7 +380,7 @@ end
 
 @testset "Arithmetic" begin
 
-    @testset for  P in Ps
+    @testset for P in Ps
         pNULL = P(Int[])
         p0 = P([0])
         p1 = P([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
@@ -463,7 +463,7 @@ end
 end
 
 @testset "Divrem" begin
-    for P in  Ps
+    @testset for P in  Ps
 
         p0 = P([0])
         p1 = P([1])
@@ -591,7 +591,7 @@ end
 end
 
 @testset "Fitting" begin
-    for P in Ps
+    @testset for P in Ps
         P <: FactoredPolynomial && continue
         xs = range(0, stop = π, length = 10)
         ys = sin.(xs)
@@ -607,7 +607,7 @@ end
         @test maximum(abs_error) <= 0.03
 
         # Test weighted
-        for W in [1, ones(size(xs)), diagm(0 => ones(size(xs)))]
+        @testset for W in [1, ones(size(xs)), diagm(0 => ones(size(xs)))]
             p = fit(P, xs, ys, 2, weights = W)
             @test p.(xs) ≈ y_fit
         end
@@ -649,7 +649,7 @@ end
 end
 
 @testset "Values" begin
-    for P in Ps
+    @testset for P in Ps
         pNULL = P(Int[])
         p0 = P([0])
         p1 = P([1,0,0,0,0,0,0,0,0,0,0,0,0,0])
@@ -691,9 +691,9 @@ end
 
     # constant polynomials and type
     Ts = (Int, Float32, Float64, Complex{Int}, Complex{Float64})
-    for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
-        for T in Ts
-            for S in Ts
+    @testset for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
+        @testset for T in Ts
+            @testset for S in Ts
                 c = 2
                 p = P{T}(c)
                 x = one(S)
@@ -705,7 +705,7 @@ end
         end
     end
 
-    for P in Ps
+    @testset for P in Ps
         p = P(1)
         x = [1 0; 0 1]
         y = p(x)
@@ -721,7 +721,7 @@ end
 
     # compensated_horner
     # polynomial evaluation for polynomials with large condition numbers
-    for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
+    @testset for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
         x = variable(P{Float64})
         f(x) = (x - 1)^20
         p = f(x)
@@ -793,7 +793,7 @@ end
 end
 
 @testset "Roots" begin
-    for P in Ps
+    @testset for P in Ps
 
         pNULL = P(Int[])
         p0 = P([0])
@@ -881,7 +881,7 @@ end
 
 @testset "Integrals and Derivatives" begin
     # Integrals derivatives
-    for P in Ps
+    @testset for P in Ps
         P <: FactoredPolynomial && continue
         pNULL = P(Int[])
         p0 = P([0])
@@ -916,7 +916,7 @@ end
 
         P <: FactoredPolynomial && continue
 
-        for i in 1:10
+        @testset for i in 1:10
             p = P(rand(1:5, 6))
             @test degree(truncate(p - integrate(derivative(p)), atol=1e-13)) <= 0
             @test degree(truncate(p - derivative(integrate(p)), atol=1e-13)) <= 0
@@ -949,7 +949,7 @@ end
 end
 
 @testset "Elementwise Operations" begin
-    for P in Ps
+    @testset for P in Ps
         p1  = P([1, 2])
         p2  = P([3, 1.])
         p   = [p1, p2]
@@ -975,7 +975,7 @@ end
 
 @testset "Chop and Truncate" begin
     # chop and truncate
-    for P in Ps
+    @testset for P in Ps
         P <: FactoredPolynomial && continue
         if P == Polynomial
             p = P([1, 1, 1, 1])
@@ -1009,7 +1009,7 @@ end
 
 @testset "As matrix elements" begin
 
-    for P in Ps
+    @testset for P in Ps
         p = P([1,2,3], :x)
         A = [1 p; p^2 p^3]
         @test !issymmetric(A)
@@ -1018,7 +1018,7 @@ end
     end
 
     # issue 206 with mixed variable types and promotion
-    for P in Ps
+    @testset for P in Ps
         λ = P([0,1],:λ)
         A = [1 λ; λ^2 λ^3]
         @test A ==  diagm(0 => [1, λ^3], 1=>[λ], -1=>[λ^2])
@@ -1034,14 +1034,14 @@ end
         Polynomials.constructorof(U) == T && Polynomials.indeterminate(U) == X
     end
     meths = (Base.vect, Base.vcat, Base.hcat)
-    for P in (Polynomial, ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
+    @testset for P in (Polynomial, ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
 
         p,q = P([1,2], :x), P([1,2], :y)
         P′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
 
         # * should promote to Polynomial type if mixed (save Laurent Polynomial)
         @testset "promote mixed polys" begin
-            for m ∈ meths
+            @testset for m ∈ meths
                 @test _test(m(p,p), P, :x)
                 @test _test(m(p,r), P′′, :x)
             end
@@ -1052,7 +1052,7 @@ end
 
         # * numeric constants should promote to a polynomial, when mixed
         @testset "promote numbers to poly" begin
-            for m ∈ meths
+            @testset for m ∈ meths
                 @test _test(m(p,1), P, :x)
                 @test _test(m(1,p), P, :x)
                 @test _test(m(1,1,p), P, :x)
@@ -1064,7 +1064,7 @@ end
 
         # * non-constant polynomials must share the same indeterminate
         @testset "non constant polys share same X" begin
-            for m ∈ meths
+            @testset for m ∈ meths
                 @test_throws ArgumentError m(p,q)
                 @test_throws ArgumentError m(p,s)
             end
@@ -1075,7 +1075,7 @@ end
 
         # * constant polynomials are treated as `P{T,X}`, not elements of `T`
          @testset "constant polys" begin
-            for m ∈ meths
+            @testset for m ∈ meths
                 @test _test(m(one(p),1), P, :x)
                 @test _test(m(1,one(p)), P, :x)
                 @test _test(m(1,1,one(p)), P, :x)
@@ -1124,7 +1124,7 @@ end
 end
 
 @testset "Linear Algebra" begin
-    for P in Ps
+    @testset for P in Ps
         p = P([3, 4])
         @test norm(p) == 5
         p = P([-1, 3, 5, -2])
@@ -1155,7 +1155,7 @@ end
 
 @testset "Indexing" begin
     # Indexing
-    for P in Ps
+    @testset for P in Ps
 
         # getindex
         p = P([-1, 3, 5, -2])
@@ -1190,12 +1190,12 @@ end
         end
 
         p1 = P([1,2,0,3])
-        for term in p1
+        @testset for term in p1
             @test isa(term, eltype(p1))
         end
 
         !(P <: FactoredPolynomial) && @test eltype(p1) == Int
-        for P in Ps
+        @testset for P in Ps
             p1 = P([1,2,0,3])
             @test eltype(collect(p1)) <: eltype(p1)
             @test eltype(collect(Float64, p1)) <: Float64
@@ -1253,7 +1253,7 @@ end
 
 
 @testset "Copying" begin
-    for P in Ps
+    @testset for P in Ps
         pcpy1 = P([1,2,3,4,5], :y)
         pcpy2 = copy(pcpy1)
         @test pcpy1 == pcpy2
@@ -1261,7 +1261,7 @@ end
 end
 
 @testset "GCD" begin
-    for P in Ps
+    @testset for P in Ps
         p1 = P([2.,5.,1.])
         p2 = P([1.,2.,3.])
 
@@ -1318,14 +1318,14 @@ end
     U(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in 1:n)
     V(n) = prod( (x-r2*alpha(j,n))^2 + r2^2*beta(j,n)^2 for j in 1:n)
     W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
-    for n in 2:2:20
+    @testset for n in 2:2:20
         p = U(n) * V(n); q = U(n) * W(n)
         @test degree(gcd(p,q, method=:numerical)) == degree(U(n))
     end
 
     # Test 5 of Zeng
     x =  variable(P{Float64})
-    for ms in ((2,1,1,0), (3,2,1,0), (4,3,2,1), (5,3,2,1), (9,6,4,2),
+    @testset for ms in ((2,1,1,0), (3,2,1,0), (4,3,2,1), (5,3,2,1), (9,6,4,2),
                (20, 14, 10, 5), (80,60,40,20), (100,60,40,20)
                )
 
@@ -1336,7 +1336,7 @@ end
 
     # fussy pair
     x =  variable(P{Float64})
-    for n in (2,5,10,20,50, 100)
+    @testset for n in (2,5,10,20,50, 100)
         p = (x-1)^n * (x-2)^n * (x-3)
         q = (x-1) * (x-2) * (x-4)
         @test degree(gcd(p,q, method=:numerical)) == 2
@@ -1361,8 +1361,8 @@ end
     # check for canceling of x^k terms
     x = variable(P{Float64})
     p,q = x^2 + 1, x^2 - 1
-    for j ∈ 0:2
-        for k ∈ 0:j
+    @testset for j ∈ 0:2
+        @testset for k ∈ 0:j
             out = Polynomials.ngcd(x^j*p, x^k*q)
             @test out.u == x^k
         end
@@ -1384,7 +1384,7 @@ end
     p = Polynomial{Rational{Int}}([1, 4])
     @test sprint(show, p) == "Polynomial(1//1 + 4//1*x)"
 
-    for P in (Polynomial, ImmutablePolynomial)
+    @testset for P in (Polynomial, ImmutablePolynomial)
         p = P([1, 2, 3])
         @test sprint(show, p) == "$P(1 + 2*x + 3*x^2)"
 
@@ -1457,7 +1457,7 @@ end
 @testset "Promotion"  begin
 
     # Test different types work together
-    for P₁ in Ps
+    @testset for P₁ in Ps
         for   P₂ in Ps
             p₁, p₂ = P₁(rand(1:5, 4)), P₂(rand(1:5, 5))
             p₁ + p₂
@@ -1476,15 +1476,15 @@ end
     end
 
     # P{T}(vector{S}) will promote to P{T}
-    for Ts in ((Int32, Int,  BigInt),
+    @testset for Ts in ((Int32, Int,  BigInt),
                (Int,  Rational{Int}, Float64),
                (Float32, Float64, BigFloat)
               )
 
         n = length(Ts)
-        for i in 1:n-1
+        @testset for i in 1:n-1
             T1,T2 = Ts[i],Ts[i+1]
-            for P in Ps
+            @testset for P in Ps
                 P <: FactoredPolynomial && continue
                 if !isimmutable(P)
                     p = P{T2}(T1.(rand(1:3,3)))
@@ -1500,7 +1500,7 @@ end
     end
 
     # test P{T}(...) is P{T} (not always the case for FactoredPolynomial)
-    for P in Ps
+    @testset for P in Ps
         P <: FactoredPolynomial && continue
         if !isimmutable(P)
             for  T in (Int32, Int64, BigInt)

@@ -387,7 +387,7 @@ p2s = Poly([1], :s)
 
 # test iteration
 p1 = Poly([1,2,0,3])
-for term in p1
+@testset for term in p1
   @test isa(term, Poly)
 end
 
