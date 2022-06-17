@@ -143,6 +143,11 @@ function ⊗(P::Type{<:StandardBasisPolynomial}, p::Dict{Int,T}, q::Dict{Int,S})
     c
 end
 
+## Define a dot product on vectors of polynomials, where polynomials are treated as
+## as the scalar types -- the dot is the sum of pairwise products. Might change in
+## the future if this causes confusion with the "vector" interpretation of polys.
+LinearAlgebra.dot(xv::AbstractArray{T}, yv::AbstractArray{T}) where {T <: StandardBasisPolynomial} = sum(conj(x)*y for (x,y) = zip(xv, yv))
+
 ## ---
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
     n = length(r)
