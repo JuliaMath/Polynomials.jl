@@ -255,7 +255,7 @@ function printcoefficient(io::IO, pj::S, j, mimetype) where {T,S <: Complex{T}}
     hasimag = !iszero(b) || isnan(b) || isinf(b)
 
     if hasreal && hasimag
-        iszero(j) || print(io, "(")
+        print(io, "(")
         print(io, a)
 
         # print b
@@ -277,7 +277,7 @@ function printcoefficient(io::IO, pj::S, j, mimetype) where {T,S <: Complex{T}}
         end
 
         print(io, imagsymbol(mimetype))
-        iszero(j) || print(io, ")")
+        print(io, ")")
 
     elseif hasreal
 
