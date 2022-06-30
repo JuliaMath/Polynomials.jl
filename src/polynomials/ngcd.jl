@@ -181,11 +181,11 @@ function ngcd(p::PnPolynomial{T,X},
     Q = zeros(T, m + n, m + n)
     R = zeros(T, m + n, m + n)
     Sₓ = hcat(convmtx(p,1),  convmtx(q, m-n+1))
-
+    λ = norm(Sₓ, Inf)
     uv = copy(p)
     uw = copy(q)
 
-    local x::Vector{T}
+    x = Vector{T}(undef, m + n)
 
     F = qr(Sₓ)
     nr, nc = size(Sₓ) # m+1, m-n+2
@@ -196,15 +196,23 @@ function ngcd(p::PnPolynomial{T,X},
 
     while true
 
-        V = view(R, 1:nc, 1:nc)
-        flag, σ, x = smallest_singular_value(V, satol *  sqrt(1 + m - j), srtol)
-        verbose && println("------ degree $j ----- σ₁: $σ  --- $flag")
+        V = UpperTriangular(view(R, 1:nc, 1:nc))
+        xx = view(x, 1:nc)
 
-        if (flag == :iszero || flag == :ispossible)
-            u, v, w = initial_uvw(Val(flag), j, p, q, x)
+        σ = smallest_singular_value!(xx, V, satol *  sqrt(1 + m - j), λ * srtol)
+        if σ ≤ satol *  sqrt(1 + m - j) # and rtol?
+            #flag, σ, x = smallest_singular_value(V, satol *  sqrt(1 + m - j), srtol)
+            #verbose && println("------ degree $j ----- σ₁: $σ  --- $flag")
+
+            #if (flag == :iszero || flag == :ispossible)
+            if iszero(σ)
+                u, v, w = initial_uvw(Val(:iszero), j, p, q, xx)
+            else
+                u, v, w = initial_uvw(Val(:ispossible), j, p, q, xx)
+            end
             flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, p, q, uv, uw, atol, rtol)
 
-            verbose && println("   --- Θᵏ: $ρ₁ --- $flag (ρ=$(ρ))")
+            #verbose && println("   --- Θᵏ: $ρ₁ --- $flag (ρ=$(ρ))")
 
             if flag == :convergence
                 return (u=u, v=v, w=w, Θ=ρ₁, κ=σ₂) # (u,v,w) verified
@@ -214,7 +222,7 @@ function ngcd(p::PnPolynomial{T,X},
         # reduce possible degree of u and try again with Sⱼ₋₁
         # unless we hit specified minimum, in which case return it
         if j == minⱼ
-            u, v, w = initial_uvw(Val(:ispossible), j, p, q, x)
+            u, v, w = initial_uvw(Val(:ispossible), j, p, q, xx)
             flag, ρ₁, σ₂, ρ = refine_uvw!(u,v,w, p, q, uv, uw, atol, rtol)
             return (u=u, v=v, w=w, Θ=ρ₁, κ=σ₂)
         end
@@ -223,13 +231,11 @@ function ngcd(p::PnPolynomial{T,X},
         nr += 1
         nc += 2
         nc > nr && break
-        extend_QR!(Q,R, nr, nc, A0) # before Q⋅R = Sⱼ, now Q⋅R = Sⱼ₋₁
-
-
+        extend_QR!(Q, R, nr, nc, A0) # before Q⋅R = Sⱼ, now Q⋅R = Sⱼ₋₁
     end
 
     # u is a constant
-    verbose && println("------ GCD is constant ------")
+    #verbose && println("------ GCD is constant ------")
 
     u, v, w = initial_uvw(Val(:constant), j, p, q, x)
     flag, ρ₁, κ, ρ = refine_uvw!(u,v,w, p, q, uv, uw, atol, rtol)
@@ -315,7 +321,7 @@ function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,
                                                               P<:PnPolynomial{T,X},
                                                               Q<:PnPolynomial{T,X}}
     # Sk*[w;-v] = 0, so pick out v,w after applying permutation
-    m,n = length(p)-1, length(q)-1
+    m, n = length(p)-1, length(q)-1
     vᵢ = vcat(2:m-n+2, m-n+4:2:length(x))
     wᵢ = m-n+3 > length(x) ? [1] : vcat(1, (m-n+3):2:length(x))
     #    v = 𝑷{m-j}(-x[vᵢ])
