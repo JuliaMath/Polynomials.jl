@@ -14,14 +14,13 @@ using Random
 
 function Ngcd(p::PnPolynomial{T,X},
               q::PnPolynomial{T,X};
-              ϵ = sqrt(eps(real(T))), # closeness of (p,q), (p̃, q̃)
+              ϵ = sqrt(eps(real(T))), # backward error tolerance of (p,q), (p̃, q̃)
               ρ = ϵ,                  # residual over Πₖ
               scale::Bool=false,
               minⱼ = -1
               ) where {T, X}
 
 
-    rtol = eps(real(T))
 
     m,n = length(p)-1, length(q)-1
     (m == 1 || n == 0) && return trivial_gcd(p, q)
@@ -48,32 +47,32 @@ function Ngcd(p::PnPolynomial{T,X},
     # initial Sylvester matrix
     Sₓ = hcat(convmtx(p,1),  convmtx(q, m-n+1))
     nr, nc = size(Sₓ) # m+1, m-n+2
-    λ = norm(Sₓ, Inf)
     F = qr(Sₓ)
     Q[1:nr, 1:nr] .= F.Q
     R[1:nc, 1:nc] .= F.R
 
+    ϵₘ = eps(real(T))
     j = n  # We count down Sn, S_{n-1}, ..., S₂, S₁
 
     while true
 
         V = UpperTriangular(view(R, 1:nc, 1:nc))
         xx = view(x, 1:nc)
+        λ = norm(Q,Inf)*norm(R,Inf)
+        σ₋₁ = smallest_singular_value!(xx, V, ϵ *  sqrt(m - j + 1), λ * ϵₘ)
+        @show j, σ₋₁, ϵ *  sqrt(m - j + 1), λ * ρ
 
-        σ₋₁ = smallest_singular_value!(xx, V, ϵ *  sqrt(m - j + 1), λ * rtol)
-        @show j, σ₋₁, ϵ *  sqrt(m - j + 1), λ * rtol
-
+        # Lemma 7.1: If (p,q) is w/in ϵ of P^k_{mn} then σ₋₁ < ϵ√(m-j+1)
         if σ₋₁ ≤ ϵ *  sqrt(m - j + 1)
             # candidate for degree; refine u₀, vₒ, w₀ to see if ρ < ϵ
             if iszero(σ₋₁)
+                @show :det_V, det(V)
                 u, v, w = initial_uvw(Val(:iszero), j, p, q, xx)
             else
                 u, v, w = initial_uvw(Val(:ispossible), j, p, q, xx)
             end
             ρₖ, κ = refine_uvw!(u, v, w, p, q, uv, uw)
-            @show ρₖ ≤ ρ, ρₖ
             if ρₖ ≤ ρ
-                @show :keeper, j, ρₖ
                 return (u=u, v=v, w=w, θ=ρₖ, κ=κ)
             end
 
@@ -94,7 +93,6 @@ function Ngcd(p::PnPolynomial{T,X},
         nc += 2
         nc > nr && break
         extend_QR!(Q, R, nr, nc, A0) # before Q⋅R = Sⱼ, now Q⋅R = Sⱼ₋₁
-        λ = norm(Q, Inf) * norm(R, Inf) # cheaper than ||Q*R||_oo
     end
 
     return trivial_gcd(p, q)
@@ -109,7 +107,6 @@ function ngcdk(p::P, q::P, k::Int;
     R = UpperTriangular(F.R)
     x = zeros(T, size(Sₓ, 2))
     σ₋₁ = smallest_singular_value!(x, R, ϵ *  sqrt(m - k + 1), norm(Sₓ,2) * ρ)
-    @show x
     u, v, w = initial_uvw(Val(:ispossible), k, p, q, x)
     ρₖ, κ = refine_uvw!(u, v, w, p, q, uv, uw)
     return (u=u, v=v, w=w, θ=ρₖ, κ=κ)
@@ -155,6 +152,7 @@ function smallest_singular_value!(w, R::UpperTriangular{T},
     end
 
     return sⱼ
+
 end
 
 # modify w, return sⱼ after one step
@@ -276,6 +274,8 @@ function refine_uvw!(u::P, v::P, w::P,
     A = JF(h, u, v, w)
     Δfβ = Fmp(dot(h, u) - β, p, q, uv, uw)
     Δz = zeros(T, length(u) + length(v) + length(w))
+    n = size(A, 2)
+    R = UpperTriangular(Matrix{Float64}(undef, n, n))
 
     steps = 0
     @show steps, ρ₁
@@ -289,7 +289,7 @@ function refine_uvw!(u::P, v::P, w::P,
         steps += 1
 
         refine_uvw_step!(ũ, ṽ, w̃,
-                         Δz, A, Δfβ)
+                         Δz, A, Δfβ, R)
 
         mul!(uv, ũ, ṽ)
         mul!(uw, ũ, w̃)
@@ -313,11 +313,8 @@ function refine_uvw!(u::P, v::P, w::P,
             break
         end
     end
-
-    _, R = qr(A) # uggh, need to save. It is computed in refine_uvw_step!
-    σ₂ = smallest_singular_value_one_step!(Δz, UpperTriangular(R))
+    σ₂ = smallest_singular_value_one_step!(Δz, R)
     κ = 1 / σ₂
-            @show :use, ρ₁
     return ρ₁, κ
 
 end
@@ -325,9 +322,10 @@ end
 # update u,v,w, uv, uw
 # computes update step of zₖ₊₁ = zₖ - Δz; Δz = J(zₖ)⁺(fₕ(u,v,w) - [β;p;q])
 function refine_uvw_step!(u, v, w,
-                          Δz, J⁺, Δfβ)
+                          Δz, J⁺, Δfβ, R)
 
-    qrsolve!(Δz, J⁺, Δfβ)
+    qrsolve!(Δz, J⁺, Δfβ, R)
+    #Δz .= J⁺ \ Δfβ
 
     m,n,l = length(u)-1, length(v)-1, length(w)-1
 
@@ -403,7 +401,7 @@ function Fmp(Δ, p::PnPolynomial{T,X}, q, p̃, q̃) where {T,X}
 end
 
 ## fₕ - [β; p; q]
-## Δ = h⋅uᵢ - uᵢ⋅uᵢ
+## Δ = h⋅uᵢ - β
 function Fmp!(b, Δ, p, q, uv, uw)
     b[1] = Δ
     for (i, pᵢ) ∈ pairs(p)
@@ -430,13 +428,15 @@ end
 ## ---- utils
 ## ---- QR factorization
 
-function qrsolve!(y::Vector{T}, A, b) where {T}
-    y .= A \ b
+function qrsolve!(y::Vector{T}, A, b, R) where {T}
+    q = qr(A)
+    R .= UpperTriangular(q.R)
+    y .= q \ b
 end
 
 # Fast least-squares solver for full column rank Hessenberg-like matrices
 # By Andreas Varga
-function qrsolve!(y::Vector{T}, A, b) where {T <: Float64}
+function Xqrsolve!(y::Vector{T}, A, b, R) where {T <: Float64}
     # half the time of ldiv!(y, qr(A), b)
     Base.require_one_based_indexing(A)
     m, n = size(A)
@@ -444,9 +444,16 @@ function qrsolve!(y::Vector{T}, A, b) where {T <: Float64}
     _, τ = LinearAlgebra.LAPACK.geqrf!(A)
     tran = T <: Complex ? 'C' : 'T'
     LinearAlgebra.LAPACK.ormqr!('L', tran, A, τ, view(b,:,1:1))
-    R = UpperTriangular(triu(A[1:n,:]))
+    R .= UpperTriangular(triu(A[1:n,:]))
     ldiv!(y, R, view(b,1:n))
 end
+
+function qrsolve!(y::Vector{T}, A, b) where {T <: Float64}
+    n = size(A, 2)
+    R = UpperTriangular(Matrix{Float64}(undef, n, n))
+    qrsolve!(y, A, b, R)
+end
+
 
 """
     convmtx(v, n::Int)
@@ -577,4 +584,39 @@ function rank_reveal!(R::LinearAlgebra.UpperTriangular{T, Matrix{T}}, w,
 
     end
     r, sⱼ
+end
+
+
+## Tests
+function test1()
+    x = variable(PnPolynomial)
+    α(j, n) = cospi(j/n)
+    β(j, n) = sinpi(j/n)
+    k(n) = n ÷ 2
+    r1, r2 = 1/2, 3/2
+    u(n) = prod((x - r1*α(j,n))^2 + (r1*β(j,n))^2 for j ∈ 1:k(n))
+    v(n) = prod((x - r2*α(j,n))^2 + (r2*β(j,n))^2 for j ∈ 1:k(n))
+    w(n) = prod((x - r1*α(j,n))^2 + (r1*β(j,n))^2 for j ∈ (k(n)+1):n)
+
+
+    for n ∈ (6, 10, 16, 18, 20)
+        p = u(n)*v(n)
+        q = u(n)*w(n)
+        a = Ngcd(p, q, ϵ = 1e-8)
+        @show n, a.κ, a.θ
+    end
+end
+
+
+function test2()
+    x = variable(PnPolynomial)
+    xⱼ(j) = (-1)^j * (j/2)
+    p = prod(x - xⱼ(j) for j ∈ 1:10)
+    q = prod(x - xⱼ(j) + 1/10^j for j ∈ 1:10)
+
+    for k = 2:10
+        ϵ = 1/10^k
+        a = Ngcd(p, q, ϵ = ϵ)
+        @show k, ϵ, degree(a.u), a.θ
+    end
 end
