@@ -1392,7 +1392,7 @@ end
         @test sprint(show, p) == "$P(1.0 + 2.0*x + 3.0*x^2)"
 
         p = P([1 + 1im, -2im])
-        @test sprint(show, p) == "$P(1 + im - 2im*x)"
+        @test sprint(show, p) == "$P((1 + im) - 2im*x)"
 
 
         p = P([1,2,3,1])  # leading coefficient of 1
@@ -1402,7 +1402,7 @@ end
         p = P([1, im])
         @test repr(p) == "$P(1 + im*x)"
         p = P([1 + im, 1 - im, -1 + im, -1 - im])# minus signs
-        @test repr(p) == "$P(1 + im + (1 - im)x - (1 - im)x^2 - (1 + im)x^3)"
+        @test repr(p) == "$P((1 + im) + (1 - im)x - (1 - im)x^2 - (1 + im)x^3)"
         p = P([1.0, 0 + NaN * im, NaN, Inf, 0 - Inf * im]) # handle NaN or Inf appropriately
         @test repr(p) == "$P(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
 
@@ -1412,13 +1412,13 @@ end
         p = P([1 // 2, 2 // 3, 1])
         @test repr("text/latex", p) == "\$\\frac{1}{2} + \\frac{2}{3}\\cdot x + x^{2}\$"
         p = P([complex(1,1),complex(0,1),complex(1,0),complex(1,1)])
-        @test repr("text/latex", p) == "\$1 + i + i\\cdot x + x^{2} + (1 + i)x^{3}\$"
+        @test repr("text/latex", p) == "\$(1 + i) + i\\cdot x + x^{2} + (1 + i)x^{3}\$"
 
         @test printpoly_to_string(P([1,2,3], "y")) == "1 + 2*y + 3*y^2"
         @test printpoly_to_string(P([1,2,3], "y"), descending_powers = true) == "3*y^2 + 2*y + 1"
         @test printpoly_to_string(P([2, 3, 1], :z), descending_powers = true, offset = -2) == "1 + 3*z^-1 + 2*z^-2"
         @test printpoly_to_string(P([-1, 0, 1], :z), offset = -1, descending_powers = true) == "z - z^-1"
-        @test printpoly_to_string(P([complex(1,1),complex(1,-1)]),MIME"text/latex"()) == "1 + i + (1 - i)x"
+        @test printpoly_to_string(P([complex(1,1),complex(1,-1)]),MIME"text/latex"()) == "(1 + i) + (1 - i)x"
     end
 
     ## closed issues
@@ -1428,7 +1428,7 @@ end
     io=IOBuffer(); printpoly(io, p, compact=true, mulsymbol=""); @test String(take!(io)) == "1.23457 + 2.34568x"
 
     ## issue 278 with complex
-    @test printpoly_to_string(Polynomial([1 + im, 1, 2, im, 2im, 1+im, 1-im])) == "1 + im + x + 2*x^2 + im*x^3 + 2im*x^4 + (1 + im)x^5 + (1 - im)x^6"
+    @test printpoly_to_string(Polynomial([1 + im, 1, 2, im, 2im, 1+im, 1-im])) == "(1 + im) + x + 2*x^2 + im*x^3 + 2im*x^4 + (1 + im)x^5 + (1 - im)x^6"
 
     ## issue #320 (fix was broken)
     @test printpoly_to_string(Polynomial(BigInt[1,0,1], :y)) == "1 + y^2"
