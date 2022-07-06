@@ -8,7 +8,8 @@ In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call on
 
 """
 function ngcd(p::P, q::Q,
-              args...; kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
+              args...;
+              kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
                                          S,Y,Q<:StandardBasisPolynomial{S,Y}}
 
     if (degree(q) > degree(p))
@@ -17,7 +18,7 @@ function ngcd(p::P, q::Q,
     end
     if degree(p) > 5*(1+degree(q))
         a,b = divrem(p,q)
-        return ngcd(q,b, args...; λ=100, kwargs...)
+        return ngcd(q, b, args...; λ=100,  kwargs...)
     end
 
     # easy cases
@@ -70,6 +71,10 @@ module NGCD
 using Polynomials, LinearAlgebra
 import Polynomials: PnPolynomial, constructorof
 
+include("rank_reveal.jl")
+
+
+#==
 """
     ngcd(ps::PnPolynomial{T,X}, qs::PnPolynomial{T,X}, [k::Int]; scale::Bool=false, atol=eps(T), rtol=eps(T), satol=atol, srtol=rtol)
 
@@ -645,5 +650,5 @@ function solve_u(v::P,w,p,q, k) where {T,X,P<:PnPolynomial{T,X}}
     u = A \ b
     return P(u)
 end
-
+==#
 end

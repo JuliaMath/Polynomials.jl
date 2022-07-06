@@ -113,27 +113,34 @@ function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T};
 #                                       atol=ρ*norm(p), satol = θ*norm(p),
     #                                       rtol = zT, srtol = zT)
     p₂ = norm(p, 2)
-    @show θ * p₂, ρ * p₂
-    u, v, w, ρⱼ, κ = Polynomials.Ngcd(p, derivative(p),
-                                      ϵ = θ * p₂,
-                                      ρ = ρ * p₂
+    u, v, w, ρⱼ, κ = Polynomials.ngcd(p, derivative(p);
+                                      ϵₐ = θ * p₂, ϵᵣ = zero(real(T)),
+                                      ρₐ = ρ * p₂, ρᵣ = zero(real(T))
                                       )
-    @show degree(u)
+
+
+#    u, v, w, ρⱼ, κ = Polynomials.ngcd(p, derivative(p); scale=true)
+#    u, v, w, ρⱼ, κ = Polynomials.ngcd(p, derivative(p), degree(u))
+
+
     zs = roots(v)
     nrts = length(zs)
     ls = ones(Int, nrts)
-
+    λ = ϕ
     while !Polynomials.isconstant(u)
 
         u₂ = norm(u,2)
-        #ρ = max(ρ * u₂, ϕ * ρⱼ)  # paper uses just latter
-        @show θ*u₂, ρ
-        u, v, w, ρⱼ, κ = Polynomials.Ngcd(u, derivative(u),
-                                          ϵ = θ * u₂,
-                                          ρ = max(ρ * u₂, ϕ * ρⱼ), #ρ,
+        ρ = max(ρ * u₂, ϕ * ρⱼ)  # paper uses just latter
+        u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u),
+                                          ϵₐ = θ * u₂,
+                                          ρₐ = ρ,
                                           minⱼ = degree(u) - nrts
                                           )
-        @show degree(u)
+        # u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u),
+        #                                   ϵₐ = θ * u₂, ϵᵣ=0,
+        #                                   ρₐ = ρ, ρᵣ=0,
+        #                                   minⱼ = degree(u) - nrts
+        #                                   )
 
         # u, v, w, θ′, κ = Polynomials.ngcd(u, derivative(u),
         #                                   atol=ρ′, satol = θ*normp,
@@ -281,7 +288,7 @@ function cond_zl(p, zs::Vector{S}, ls) where {S}
     W = diagm(0 => [min(1, 1/abs(aᵢ)) for aᵢ in p[2:end]])
     evalJ!(J, zs, ls)
     F = qr(W*J)
-    _, σ, _ = Polynomials.NGCD.smallest_singular_value(F.R)
+    σ = Polynomials.NGCD.smallest_singular_value(F.R)
     1 / σ
 end
 

@@ -1013,7 +1013,8 @@ end
         p = P([1,2,3], :x)
         A = [1 p; p^2 p^3]
         @test !issymmetric(A)
-        @test issymmetric(A*transpose(A))
+        U = A * A'
+        @test U[1,2] ≈ U[2,1] # issymmetric with some allowed error for FactoredPolynomial
         diagm(0 => [1, p^3], 1=>[p^2], -1=>[p])
     end
 
@@ -1320,7 +1321,7 @@ end
     W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
     @testset for n in 2:2:20
         p = U(n) * V(n); q = U(n) * W(n)
-        @test degree(gcd(p,q, method=:numerical)) == degree(U(n))
+        @test degree(gcd(p,q; scale=true, method=:numerical)) == degree(U(n))
     end
 
     # Test 5 of Zeng
@@ -1331,7 +1332,7 @@ end
 
         p = prod((x-i)^j for (i,j) in enumerate(ms))
         dp = derivative(p)
-        @test degree(gcd(p,dp, method=:numerical)) == sum(max.(ms .- 1, 0))
+        @test degree(gcd(p,dp; scale=true, method=:numerical)) == sum(max.(ms .- 1, 0))
     end
 
     # fussy pair
@@ -1339,7 +1340,7 @@ end
     @testset for n in (2,5,10,20,50, 100)
         p = (x-1)^n * (x-2)^n * (x-3)
         q = (x-1) * (x-2) * (x-4)
-        @test degree(gcd(p,q, method=:numerical)) == 2
+        @test degree(gcd(p,q; scale=true, method=:numerical)) == 2
     end
 
     # check for fixed k
