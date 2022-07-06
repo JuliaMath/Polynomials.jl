@@ -59,7 +59,7 @@ multiplicity structure:
 
 * `ρ`: the initial residual tolerance, set to `1e-10`. This is passed
   to `Polynomials.ngcd`, the GCD finding algorithm as a measure for
-  the residual tolerance multiplied by `‖p‖₂`.
+  the absolute tolerance multiplied by `‖p‖₂`.
 
 * `ϕ`: A scale factor, set to `100`. As the `ngcd` algorithm is called
   recursively, this allows the residual tolerance to scale up to match
@@ -105,23 +105,13 @@ end
 function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T};
                              θ = 1e-8,  # zero singular-value threshold
                              ρ = 1e-10, # initial residual tolerance
-                             ϕ = 100    # residual tolerance multiplier
+                             ϕ = 100    # residual growth factor
                              )  where {T}
-
-#    zT = zero(float(real(T)))
-#    u, v, w, θ′, κ = Polynomials.ngcd(p, derivative(p),
-#                                       atol=ρ*norm(p), satol = θ*norm(p),
-    #                                       rtol = zT, srtol = zT)
     p₂ = norm(p, 2)
     u, v, w, ρⱼ, κ = Polynomials.ngcd(p, derivative(p);
-                                      ϵₐ = θ * p₂, ϵᵣ = zero(real(T)),
-                                      ρₐ = ρ * p₂, ρᵣ = zero(real(T))
-                                      )
-
-
-#    u, v, w, ρⱼ, κ = Polynomials.ngcd(p, derivative(p); scale=true)
-#    u, v, w, ρⱼ, κ = Polynomials.ngcd(p, derivative(p), degree(u))
-
+                                      satol = θ * p₂, srtol = zero(real(T)),
+                                      atol = ρ * p₂, rtol = zero(real(T))
+    )
 
     zs = roots(v)
     nrts = length(zs)
@@ -129,24 +119,14 @@ function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T};
     λ = ϕ
     while !Polynomials.isconstant(u)
 
-        u₂ = norm(u,2)
-        ρ = max(ρ * u₂, ϕ * ρⱼ)  # paper uses just latter
+        nu₂ = norm(u,2)
+        θ′ = θ * nu₂
+        ρ′ = max(ρ, ϕ * ρⱼ)  # paper uses just latter
         u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u),
-                                          ϵₐ = θ * u₂,
-                                          ρₐ = ρ,
+                                          satol = θ′,
+                                          atol = ρ′,
                                           minⱼ = degree(u) - nrts
                                           )
-        # u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u),
-        #                                   ϵₐ = θ * u₂, ϵᵣ=0,
-        #                                   ρₐ = ρ, ρᵣ=0,
-        #                                   minⱼ = degree(u) - nrts
-        #                                   )
-
-        # u, v, w, θ′, κ = Polynomials.ngcd(u, derivative(u),
-        #                                   atol=ρ′, satol = θ*normp,
-        #                                   rtol = zT, srtol = zT,
-        #                                   minⱼ = degree(u) - nrts # truncate search
-        #                                   )
 
         rts = roots(v)
         nrts = length(rts)
@@ -173,13 +153,13 @@ root is a least squares minimizer of `F(z) = W ⋅ [Gₗ(z) - a]`. Here `a ~ (p_
 This follows Algorithm 1 of [Zeng](https://www.ams.org/journals/mcom/2005-74-250/S0025-5718-04-01692-8/S0025-5718-04-01692-8.pdf)
 """
 function pejorative_root(p::Polynomials.StandardBasisPolynomial,
-                         zs::Vector{S}, ls::Vector{Int}; kwargs...) where {S}
+                         zs::Vector{S}, ls; kwargs...) where {S}
     ps = (reverse ∘ coeffs)(p)
     pejorative_root(ps, zs, ls; kwargs...)
 end
 
 # p is [1, a_{n-1}, a_{n-2}, ..., a_1, a_0]
-function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
+function pejorative_root(p, zs::Vector{S}, ls;
                  τ = eps(float(real(S)))^(2/3),
                  maxsteps = 100, # linear or quadratic
                  verbose=false
@@ -283,6 +263,7 @@ end
 
 # Defn (3.5) condition number of z with respect to the multiplicity l and weight W
 cond_zl(p::AbstractPolynomial, zs::Vector{S}, ls) where {S}  = cond_zl(reverse(coeffs(p)), zs, ls)
+
 function cond_zl(p, zs::Vector{S}, ls) where {S}
     J = zeros(S, sum(ls), length(zs))
     W = diagm(0 => [min(1, 1/abs(aᵢ)) for aᵢ in p[2:end]])
@@ -294,6 +275,7 @@ end
 
 backward_error(p::AbstractPolynomial, zs::Vector{S}, ls) where {S}  =
     backward_error(reverse(coeffs(p)), zs, ls)
+
 function backward_error(p, z̃s::Vector{S}, ls) where {S}
     # ‖ ã - a ‖w
     G = zeros(S,  1 + sum(ls))

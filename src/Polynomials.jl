@@ -23,7 +23,6 @@ include("polynomials/pi_n_polynomial.jl")
 include("polynomials/factored_polynomial.jl")
 include("polynomials/ngcd.jl")
 include("polynomials/multroot.jl")
-#include("polynomials/rank_reveal.jl")
 include("polynomials/ChebyshevT.jl")
 
 # Rational functions
