@@ -133,7 +133,7 @@ function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T};
 
         for z in rts
             tmp, ind = findmin(abs.(zs .- z))
-            ls[ind] = ls[ind] + 1
+            ls[ind] += 1
         end
 
     end
@@ -212,7 +212,7 @@ function pejorative_root(p, zs::Vector{S}, ls;
         @info ("""
 The multiplicity count may be in error: the initial guess for the roots failed
 to converge to a pejorative root.
-""")
+        """)
         return(zₖs)
     end
 
@@ -268,8 +268,8 @@ function cond_zl(p, zs::Vector{S}, ls) where {S}
     J = zeros(S, sum(ls), length(zs))
     W = diagm(0 => [min(1, 1/abs(aᵢ)) for aᵢ in p[2:end]])
     evalJ!(J, zs, ls)
-    F = qr(W*J)
-    σ = Polynomials.NGCD.smallest_singular_value(F.R)
+    _,R = qr(W*J)
+    σ = Polynomials.NGCD.smallest_singular_value(UpperTriangular(R))
     1 / σ
 end
 
