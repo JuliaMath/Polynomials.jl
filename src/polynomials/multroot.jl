@@ -209,10 +209,10 @@ function pejorative_root(p, zs::Vector{S}, ls;
     if cvg
         return zₖs
     else
-        @info ("""
+        @info """
 The multiplicity count may be in error: the initial guess for the roots failed
 to converge to a pejorative root.
-        """)
+"""
         return(zₖs)
     end
 

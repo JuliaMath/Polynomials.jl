@@ -91,8 +91,9 @@ end
 ## ---- the work is done in this module
 
 module NGCD
-using Polynomials, LinearAlgebra, Random
+using Polynomials, LinearAlgebra
 import Polynomials: PnPolynomial, constructorof
+import Random: rand!
 
 """
     ngcd(p::PnPolynomial{T,X}, q::PnPolynomial{T,X}, [k::Int];
@@ -443,11 +444,6 @@ function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,
     else
         rand!(x)
         smallest_singular_value!(x, R)
-#        x .= ones(T, size(R,2))
-#        ldiv!(R', x)
-#        x ./= norm(x,2)
-#        ldiv!(R, x)
-#        x ./= norm(x)
     end
 
     w = P(x[1:n-j+1]) # ordering of S is not interlaced
