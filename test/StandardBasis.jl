@@ -1292,7 +1292,7 @@ end
     @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
     @test  degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
     @test_skip degree(gcd(a*d,b*d, method=:numerical)) == degree(d) # issues on some architectures
-    l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
+    l,m,n = (2,2,2) # realiable, though for larger l,m,n only **usually** correct
     u,v,w = fromroots.(rand.((l,m,n)))
     @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
 
