@@ -204,8 +204,6 @@ function ngcd(p::PnPolynomial{T,X},
               minⱼ = -1
               ) where {T, X}
 
-    verbose = false
-
     m,n = length(p)-1, length(q)-1
     (m == 1 || n == 0) && return trivial_gcd(p, q)
 
@@ -254,20 +252,20 @@ function ngcd(p::PnPolynomial{T,X},
         xx = view(x, 1:nc)
         λ = norm(Q,Inf)*norm(R,Inf)
         σ₋₁ = smallest_singular_value!(xx, V, ρ *  sqrt(m - j + 1), λ*ϵₘ)
-        verbose && @show j, σ₋₁, ρ *  sqrt(m - j + 1)
+        # @show j, σ₋₁, ρ *  sqrt(m - j + 1)
 
         # Lemma 7.1: If (p,q) is w/in ϵ of P^k_{mn} then σ₋₁ < ϵ√(m-j+1)
         if σ₋₁ ≤ ρ *  sqrt(m - j + 1)
             # candidate for degree; refine u₀, vₒ, w₀ to see if ρ < ϵ
             if iszero(σ₋₁)
-                @info "Determinant is zero, which shouldn't be the case. Treat results with scrutiny"
+                # determinant is 0
                 u, v, w = initial_uvw(Val(:iszero), j, p, q, xx)
             else
                 u, v, w = initial_uvw(Val(:ispossible), j, p, q, xx)
             end
             ϵₖ, κ = refine_uvw!(u, v, w, p, q, uv, uw)
             ϵ = max(atol, npq₂ * κ * rtol)
-            verbose && @show ϵₖ, ϵ
+            # @show ϵₖ, ϵ
             if ϵₖ ≤ ϵ
                 return (u=u, v=v, w=w, Θ=ϵₖ, κ=κ)
             end
@@ -430,28 +428,29 @@ function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,
 
 end
 
-# find u₎, v₀. w₀ when R is singular
+# find u₀, v₀. w₀ when R is singular.
 function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,
                                                               P<:PnPolynomial{T,X},
                                                               Q<:PnPolynomial{T,X}}
 
     m,n = length(p)-1, length(q)-1
-    S = [convmtx(p, n-j+1) convmtx(q, m-j+1)]
-
+    S = SylvesterMatrix(p,q,j)
     F = qr(S)
     R = UpperTriangular(F.R)
 
     if iszero(det(R))
         x .= eigvals(R)[:,1]
     else
-        x .= ones(T, size(R,2))
-        ldiv!(R', x)
-        x ./= norm(x,2)
-        ldiv!(R, x)
-        x ./= norm(x)
+        rand!(x)
+        smallest_singular_value!(x, R)
+#        x .= ones(T, size(R,2))
+#        ldiv!(R', x)
+#        x ./= norm(x,2)
+#        ldiv!(R, x)
+#        x ./= norm(x)
     end
 
-    w = P(x[1:n-j+1])
+    w = P(x[1:n-j+1]) # ordering of S is not interlaced
     v = P(-x[(n-j+2):end])
 
     u = solve_u(v,w,p,q,j)
@@ -735,7 +734,7 @@ end
 
 function SylvesterMatrix(p, q, j)
     m, n = length(p)-1, length(q) - 1
-    Sₓ = hcat(convmtx(p, n-j + 1 ),  convmtx(q, m-j + 1))
+    Sₓ = hcat(convmtx(p, n - j + 1 ),  convmtx(q, m - j + 1))
 end
 
 ## ----
