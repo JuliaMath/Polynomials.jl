@@ -55,10 +55,11 @@ multiplicity structure:
 
 * `θ`: the singular value threshold, set to `1e-8`. This is used by
   `Polynomials.ngcd` to assess if a matrix is rank deficient by
-  comparing the smallest singular value to `θ ⋅ ||p||₂`.
+  comparing the smallest singular value to `θ ⋅ ‖p‖₂`.
 
 * `ρ`: the initial residual tolerance, set to `1e-10`. This is passed
-  to `Polynomials.ngcd`, the GCD finding algorithm as a relative tolerance.
+  to `Polynomials.ngcd`, the GCD finding algorithm as a measure for
+  the absolute tolerance multiplied by `‖p‖₂`.
 
 * `ϕ`: A scale factor, set to `100`. As the `ngcd` algorithm is called
   recursively, this allows the residual tolerance to scale up to match
@@ -69,11 +70,11 @@ Returns a named tuple with
 * `values`: the identified roots
 * `multiplicities`: the corresponding multiplicities
 * `κ`: the estimated condition number
-* `ϵ`: the backward error, `||p̃ - p||_w`.
+* `ϵ`: the backward error, `‖p̃ - p‖_w`.
 
 If the wrong multiplicity structure is identified in step 1, then
 typically either `κ` or `ϵ` will be large. The estimated forward
-error, `||z̃ - z||₂`, is bounded up to higher order terms by `κ ⋅ ϵ`.
+error, `‖z̃ - z‖₂`, is bounded up to higher order terms by `κ ⋅ ϵ`.
 This will be displayed if `verbose=true` is specified.
 
 For polynomials of degree 20 or higher, it is often the case the `l`
@@ -100,43 +101,66 @@ function multroot(p::Polynomials.StandardBasisPolynomial{T}; verbose=false,
 
 end
 
-# The multiplicity structure, `l`, gives rise to a pejorative manifold `Πₗ = {Gₗ(z) | z∈ Cᵐ}`.
-function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T};
-                        ρ = 1e-10, # initial residual tolerance
-                        θ = 1e-8,  # zero singular-value threshold
-                        ϕ = 100)  where {T}
+# The multiplicity structure, `l`, gives rise to a pejorative manifold
+# `Πₗ = {Gₗ(z) | z ∈ Cᵐ}`. This first finds the approximate roots, then
+# finds the multiplicity structure
+function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X};
+                             θ = 1e-8,  # zero singular-value threshold
+                             ρ = 1e-10, # initial residual tolerance
+                             ϕ = 100    # residual growth factor
+                             )  where {T,X}
 
-    zT = zero(float(real(T)))
-    u, v, w, θ′, κ = Polynomials.ngcd(p, derivative(p),
-                                       atol=ρ*norm(p), satol = θ*norm(p),
-                                       rtol = zT, srtol = zT)
+    S = float(T)
+    u = Polynomials.PnPolynomial{S,X}(S.(coeffs(p)))
+
+    nu₂ = norm(u, 2)
+    θ′, ρ′ =  θ * nu₂, ρ * nu₂
+
+    u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u);
+                                       satol = θ′, srtol = zero(real(T)),
+                                       atol = ρ′, rtol = zero(real(T))
+                                      )
+    ρⱼ /= nu₂
+
     zs = roots(v)
+    ls = pejorative_manifold_multiplicities(u,
+                                            zs, ρⱼ,
+                                            θ, ρ, ϕ)
+    zs, ls
+end
+
+
+
+function pejorative_manifold_multiplicities(u::Polynomials.PnPolynomial{T},
+                                            zs, ρⱼ,
+                                            θ, ρ, ϕ) where {T}
     nrts = length(zs)
     ls = ones(Int, nrts)
 
     while !Polynomials.isconstant(u)
 
-        normp = 1 + norm(u, 2)
-        ρ′ = max(ρ*normp, ϕ * θ′)  # paper uses just latter
-        u, v, w, θ′, κ = Polynomials.ngcd(u, derivative(u),
-                                          atol=ρ′, satol = θ*normp,
-                                          rtol = zT, srtol = zT,
-                                          minⱼ = degree(u) - nrts # truncate search
+        nu₂ = norm(u,2)
+        θ = θ * nu₂
+        ρ =  max(ρ, ϕ * ρⱼ)
+        ρ′ = ρ * nu₂
+        u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u),
+                                           satol = θ, srtol = zero(real(T)),
+                                           atol = ρ′, rtol = zero(real(T)),
+                                           minⱼ = degree(u) - nrts
                                           )
-
-        rts = roots(v)
-        nrts = length(rts)
-
-        for z in rts
-            tmp, ind = findmin(abs.(zs .- z))
-            ls[ind] = ls[ind] + 1
+        ρⱼ /= nu₂
+        nrts = degree(v)
+        for z ∈ roots(v)
+            _, ind = findmin(abs.(zs .- z))
+            ls[ind] += 1
         end
 
     end
 
-    zs, ls # estimate for roots, multiplicities
+    ls
 
 end
+
 
 """
     pejorative_root(p, zs, ls; kwargs...)
@@ -144,18 +168,18 @@ end
 Find a *pejorative* *root* for `p` given multiplicity structure `ls` and initial guess `zs`.
 
 The pejorative manifold for a multplicity structure `l` is denoted `{Gₗ(z) | z ∈ Cᵐ}`. A pejorative
-root is a least squares minimizer of `F(z) = W ⋅ [Gₗ(z) - a]`. Here `a ~ (p_{n-1}, p_{n-2}, …, p_1, p_0) / p_n` and `W` are weights given by `min(1, 1/|aᵢ|)`. When `l` is the mathematically correct structure, then `F` will be `0` for a pejorative root. If `l` is not correct, then the backward error `||p̃ - p||_w` is typically large, where `p̃ = Π (x-z̃ᵢ)ˡⁱ`.
+root is a least squares minimizer of `F(z) = W ⋅ [Gₗ(z) - a]`. Here `a ~ (p_{n-1}, p_{n-2}, …, p_1, p_0) / p_n` and `W` are weights given by `min(1, 1/|aᵢ|)`. When `l` is the mathematically correct structure, then `F` will be `0` for a pejorative root. If `l` is not correct, then the backward error `‖p̃ - p‖_w` is typically large, where `p̃ = Π (x-z̃ᵢ)ˡⁱ`.
 
 This follows Algorithm 1 of [Zeng](https://www.ams.org/journals/mcom/2005-74-250/S0025-5718-04-01692-8/S0025-5718-04-01692-8.pdf)
 """
 function pejorative_root(p::Polynomials.StandardBasisPolynomial,
-                         zs::Vector{S}, ls::Vector{Int}; kwargs...) where {S}
+                         zs::Vector{S}, ls; kwargs...) where {S}
     ps = (reverse ∘ coeffs)(p)
     pejorative_root(ps, zs, ls; kwargs...)
 end
 
 # p is [1, a_{n-1}, a_{n-2}, ..., a_1, a_0]
-function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
+function pejorative_root(p, zs::Vector{S}, ls;
                  τ = eps(float(real(S)))^(2/3),
                  maxsteps = 100, # linear or quadratic
                  verbose=false
@@ -170,7 +194,7 @@ function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
     a = p[2:end]./p[1]     # a ~ (p[n-1], p[n-2], ..., p[0])/p[n]
     W = Diagonal([min(1, 1/abs(aᵢ)) for aᵢ in a])
     J = zeros(S, m, n)
-    G = zeros(S,  1 + m)
+    G = zeros(S, 1 + m)
     Δₖ = zeros(S, n)
     zₖs = copy(zs)  # updated
 
@@ -205,10 +229,10 @@ function pejorative_root(p, zs::Vector{S}, ls::Vector{Int};
     if cvg
         return zₖs
     else
-        @info ("""
+        @info """
 The multiplicity count may be in error: the initial guess for the roots failed
 to converge to a pejorative root.
-""")
+"""
         return(zₖs)
     end
 
@@ -220,13 +244,11 @@ function evalG!(G, zs::Vector{T}, ls::Vector) where {T}
     G .= zero(T)
     G[1] = one(T)
 
-    ctr = 1
     for (z,l) in zip(zs, ls)
         for _ in 1:l
-            for j in length(G)-1:-1:1#ctr
+            for j in length(G)-1:-1:1
                 G[1 + j] -= z * G[j]
             end
-            ctr += 1
         end
     end
 
@@ -241,6 +263,7 @@ function evalJ!(J, zs::Vector{T}, ls::Vector) where {T}
     n, m = sum(ls), length(zs)
 
     evalG!(view(J, 1:1+n-m, 1), zs, ls .- 1)
+
     for (j′, lⱼ) in enumerate(reverse(ls))
         for i in 1+n-m:-1:1
             J[i, m - j′ + 1] = -lⱼ * J[i, 1]
@@ -260,19 +283,21 @@ end
 
 # Defn (3.5) condition number of z with respect to the multiplicity l and weight W
 cond_zl(p::AbstractPolynomial, zs::Vector{S}, ls) where {S}  = cond_zl(reverse(coeffs(p)), zs, ls)
+
 function cond_zl(p, zs::Vector{S}, ls) where {S}
     J = zeros(S, sum(ls), length(zs))
-    W = diagm(0 => [min(1, 1/abs(aᵢ)) for aᵢ in p[2:end]])
     evalJ!(J, zs, ls)
-    F = qr(W*J)
-    _, σ, _ = Polynomials.NGCD.smallest_singular_value(F.R)
+    W = diagm(0 => [min(1, 1/abs(aᵢ)) for aᵢ in p[2:end]])
+
+    σ = Polynomials.NGCD.smallest_singular_value(W*J)
     1 / σ
 end
 
 backward_error(p::AbstractPolynomial, zs::Vector{S}, ls) where {S}  =
     backward_error(reverse(coeffs(p)), zs, ls)
+
 function backward_error(p, z̃s::Vector{S}, ls) where {S}
-    # || ã - a ||w
+    # ‖ ã - a ‖w
     G = zeros(S,  1 + sum(ls))
     evalG!(G, z̃s, ls)
     a = p[2:end]./p[1]
@@ -288,8 +313,8 @@ end
 function show_stats(κ, ϵ)
     println("")
     println("Condition number κ(z; l) = ", κ)
-    println("Backward error ||ã - a||w = ", ϵ)
-    println("Estimated forward root error ||z̃ - z||₂ = ", κ * ϵ)
+    println("Backward error ‖ã - a‖w = ", ϵ)
+    println("Estimated forward root error ‖z̃ - z‖₂ = ", κ * ϵ)
     println("")
 end
 

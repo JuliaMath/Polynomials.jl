@@ -862,7 +862,7 @@ end
         n = 4
         q = p^n
         out = Polynomials.Multroot.multroot(q)
-        @test out.κ * out.ϵ > sqrt(eps())  # large  forward error, l misidentified
+        @test (out.multiplicities == n*ls) || (out.κ * out.ϵ > sqrt(eps()))  # large  forward error, l misidentified
         # with right manifold it does yield a small forward error
         zs′ = Polynomials.Multroot.pejorative_root(q, rts .+ 1e-4*rand(3), n*ls)
         @test prod(Polynomials.Multroot.stats(q, zs′, n*ls))  < sqrt(eps())
@@ -1013,7 +1013,8 @@ end
         p = P([1,2,3], :x)
         A = [1 p; p^2 p^3]
         @test !issymmetric(A)
-        @test issymmetric(A*transpose(A))
+        U = A * A'
+        @test U[1,2] ≈ U[2,1] # issymmetric with some allowed error for FactoredPolynomial
         diagm(0 => [1, p^3], 1=>[p^2], -1=>[p])
     end
 
@@ -1289,9 +1290,9 @@ end
     d = P([0.5490673726445683, 0.15991109487875477]);
     @test degree(gcd(a*d,b*d)) == 0
     @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
-    @test  degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
-    @test_skip degree(gcd(a*d,b*d, method=:numerical)) == degree(d) # issues on some architectures
-    l,m,n = (5,5,5) # realiable, though for larger l,m,n only **usually** correct
+    @test degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
+    @test_skip degree(gcd(a*d,b*d, method=:numerical)) == degree(d) # issues on some architectures (had test_skip)
+    l,m,n = (5,5,5) # sensitive to choice of `rtol` in ngcd
     u,v,w = fromroots.(rand.((l,m,n)))
     @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
 
@@ -1320,7 +1321,7 @@ end
     W(n) = prod( (x-r1*alpha(j,n))^2 + r1^2*beta(j,n)^2 for j in (n+1):2n)
     @testset for n in 2:2:20
         p = U(n) * V(n); q = U(n) * W(n)
-        @test degree(gcd(p,q, method=:numerical)) == degree(U(n))
+        @test degree(gcd(p,q;  method=:numerical)) == degree(U(n))
     end
 
     # Test 5 of Zeng
@@ -1331,15 +1332,16 @@ end
 
         p = prod((x-i)^j for (i,j) in enumerate(ms))
         dp = derivative(p)
-        @test degree(gcd(p,dp, method=:numerical)) == sum(max.(ms .- 1, 0))
+        @test degree(gcd(p,dp; method=:numerical)) == sum(max.(ms .- 1, 0))
     end
 
     # fussy pair
     x =  variable(P{Float64})
-    @testset for n in (2,5,10,20,50, 100)
+    @testset for n in (2,5,10,20,25,50, 100)
         p = (x-1)^n * (x-2)^n * (x-3)
         q = (x-1) * (x-2) * (x-4)
-        @test degree(gcd(p,q, method=:numerical)) == 2
+        a = Polynomials.ngcd(p, q)
+        a.κ < 100 && @test degree(a.u) == 2
     end
 
     # check for fixed k
