@@ -12,7 +12,6 @@ function ngcd(p::P, q::Q,
               args...;
               kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
                                          S,Y,Q<:StandardBasisPolynomial{S,Y}}
-
     if (degree(q) > degree(p))
         u,w,v,Θ,κ =  ngcd(q,p,args...;kwargs...)
         return (u=u,v=v,w=w, Θ=Θ, κ=κ)
@@ -93,7 +92,6 @@ end
 module NGCD
 using Polynomials, LinearAlgebra
 import Polynomials: PnPolynomial, constructorof
-import Random: rand!
 
 """
     ngcd(p::PnPolynomial{T,X}, q::PnPolynomial{T,X}, [k::Int];
@@ -105,18 +103,19 @@ import Random: rand!
              scale::Bool=false
          )
 
+Computes numerical GCD of polynomials `p` and `q`.
 
-Return ``u, v, w, Θ, κ`` where ``u⋅v ≈ p`` and ``u⋅w ≈ q`` (polynomial
+Returns ``u, v, w, Θ, κ`` where ``u⋅v ≈ p`` and ``u⋅w ≈ q`` (polynomial
 multiplication); ``Θ`` (`\\Theta[tab]`) is the residual error (``‖
 [u⋅v,u⋅w] - [p,q] ‖``); and ``κ`` (`\\kappa[tab]`) is the numerical gcd
 condition number estimate. When `scale=true`, ``u⋅v ≈ ps/‖ps‖₂`` and
 ``u⋅w ≈ qs/‖qs‖₂``.
 
 The numerical GCD problem is defined in [1] (5.4). Let ``(p,q)`` be a
-polynomial pair with degree ``m``, ``n``. Let ``Ρ_{mn}`` be set of all
+polynomial pair with degree ``m``, ``n``. Let ``Ρₘₙ`` be set of all
 such pairs. Any given pair of polynomials has an exact greatest common
 divisor, ``u``, of degree ``k``, defined up to constant factors. Let
-``Ρᵏmn`` be the manifold of all such ``(p,q)`` pairs with exact gcd of
+``Ρᵏₘₙ`` be the manifold of all such ``(p,q)`` pairs with exact gcd of
 degree ``k``. A given pair ``(p,q)`` with exact gcd of degree ``j``
 will have some distance ``Θᵏ`` from ``Pᵏ``.  For a given threshold
 ``ϵ>0`` a numerical GCD of ``(p,q)`` within ``ϵ`` is an exact GCD of a
@@ -136,7 +135,7 @@ Suppose ``(p,q)`` is an ``ϵ`` pertubation from ``(p̂,q̂)`` where ``(p̂,q̂)`
 
 
 The Zeng algorithm proposes a degree for ``u`` and then *if* a triple
-``(u,v,w)`` with ``u`` of degree ``k`` and ``(u⋅v, u⋅w)`` in ``Ρᵏmn``
+``(u,v,w)`` with ``u`` of degree ``k`` and ``(u⋅v, u⋅w)`` in ``Ρᵏₘₙ``
 can be found satisfying ``‖ (u⋅v, u⋅w) - (p,q) ‖ < ϵ`` then
 ``(u,v,w)`` is returned; otherwise the proposed degree is reduced and
 the process repeats. If not terminated, at degree ``0`` a constant gcd
@@ -158,9 +157,9 @@ polynomials have large norms, scaling -- or using a relative tolerance
 
 There are two places where tolerances are utilized:
 
-* For a given `k`, the algorithm refines values `u,v,w`. The value `Θᵏ` is estimated by the difference between ``(u ⋅ v, u ⋅ w)`` and ``(p,q)``. A tolerance of `ρ` is used to test if this is smaller than specified. The arguments `atol` and `rtol` are used to compute `ϵ=max(atol, (‖p‖₂+‖q‖₂)*κ*rtol)`
+* For a given `k`, the algorithm refines values `u,v,w`. The value `Θᵏ` is estimated by the difference between ``(u ⋅ v, u ⋅ w)`` and ``(p,q)``. A tolerance of `ρ` is used to test if this is smaller than specified. The arguments `atol` and `rtol` are used to compute `ϵ=max(atol, (‖(p,q)‖₂)*κ*rtol)`
 
-* The value `ϵ` is also used to determine if the Sylvester matrix for a given `j`, `Sⱼ`, is singular. The theory has ``ϵ`` the same a above, but we this implementation uses `ρ = max(satol, ‖p‖₂*srtol)`, which seems to track the scaling that is needed due to floating point approximations. The theory states that if `Θᵏ < ϵ` then `σ₋₁ < ϵ √(m - j + 1)`.
+* The value `ϵ` is also used to determine if the Sylvester matrix for a given `j`, `Sⱼ`, is singular. The theory has ``ϵ`` the same a above, but we this implementation uses `ρ = max(satol, ‖(p,q)‖₂*srtol)`, which seems to track the scaling that is needed due to floating point approximations. The theory states that if `Θᵏ < ϵ` then `σ₋₁ < ϵ √(m - j + 1)`.
 
 The default choice for `ϵ` works reasonably well for a range of polynomials, but scaling or some other choice of `ϵ` is needed for some cases.
 
@@ -171,18 +170,48 @@ When `k` is specified, a value for ``(u, v, w)`` is identified with ``degree(u)=
 
 Output:
 
-The function outputs a named tuple with names (`u`, `v`, `w`, `Θ`, `κ`). The components `u`,`v`,`w` estimate the gcd and give the divisors. The value is the residual error and `κ` estimates the numerical condition number.
+The function outputs a named tuple with names (`u`, `v`, `w`, `Θ`, `κ`). The components `u`,`v`,`w` estimate the gcd and give the divisors. The value `Θ` is the residual error and `κ` estimates the numerical condition number.
 
 Example:
 
+```jldoctest ngcd
+julia> using Polynomials
+
+julia> x = variable(Polynomial{Float64})
+Polynomial(1.0*x)
+
+julia> p = (x+10)*(x^9 + x^8/3 + 1);
+
+julia> q = (x+10)*(x^9 + x^8/7 - 6/7);
+
+julia> degree(gcd(p, q))
+0
+
+julia> degree(gcd(p, q, method=:numerical))  # u a degree 1 polynomial
+1
 ```
-using Polynomials
-x = variable(Polynomial{Float64})
-p = (x+10)*(x^2 + x/3 + 1)
-q = (x+10)*(x^2 + x/3 - 6/7)
-gcd(p, q) # u a constant
-gcd(p, q, method=:numerical)  # u a degree 1 polynomial
+
+This example perturbs `q` more than the default tolerance, so `atol` is set. We can see that the residual error found is on the order of `1e-9`:
+
+```jldoctest ngcd
+julia> p = (x-1)*(x-2)*(x-3);
+
+julia> q = (x-2)*(x-3)*(x-4) + (1e-8)*x^2;
+
+julia> out = Polynomials.ngcd(p, q, atol=1e-8);
+
+julia> degree(out.u)
+2
+
+julia> round(log10(out.Θ))
+-9.0
+
+julia> out = Polynomials.ngcd(p, q);
+
+julia> degree(out.u)
+0
 ```
+
 
 Reference:
 
@@ -196,12 +225,12 @@ Note: Based on work by Andreas Varga
 """
 function ngcd(p::PnPolynomial{T,X},
               q::PnPolynomial{T,X};
-              atol = eps(real(T))^(5/6),       # residual over Πₖ
-              rtol = eps(real(T)),
-              satol = atol,
-              srtol = rtol, # backward error tolerance of (p,q), (p̃, q̃)
+              atol = eps(real(T))^(5/6),       # residual over Θᵏ
+              rtol = Base.rtoldefault(real(T)),
+              satol = atol,                    # singular tolerance
+              srtol =  eps(real(T)),
               scale::Bool=false,
-              λ::Real = one(real(T)),
+              λ::Real = one(real(T)),          # not used
               minⱼ = -1
               ) where {T, X}
 
@@ -229,7 +258,7 @@ function ngcd(p::PnPolynomial{T,X},
 
     # j is degree of proposed gcd j ≤ n ≤ m
     j = n  # We count down Sn, S_{n-1}, ..., S₂, S₁
-    Sₓ = SylvesterMatrix(p, q, j)    # initial Sylvester matrix
+    Sₓ = SylvesterMatrix(p, q, j)    # initial Sylvester matrix [Cₙ₋ⱼ₊₁(p), Cₘ₋ⱼ₊₁(q)]
 
     A0 = zeros(T, m+1, 2) # storage for use with extend_QR!
     A0[:,1] = coeffs(p)
@@ -241,19 +270,14 @@ function ngcd(p::PnPolynomial{T,X},
     R[1:nc, 1:nc] .= F.R
 
     # tolerances
-    ϵₘ = eps(real(T)) # machine tolerance
-    atol, satol = λ*atol, λ*satol
-
+    atol, satol, rtol, srtol = λ*atol, λ*satol, λ*rtol, λ*srtol
     ρ = max(satol, npq₂ * srtol)
 
-
     while true
-
         V = UpperTriangular(view(R, 1:nc, 1:nc))
         xx = view(x, 1:nc)
-        λ = norm(Q,Inf)*norm(R,Inf)
-        σ₋₁ = smallest_singular_value!(xx, V, ρ *  sqrt(m - j + 1), λ*ϵₘ)
-        # @show j, σ₋₁, ρ *  sqrt(m - j + 1)
+        σ₋₁ = smallest_singular_value!(xx, V, ρ *  sqrt(m - j + 1))
+        #@show j, σ₋₁, ρ *  sqrt(m - j + 1), npq₂
 
         # Lemma 7.1: If (p,q) is w/in ϵ of P^k_{mn} then σ₋₁ < ϵ√(m-j+1)
         if σ₋₁ ≤ ρ *  sqrt(m - j + 1)
@@ -265,12 +289,19 @@ function ngcd(p::PnPolynomial{T,X},
                 u, v, w = initial_uvw(Val(:ispossible), j, p, q, xx)
             end
             ϵₖ, κ = refine_uvw!(u, v, w, p, q, uv, uw)
+            # we have limsup Θᵏ / ‖(p,q) - (p̃,q̃)‖ = κ, so
+            # ‖Θᵏ‖ ≤ κ ⋅ ‖(p,q)‖ ⋅ ϵ seems a reasonable heuristic.
+            # Too tight a tolerance and the right degree will be missed; too
+            # lax, and larger degrees will be accepted. We are using
+            # `√eps()` for `rtol`, but that may be too lax and is subject to
+            # change.
             ϵ = max(atol, npq₂ * κ * rtol)
-            # @show ϵₖ, ϵ
+            #@show ϵₖ, ϵ, κ
             if ϵₖ ≤ ϵ
+                #@show :success, σ₋₁, ϵₖ
                 return (u=u, v=v, w=w, Θ=ϵₖ, κ=κ)
             end
-
+            #@show :failure, j
         end
 
         # reduce possible degree of u and try again with Sⱼ₋₁
@@ -278,7 +309,7 @@ function ngcd(p::PnPolynomial{T,X},
         # minⱼ = -1
         if j == minⱼ
             u, v, w = initial_uvw(Val(:ispossible), j, p, q, xx)
-            ϵₖ, κ = refine_uvw!(u,v,w, p, q, uv, uw)
+            ϵₖ, κ = refine_uvw!(u, v ,w, p, q, uv, uw)
             return (u=u, v=v, w=w, Θ=ϵₖ, κ=κ)
         end
 
@@ -312,7 +343,7 @@ end
 
 function trivial_gcd(p::P, q) where {T, X, P <: PnPolynomial{T, X}}
     u, v, w = one(P), p, q
-    return (u=u, v=v, w=w, Θ=zero(T), κ=typemax(real(T)))
+    return (u=u, v=v, w=w, Θ=zero(T), κ=NaN)
 end
 
 
@@ -321,7 +352,7 @@ end
 
 # https://arxiv.org/abs/2103.04196
 # Find smallest singular value
-# stop when values less then max(atol, ‖R‖⋅rtol) or Δ=sⱼ - s₋₁ is small
+# stop when value is less then θ or Δ=sⱼ - s₋₁ is small
 function smallest_singular_value!(w, R::UpperTriangular{T},
                                   θ,
                                   ϵₘ = eps(real(T))
@@ -329,20 +360,20 @@ function smallest_singular_value!(w, R::UpperTriangular{T},
 
     # Cant' handle singular matrices
     iszero(det(R)) && return zero(T)
+
     nRₒₒ = norm(R, Inf)
-
-
     MAXSTEPS = 50
     sⱼ = sⱼ₋₁ = typemax(real(T))
 
-    rand!(w)
+    w .= one(T)
     w ./= norm(w)
 
     j = 1
     while true
         sⱼ₋₁ = sⱼ
         sⱼ = smallest_singular_value_one_step!(w, R)
-        if sⱼ ≤ θ || abs(sⱼ - sⱼ₋₁) ≤ sⱼ * ϵₘ
+
+        if sⱼ ≤ θ || abs(sⱼ - sⱼ₋₁) ≤ max(1, sⱼ)  * ϵₘ *  nRₒₒ
             break
         end
 
@@ -368,7 +399,7 @@ function smallest_singular_value!(w, R::UpperTriangular{T}) where {T}
 
     sⱼ = typemax(real(T))
 
-    rand!(w)
+    w .= one(T)
     w ./= norm(w)
 
     j = 1
@@ -442,7 +473,7 @@ function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,
     if iszero(det(R))
         x .= eigvals(R)[:,1]
     else
-        rand!(x)
+        x .= one(T)
         smallest_singular_value!(x, R)
     end
 
@@ -453,9 +484,6 @@ function initial_uvw(::Val{:iszero}, j, p::P, q::Q, x) where {T,X,
     return u,v,w
 end
 
-function initial_uvw(::Val{:constant}, j, p::P, q, x) where {T,X,P<:PnPolynomial{T,X}}
-    return one(P), p, q
-end
 
 # extend QR to next size
 # Q gets a 1 in nc,nc, 0s should be elswhere
@@ -500,38 +528,36 @@ function refine_uvw!(u::P, v::P, w::P,
     mul!(uv, u, v)
     mul!(uw, u, w)
     ρ₁ = residual_error(p, q, uv, uw)
-
+    iszero(ρ₁) && return (ρ₁, NaN)
     # storage
     h, β =  u, dot(u,u)  # h = constant * u₀ is used
     A = JF(h, u, v, w)
     Δfβ = Fmp(dot(h, u) - β, p, q, uv, uw)
-    Δz = zeros(T, length(u) + length(v) + length(w))
+    Δz = ones(T, length(u) + length(v) + length(w))
     n = size(A, 2)
     R = UpperTriangular(Matrix{T}(undef, n, n))
+    R′ = copy(R)
     ũ, ṽ, w̃ = copy(u), copy(v), copy(w)
 
     steps = 0
-#    @show steps, ρ₁
-
+    #@show steps, ρ₁
     minᵢ, Maxᵢ = 3, 20
-
-
 
     while ρ₁ > 0.0
         steps += 1
         refine_uvw_step!(ũ, ṽ, w̃,
                          Δz, A, Δfβ, R)
-
         mul!(uv, ũ, ṽ)
         mul!(uw, ũ, w̃)
         ρ′ = residual_error(p, q, uv, uw)
-#        @show steps, ρ′
+        #@show steps, ρ′
         # don't worry as much about first few,
         # but afterwards each step must be productive
         # terminate when no longer decreasing
         #if steps < minᵢ || (steps ≤ Maxᵢ && ρ′ < 0.95*ρ₁)
         if ρ′ < ρ₁ || (steps ≤ minᵢ && ρ′ ≤ 1.1*ρ₁)
             ρ₁ = ρ′
+            copy!(R′, R)
             copy!(u.coeffs, ũ.coeffs)
             copy!(v.coeffs, ṽ.coeffs)
             copy!(w.coeffs, w̃.coeffs)
@@ -540,12 +566,13 @@ function refine_uvw!(u::P, v::P, w::P,
             JF!(A, h, u, v, w)
             Fmp!(Δfβ,  dot(h, u) - β, p, q, uv, uw)
         else
-
+            steps == 1 && copy!(R′, R)
             break
         end
     end
-    σ₂ = smallest_singular_value_one_step!(Δz, R)
-    κ = 1 / σ₂
+    smallest_singular_value_one_step!(Δz, R′) # two steps, not one
+    σ₂ = smallest_singular_value_one_step!(Δz, R′)
+    κ = 1/σ₂
     return ρ₁, κ
 
 end
@@ -555,8 +582,7 @@ end
 function refine_uvw_step!(u, v, w,
                           Δz, J⁺, Δfβ, R)
 
-    qrsolve!(Δz, J⁺, Δfβ, R)
-    #Δz .= J⁺ \ Δfβ
+    qrsolve!(Δz, J⁺, Δfβ, R) # Δz .= J⁺ \ Δfβ
 
     m,n,l = length(u)-1, length(v)-1, length(w)-1
 

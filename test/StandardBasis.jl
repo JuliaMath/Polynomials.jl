@@ -862,7 +862,7 @@ end
         n = 4
         q = p^n
         out = Polynomials.Multroot.multroot(q)
-        @test out.κ * out.ϵ > sqrt(eps())  # large  forward error, l misidentified
+        @test (out.multiplicities == n*ls) || (out.κ * out.ϵ > sqrt(eps()))  # large  forward error, l misidentified
         # with right manifold it does yield a small forward error
         zs′ = Polynomials.Multroot.pejorative_root(q, rts .+ 1e-4*rand(3), n*ls)
         @test prod(Polynomials.Multroot.stats(q, zs′, n*ls))  < sqrt(eps())
@@ -1290,9 +1290,9 @@ end
     d = P([0.5490673726445683, 0.15991109487875477]);
     @test degree(gcd(a*d,b*d)) == 0
     @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
-    @test  degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
-    @test_skip degree(gcd(a*d,b*d, method=:numerical)) == degree(d) # issues on some architectures
-    l,m,n = (2,2,2) # realiable, though for larger l,m,n only **usually** correct.
+    @test degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
+    @test degree(gcd(a*d,b*d, method=:numerical)) == degree(d) # issues on some architectures (had test_skip)
+    l,m,n = (5,5,5) # sensitive to choice of `rtol` in ngcd
     u,v,w = fromroots.(rand.((l,m,n)))
     @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
 

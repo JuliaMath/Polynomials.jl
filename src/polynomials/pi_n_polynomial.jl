@@ -21,7 +21,8 @@ struct PnPolynomial{T,X} <: StandardBasisPolynomial{T, X}
     end
 end
 
-
+PnPolynomial{T, X}(coeffs::Tuple) where {T, X} =
+    PnPolynomial{T,X}(T[pᵢ for pᵢ ∈ coeffs])
 
 Polynomials.@register PnPolynomial
 
@@ -46,7 +47,7 @@ function LinearAlgebra.mul!(pq, p::PnPolynomial{T,X}, q) where {T,X}
     for i ∈ 0:m
         for j ∈ 0:n
             k = i + j
-            @inbounds pq.coeffs[1+k] += p.coeffs[1+i] * q.coeffs[1+j]
+            @inbounds pq.coeffs[1+k] = muladd(p.coeffs[1+i], q.coeffs[1+j], pq.coeffs[1+k])
         end
     end
     nothing

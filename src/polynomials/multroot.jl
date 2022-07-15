@@ -101,46 +101,66 @@ function multroot(p::Polynomials.StandardBasisPolynomial{T}; verbose=false,
 
 end
 
-# The multiplicity structure, `l`, gives rise to a pejorative manifold `Πₗ = {Gₗ(z) | z∈ Cᵐ}`.
-function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T};
+# The multiplicity structure, `l`, gives rise to a pejorative manifold
+# `Πₗ = {Gₗ(z) | z ∈ Cᵐ}`. This first finds the approximate roots, then
+# finds the multiplicity structure
+function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X};
                              θ = 1e-8,  # zero singular-value threshold
                              ρ = 1e-10, # initial residual tolerance
                              ϕ = 100    # residual growth factor
-                             )  where {T}
-    p₂ = norm(p, 2)
-    u, v, w, ρⱼ, κ = Polynomials.ngcd(p, derivative(p);
-                                      satol = θ * p₂, srtol = zero(real(T)),
-                                      atol = ρ * p₂, rtol = zero(real(T))
-    )
+                             )  where {T,X}
+
+    S = float(T)
+    u = Polynomials.PnPolynomial{S,X}(S.(coeffs(p)))
+
+    nu₂ = norm(u, 2)
+    θ′, ρ′ =  θ * nu₂, ρ * nu₂
+
+    u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u);
+                                       satol = θ′, srtol = zero(real(T)),
+                                       atol = ρ′, rtol = zero(real(T))
+                                      )
+    ρⱼ /= nu₂
 
     zs = roots(v)
+    ls = pejorative_manifold_multiplicities(u,
+                                            zs, ρⱼ,
+                                            θ, ρ, ϕ)
+    zs, ls
+end
+
+
+
+function pejorative_manifold_multiplicities(u::Polynomials.PnPolynomial{T},
+                                            zs, ρⱼ,
+                                            θ, ρ, ϕ) where {T}
     nrts = length(zs)
     ls = ones(Int, nrts)
-    λ = ϕ
+
     while !Polynomials.isconstant(u)
 
         nu₂ = norm(u,2)
-        θ′ = θ * nu₂
-        ρ′ = max(ρ, ϕ * ρⱼ)  # paper uses just latter
+        θ = θ * nu₂
+        ρ =  max(ρ, ϕ * ρⱼ)
+        ρ′ = ρ * nu₂
         u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u),
-                                          satol = θ′,
-                                          atol = ρ′,
-                                          minⱼ = degree(u) - nrts
+                                           satol = θ, srtol = zero(real(T)),
+                                           atol = ρ′, rtol = zero(real(T)),
+                                           minⱼ = degree(u) - nrts
                                           )
-
-        rts = roots(v)
-        nrts = length(rts)
-
-        for z in rts
-            tmp, ind = findmin(abs.(zs .- z))
+        ρⱼ /= nu₂
+        nrts = degree(v)
+        for z ∈ roots(v)
+            _, ind = findmin(abs.(zs .- z))
             ls[ind] += 1
         end
 
     end
 
-    zs, ls # estimate for roots, multiplicities
+    ls
 
 end
+
 
 """
     pejorative_root(p, zs, ls; kwargs...)
@@ -266,10 +286,10 @@ cond_zl(p::AbstractPolynomial, zs::Vector{S}, ls) where {S}  = cond_zl(reverse(c
 
 function cond_zl(p, zs::Vector{S}, ls) where {S}
     J = zeros(S, sum(ls), length(zs))
-    W = diagm(0 => [min(1, 1/abs(aᵢ)) for aᵢ in p[2:end]])
     evalJ!(J, zs, ls)
-    _,R = qr(W*J)
-    σ = Polynomials.NGCD.smallest_singular_value(UpperTriangular(R))
+    W = diagm(0 => [min(1, 1/abs(aᵢ)) for aᵢ in p[2:end]])
+
+    σ = Polynomials.NGCD.smallest_singular_value(W*J)
     1 / σ
 end
 
