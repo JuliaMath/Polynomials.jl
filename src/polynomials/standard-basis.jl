@@ -644,7 +644,7 @@ evalpoly(x, p::ArnoldiFit) = polyvalA(p.coeffs, p.H, x)
 
 fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T} = polyfitA(x, y, deg; var=var)
 
-Base.convert(::Type{P}, p::ArnoldiFit) where {P <: AbstractPolynomial} = p(variable(P,indeterminate(p)))
+Base.convert(::Type{P}, p::ArnoldiFit{T,M,X}) where {P <: AbstractPolynomial,T,M,X} = p(variable(P,indeterminate(p)))
 
 
 

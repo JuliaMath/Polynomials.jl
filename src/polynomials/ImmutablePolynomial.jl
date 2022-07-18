@@ -203,7 +203,7 @@ function scalar_mult(c::S, p::ImmutablePolynomial{T,X,N}) where {T, X,N, S <: Nu
     return ImmutablePolynomial(cs, X)
 end
 
-function Base.:/(p::ImmutablePolynomial{T,X,N}, c::S) where {T,X,N,S}
+function Base.:/(p::ImmutablePolynomial{T,X,N}, c::S) where {T,X,N,S<:Number}
     R = eltype(one(T)/one(S))
     P = ImmutablePolynomial{R,X}
     (N == 0  || isinf(c)) && return zero(P)

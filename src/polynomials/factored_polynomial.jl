@@ -273,7 +273,7 @@ function scalar_mult(p::P, c::S) where {S<:Number, T, X, P <: FactoredPolynomial
 end
 
 # scalar division
-function Base.:/(p::P, c::S) where {S, T, X, P <: FactoredPolynomial{T, X}}
+function Base.:/(p::P, c::S) where {S<:Number, T, X, P <: FactoredPolynomial{T, X}}
     p * (1/c)
 end
 

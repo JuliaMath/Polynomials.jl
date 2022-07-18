@@ -298,6 +298,7 @@ Base.:+(p::Number, q::AbstractRationalFunction) = q + p
 Base.:+(p::AbstractRationalFunction,  q::Number) = p + q*one(p)
 Base.:+(p::AbstractPolynomial, q::AbstractRationalFunction) = q + p
 Base.:+(p::AbstractRationalFunction,  q::AbstractPolynomial) = p + (q//one(q))
+Base.:+(p::P,  q::T) where {T<:Polynomials.AbstractRationalFunction, P<:(Polynomials.StandardBasisPolynomial{T})} = throw(DomainError()) # avoid ambiguity (issue #435.
 Base.:+(p::AbstractRationalFunction, q::AbstractRationalFunction) = sum(promote(p,q))
 # type should implement this
 function Base.:+(p::R, q::R) where {T,X,P,R <: AbstractRationalFunction{T,X,P}}
