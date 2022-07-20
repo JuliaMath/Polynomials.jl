@@ -151,8 +151,13 @@ function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {P <:Laure
      ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
  end
 
-function Base.convert(::Type{P}, q::AbstractPolynomial) where {P <:LaurentPolynomial}
+function Base.convert(::Type{P}, q::AbstractPolynomial{T,X}) where {T,X,P <:LaurentPolynomial}
     convert(P, convert(Polynomial, q))
+end
+
+# Ambiguity, issue #435
+function Base.convert(𝑷::Type{P}, p::ArnoldiFit{T, M, X}) where {P<:LaurentPolynomial, T, M, X}
+    convert(𝑷, convert(Polynomial, p))
 end
 
 ##

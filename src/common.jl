@@ -851,6 +851,7 @@ function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
     q + R(c)
 end
 
+
 # polynomial + polynomial when different types
 function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: AbstractPolynomial{S,Y}}
     isconstant(p) && return constantterm(p) + q
@@ -944,6 +945,12 @@ function scalar_mult(c::S, p::P) where {S, T, X, P<:AbstractPolynomial{T, X}}
     𝐏([c * pᵢ for pᵢ ∈ coeffs(p)])
 end
 
+scalar_mult(c::S, p::Union{P, R}) where {
+    S<: AbstractPolynomial,
+    T, X,
+    P<:AbstractPolynomial{T, X},
+    R <:AbstractPolynomial{T}
+} = throw(DomainError()) # avoid ambiguity, issue #435
 
 function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) ./ c)
@@ -1081,6 +1088,11 @@ function Base.isapprox(p1::AbstractPolynomial{T},
                        atol::Real = 0,) where {T,S}
     return isapprox(p1, _convert(p1, [n]))
 end
+
+Base.isapprox(::AbstractPolynomial{T}, ::Missing, args...; kwargs...) where T =
+    missing
+Base.isapprox(::Missing, ::AbstractPolynomial{T}, args...; kwargs...) where T =
+    missing
 
 Base.isapprox(n::S,
     p1::AbstractPolynomial{T};

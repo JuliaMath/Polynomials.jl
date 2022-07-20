@@ -222,7 +222,8 @@ function Base.:+(p::ChebyshevT{T,X}, c::S) where {T,X, S<:Number}
     cs[1] += c
     ChebyshevT{R,X}(cs)
 end
-function Base.:+(p::P, c::T) where {T,X,P<:ChebyshevT{T,X}}
+
+function Base.:+(p::P, c::T) where {T <: Number,X,P<:ChebyshevT{T,X}}
     cs = collect(T, values(p))
     cs[1] += c
     P(cs)
