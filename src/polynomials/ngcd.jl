@@ -266,7 +266,9 @@ function ngcd(p::PnPolynomial{T,X},
 
     nr, nc = size(Sₓ) # m+1, m-n+2
     F = qr(Sₓ)
-    Q[1:nr, 1:nr] .= F.Q
+    dest = view(Q, 1:nr, 1:nr)
+    copyto!(dest, I)
+    lmul!(F.Q, dest)
     R[1:nc, 1:nc] .= F.R
 
     # tolerances
