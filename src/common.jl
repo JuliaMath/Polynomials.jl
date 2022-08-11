@@ -476,7 +476,7 @@ Test whether all coefficients of an `AbstractPolynomial` satisfy predicate `pred
 
 You can implement `isreal`, etc., to a `Polynomial` by using `all`.
 """
-Base.all(pred, p::AbstractPolynomial) = all(pred, values(p))
+Base.all(pred, p::AbstractPolynomial{T, X}) where {T,X} = all(pred, values(p))
 """
     any(pred, poly::AbstractPolynomial)
 
