@@ -431,9 +431,6 @@ function Base.convert(::Type{T}, p::AbstractPolynomial{T,X}) where {T <: Number,
 end
 
 # Methods to ensure that matrices of polynomials behave as desired
-Base.promote_rule(::Type{<:AbstractPolynomial{T}},
-                  ::Type{<:AbstractPolynomial{S}},
-                  ) where {T,S} = Polynomial{promote_type(T, S)}
 Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
                                               S,   Q<:AbstractPolynomial{S,X}} =
                                                    Polynomial{promote_type(T, S),X}
@@ -485,7 +482,7 @@ Base.all(pred, p::AbstractPolynomial) = all(pred, values(p))
 
 Test whether any coefficient of an `AbstractPolynomial` satisfies predicate `pred`.
 """
-Base.any(pred, p::AbstractPolynomial) = any(pred, values(p))
+Base.any(pred, p::AbstractPolynomial{T,X}) where {T, X} = any(pred, values(p))
 
 
 

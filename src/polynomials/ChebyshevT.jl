@@ -83,7 +83,10 @@ function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
     p(x)
 end
 
-Base.promote_rule(::Type{P},::Type{Q}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: ChebyshevT{S, X}} = LaurentPolynomial{promote_type(T, S), X}
+Base.promote_rule(::Type{P},::Type{Q}) where {
+    T, X, P <: LaurentPolynomial{T,X},
+    S, Q <: ChebyshevT{S, X}} =
+        LaurentPolynomial{promote_type(T, S), X}
 
 domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
 function Base.one(::Type{P}) where {P<:ChebyshevT}
