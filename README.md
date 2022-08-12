@@ -146,14 +146,14 @@ c = [z(2d - 1) for i in 1:m]
 ```
 then we can exploit its mutability with
 ```julia
-MA.mutable_operate!(MA.add_mul, c, A, b)
+MA.operate!(MA.add_mul, c, A, b)
 ```
 to reduce the allocation down to 48 bytes due to 3 allocations. These remaining
 allocations are due to the `BigInt` buffer used to store the result of
 intermediate multiplications. This buffer can be preallocated with
 ```julia
 buffer = MA.buffer_for(MA.add_mul, typeof(c), typeof(A), typeof(b))
-MA.mutable_buffered_operate!(buffer, MA.add_mul, c, A, b)
+MA.buffered_operate!(buffer, MA.add_mul, c, A, b)
 ```
 then the second line is allocation-free.
 
@@ -174,7 +174,7 @@ c = MA.operate(*, A1, b1)
 MA.mutable_operate!(MA.add_mul, c, A2, b2)
 ```
 
-*Note that currently, only the `Polynomial` implements the API and it only
+*Note that currently, only the `Polynomial` type implements the API and it only
 implements part of it.*
 
 ### Integrals and Derivatives
