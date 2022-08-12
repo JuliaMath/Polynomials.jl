@@ -14,7 +14,7 @@ include("common.jl")
 
 # Polynomials
 include("polynomials/standard-basis.jl")
-include("polynomials/mutable-arithmetics.jl")
+#include("polynomials/mutable-arithmetics.jl")
 include("polynomials/Polynomial.jl")
 include("polynomials/ImmutablePolynomial.jl")
 include("polynomials/SparsePolynomial.jl")

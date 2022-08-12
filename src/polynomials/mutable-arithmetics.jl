@@ -67,5 +67,5 @@ macro register_mutable_arithmetic(name)
 end
 
 ## Ambiguities. Issue #435
-Base.:+(p::P, ::MutableArithmetics.Zero) where {T, X, P<:AbstractPolynomial{T, X}} = p
-Base.:+(p::P, ::T) where {T<:MutableArithmetics.Zero, P<:StandardBasisPolynomial{T}} = p
+#Base.:+(p::P, ::MutableArithmetics.Zero) where {T, X, P<:Polynomials.AbstractPolynomial{T, X}} = p
+#Base.:+(p::P, ::T) where {T<:MutableArithmetics.Zero, P<:Polynomials.StandardBasisPolynomial{T}} = p
