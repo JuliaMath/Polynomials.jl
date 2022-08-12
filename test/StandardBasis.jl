@@ -161,6 +161,7 @@ end
             @test_throws ArgumentError p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]]) # can't fix
 
             # poly add
+            @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
             @test p - p == P([0*a])
@@ -211,6 +212,7 @@ end
             @test p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]])
 
             # poly add
+            @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
             @test_throws MethodError p - p == P([0*a])  # no zeros to make zero polynomial
@@ -260,6 +262,7 @@ end
             @test_throws MethodError p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]]) # Ok, no * for T
 
             # poly add
+            @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
             @test_throws MethodError p - p == P([0*a])  # no zero(T) to make zero polynomial
@@ -313,6 +316,7 @@ end
                 @test p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]])
 
                 # poly add
+                @test +p == p
                 @test p + q == P([a+a,b+b,c])
                 @test p - p == P([0*a])
 

@@ -839,6 +839,8 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 ## +(p::P,c::Number) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
 ## though the default for poly+poly isn't terrible
 
+Base.:+(p::AbstractPolynomial) = p
+
 # polynomial + scalar; implicit identification of c with c*one(P)
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
 
