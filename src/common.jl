@@ -944,12 +944,7 @@ function scalar_mult(c::S, p::P) where {S, T, X, P<:AbstractPolynomial{T, X}}
     𝐏([c * pᵢ for pᵢ ∈ coeffs(p)])
 end
 
-scalar_mult(c::S, p::Union{P, R}) where {
-    S<: AbstractPolynomial,
-    T, X,
-    P<:AbstractPolynomial{T, X},
-    R <:AbstractPolynomial{T}
-} = throw(DomainError()) # avoid ambiguity, issue #435
+scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) = error("scalar_mult(::$(typeof(p1)), ::$(typeof(p2))) is not defined.") # avoid ambiguity, issue #435
 
 function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
     _convert(p, coeffs(p) ./ c)
