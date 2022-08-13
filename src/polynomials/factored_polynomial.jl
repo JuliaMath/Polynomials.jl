@@ -92,7 +92,7 @@ end
 Base.convert(::Type{P}, p::P) where {P <: FactoredPolynomial} = p
 function Base.convert(P::Type{<:FactoredPolynomial}, p::FactoredPolynomial{T,X}) where {T,X}
     T′ = _eltype(P)
-    𝑻 = T′ == nothing ? T : T′
+    𝑻 = isnothing(T′) ? T : T′
     𝑿 = indeterminate(P, p)
     d = Dict{𝑻,Int}()
     copy!(d, p.coeffs)

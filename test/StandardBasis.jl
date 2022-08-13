@@ -7,7 +7,7 @@ import Polynomials: indeterminate
 function  upto_tz(as, bs)
     n,m = findlast.(!iszero, (as,bs))
     n == m || return false
-    n == nothing &&  return true
+    isnothing(n) &&  return true
     for i in 1:n
         !(as[i] ≈ bs[i]) && return false
     end
@@ -1456,7 +1456,7 @@ end
 
     p = ChebyshevT([1,1,1])
     rec = apply_recipe(Dict{Symbol,Any}(), p)
-    @test match(r"T_0", rec[1].plotattributes[:label]) !== nothing
+    @test !isnothing(match(r"T_0", rec[1].plotattributes[:label]))
     @test rec[1].plotattributes[:xlims] == (-1.0, 1.0) # uses domain(p)
 end
 

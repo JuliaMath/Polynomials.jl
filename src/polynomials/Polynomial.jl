@@ -39,7 +39,7 @@ struct Polynomial{T, X} <: StandardBasisPolynomial{T, X}
             @warn "ignoring the axis offset of the coefficient vector"
         end
         N = findlast(!iszero, coeffs)
-        N == nothing && return new{T,X}(zeros(T,1))
+        isnothing(N) && return new{T,X}(zeros(T,1))
         cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
         new{T,X}(cs)
     end

@@ -48,7 +48,7 @@ struct ChebyshevT{T, X} <: AbstractPolynomial{T, X}
         end
 
         N = findlast(!iszero, coeffs)
-        N === nothing && return new{T,X}(zeros(T,1))
+        isnothing(N) && return new{T,X}(zeros(T,1))
         cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
         new{T,X}(cs)
     end

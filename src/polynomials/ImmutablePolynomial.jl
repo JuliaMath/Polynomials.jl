@@ -83,7 +83,7 @@ function ImmutablePolynomial{T,X}(coeffs::AbstractVector{S})  where {T,X,S}
         @warn "ignoring the axis offset of the coefficient vector"
     end
     N = findlast(!iszero, coeffs)
-    N == nothing && return ImmutablePolynomial{R,X,0}(())
+    isnothing(N) && return ImmutablePolynomial{R,X,0}(())
     N′ = N + 1 - firstindex(coeffs)
     ImmutablePolynomial{T, X, N′}([coeffs[i] for i ∈ firstindex(coeffs):N])
 end
@@ -91,7 +91,7 @@ end
 ## -- Tuple arguments
 function ImmutablePolynomial{T,X}(coeffs::Tuple)  where {T,X}
     N = findlast(!iszero, coeffs)
-    N == nothing && return zero(ImmutablePolynomial{T,X})
+    isnothing(N) && return zero(ImmutablePolynomial{T,X})
     ImmutablePolynomial{T,X,N}(NTuple{N,T}(coeffs[i] for i in 1:N))
 end
 
@@ -124,8 +124,8 @@ for op in [:isequal, :(==)]
         (N == M  && $op(p1s,p2s)) &&  return  true
         n1 = findlast(!iszero, p1s) # now trim out zeros
         n2 = findlast(!iszero, p2s)
-        (n1 == nothing && n2 == nothing) && return true
-        (n1 == nothing || n2  == nothing) && return false
+        (isnothing(n1) && isnothing(n2)) && return true
+        (isnothing(n1) || isnothing(n2)) && return false
         $op(p1s[1:n1],p2s[1:n2]) &&  return true
         false
     end

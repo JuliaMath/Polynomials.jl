@@ -36,7 +36,7 @@ Base.copyto!(p::PnPolynomial{T, X}, x::S) where
 
 function Polynomials.degree(p::PnPolynomial)
     i = findlast(!iszero, p.coeffs)
-    i == nothing && return -1
+    isnothing(i) && return -1
     i - 1
 end
 
