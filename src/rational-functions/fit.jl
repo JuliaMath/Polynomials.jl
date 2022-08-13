@@ -68,10 +68,9 @@ julia> u(variable(pq)) # to see which polynomial is used
 """
 function Polynomials.fit(::Type{PQ}, xs::AbstractVector{S}, ys::AbstractVector{T}, m, n; var=:x) where {T,S, PQ<:RationalFunction}
 
-
     β₁,β₂ = gauss_newton(collect(xs), convert(Vector{float(T)}, ys), m, n)
     P = eltype(PQ)
-    T′ = Polynomials._eltype(P) == nothing ? eltype(β₁) : eltype(P)
+    T′ = isnothing(Polynomials._eltype(P)) ? eltype(β₁) : eltype(P)
     X = indeterminate(PQ, var)
     P′ = constructorof(P){T′,X}
     p = P′(β₁)

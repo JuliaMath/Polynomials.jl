@@ -146,7 +146,7 @@ function _fit(P::Type{<:AbstractPolynomial},
              var = :x,) where {T}
     x = mapdomain(P, x)
     vand = vander(P, x, deg)
-    if weights !== nothing
+    if !isnothing(weights)
         coeffs = _wlstsq(vand, y, weights)
     else
         coeffs = vand \ y
@@ -462,7 +462,7 @@ _eltype(::Type{<:AbstractPolynomial}) = nothing
 _eltype(::Type{<:AbstractPolynomial{T}}) where {T} = T
 function _eltype(P::Type{<:AbstractPolynomial}, p::AbstractPolynomial)
     T′ = _eltype(P)
-    T = T′ === nothing ? eltype(p) : T′
+    T = isnothing(T′) ? eltype(p) : T′
     T
 end
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
@@ -706,7 +706,7 @@ Returns an iterator over the terms, `pᵢ⋅basis(p,i)`, of the polynomial for e
 monomials(p) = Monomials(p)
 function Base.iterate(v::Monomials, state...)
     y = iterate(pairs(v.p), state...)
-    y === nothing && return nothing
+    isnothing(y) && return nothing
     kv, s = y
     return (kv[2]*basis(v.p, kv[1]), s)
 end
@@ -723,18 +723,18 @@ _indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
 _indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
 function indeterminate(::Type{P}) where {P <: AbstractPolynomial}
     X = _indeterminate(P)
-    X === nothing ? :x : X
+    isnothing(X) ? :x : X
 end
 indeterminate(p::P) where {P <: AbstractPolynomial} = _indeterminate(P)
 function indeterminate(PP::Type{P}, p::AbstractPolynomial{T,Y}) where {P <: AbstractPolynomial, T,Y}
     X = _indeterminate(PP)
-    X === nothing && return Y
+    isnothing(X) && return Y
     assert_same_variable(X,Y)
     return X
-    #X = _indeterminate(PP) === nothing ? indeterminate(p) :  _indeterminate(PP)
+    #X = isnothing(_indeterminate(PP)) ? indeterminate(p) :  _indeterminate(PP)
 end
 function indeterminate(PP::Type{P}, x::Symbol) where {P <: AbstractPolynomial}
-    X = _indeterminate(PP) === nothing ? x :  _indeterminate(PP)
+    X = isnothing(_indeterminate(PP)) ? x :  _indeterminate(PP)
 end
 
 #=
@@ -761,7 +761,7 @@ Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, 
 Returns a representation of 1 as the given polynomial.
 """
 Base.one(::Type{P}) where {P<:AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default method
-Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var === nothing ? :x : var)})
+Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(isnothing(var) ? :x : var)})
 Base.one(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = one(P, var)
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)

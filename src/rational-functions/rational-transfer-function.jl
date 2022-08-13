@@ -148,7 +148,7 @@ Compute the adjoint `rt(λ)` of the rational transfer function `r(λ)` such that
 function Base.adjoint(pq::PQ) where {PQ <: RationalTransferFunction}
     p,q = pqs(pq)
     Ts = sampling_time(pq)
-    if Ts != nothing && iszero(Ts)
+    if !isnothing(Ts) && iszero(Ts)
         # p(-λ)/q(-λ)
         p′ = poly_scale(p, -1)
         q′ = poly_scale(q, -1)

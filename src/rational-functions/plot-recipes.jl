@@ -3,7 +3,7 @@
 ## just sort of succesful
 @recipe function f(pq::AbstractRationalFunction{T}, a=nothing, b=nothing) where {T}
 
-    xlims = get(plotattributes, :xlims, (nothing,nothing))
+    xlims = get(plotattributes, :xlims, (nothing, nothing))
     ylims = get(plotattributes, :ylims, (nothing, nothing))
     rational_function_trim(pq, a, b, xlims, ylims)    
 
@@ -34,10 +34,10 @@ function rational_function_trim(pq, a, b, xlims, ylims)
     cps = isempty(cps) ? cps : real.(filter(isapproxreal, cps))
     cps = isempty(cps) ? cps : filter(!toobig(pq), cps)
 
-    a = a == nothing ? xlims[1] : a
-    b = b == nothing ? xlims[2] : b
+    a = isnothing(a) ? xlims[1] : a
+    b = isnothing(b) ? xlims[2] : b
     
-    if a==nothing && b==nothing
+    if isnothing(a) && isnothing(b)
         u= poly_interval(p)
         v= poly_interval(q)
         a,b = min(first(u), first(v)), max(last(u), last(v))
@@ -58,8 +58,8 @@ function rational_function_trim(pq, a, b, xlims, ylims)
     Mcps = isempty(cps) ? 5 : 3*maximum(abs, pq.(cps))
     M = max(5, Mcps, 1.25*maximum(abs, pq.((a,b))))
 
-    lo = ylims[1] == nothing ? -M : ylims[1]
-    hi = ylims[2] == nothing ?  M : ylims[2]
+    lo = isnothing(ylims[1]) ? -M : ylims[1]
+    hi = isnothing(ylims[2]) ?  M : ylims[2]
     ys′ = [lo <= yᵢ <= hi ? yᵢ : NaN for yᵢ ∈ ys]
     xs, ys′
 
