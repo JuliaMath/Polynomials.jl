@@ -271,7 +271,7 @@ function Base.divrem(num::ChebyshevT{T,X}, den::ChebyshevT{S,Y}) where {T,X,S,Y}
     return P(q_coeff), P(r_coeff)
 end
 
-function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, mimetype) where {N, T,X}
+function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, mimetype) where {T,X}
     iszero(pj) && return false
     !first &&  print(io, " ")
     if hasneg(T)

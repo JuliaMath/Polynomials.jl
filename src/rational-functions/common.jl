@@ -82,7 +82,7 @@ function Base.convert(::Type{P}, pq::PQ) where {P<:AbstractPolynomial, PQ<:Abstr
     convert(P, p) / constantterm(q)
 end
 
-function Base.convert(::Type{S}, pq::PQ) where {S<:Number, T,X,P,PQ<:AbstractRationalFunction}
+function Base.convert(::Type{S}, pq::PQ) where {S<:Number, PQ<:AbstractRationalFunction}
     !isconstant(pq) && throw(ArgumentError("Can't convert non-constant rational function to a number"))
     S(pq(0))
 end
