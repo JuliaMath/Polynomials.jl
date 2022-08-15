@@ -818,8 +818,8 @@ Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p))
 
 Base.:*(p::AbstractPolynomial, c::Number) = scalar_mult(p, c)
 Base.:*(c::Number, p::AbstractPolynomial) = scalar_mult(c, p)
-Base.:*(c::T, p::P) where {T, P <: AbstractPolynomial{T}} = scalar_mult(c, p)
-Base.:*(p::P, c::T) where {T, P <: AbstractPolynomial{T}} = scalar_mult(p, c)
+Base.:*(c::T, p::P) where {T, X, P <: AbstractPolynomial{T,X}} = scalar_mult(c, p)
+Base.:*(p::P, c::T) where {T, X, P <: AbstractPolynomial{T,X}} = scalar_mult(p, c)
 
 # implicitly identify c::Number with a constant polynomials
 Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
