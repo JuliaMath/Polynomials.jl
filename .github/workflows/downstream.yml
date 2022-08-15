@@ -18,7 +18,7 @@ jobs:
         os: [ubuntu-latest]
         package:
           - {user: jverzani, repo: SpecialPolynomials.jl, group: All}
-	  - {user: jverzani, repo: PolynomialsMutableArithmetics.jl, group: All}
+          - {user: jverzani, repo: PolynomialsMutableArithmetics.jl, group: All}
 
     steps:
       - uses: actions/checkout@v2
