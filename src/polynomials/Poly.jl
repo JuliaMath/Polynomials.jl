@@ -30,7 +30,7 @@ struct Poly{T <: Number,X} <: Polynomials.StandardBasisPolynomial{T,X}
         else
         # determine the last nonzero element and truncate a accordingly
             last_nz = findlast(!iszero, a)
-            a_last = max(1, last_nz === nothing ? 0 : last_nz)
+            a_last = max(1, isnothing(last_nz) ? 0 : last_nz)
             new{T,X}(a[1:a_last])
         end
     end

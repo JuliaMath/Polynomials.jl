@@ -66,7 +66,7 @@ end
 
 function Base.convert(::Type{PQ}, p::P) where {PQ <: AbstractRationalFunction, P<:AbstractPolynomial}
     T′ = _eltype(_eltype((PQ)))
-    T =  T′ == nothing ? eltype(p) : T′
+    T =  isnothing(T′) ? eltype(p) : T′
     X = indeterminate(PQ, p)
 
     𝐩 = convert(Polynomial{T,X}, p)
@@ -82,7 +82,7 @@ function Base.convert(::Type{P}, pq::PQ) where {P<:AbstractPolynomial, PQ<:Abstr
     convert(P, p) / constantterm(q)
 end
 
-function Base.convert(::Type{S}, pq::PQ) where {S<:Number, T,X,P,PQ<:AbstractRationalFunction}
+function Base.convert(::Type{S}, pq::PQ) where {S<:Number, PQ<:AbstractRationalFunction}
     !isconstant(pq) && throw(ArgumentError("Can't convert non-constant rational function to a number"))
     S(pq(0))
 end
@@ -145,7 +145,7 @@ Base.denominator(pq::AbstractRationalFunction) = pq.den
 # Treat a RationalFunction as a tuple (num=p, den=q)
 Base.length(pq::AbstractRationalFunction) = 2
 function Base.iterate(pq::AbstractRationalFunction, state=nothing)
-    state == nothing && return (numerator(pq), 1)
+    isnothing(state) && return (numerator(pq), 1)
     state == 1 && return (denominator(pq), 2)
     nothing
 end
@@ -197,7 +197,7 @@ _indeterminate(::Type{PQ}) where {T,X,PQ<:AbstractRationalFunction{T,X}} = X
 indeterminate(pq::PQ) where {PQ<:AbstractRationalFunction} = indeterminate(PQ)
 function indeterminate(::Type{PQ}, var=:x) where {PQ<:AbstractRationalFunction}
     X′ = _indeterminate(PQ)
-    X = X′ == nothing ? Symbol(var) : X′
+    X = isnothing(X′) ? Symbol(var) : X′
     X
 end
 function indeterminate(PP::Type{P}, p::AbstractPolynomial{T,Y}) where {P <: AbstractRationalFunction, T,Y}

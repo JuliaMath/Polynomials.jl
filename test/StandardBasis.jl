@@ -7,7 +7,7 @@ import Polynomials: indeterminate
 function  upto_tz(as, bs)
     n,m = findlast.(!iszero, (as,bs))
     n == m || return false
-    n == nothing &&  return true
+    isnothing(n) &&  return true
     for i in 1:n
         !(as[i] ≈ bs[i]) && return false
     end
@@ -161,6 +161,7 @@ end
             @test_throws ArgumentError p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]]) # can't fix
 
             # poly add
+            @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
             @test p - p == P([0*a])
@@ -211,6 +212,7 @@ end
             @test p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]])
 
             # poly add
+            @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
             @test_throws MethodError p - p == P([0*a])  # no zeros to make zero polynomial
@@ -260,6 +262,7 @@ end
             @test_throws MethodError p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]]) # Ok, no * for T
 
             # poly add
+            @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
             @test_throws MethodError p - p == P([0*a])  # no zero(T) to make zero polynomial
@@ -313,6 +316,7 @@ end
                 @test p*d == P([cᵢ*d for cᵢ ∈ [a,b,c]])
 
                 # poly add
+                @test +p == p
                 @test p + q == P([a+a,b+b,c])
                 @test p - p == P([0*a])
 
@@ -1452,7 +1456,7 @@ end
 
     p = ChebyshevT([1,1,1])
     rec = apply_recipe(Dict{Symbol,Any}(), p)
-    @test match(r"T_0", rec[1].plotattributes[:label]) !== nothing
+    @test !isnothing(match(r"T_0", rec[1].plotattributes[:label]))
     @test rec[1].plotattributes[:xlims] == (-1.0, 1.0) # uses domain(p)
 end
 

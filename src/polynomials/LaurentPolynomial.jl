@@ -77,7 +77,7 @@ struct LaurentPolynomial{T, X} <: LaurentBasisPolynomial{T, X}
                                     m::Union{Int, Nothing}=nothing) where {T, X, S}
 
         fnz = findfirst(!iszero, coeffs)
-        fnz == nothing && return  new{T,X}(zeros(T,1), Ref(0), Ref(0))
+        isnothing(fnz) && return new{T,X}(zeros(T,1), Ref(0), Ref(0))
         lnz = findlast(!iszero, coeffs)
         if Base.has_offset_axes(coeffs)
             # if present, use axes
@@ -87,7 +87,7 @@ struct LaurentPolynomial{T, X} <: LaurentBasisPolynomial{T, X}
 
             c = convert(Vector{T}, coeffs[fnz:lnz])
 
-            m′ = fnz - 1 + (m == nothing ? 0 : m)
+            m′ = fnz - 1 + (isnothing(m) ? 0 : m)
             n = m′ + (lnz-fnz)
 
             (n - m′ + 1  == length(c)) || throw(ArgumentError("Lengths do not match"))

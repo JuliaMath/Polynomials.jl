@@ -124,13 +124,13 @@ end
 # inherits order for underlying dictionary
 function Base.iterate(v::PolynomialKeys{SparsePolynomial{T,X}}, state...) where {T,X}
     y = iterate(v.p.coeffs, state...)
-    y == nothing && return nothing
+    isnothing(y) && return nothing
     return (y[1][1], y[2])
 end
 
 function Base.iterate(v::PolynomialValues{SparsePolynomial{T,X}}, state...) where {T,X}
     y = iterate(v.p.coeffs, state...)
-    y == nothing && return nothing
+    isnothing(y) && return nothing
     return (y[1][2], y[2])
 end
 

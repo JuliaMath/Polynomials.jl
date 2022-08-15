@@ -48,7 +48,7 @@ struct ChebyshevT{T, X} <: AbstractPolynomial{T, X}
         end
 
         N = findlast(!iszero, coeffs)
-        N === nothing && return new{T,X}(zeros(T,1))
+        isnothing(N) && return new{T,X}(zeros(T,1))
         cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
         new{T,X}(cs)
     end
@@ -271,7 +271,7 @@ function Base.divrem(num::ChebyshevT{T,X}, den::ChebyshevT{S,Y}) where {T,X,S,Y}
     return P(q_coeff), P(r_coeff)
 end
 
-function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, mimetype) where {N, T,X}
+function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, mimetype) where {T,X}
     iszero(pj) && return false
     !first &&  print(io, " ")
     if hasneg(T)

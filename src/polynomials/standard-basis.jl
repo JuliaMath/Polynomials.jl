@@ -116,7 +116,7 @@ end
     for i in 1 : N
         for j in 1 : M
             k = i + j - 1
-            if exprs[k] === nothing
+            if isnothing(exprs[k])
                 exprs[k] = :(p1[$i] * p2[$j])
             else
                 exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
@@ -334,10 +334,10 @@ function _gcd_noda_sasaki(a::Vector{T}, b::Vector{S};
     R = eltype(one(T)/one(S))
 
     na1 = findlast(!iszero,a) # degree(a) + 1
-    na1 === nothing && return(ones(R, 1))
+    isnothing(na1) && return(ones(R, 1))
 
     nb1 = findlast(!iszero,b) # degree(b) + 1
-    nb1 === nothing && return(ones(R, 1))
+    isnothing(nb1) && return(ones(R, 1))
 
     a1 = R[a[i] for i in 1:na1]
     b1 = R[b[i] for i in 1:nb1]
@@ -364,7 +364,7 @@ function _gcd_noda_sasaki(a::Vector{T}, b::Vector{S};
         end
         a1 ./= sc
         na1 = findlast(t -> (abs(t) > tol),a1[1:nb1-1])
-        na1 === nothing && (na1 = 0)
+        isnothing(na1) && (na1 = 0)
         resize!(a1, na1)
     end
 
@@ -472,7 +472,7 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
 
     as = [p[i] for i in 0:d]
     K  = findlast(!iszero, as)
-    if K == nothing
+    if isnothing(K)
         return R[]
     end
     k =  findfirst(!iszero, as)
@@ -524,7 +524,7 @@ function fit(P::Type{<:StandardBasisPolynomial},
              weights = nothing,
              var = :x,) where {T}
 
-    if deg == length(x) -1 && weights == nothing
+    if deg == length(x) -1 && isnothing(weights)
         _polynomial_fit(P, x, y; var=var)
     else
         _fit(P, x, y, deg; weights=weights, var=var)
