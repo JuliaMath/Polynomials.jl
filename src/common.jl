@@ -465,6 +465,15 @@ function _eltype(P::Type{<:AbstractPolynomial}, p::AbstractPolynomial)
     T = isnothing(T′) ? eltype(p) : T′
     T
 end
+
+function Base.reinterpret(::Type{T}, p::P) where {T, S, X, P<:AbstractPolynomial{S,X}}
+    ⟒(P){T, X}(coeffs(p))
+end
+function Base.reinterpret(::Type{T}, X, p::P) where {T, S, Y, P<:AbstractPolynomial{S, Y}}
+    ⟒(P){T, X}(coeffs(p))
+end
+
+
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
 
 

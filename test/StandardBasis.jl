@@ -794,6 +794,15 @@ end
         end
         @test convert(FactoredPolynomial, p) ≈ p
     end
+
+    # reinterpret coefficients
+    for P in (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
+        for T in (Float64, Rational)
+            xs = [1,2,3]
+            p = P(xs)
+            @test reinterpret(T, p) == P(T.(xs))
+        end
+    end
 end
 
 @testset "Roots" begin
