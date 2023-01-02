@@ -119,6 +119,11 @@ function Base.convert(P::Type{<:FactoredPolynomial}, p::Polynomial{T,X}) where {
     ⟒(P)(coeffs(p), X)
 end
 
+function copy_with_eltype(::Type{T}, X, p::P) where {T, S, Y, P<:FactoredPolynomial{S, Y}}
+    d = convert(Dict{T, Int}, p.coeffs)
+    FactoredPolynomial{T, X}(d)
+end
+
 ## ----
 ## apply map to factors and the leading coefficient, not the coefficients
 function Base.map(fn, p::P, args...)  where {T,X,P<:FactoredPolynomial{T,X}}

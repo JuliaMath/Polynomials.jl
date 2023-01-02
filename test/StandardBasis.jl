@@ -796,11 +796,12 @@ end
     end
 
     # reinterpret coefficients
-    for P in (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial)
+    for P in (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
         for T in (Float64, Rational)
             xs = [1,2,3]
-            p = P(xs)
-            @test reinterpret(T, p) == P(T.(xs))
+            p = fromroots(P,xs)
+            @test Polynomials.copy_with_eltype(T, p) == fromroots(P, T.(xs))
+            @test Polynomials.copy_with_eltype(T, :u, p) == fromroots(P, T.(xs); var=:u)
         end
     end
 end
