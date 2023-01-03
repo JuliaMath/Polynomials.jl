@@ -465,6 +465,17 @@ function _eltype(P::Type{<:AbstractPolynomial}, p::AbstractPolynomial)
     T = isnothing(T′) ? eltype(p) : T′
     T
 end
+
+"""
+    copy_with_eltype(T, [X], p::AbstractPolynomial)
+
+Copy polynomial `p` changing the underlying element type and optionally the symbol.
+"""
+function copy_with_eltype(::Type{T}, X, p::P) where {T, S, Y, P<:AbstractPolynomial{S, Y}}
+    ⟒(P){T, X}(p.coeffs)
+end
+copy_with_eltype(::Type{T}, p::P) where {T, S, X, P<:AbstractPolynomial{S,X}} = copy_with_eltype(T, X, p)
+
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
 
 
