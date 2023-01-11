@@ -14,7 +14,7 @@ T_0(x)=1,\ T_1(x)=x
 ```
 
 ```math
-T_{n+1}(x) = 2xT_n{x}-T_{n-1}(x)
+T_{n+1}(x) = 2xT_n(x)-T_{n-1}(x)
 ```
 
 The Chebyshev polynomioals of the second kind, ``U_n(x)``, can be defined by

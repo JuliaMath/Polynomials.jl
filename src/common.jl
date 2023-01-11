@@ -481,9 +481,6 @@ copy_with_eltype(::Type{T}, X, p::P) where {T, S, Y, P<:AbstractPolynomial{S, Y}
 copy_with_eltype(::Type{T}, p::P) where {T, S, X, P<:AbstractPolynomial{S,X}} =
     copy_with_eltype(Val(T), Val(X), p)
 
-
-
-
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
 
 

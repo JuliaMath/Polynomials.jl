@@ -807,7 +807,6 @@ end
             @inferred Polynomials.copy_with_eltype(Val(T), p)
         end
     end
-
 end
 
 @testset "Roots" begin
