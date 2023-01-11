@@ -800,8 +800,11 @@ end
         for T in (Float64, Rational)
             xs = [1,2,3]
             p = fromroots(P,xs)
-            @test Polynomials.copy_with_eltype(T, p) == fromroots(P, T.(xs))
-            @test Polynomials.copy_with_eltype(T, :u, p) == fromroots(P, T.(xs); var=:u)
+            @test Polynomials.copy_with_eltype(Val(T), p) == fromroots(P, T.(xs))
+            @test Polynomials.copy_with_eltype(Val(T), Val(:u), p) == fromroots(P, T.(xs); var=:u)
+            P == ImmutablePolynomial && continue
+            @inferred Polynomials.copy_with_eltype(Val(T), Val(:u), p)
+            @inferred Polynomials.copy_with_eltype(Val(T), p)
         end
     end
 end
