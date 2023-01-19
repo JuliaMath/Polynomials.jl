@@ -102,7 +102,7 @@ macro register(name)
         end
         function $poly(coeffs::G, var::SymbolLike=Var(:x)) where {G}
             !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
-            cs = collect(coeffs)
+            cs = collect(promote(coeffs...))
             $poly{eltype(cs), Symbol(var)}(cs)
         end
 
