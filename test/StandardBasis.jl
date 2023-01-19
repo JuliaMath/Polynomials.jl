@@ -59,6 +59,10 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
             ## issue #395
             v = [1,2,3]
             @test P(v) == P(v,:x) == P(v,'x') == P(v,"x") == P(v, Polynomials.Var(:x))
+
+            ## issue #452
+            ps = (1, 1.0)
+            P != FactoredPolynomial && @test eltype(P(ps)) == eltype(promote(ps...))
         end
     end
 end
