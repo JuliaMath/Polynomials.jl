@@ -207,6 +207,97 @@ Calculate the pseudo-Vandermonde matrix of the given polynomial type with the gi
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 """
+    findmin(p::AbstractPolynomial{<:Real}, domain; atol=eps(), rtol=Base.rtoldefault())
+
+For a polynomial with `Real` coefficients, find the minimum value and the point of minimum over the (closed) domain.
+
+* `p`: a polynomial with real coefficients
+
+* `domain`: a specification of a closed interval (or infinite) interval over the real line. The endpoints are found using `extrema(domain)`.
+
+* `atol`, `rtol`: tolerances used to determine the sign of ``p`` at various test points when the first derivative test is used to classify the identified critical points.
+
+The algorithm is straightforward: find the critical points as roots of the derivative; identify points of local minimum by the first derivative test; compare values with values at the endpoints to identify the smallest. Floating point issues can arise in the first two steps.
+"""
+function Base.findmin(p::AbstractPolynomial{T}, domain=(-Inf, Inf); atol=eps(float(T)), rtol=Base.rtoldefault(float(T))) where {T <: Real}
+
+    S = float(T)
+    l, r = extrema(domain)
+
+    n, aₙ = degree(p), p[end]
+    if isinf(l)
+        isodd(n) || aₙ < 0 && return (-one(S)*Inf, S(l))
+    end
+
+    if isinf(r)
+        aₙ < 0 && return (-one(S)*Inf, S(r))
+    end
+
+    pts = pts_local_min(p; atol=atol, rtol=rtol)
+
+    m::S, c::S = p(l), l
+    pr = p(r)
+    if pr < m
+        m, c = pr, r
+    end
+    for rt ∈ filter(x -> l ≤ x ≤ r, pts)
+        pm = p(rt)
+        if pm < m
+            m, c = pm, rt
+        end
+    end
+
+    m, c
+end
+
+# return critical points that have a local min
+# several points where numeric issues can arise:
+# * roots can misidentify real roots
+# * multiplicites must be removed. We use r ≈ s to check
+# * first derivative test requires test of sign(p′). We test midway and with a tolerance
+function pts_local_min(p::AbstractPolynomial{T}; atol=zero(float(T)), rtol=Base.rtoldefault(float(T))) where {T <: Real}
+
+    p′ = derivative(p)
+    critical_pts = sort(real.(filter(isreal, roots(p′))))
+
+    pts = similar(critical_pts, 0)
+    isempty(critical_pts) && return pts
+
+    # remove approximate multiple roots
+    r, rst... = critical_pts
+    critical_pts′ = [r]
+    for s ∈ rst
+        !isapprox(r, s; atol=atol, rtol=rtol) && push!(critical_pts′, s)
+        r = s
+    end
+    critical_pts = critical_pts′
+
+    # first derivative test
+    n, aₙ = degree(p′), p′[end]
+    lsgn = ifelse(iseven(n), 1, -1) * sign(aₙ)
+
+    if length(critical_pts) > 1
+        for i in 1:length(critical_pts) - 1
+            r, s = critical_pts[i], critical_pts[i+1]
+            Δ = s/2 - r/2
+            rsgn = p′(r + Δ)
+
+            δ = atol + abs(r+Δ) * rtol
+            lsgn < -δ && rsgn > δ && push!(pts, r)
+
+            lsgn = rsgn
+        end
+    end
+
+    rsgn = sign(aₙ)
+    !(lsgn == rsgn) && push!(pts, last(critical_pts))
+
+    pts
+end
+
+
+
+"""
     integrate(p::AbstractPolynomial)
 
 Return an antiderivative for `p`

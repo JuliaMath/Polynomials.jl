@@ -900,6 +900,27 @@ end
     end
 end
 
+@testset "findmin" begin
+    p = Polynomial([0.0, 72.0, 6.0, -16.0, 3.0])
+    m,c = findmin(p)
+    @test m ≈ p(-1) && c ≈ -1
+
+    x = variable()
+    m,c = findmin(x^2)
+    @test iszero(m) && iszero(c)
+
+    m,c = findmin(x^2, (1,2))
+    @test m ≈ 1 && c ≈ 1
+
+    p = 2x^4 + x^3 - 3x^2
+    m,c = findmin(p)
+    @test c ≈ -1.0735904299223642 && m ≈ p(c)
+
+    m,c = findmin(p, (0, Inf))
+    @test c ≈ 0.698590429922364 && m ≈ p(c)
+
+end
+
 @testset "Integrals and Derivatives" begin
     # Integrals derivatives
     @testset for P in Ps
