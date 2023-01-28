@@ -207,21 +207,19 @@ Calculate the pseudo-Vandermonde matrix of the given polynomial type with the gi
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 """
-    findmin(p::AbstractPolynomial{<:Real}, domain; atol=eps(), rtol=Base.rtoldefault())
+    findmin(p::AbstractPolynomial{<:Real}, I=domain(p))
 
 For a polynomial with `Real` coefficients, find the minimum value and the point of minimum over the (closed) domain.
 
 * `p`: a polynomial with real coefficients
 
-* `domain`: a specification of a closed interval (or infinite) interval over the real line. The endpoints are found using `extrema(domain)`.
-
-* `atol`, `rtol`: tolerances used to determine the sign of ``p`` at various test points when the first derivative test is used to classify the identified critical points.
+* `I`: a specification of a closed interval (or infinite) interval over the real line. The endpoints are found using `extrema(domain)`. The default is `Polynomials.domain(p)`.
 
 The algorithm is basic. Rather than use a derivative test to classify critical points, this finds the real roots of the derivative (subject to the vagaries of floating point) then just iterates over these and the left and right endpoints to identify the minimal value.
 """
-function Base.findmin(p::AbstractPolynomial{T}, domain=(-Inf, Inf)) where {T <: Real}
+function Base.findmin(p::AbstractPolynomial{T}, I=domain(p)) where {T <: Real}
     S = float(T)
-    l, r = extrema(domain)
+    l, r = extrema(I)
 
     n, aₙ = degree(p), p[end]
 
