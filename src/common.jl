@@ -269,11 +269,7 @@ function min_max(p::AbstractPolynomial{T}, I=domain(p)) where {T <: Real}
 
     ## just check all critical points
     ## no fewer function evaluations than first or second derivative test
-
-    p′ = derivative(p)
-    mrts = roots(ngcd(p′, derivative(p′)).v) # attempt to handle multiplicities
-    rrts = real(filter(isreal, mrts))
-    critical_pts = sort(rrts)
+    critical_pts = critical_points(p)
 
     m::S, am::S = p(l), l
     M, aM = m, am
@@ -296,6 +292,12 @@ function min_max(p::AbstractPolynomial{T}, I=domain(p)) where {T <: Real}
 
     return ((m,am), (M, aM))
 
+end
+
+# zeros of derivative
+function critical_points(p)
+    q = ngcd(derivative(p), derivative(p,2)).v
+    filter(isreal, roots(q)) .|> real |> sort
 end
 
 
