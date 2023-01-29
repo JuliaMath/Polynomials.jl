@@ -919,6 +919,20 @@ end
     m,c = findmin(p, (0, Inf))
     @test c ≈ 0.698590429922364 && m ≈ p(c)
 
+    m,c = findmax(-(x-2)*(x-3))
+    @test m ≈ 1/4 && c ≈ 5/2
+
+    c = argmax(-(x-2)*(x-3))
+    @test c ≈ 5/2
+
+    c = argmin((x-2)*(x-4))
+    @test c ≈ 3
+
+    m,M = extrema(x^2 + 2)
+    @test m ≈ 2 && isinf(M)
+
+
+
 end
 
 @testset "Integrals and Derivatives" begin

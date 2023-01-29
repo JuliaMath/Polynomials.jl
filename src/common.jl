@@ -207,42 +207,94 @@ Calculate the pseudo-Vandermonde matrix of the given polynomial type with the gi
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 """
-    findmin(p::AbstractPolynomial{<:Real}, I=domain(p))
+    findmin(p::AbstractPolynomial{<:Real}, I=domain(p)) -> (f(x), x)
+    findmax(p::AbstractPolynomial{<:Real}, I=domain(p)) -> (f(x), x)
+    extrema(p::AbstractPolynomial{<:Real}, I=domain(p)) -> (m, M)
+    argmin(p::AbstractPolynomial{<:Real}, I=domain(p)) -> x
+    argmax(p::AbstractPolynomial{<:Real}, I=domain(p)) -> x
 
-For a polynomial with `Real` coefficients, find the minimum value and the point of minimum over the (closed) domain.
+For a polynomial with `Real` coefficients, find the minimum/maximum value and the point of minimum/maximum over the (closed or infinite) domain.
 
 * `p`: a polynomial with real coefficients
 
 * `I`: a specification of a closed interval (or infinite) interval over the real line. The endpoints are found using `extrema(domain)`. The default is `Polynomials.domain(p)`.
 
-The algorithm is basic. Rather than use a derivative test to classify critical points, this finds the real roots of the derivative (subject to the vagaries of floating point) then just iterates over these and the left and right endpoints to identify the minimal value.
+The algorithm is basic. Rather than use a derivative test to classify critical points, this finds the real roots of the derivative (subject to the vagaries of floating point) then just iterates over these and the left and right endpoints to identify the minimal (and) maximal values.
+
+The function `findmin(f::Function, domain)` returns the minimum value and the index in the iterable domain.  Formally, this function for polynomials takes the viewpoint that the second argument is an interval with continuous indexing, `I[x] = x`.
+
 """
-function Base.findmin(p::AbstractPolynomial{T}, I=domain(p)) where {T <: Real}
+Base.findmin(p::AbstractPolynomial{T}, I=domain(p)) where {T <: Real} = first(min_max(p, I))
+Base.findmax(p::AbstractPolynomial{T}, I=domain(p)) where {T <: Real} = last(min_max(p,I))
+Base.extrema(p::AbstractPolynomial{T}, I=domain(p)) where {T <: Real} = first.(min_max(p,I))
+Base.argmin(p::AbstractPolynomial{T},  I=domain(p)) where {T <: Real} = last(findmin(p,I))
+Base.argmax(p::AbstractPolynomial{T},  I=domain(p)) where {T <: Real} = last(findmax(p,I))
+
+# return (min, argmin), (max, argmax) with one pass through the critical points
+function min_max(p::AbstractPolynomial{T}, I=domain(p)) where {T <: Real}
     S = float(T)
     l, r = extrema(I)
 
     n, aₙ = degree(p), p[end]
 
-    isinf(r) && r > 0 && aₙ < 0 &&
-        return (-one(S)*Inf, S(r))
-    isinf(l) && l < 0 && ((isodd(n) && aₙ > 0) || (iseven(n) && aₙ < 0)) &&
-        return (-one(S)*Inf, S(l))
 
+    Min, Max = one(S)*NaN, one(S)*NaN
+    if isinf(r)
+        if aₙ < 0
+            Min, Argmin = -one(S)*Inf, S(r)
+        end
+        if aₙ > 0
+            Max, Argmax = one(S)*Inf, S(r)
+        end
+    end
+    if isinf(l)
+        if iseven(n)
+            if aₙ < 0
+                Min, Argmin = -one(S)*Inf, S(l)
+            end
+            if aₙ > 0
+                Max, Argmax =  one(S)*Inf, S(l)
+            end
+        else
+            if aₙ < 0
+                Max, Argmax = one(S)*Inf, S(l)
+            end
+            if aₙ > 0
+                Min, Argmin = -one(S)*Inf, S(l)
+            end
+        end
+    end
+
+    !isnan(Min) && !isnan(Max) && return ((Min, Argmin), (Max, Argmax))
 
     ## just check all critical points
     ## no fewer function evaluations than first or second derivative test
 
     p′ = derivative(p)
-    critical_pts = sort(real.(filter(isreal, roots(p′))))
+    mrts = roots(ngcd(p′, derivative(p′)).v) # attempt to handle multiplicities
+    rrts = real(filter(isreal, mrts))
+    critical_pts = sort(rrts)
 
-    m::S, c::S = p(l), l
+    m::S, am::S = p(l), l
+    M, aM = m, am
     for rt ∈ critical_pts
         l ≤ rt ≤ r || continue
-        m, c = (m′ = p(rt)) < m ? (m′, rt) : (m, c)
+        pm = p(rt)
+        m, am = pm < m ? (pm, rt) : (m, am)
+        M, aM = pm > M ? (pm, rt) : (m, aM)
     end
-    m, c = (m′ = p(r)) < m ? (m′, r) : (m, c)
 
-    return m, c
+    pm = p(r)
+    m, am = pm < m ? (pm, r) : (m, am)
+    M, aM = pm > M ? (pm, r) : (M, aM)
+    if !isnan(Min)
+        m, am = Min, Argmin
+    end
+    if !isnan(Max)
+        M, aM = Max, Argmax
+    end
+
+    return ((m,am), (M, aM))
 
 end
 
