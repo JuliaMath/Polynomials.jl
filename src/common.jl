@@ -281,7 +281,7 @@ function min_max(p::AbstractPolynomial{T}, I=domain(p)) where {T <: Real}
         l ≤ rt ≤ r || continue
         pm = p(rt)
         m, am = pm < m ? (pm, rt) : (m, am)
-        M, aM = pm > M ? (pm, rt) : (m, aM)
+        M, aM = pm > M ? (pm, rt) : (M, aM)
     end
 
     pm = p(r)
