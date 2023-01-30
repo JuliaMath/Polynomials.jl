@@ -208,34 +208,41 @@ vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 
 """
-    critical_points(p)
-    critical_points(p, lo, hi)
+    critical_points(p, I=domain(p); endpoints::Bool=true)
 
-Return critical points (sorted zeros of derivative) or critical points in `[l,r]` with `l` and `r` included, either possibly infinite.
+Returns critical points (sorted zeros of the derivative) or, if `endpoints=true` critical points in `I` where finite endpoints of `I` are included. `I` defaults to the `p`'s `domain`.
 
-Can be used with `findmax`, `findmin`, `argmax`, `argmin`, `extrema`, etc.
+Can be used in conjuction with `findmax`, `findmin`, `argmax`, `argmin`, `extrema`, etc.
 
 ## Example
 ```
 x = variable()
 p = x^2 - 2
-cps = Polynomials.critical_points(p, -Inf, Inf)
-findmin(p, cps)  # (-2, 2)
+cps = Polynomials.critical_points(p)
+findmin(p, cps)  # (-2.0, 2.0)
 argmin(p, cps)   #  0.0
 extrema(p, cps)  # (-2.0, Inf)
+cps = Polynomials.critical_points(p, (0, 2))
+extrema(p, cps)  # (-2.0, 2.0)
 ```
 """
-function critical_points(p::AbstractPolynomial{T}) where {T <: Real}
+function critical_points(p::AbstractPolynomial{T}, I = domain(p); endpoints::Bool=true) where {T <: Real}
+    l, r = extrema(I)
+
     q = Polynomials.ngcd(derivative(p), derivative(p,2)).v
-    real.(filter(isreal, roots(q)))
+    pts = sort(real.(filter(isreal, roots(q))))
+    pts = filter(x -> l ≤ x ≤ r, pts)
+
+    !endpoints && return pts
+
+    l !== first(pts) && pushfirst!(pts, l)
+    r != last(pts) && push!(pts, r)
+    pts
 end
 
-function critical_points(p::AbstractPolynomial{T}, l, r = -l) where {T <: Real}
-    l, r = l < r ? (l,r) : (r,l)
-    rs = critical_points(p)
-    pts = Iterators.flatten((l, r, rs))
-    sort(collect(Iterators.filter(x -> l ≤ x ≤ r, pts)))
-end
+
+
+
 
 
 """

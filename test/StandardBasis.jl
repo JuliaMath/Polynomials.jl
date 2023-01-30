@@ -903,9 +903,12 @@ end
 @testset "critical points" begin
     for P in (Polynomial, ImmutablePolynomial)
         p = fromroots(P, [-1,-1, 2]) |> integrate
-        cps = Polynomials.critical_points(p)
+        cps = Polynomials.critical_points(p, (-5,5); endpoints=false)
         @test all(cps .≈ [-1, 2])
-        cps = Polynomials.critical_points(p, -Inf, Inf)
+        cps = Polynomials.critical_points(p, (0,5); endpoints=false)
+        @test all(cps .≈ [2])
+
+        cps = Polynomials.critical_points(p)
         m, i = findmin(p, cps)
         @test m ≈ -6.0
         x = argmin(p, cps)
