@@ -38,14 +38,13 @@ include("polynomials/Poly.jl")
 
 # precompiles
 using SnoopPrecompile    # this is a small dependency
-
-
 @precompile_setup begin
     @precompile_all_calls begin
-        for P ∈ (Polynomial, ImmutablePolynomial, SparsePolynomial,FactoredPolynomial)
-            p = P([1,2,3])
-            p = P([1.0, 2.0, 3.0])
-        end
+        # try to speed up factorizing without penalizing too much start up
+        p = fromroots(Polynomial, [1,1,2])
+        Multroot.multroot(p)
+        gcd(p, derivative(p); method=:numerical)
+        Polynomials.uvw
     end
 end
 
