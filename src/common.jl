@@ -208,9 +208,16 @@ vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 
 """
-    critical_points(p, I=domain(p); endpoints::Bool=true)
+    critical_points(p::AbstractPolynomial{<:Real}, I=domain(p); endpoints::Bool=true)
 
-Returns critical points (sorted zeros of the derivative) or, if `endpoints=true` critical points in `I` where finite endpoints of `I` are included. `I` defaults to the `p`'s `domain`.
+Return the critical points of `p` (real zeros of the derivative) within `I` in sorted order.
+
+* `p`: a polynomial
+
+* `I`: a specification of a closed or infinite domain, defaulting to `Polynomials.domain(p)`. When specified, the values of `extrema(I)` are used with closed endpoints when finite.
+
+* `endpoints::Bool`: if `true`, return the endpoints of `I` along with the critical points
+
 
 Can be used in conjuction with `findmax`, `findmin`, `argmax`, `argmin`, `extrema`, etc.
 
@@ -226,12 +233,15 @@ cps = Polynomials.critical_points(p, (0, 2))
 extrema(p, cps)  # (-2.0, 2.0)
 ```
 """
-function critical_points(p::AbstractPolynomial{T}, I = domain(p); endpoints::Bool=true) where {T <: Real}
-    l, r = extrema(I)
+function critical_points(p::AbstractPolynomial{T}, I = domain(p);
+                         endpoints::Bool=true) where {T <: Real}
+
+    I′ = Interval(I)
+    l, r = extrema(I′)
 
     q = Polynomials.ngcd(derivative(p), derivative(p,2)).v
     pts = sort(real.(filter(isreal, roots(q))))
-    pts = filter(x -> l ≤ x ≤ r, pts)
+    pts = filter(in(I′), pts)
 
     !endpoints && return pts
 

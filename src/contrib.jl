@@ -174,6 +174,8 @@ struct Interval{T, L <: Bound, R <: Bound}
     end
     Interval(f, l) = Interval{Closed, Closed}(f, l)
 end
+Interval(I::Interval) = I
+Interval(I) = Interval(extrema(I)...)
 
 bounds_types(x::Interval{T,L,R}) where {T,L,R} = (L, R)
 
