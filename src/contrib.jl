@@ -182,7 +182,7 @@ Base.broadcastable(I::Interval) = Ref(I)
 function Base.show(io::IO, I::Interval{T,L,R}) where {T,L,R}
     l,r = extrema(I)
     print(io, L == Closed ? "[" : "(")
-    print(io, l, ", ", r)
+    print(io, l, "..", r)
     print(io, R == Closed ? "]" : ")")
 end
 
