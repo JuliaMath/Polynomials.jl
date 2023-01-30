@@ -206,6 +206,38 @@ Calculate the pseudo-Vandermonde matrix of the given polynomial type with the gi
 """
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
+
+"""
+    critical_points(p)
+    critical_points(p, lo, hi)
+
+Return critical points (sorted zeros of derivative) or critical points in `[l,r]` with `l` and `r` included, either possibly infinite.
+
+Can be used with `findmax`, `findmin`, `argmax`, `argmin`, `extrema`, etc.
+
+## Example
+```
+x = variable()
+p = x^2 - 2
+cps = Polynomials.critical_points(p, -Inf, Inf)
+findmin(p, cps)  # (-2, 2)
+argmin(p, cps)   #  0.0
+extrema(p, cps)  # (-2.0, Inf)
+```
+"""
+function critical_points(p::AbstractPolynomial{T}) where {T <: Real}
+    q = Polynomials.ngcd(derivative(p), derivative(p,2)).v
+    real.(filter(isreal, roots(q)))
+end
+
+function critical_points(p::AbstractPolynomial{T}, l, r = -l) where {T <: Real}
+    l, r = l < r ? (l,r) : (r,l)
+    rs = critical_points(p)
+    pts = Iterators.flatten((l, r, rs))
+    sort(collect(Iterators.filter(x -> l ≤ x ≤ r, pts)))
+end
+
+
 """
     integrate(p::AbstractPolynomial)
 
