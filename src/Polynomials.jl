@@ -35,4 +35,18 @@ include("rational-functions/plot-recipes.jl")
 # compat; opt-in with `using Polynomials.PolyCompat`
 include("polynomials/Poly.jl")
 
+
+# precompiles
+using SnoopPrecompile    # this is a small dependency
+
+
+@precompile_setup begin
+    @precompile_all_calls begin
+        for P ∈ (Polynomial, ImmutablePolynomial, SparsePolynomial,FactoredPolynomial)
+            p = P([1,2,3])
+            p = P([1.0, 2.0, 3.0])
+        end
+    end
+end
+
 end # module
