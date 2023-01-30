@@ -6,7 +6,6 @@ export fromroots,
        coeffs,
        degree,
        mapdomain,
-       order,
        hasnan,
        roots,
        companion,
@@ -586,6 +585,7 @@ has a nonzero coefficient. The degree of the zero polynomial is defined to be -1
 """
 degree(p::AbstractPolynomial) = iszero(coeffs(p)) ? -1 : length(coeffs(p)) - 1 + min(0, minimumexponent(p))
 
+@deprecate order degree true
 
 """
     Polynomials.domain(::Type{<:AbstractPolynomial})
