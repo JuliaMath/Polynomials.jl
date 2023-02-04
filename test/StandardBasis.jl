@@ -900,6 +900,24 @@ end
     end
 end
 
+@testset "critical points" begin
+    for P in (Polynomial, ImmutablePolynomial)
+        p = fromroots(P, [-1,-1, 2]) |> integrate
+        cps = Polynomials.critical_points(p, (-5,5); endpoints=false)
+        @test all(cps .≈ [-1, 2])
+        cps = Polynomials.critical_points(p, (0,5); endpoints=false)
+        @test all(cps .≈ [2])
+
+        cps = Polynomials.critical_points(p)
+        m, i = findmin(p, cps)
+        @test m ≈ -6.0
+        x = argmin(p, cps)
+        @test x ≈ 2.0
+        mn, mx = extrema(p, cps)
+        @test mn ≈ -6.0 && isinf(mx)
+    end
+end
+
 @testset "Integrals and Derivatives" begin
     # Integrals derivatives
     @testset for P in Ps

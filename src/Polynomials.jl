@@ -35,4 +35,6 @@ include("rational-functions/plot-recipes.jl")
 # compat; opt-in with `using Polynomials.PolyCompat`
 include("polynomials/Poly.jl")
 
+include("precompiles.jl")
+
 end # module

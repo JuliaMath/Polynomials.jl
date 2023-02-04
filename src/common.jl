@@ -205,6 +205,55 @@ Calculate the pseudo-Vandermonde matrix of the given polynomial type with the gi
 """
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
+
+"""
+    critical_points(p::AbstractPolynomial{<:Real}, I=domain(p); endpoints::Bool=true)
+
+Return the critical points of `p` (real zeros of the derivative) within `I` in sorted order.
+
+* `p`: a polynomial
+
+* `I`: a specification of a closed or infinite domain, defaulting to `Polynomials.domain(p)`. When specified, the values of `extrema(I)` are used with closed endpoints when finite.
+
+* `endpoints::Bool`: if `true`, return the endpoints of `I` along with the critical points
+
+
+Can be used in conjuction with `findmax`, `findmin`, `argmax`, `argmin`, `extrema`, etc.
+
+## Example
+```
+x = variable()
+p = x^2 - 2
+cps = Polynomials.critical_points(p)
+findmin(p, cps)  # (-2.0, 2.0)
+argmin(p, cps)   #  0.0
+extrema(p, cps)  # (-2.0, Inf)
+cps = Polynomials.critical_points(p, (0, 2))
+extrema(p, cps)  # (-2.0, 2.0)
+```
+"""
+function critical_points(p::AbstractPolynomial{T}, I = domain(p);
+                         endpoints::Bool=true) where {T <: Real}
+
+    I′ = Interval(I)
+    l, r = extrema(I′)
+
+    q = Polynomials.ngcd(derivative(p), derivative(p,2)).v
+    pts = sort(real.(filter(isreal, roots(q))))
+    pts = filter(in(I′), pts)
+
+    !endpoints && return pts
+
+    l !== first(pts) && pushfirst!(pts, l)
+    r != last(pts) && push!(pts, r)
+    pts
+end
+
+
+
+
+
+
 """
     integrate(p::AbstractPolynomial)
 
