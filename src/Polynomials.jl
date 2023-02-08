@@ -7,6 +7,7 @@ import Base: evalpoly
 include("abstract.jl")
 include("show.jl")
 include("plots.jl")
+include("makie.jl")
 include("contrib.jl")
 
 # Interface for all AbstractPolynomials
