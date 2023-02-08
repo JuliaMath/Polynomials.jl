@@ -47,7 +47,7 @@ Some `T`s will not be successful
 
 
 """
-abstract type AbstractPolynomial{T,X} end
+abstract type AbstractPolynomial{T,X} <: Function end
 
 
 ## -----
