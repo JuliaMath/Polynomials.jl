@@ -14,6 +14,7 @@ export fromroots,
        integrate,
        derivative,
        variable,
+       @variable,
        isintegral,
        ismonic
 
@@ -861,6 +862,26 @@ variable(::Type{P}) where {P <: AbstractPolynomial} = throw(ArgumentError("No de
 variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P),Symbol(var)})
 variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
+
+#@variable x
+#@variable x::Polynomial
+#@variable x::Polynomial{t]
+macro variable(x)
+    q = Expr(:block)
+    if isa(x, Expr) && x.head == :(::)
+        x, P = x.args
+        push!(q.args, Expr(:(=), esc(x),
+                           Expr(:call, :variable, P, Expr(:quote, x))))
+    else
+        push!(q.args, Expr(:(=), esc(x),
+                           Expr(:call, :variable, Expr(:quote, x))))
+    end
+    push!(q.args, esc(x))
+
+    q
+end
+
+
 
 # basis
 # var is a positional argument, not a keyword; can't deprecate so we do `_var; var=_var`

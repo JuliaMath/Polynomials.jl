@@ -63,6 +63,9 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
             ## issue #452
             ps = (1, 1.0)
             P != FactoredPolynomial && @test eltype(P(ps)) == eltype(promote(ps...))
+            ## issue 464
+            @variable z
+            @test z^2 + 2 == Polynomial([2,0,1], :z)
         end
     end
 end
