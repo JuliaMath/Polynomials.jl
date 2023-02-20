@@ -550,6 +550,8 @@ Fit a degree ``n`` or less polynomial through the points ``(x_i, y_i)`` using Ar
 
 The use of a Vandermonde matrix to fit a polynomial to data is exponentially ill-conditioned for larger values of ``n``. The Arnoldi orthogonalization fixes this problem.
 
+This representation is useful for *evaluating* the polynomial, but does not lend itself to other polynomial manipulations.
+
 # Returns
 
 Returns an instance of `ArnoldiFit`. This object can be used to evaluate the polynomial. To manipulate the polynomial, the object can be `convert`ed to other polynomial types, though there may be some loss in accuracy when doing polynomial evaluations afterwards for higher-degree polynomials.
@@ -562,6 +564,12 @@ The two main functions are translations from example code in:
 PABLO D. BRUBECK, YUJI NAKATSUKASA, AND LLOYD N. TREFETHEN;
 [arXiv:1911.09988](https://people.maths.ox.ac.uk/trefethen/vander_revised.pdf)
 
+For more details, see also:
+
+Lei-Hong Zhang, Yangfeng Su, Ren-Cang Li. Accurate polynomial fitting and evaluation via Arnoldi. Numerical Algebra, Control and Optimization. doi: 10.3934/naco.2023002
+
+
+
 # Examples:
 
 ```
@@ -571,22 +579,26 @@ p = fit(Polynomial, xs, f.(xs));
 q = fit(ArnoldiFit, xs, f.(xs));
 maximum(abs, p(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 3.304586010148457e16
 maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 1.1939520722092922e-7
+```
 
+```
 N = 250; xs = [cos(j*pi/N) for j in N:-1:0];
 p = fit(Polynomial, xs, f.(xs));
 q = fit(ArnoldiFit, xs, f.(xs));
 maximum(abs, p(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 3.55318186254542e92
 maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 8.881784197001252e-16
+```
 
+```
 p = fit(Polynomial, xs, f.(xs), 10); # least-squares fit
 q = fit(ArnoldiFit, xs, f.(xs), 10);
 maximum(abs, q(x) - p(x) for x ∈ range(-1,stop=1,length=500)) # 4.6775083806238626e-14
 Polynomials.norm(q-p, Inf) # 2.2168933355715126e-12 # promotes `q` to `Polynomial`
 ```
 
-"""
-polyfit
+To manipulate the fitted polynomial, conversion is necessary. Conversion can lead to wildly divergent polynomials when n is large.
 
+"""
 function polyfitA(x, y, n=length(x)-1; var=:x)
     m = length(x)
     T = eltype(y)
@@ -596,6 +608,7 @@ function polyfitA(x, y, n=length(x)-1; var=:x)
 
     q = zeros(T, m)
 
+    # we have Vₓ = QR, y = Vₓa = Q(Ra) = Qd, so d = Q \ y
     @inbounds for k = 1:n
         q .= x .* Q[:,k]
         for j in 1:k
@@ -610,6 +623,8 @@ function polyfitA(x, y, n=length(x)-1; var=:x)
     ArnoldiFit{eltype(d),typeof(H),Symbol(var)}(d, H)
 end
 
+# from Vₓ = QR, we get Vₛ = WR and f = Vₛa = WRa = W(d) stored above
+# this finds W
 function polyvalA(d, H::AbstractMatrix{S}, s::T) where {T, S}
     R = promote_type(T,S)
     n = length(d) - 1
@@ -629,6 +644,9 @@ end
     ArnoldiFit
 
 A polynomial type produced through fitting a degree ``n`` or less polynomial to data ``(x_1,y_1),…,(x_N, y_N), N ≥ n+1``, This uses Arnoldi orthogonalization to avoid the exponentially ill-conditioned Vandermonde polynomial. See [`Polynomials.polyfitA`](@ref) for details.
+
+This is useful for polynomial evaluation, but other polynomial operations are not defined. Though these fitted polynomials may be converted to other types, for larger degrees this will prove unstable.
+
 """
 struct ArnoldiFit{T, M<:AbstractArray{T,2}, X}  <: AbstractPolynomial{T,X}
     coeffs::Vector{T}
