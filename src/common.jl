@@ -106,6 +106,7 @@ the variance-covariance matrix.)
 
 For fitting with a large degree, the Vandermonde matrix is exponentially ill-conditioned. The [`ArnoldiFit`](@ref) type introduces an Arnoldi orthogonalization that fixes this problem.
 
+
 """
 function fit(P::Type{<:AbstractPolynomial},
              x::AbstractVector{T},
@@ -140,7 +141,7 @@ fit(x::AbstractVector,
 function _fit(P::Type{<:AbstractPolynomial},
              x::AbstractVector{T},
              y::AbstractVector{T},
-             deg::Integer = length(x) - 1;
+             deg = length(x) - 1;
              weights = nothing,
              var = :x,) where {T}
     x = mapdomain(P, x)
@@ -151,7 +152,17 @@ function _fit(P::Type{<:AbstractPolynomial},
         coeffs = vand \ y
     end
     R = float(T)
-    return P(R.(coeffs), var)
+    if isa(deg, Integer)
+        return P{R, Symbol(var)}(R.(coeffs))
+    else
+        cs = zeros(T, 1 + maximum(deg))
+        for (i,aᵢ) ∈ zip(deg, coeffs)
+            cs[1 + i] = aᵢ
+        end
+        return P{R, Symbol(var)}(cs)
+    end
+
+
 end
 
 

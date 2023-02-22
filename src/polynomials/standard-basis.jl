@@ -488,13 +488,33 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
 end
 
 function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, n::Integer) where {T <: Number}
-    A = Matrix{T}(undef, length(x), n + 1)
-    A[:, 1] .= one(T)
-    @inbounds for i in 1:n
-        A[:, i + 1] = A[:, i] .* x
-    end
-    return A
+    vander(P, x, 0:n)
+    # A = Matrix{T}(undef, length(x), n + 1)
+    # A[:, 1] .= one(T)
+    # @inbounds for i in 1:n
+    #     A[:, i + 1] = A[:, i] .* x
+    # end
+    # return A
 end
+
+# skip some degrees
+function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, degs) where {T <: Number}
+    A = Matrix{T}(undef, length(x),  length(degs))
+    Aᵢ = one.(x)
+
+    i′ = 1
+    for i ∈ 0:maximum(degs)
+        if i ∈ degs
+            A[:, i′] = Aᵢ
+            i′ += 1
+        end
+        for (i, xᵢ) ∈ enumerate(x)
+            Aᵢ[i] *= xᵢ
+        end
+    end
+    A
+end
+
 
 ## as noted at https://github.com/jishnub/PolyFit.jl, using method from SpecialMatrices is faster
 ## https://github.com/JuliaMatrices/SpecialMatrices.jl/blob/master/src/vandermonde.jl
@@ -529,6 +549,25 @@ function fit(P::Type{<:StandardBasisPolynomial},
     else
         _fit(P, x, y, deg; weights=weights, var=var)
     end
+end
+
+"""
+    fit(P::Type{<:StandardBasisPolynomial}, x, y, deg)
+
+Fit a standard basis polynomial of degree `deg` to the pairs `(xᵢ,yᵢ)`.
+
+## Selective degrees
+
+To find a polynomial with some forced values of `0` for coefficients, a collection of desired non-zero terms can be specified for `deg`, rather than an integer indicating the maximum degree. (The default would basically be `0:length(xs)-1`.)
+
+"""
+function fit(P::Type{<:StandardBasisPolynomial},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             deg;
+             weights = nothing,
+             var = :x,) where {T}
+    _fit(P, x, y, deg; weights=weights, var=var)
 end
 
 function _polynomial_fit(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, y; var=:x) where {T}
