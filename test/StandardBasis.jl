@@ -144,6 +144,12 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
         @test Polynomials.isconstant(P(1))
         @test !Polynomials.isconstant(variable(P))
     end
+
+    ## issue #457
+    p = Polynomial([1,2,3])
+    @test_warn "deprecated" Polynomials.order(p)
+    @test Polynomials.order(p) == 2
+
 end
 
 @testset "Non-number type" begin
