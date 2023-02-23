@@ -634,7 +634,12 @@ has a nonzero coefficient. The degree of the zero polynomial is defined to be -1
 """
 degree(p::AbstractPolynomial) = iszero(coeffs(p)) ? -1 : length(coeffs(p)) - 1 + min(0, minimumexponent(p))
 
-@deprecate order degree true
+function order(p::AbstractPolynomial)
+    Base.depwarn("The `order` function is deprecated. Use `degree`.",
+                 :AbstractPolynomial)
+    degree(p)
+end
+
 
 """
     Polynomials.domain(::Type{<:AbstractPolynomial})
