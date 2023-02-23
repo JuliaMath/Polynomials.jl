@@ -231,6 +231,9 @@ extrema(p, cps)  # (-2.0, Inf)
 cps = Polynomials.critical_points(p, (0, 2))
 extrema(p, cps)  # (-2.0, 2.0)
 ```
+
+!!! note
+    There is a *big* difference between `minimum(p)` and `minimum(p, cps)`. The former takes the viewpoint that a polynomial `p` is a certain type of vector of its coefficients; returning the smallest coefficient. The latter uses `p` as a callable object, returning the smallest of the values `p.(cps)`.
 """
 function critical_points(p::AbstractPolynomial{T}, I = domain(p);
                          endpoints::Bool=true) where {T <: Real}
