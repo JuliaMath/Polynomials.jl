@@ -146,9 +146,11 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
     end
 
     ## issue #457
-    p = Polynomial([1,2,3])
-    @test_warn "deprecated" Polynomials.order(p)
-    @test Polynomials.order(p) == 2
+    if VERSION >= v"1.7.0"
+        p = Polynomial([1,2,3])
+        @test_warn "deprecated" Polynomials.order(p)
+        @test Polynomials.order(p) == 2
+    end
 
 end
 
