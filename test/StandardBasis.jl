@@ -636,7 +636,14 @@ end
         # issue #467, fit specific degrees only
         p = fit(P, xs, ys, 1:2:9)
         @test norm(p.(xs) - ys) ≤ 1e-4
+
+        # issue 467: with constants
+        p = fit(P, xs, ys, 3:2:9, Dict(1 => 1))
+        @test norm(p.(xs) - ys) ≤ 1e-3
+
     end
+
+
 
     f(x) = 1/(1 + 25x^2)
     N = 250; xs = [cos(j*pi/N) for j in N:-1:0];

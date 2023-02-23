@@ -552,23 +552,63 @@ function fit(P::Type{<:StandardBasisPolynomial},
 end
 
 """
-    fit(P::Type{<:StandardBasisPolynomial}, x, y, deg)
+    fit(P::Type{<:StandardBasisPolynomial}, x, y, J, [cs::Dict{Int, T}]; weights, var)
 
-Fit a standard basis polynomial of degree `deg` to the pairs `(xᵢ,yᵢ)`.
+Using constrained least squares, fit a polynomial of the type
+`p = ∑_{i ∈ J} aᵢ xⁱ + ∑ cⱼxʲ` where `cⱼ` are fixed non-zero constants
 
-## Selective degrees
+* `J`: a collection of degrees to find coefficients for
+* `cs`: If given, a `Dict` of key/values, `i => cᵢ`, which indicate the degree and value of the fixed non-zero constants.
 
-To find a polynomial with some forced values of `0` for coefficients, a collection of desired non-zero terms can be specified for `deg`, rather than an integer indicating the maximum degree. (The default would basically be `0:length(xs)-1`.)
+The degrees in `cs` and those in `J` should not intersect.
+
+Example
+```
+x = range(0, pi/2, 10)
+y = sin.(x)
+P = Polynomial
+p0 = fit(P, x, y, 5)
+p1 = fit(P, x, y, 1:2:5)
+p2 = fit(P, x, y, 3:2:5, Dict(1 => 1))
+[norm(p.(x) - y) for p ∈ (p0, p1, p2)] # 1.7e-5, 0.00016, 0.000248
+```
 
 """
 function fit(P::Type{<:StandardBasisPolynomial},
              x::AbstractVector{T},
              y::AbstractVector{T},
-             deg;
+             J,
+             cs=nothing;
              weights = nothing,
              var = :x,) where {T}
-    _fit(P, x, y, deg; weights=weights, var=var)
+    _fit(P, x, y, J; weights=weights, var=var)
 end
+
+
+function fit(P::Type{<:StandardBasisPolynomial},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             J,
+             cs::Dict{Int, S};
+             weights = nothing,
+             var = :x,) where {T,S}
+
+    for i ∈ J
+        haskey(cs, i) && throw(ArgumentError("cs can't overlap with deg"))
+    end
+
+    # we subtract off `∑cᵢ xⁱ`ⱼ from `y`;
+    # fit as those all degrees not in J are 0,
+    # then add back the constant coefficients
+
+    q = SparsePolynomial(cs)
+    y′ = y - q.(x)
+
+    p = fit(P, x, y′, J; weights=weights, var=var)
+
+    return p + q
+end
+
 
 function _polynomial_fit(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, y; var=:x) where {T}
     R = float(T)
