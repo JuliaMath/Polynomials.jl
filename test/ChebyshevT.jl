@@ -10,6 +10,7 @@
         @test p.coeffs == coeff
         @test coeffs(p) == coeff
         @test degree(p) == length(coeff) - 1
+        @test (@test_deprecated Polynomials.order(p)) == length(coeff) - 1 # issue 457
         @test Polynomials.indeterminate(p) == :x
         @test length(p) == length(coeff)
         @test size(p) == size(coeff)
