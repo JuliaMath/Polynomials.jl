@@ -66,6 +66,9 @@ isimmutable(::Type{<:ImmutablePolynomial}) = true
             ## issue 464
             @variable z
             @test z^2 + 2 == Polynomial([2,0,1], :z)
+
+            ## issue 457
+            @test (@test_deprecated Polynomials.order(p)) == length(coeff) - 1
         end
     end
 end
@@ -146,14 +149,9 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
         @test degree(Polynomials.basis(P,5)) == 5
         @test Polynomials.isconstant(P(1))
         @test !Polynomials.isconstant(variable(P))
+
     end
 
-    ## issue #457
-    if VERSION >= v"1.7.0"
-        p = Polynomial([1,2,3])
-        @test_warn "deprecated" Polynomials.order(p)
-        @test Polynomials.order(p) == 2
-    end
 
 end
 
