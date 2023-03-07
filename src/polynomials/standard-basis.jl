@@ -488,13 +488,33 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
 end
 
 function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, n::Integer) where {T <: Number}
-    A = Matrix{T}(undef, length(x), n + 1)
-    A[:, 1] .= one(T)
-    @inbounds for i in 1:n
-        A[:, i + 1] = A[:, i] .* x
-    end
-    return A
+    vander(P, x, 0:n)
+    # A = Matrix{T}(undef, length(x), n + 1)
+    # A[:, 1] .= one(T)
+    # @inbounds for i in 1:n
+    #     A[:, i + 1] = A[:, i] .* x
+    # end
+    # return A
 end
+
+# skip some degrees
+function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, degs) where {T <: Number}
+    A = Matrix{T}(undef, length(x),  length(degs))
+    Aᵢ = one.(x)
+
+    i′ = 1
+    for i ∈ 0:maximum(degs)
+        if i ∈ degs
+            A[:, i′] = Aᵢ
+            i′ += 1
+        end
+        for (i, xᵢ) ∈ enumerate(x)
+            Aᵢ[i] *= xᵢ
+        end
+    end
+    A
+end
+
 
 ## as noted at https://github.com/jishnub/PolyFit.jl, using method from SpecialMatrices is faster
 ## https://github.com/JuliaMatrices/SpecialMatrices.jl/blob/master/src/vandermonde.jl
@@ -530,6 +550,65 @@ function fit(P::Type{<:StandardBasisPolynomial},
         _fit(P, x, y, deg; weights=weights, var=var)
     end
 end
+
+"""
+    fit(P::Type{<:StandardBasisPolynomial}, x, y, J, [cs::Dict{Int, T}]; weights, var)
+
+Using constrained least squares, fit a polynomial of the type
+`p = ∑_{i ∈ J} aᵢ xⁱ + ∑ cⱼxʲ` where `cⱼ` are fixed non-zero constants
+
+* `J`: a collection of degrees to find coefficients for
+* `cs`: If given, a `Dict` of key/values, `i => cᵢ`, which indicate the degree and value of the fixed non-zero constants.
+
+The degrees in `cs` and those in `J` should not intersect.
+
+Example
+```
+x = range(0, pi/2, 10)
+y = sin.(x)
+P = Polynomial
+p0 = fit(P, x, y, 5)
+p1 = fit(P, x, y, 1:2:5)
+p2 = fit(P, x, y, 3:2:5, Dict(1 => 1))
+[norm(p.(x) - y) for p ∈ (p0, p1, p2)] # 1.7e-5, 0.00016, 0.000248
+```
+
+"""
+function fit(P::Type{<:StandardBasisPolynomial},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             J,
+             cs=nothing;
+             weights = nothing,
+             var = :x,) where {T}
+    _fit(P, x, y, J; weights=weights, var=var)
+end
+
+
+function fit(P::Type{<:StandardBasisPolynomial},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             J,
+             cs::Dict{Int, S};
+             weights = nothing,
+             var = :x,) where {T,S}
+
+    for i ∈ J
+        haskey(cs, i) && throw(ArgumentError("cs can't overlap with deg"))
+    end
+
+    # we subtract off `∑cᵢ xⁱ`ⱼ from `y`;
+    # fit as those all degrees not in J are 0,
+    # then add back the constant coefficients
+
+    q = SparsePolynomial(cs)
+    y′ = y - q.(x)
+
+    p = fit(P, x, y′, J; weights=weights, var=var)
+
+    return p + q
+end
+
 
 function _polynomial_fit(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, y; var=:x) where {T}
     R = float(T)
