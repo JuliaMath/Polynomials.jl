@@ -1603,3 +1603,14 @@ end
     @test Polynomials.minimumexponent(LaurentPolynomial{Float64}) == typemin(Int)
     @test Polynomials.minimumexponent(LaurentPolynomial{Float64, :y}) == typemin(Int)
 end
+
+
+# Chain rules
+using ChainRulesTestUtils
+
+@testset "Test frule and rrule" begin
+    p = Polynomial([1,2,3,4])
+    dp = derivative(p)
+
+    test_scalar(p, 1.0; check_inferred=true)
+end
