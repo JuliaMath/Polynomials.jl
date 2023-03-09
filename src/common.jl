@@ -154,13 +154,13 @@ function _fit(P::Type{<:AbstractPolynomial},
     end
     R = float(T)
     if isa(deg, Integer)
-        return P{R, Symbol(var)}(R.(coeffs))
+        return P(R.(coeffs), var)
     else
         cs = zeros(T, 1 + maximum(deg))
         for (i,aᵢ) ∈ zip(deg, coeffs)
             cs[1 + i] = aᵢ
         end
-        return P{R, Symbol(var)}(cs)
+        return P(cs, var)
     end
 
 
