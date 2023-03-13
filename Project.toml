@@ -10,6 +10,14 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 
+[weakdeps]
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
+
+[extensions]
+PolynomialsChainRulesCoreExt = "ChainRulesCore"
+PolynomialsMakieCoreExt = "MakieCore"
+
 [compat]
 ChainRulesCore = "1"
 MakieCore = "0.6"
@@ -17,6 +25,8 @@ RecipesBase = "0.7, 0.8, 1"
 julia = "1.6"
 
 [extras]
+ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
+MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -26,4 +36,4 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["DualNumbers", "LinearAlgebra", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]
+test = ["ChainRulesCore", "DualNumbers", "LinearAlgebra", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]

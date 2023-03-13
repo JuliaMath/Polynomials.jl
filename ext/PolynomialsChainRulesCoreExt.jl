@@ -1,3 +1,6 @@
+module PolynomialsChainRulesCoreExt
+
+using Polynomials
 import ChainRulesCore
 
 function ChainRulesCore.frule(
@@ -9,8 +12,9 @@ function ChainRulesCore.frule(
     p(x), derivative(p)(x)*Δx
 end
 
-
 function ChainRulesCore.rrule(p::AbstractPolynomial, x)
     _pullback(ΔΩ) = (ChainRulesCore.NoTangent(), derivative(p)(x))
     return (p(x), _pullback)
+end
+
 end

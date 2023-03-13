@@ -7,7 +7,6 @@ import Base: evalpoly
 include("abstract.jl")
 include("show.jl")
 include("plots.jl")
-include("makie.jl")
 include("contrib.jl")
 
 # Interface for all AbstractPolynomials
@@ -35,7 +34,12 @@ include("rational-functions/plot-recipes.jl")
 
 # compat; opt-in with `using Polynomials.PolyCompat`
 include("polynomials/Poly.jl")
-include("chain_rules.jl")
+
+if !isdefined(Base, :get_extension)
+    include("../ext/PolynomialsChainRulesCoreExt.jl")
+    include("../ext/PolynomialsMakieCoreExt.jl")
+end
+
 include("precompiles.jl")
 
 end # module
