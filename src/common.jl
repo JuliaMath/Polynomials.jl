@@ -1032,17 +1032,14 @@ end
 ## -- multiplication
 
 
-# this fall back not necessarily efficient (e.g., sparse)
 function scalar_mult(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T,X}}
-    R = Base.promote_op(*, T, S) # typeof(one(T)*one(S))?
-    𝐏 = ⟒(P){R,X}
-    𝐏([pᵢ * c for pᵢ ∈ coeffs(p)])
+    result = coeffs(p) .* (c,)
+    ⟒(P){eltype(result), X}(result)
 end
 
 function scalar_mult(c::S, p::P) where {S, T, X, P<:AbstractPolynomial{T, X}}
-    R = Base.promote_op(*, T, S)
-    𝐏 = ⟒(P){R,X}
-    𝐏([c * pᵢ for pᵢ ∈ coeffs(p)])
+    result = (c,) .* coeffs(p)
+    ⟒(P){eltype(result), X}(result)
 end
 
 scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) = error("scalar_mult(::$(typeof(p1)), ::$(typeof(p2))) is not defined.") # avoid ambiguity, issue #435
