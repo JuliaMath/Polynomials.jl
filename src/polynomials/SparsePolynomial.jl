@@ -212,15 +212,9 @@ end
 
 function scalar_mult(c::S, p::P) where {T, X, P <: SparsePolynomial{T,X}, S<:Number}
 
-    R1 = promote_type(T,S)
-    R = typeof(zero(c)*zero(T))
-    Q = ⟒(P){R,X}
-    q = zero(Q)
-    for (k,pₖ) ∈ pairs(p)
-        q[k] = c * pₖ
-    end
-
-    return q
+    vs = (c,) .* values(p)
+    d = Dict(k=>v for (k,v) ∈ zip(keys(p), vs))
+    return SparsePolynomial{eltype(vs), X}(d)
 end
 
 function Base.:*(p::P, q::Q) where {T,X,P<:SparsePolynomial{T,X},

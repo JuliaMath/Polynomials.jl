@@ -68,11 +68,11 @@ function Base.one(::Type{P}) where {P<:StandardBasisPolynomial}
 end
 function variable(::Type{P}) where {P<:StandardBasisPolynomial}
     T,X = eltype(P), indeterminate(P)
-    ⟒(P){T,X}([zero(T),one(T)])
+    ⟒(P){T,X}([zero(T), one(T)])
 end
 
 # can bypass c*one(P)
-Base.:+(p::P, c::T) where {T, P<:StandardBasisPolynomial{T}} = p + ⟒(P)([c])
+Base.:+(p::P, c::T) where {T, X, P<:StandardBasisPolynomial{T, X}} = p + ⟒(P)([c], X)
 
 ## multiplication algorithms for computing p * q.
 ## default multiplication between same type.
@@ -146,7 +146,8 @@ end
 ## Define a dot product on vectors of polynomials, where polynomials are treated as
 ## as the scalar types -- the dot is the sum of pairwise products. Might change in
 ## the future if this causes confusion with the "vector" interpretation of polys.
-LinearAlgebra.dot(xv::AbstractArray{T}, yv::AbstractArray{T}) where {T <: StandardBasisPolynomial} = sum(conj(x)*y for (x,y) = zip(xv, yv))
+LinearAlgebra.dot(xv::AbstractArray{T}, yv::AbstractArray{T}) where {T <: StandardBasisPolynomial} =
+    sum(conj(x)*y for (x,y) = zip(xv, yv))
 
 ## ---
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
@@ -171,7 +172,8 @@ function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPol
     # we avoid usage like Base.promote_op(*, T, Int) here, say, as
     # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
     # Base.promote_op(*, Complex, Int)
-    R = typeof(constantterm(p)*1)
+    T′ = real(eltype(T))
+    R = typeof(constantterm(p)*one(T′))
     Q = ⟒(P){R,X}
 
     order == 0 && return p
@@ -182,14 +184,15 @@ function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPol
     n = d + 1
     a2 = Vector{R}(undef, n - order)
     @inbounds for i in order:n - 1
-        a2[i - order + 1] = reduce(*, (i - order + 1):i, init = p[i])
+        a2[i - order + 1] = reduce(*, T′(i - order + 1):T′(i), init = p[i])
     end
     Q(a2)
 end
 
 function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
 
-    R = typeof(constantterm(p)/1)
+    T′ = eltype(T)
+    R = typeof(constantterm(p)/one(T′))
     Q = ⟒(P){R,X}
 
     hasnan(p) && return Q([NaN])
@@ -197,16 +200,17 @@ function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
 
     n = length(p)
     as = Vector{R}(undef, n + 1)
-    as[1] = 0*constantterm(p)
+    as[1] = zero(constantterm(p))
     for (i, pᵢ) ∈ pairs(p)
         i′ = i + 1
-        @inbounds as[i′+1] = pᵢ/i′
+        @inbounds as[i′+1] = pᵢ/T′(i′)
     end
     return Q(as)
 end
 
 function integrate(p::P) where {T, X, P <: LaurentBasisPolynomial{T, X}}
-    R = typeof(constantterm(p)/1)
+    T′ = eltype(T)
+    R = typeof(constantterm(p) / one(T′))
     Q = ⟒(P){R,X}
 
     hasnan(p) && return Q([NaN])
@@ -216,7 +220,7 @@ function integrate(p::P) where {T, X, P <: LaurentBasisPolynomial{T, X}}
     for (k, pₖ) ∈ pairs(p)
         iszero(pₖ) && continue
         k == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
-        ∫p[k+1] = pₖ/(k+1)
+        ∫p[k+1] = pₖ/T′(k+1)
     end
     ∫p
 end
@@ -286,7 +290,6 @@ function Base.gcd(::Val{:euclidean},
 
     iter = 1
     itermax = length(r₁)
-
     while !iszero(r₁) && iter ≤ itermax
         _, rtemp = divrem(r₀, r₁)
         r₀ = r₁

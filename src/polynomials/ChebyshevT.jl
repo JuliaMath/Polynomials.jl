@@ -154,7 +154,7 @@ function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {
 end
 
 function integrate(p::ChebyshevT{T,X}) where {T,X}
-    R = eltype(one(T) / 1)
+    R = eltype(one(T) / one(T))
     Q = ChebyshevT{R,X}
     if hasnan(p)
         return Q([NaN])

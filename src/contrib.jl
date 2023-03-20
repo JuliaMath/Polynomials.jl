@@ -5,6 +5,8 @@ using Base.Cartesian
 
 # direct version (do not check if threshold is satisfied)
 function fastconv(E::Array{T,N}, k::Array{T,N}) where {T,N}
+    isempty(E) && return E
+    isempty(k) && return k
     retsize = ntuple(n -> size(E, n) + size(k, n) - 1, Val{N}())
     ret = zeros(T, retsize)
     convn!(ret, E, k)
@@ -52,7 +54,7 @@ evalpoly(x, p::AbstractVector) = _evalpoly(x, p)
 # https://discourse.julialang.org/t/i-have-a-much-faster-version-of-evalpoly-why-is-it-faster/79899; improvement *and* closes #313
 function _evalpoly(x::S, p) where {S}
     i = lastindex(p)
-
+    iszero(i) && return zero(eltype(p))*_one(x)
     @inbounds out = p[i]*_one(x)
     i -= 1
 

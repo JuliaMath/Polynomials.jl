@@ -152,7 +152,7 @@ function printpoly(io::IO, p::P, mimetype=MIME"text/plain"();
         first &= !printed
         printed_anything |= printed
     end
-    printed_anything || print(io, zero(T))
+    printed_anything || print(io, zero(eltype(T)))
     return nothing
 end
 
