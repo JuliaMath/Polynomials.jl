@@ -288,7 +288,7 @@ Polynomial objects also have other methods:
 * `gcd`: greatest common divisor of two polynomials.
 
 * `Pade`: Return the
-  [Pade approximant](https://en.wikipedia.org/wiki/Pad%C3%A9_approximant) of order `m/n` for a polynomial as a `Pade` object.
+  [Padé approximant](https://en.wikipedia.org/wiki/Pad%C3%A9_approximant) of order `m/n` for a polynomial as a `Pade` object.
 
 
 ## Related Packages
