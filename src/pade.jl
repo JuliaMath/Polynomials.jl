@@ -22,7 +22,7 @@ export Pade
 Return Pade approximation of polynomial.
 
 # References
-[Pade Approximant](https://en.wikipedia.org/wiki/Pad%C3%A9_approximant)
+[Pade approximant](https://en.wikipedia.org/wiki/Pad%C3%A9_approximant)
 """
 struct Pade{T <: Number,S <: Number}
     p::Union{Poly{T}, Polynomial{T}}

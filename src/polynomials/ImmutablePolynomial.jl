@@ -22,7 +22,7 @@ As the degree of the polynomial (`+1`) is a compile-time constant,
 several performance improvements are possible. For example, immutable
 polynomials can take advantage of faster polynomial evaluation
 provided by `evalpoly` from Julia 1.4; similar methods are also used
-for addtion and multiplication.
+for addition and multiplication.
 
 However, as the degree is included in the type, promotion between
 immutable polynomials can not promote to a common type. As such, they

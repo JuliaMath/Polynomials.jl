@@ -130,7 +130,7 @@ function pade_fit(p::Polynomial{T}, m::Integer, n::Integer; var=:x) where {T}
     d = degree(p)
     @assert (0 <= m) && (1 <= n) && (m + n <= d)
 
-    # could be much more perfomant
+    # could be much more performant
     c = convert(LaurentPolynomial, p) # for better indexing
     cs = [c[m+j-i] for j ∈ 1:n, i ∈ 0:n]
 

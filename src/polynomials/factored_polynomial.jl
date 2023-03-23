@@ -58,7 +58,7 @@ struct FactoredPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
     end
 end
 
-# There are idiosyncracies with this type
+# There are idiosyncrasies with this type
 # * unlike P{T}(...) we allow T to widen here if the roots of the polynomial Polynomial(coeffs) needs
 #   a wider type (e.g. Complex{Float64}, not Float64)
 # * the handling of Inf and NaN, when a specified coefficient, is to just return a constant poly (Inf or NaN)

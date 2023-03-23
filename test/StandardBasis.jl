@@ -128,7 +128,7 @@ Base.getindex(z::ZVector, I::Int) = parent(z)[I + z.offset]
         @test iszero(p0)
         P != LaurentPolynomial && @test degree(p0) == -1
 
-        # P(2) is  2 (not  2p₀)  connvert(Polynomial, P(s::Number)) = Polynomial(s)
+        # P(2) is  2 (not  2p₀)  convert(Polynomial, P(s::Number)) = Polynomial(s)
         @test convert(Polynomial, P(2)) ≈ Polynomial(2)
         @test P(2)  ≈ 2*one(P)
 
@@ -1145,7 +1145,7 @@ end
         end
 
         # * Promotion can be forced to mix constant-polynomials
-        @testset "Use typed constructor to mix constant polynomals" begin
+        @testset "Use typed constructor to mix constant polynomials" begin
             𝑷,𝑸 = P{Int,:x}, P{Int,:y} # not typeof(p),... as Immutable carries N
             @test_throws ArgumentError [one(p), one(q)]
             @test eltype(𝑷[one(p), one(q)]) == 𝑷

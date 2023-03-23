@@ -126,7 +126,7 @@ Base.promote_rule(::Type{P},::Type{Q}) where {T, X, P <: LaurentPolynomial{T,X},
 Base.promote_rule(::Type{Q},::Type{P}) where {T, X, P <: LaurentPolynomial{T,X}, S, Q <: StandardBasisPolynomial{S,X}} =
     LaurentPolynomial{promote_type(T, S),X}
 
-# need to add p.m[], so abstract.jl method isn't sufficent
+# need to add p.m[], so abstract.jl method isn't sufficient
 # XXX unlike abstract.jl, this uses Y variable in conversion; no error
 # Used in DSP.jl
 function Base.convert(::Type{LaurentPolynomial{S,Y}}, p::LaurentPolynomial{T,X}) where {T,X,S,Y}
@@ -272,7 +272,7 @@ end
 
 
 ##
-## ---- Conjugation has different defintions
+## ---- Conjugation has different definitions
 ##
 
 """

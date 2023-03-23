@@ -116,7 +116,7 @@ While polynomials of type `Polynomial` are mutable objects, operations such as
 `+`, `-`, `*`, always create new polynomials without modifying its arguments.
 The time needed for these allocations and copies of the polynomial coefficients
 may be noticeable in some use cases. This is amplified when the coefficients
-are for instance `BigInt` or `BigFloat` which are mutable themself.
+are for instance `BigInt` or `BigFloat` which are mutable themselves.
 This can be avoided by modifying existing polynomials to contain the result
 of the operation using the [MutableArithmetics (MA) API](https://github.com/jump-dev/MutableArithmetics.jl).
 
