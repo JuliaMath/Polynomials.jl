@@ -21,6 +21,10 @@ isneg(pj::T) where {T} = hasneg(T) && _isone(sign(-pj))
 "Make `pj` positive if it is negative. (Don't call `abs` as that may not be defined, or appropriate.)"
 aspos(pj::T) where {T} = (hasneg(T) && isneg(pj)) ? -pj : pj
 
+"does type T have a 1?"
+hasone(::Type{<:Number}) = true
+hasone(::Type{T}) where {T} = false
+
 "Should a value of `one(T)` be shown as a coefficient of monomial `x^i`, `i >= 1`? (`1.0x^2` is shown, `1 x^2` is not)"
 showone(::Type{T}) where {T} = true
 

@@ -477,6 +477,55 @@ end
         @inferred p * p
         @inferred p^3
     end
+
+    # evaluation at special cases (degree 0,1; evaluate at 0)
+    @testset for P ∈ Ps
+        for T ∈ (Int, Float16, Float64, Complex{Float64})
+            p₀ = zero(P{T,:X})
+            @test p₀(0) == zero(T) == Polynomials.constantterm(p₀)
+            @test p₀(1) == zero(T)
+            p₁ = P(T[2])
+            @test p₁(0) == T(2) == Polynomials.constantterm(p₁)
+            @test p₁(1) == T(2)
+        end
+    end
+
+    # evaluation at special cases different number types
+    @testset for P ∈ Ps
+        P ∈ (SparsePolynomial, FactoredPolynomial) && continue
+        # vector coefficients
+        v₀, v₁ = [1,1,1], [1,2,3]
+        p₁ = P([v₀])
+        @test p₁(0) == v₀  == Polynomials.constantterm(p₁)
+        @test_throws MethodError (0 * p₁)(0) # no zero(Vector{Int})
+        p₂ = P([v₀, v₁])
+        @test p₂(0) == v₀ == Polynomials.constantterm(p₂)
+        @test p₂(2) == v₀ + 2v₁
+
+        # matrix arguments
+        # for matrices like pₒI + p₁X + p₂X² + ⋯
+        p = P([1])
+        x = [1 2; 3 4]
+        @test p(x) == 1*I
+        @test (0p)(x) == 0*I
+        p = P([1,2])
+        @test p(x) == 1*I + 2*x
+        p = P([1,2,3])
+        @test p(x) == 1*I + 2*x + 3x^2
+    end
+
+    # p - p requires a zero
+    @testset for P ∈ Ps
+        P ∈ (LaurentPolynomial, SparsePolynomial,
+             FactoredPolynomial) && continue
+        for v ∈ ([1,2,3],
+                 [[1,2,3],[1,2,3]],
+                 [[1 2;3 4], [3 4; 5 6]]
+                 )
+            p = P(v)
+            @test p - p == 0*p
+        end
+    end
 end
 
 @testset "Divrem" begin
@@ -736,7 +785,7 @@ end
         p = P(1)
         x = [1 0; 0 1]
         y = p(x)
-        @test y == x
+        @test y ≈ x
 
         # Issue #208 and  type of output
         p1=P([1//1])

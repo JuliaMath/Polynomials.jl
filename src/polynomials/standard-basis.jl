@@ -40,7 +40,12 @@ julia> p.(0:3)
  28
 ```
 """
-evalpoly(x, p::StandardBasisPolynomial) = EvalPoly.evalpoly(x, p.coeffs) # allows  broadcast  issue #209
+function evalpoly(x, p::StandardBasisPolynomial{T}) where {T}
+    # the zero polynomial is a *special case*
+    iszero(p) && return zero(x) * zero(T)
+    EvalPoly.evalpoly(x, p.coeffs) # allows  broadcast  issue #209
+end
+
 constantterm(p::StandardBasisPolynomial) = p[0]
 
 domain(::Type{<:StandardBasisPolynomial}) = Interval{Open,Open}(-Inf, Inf)
@@ -61,7 +66,6 @@ end
 # treat p as a *vector* of coefficients
 Base.similar(p::StandardBasisPolynomial, args...) = similar(coeffs(p), args...)
 
-
 function Base.one(::Type{P}) where {P<:StandardBasisPolynomial}
     T,X = eltype(P), indeterminate(P)
     ⟒(P){T,X}(ones(T,1))
@@ -70,6 +74,8 @@ function variable(::Type{P}) where {P<:StandardBasisPolynomial}
     T,X = eltype(P), indeterminate(P)
     ⟒(P){T,X}([zero(T), one(T)])
 end
+
+## ---- arithmetic
 
 # can bypass c*one(P)
 Base.:+(p::P, c::T) where {T, X, P<:StandardBasisPolynomial{T, X}} = p + ⟒(P)([c], X)
@@ -150,6 +156,7 @@ LinearAlgebra.dot(xv::AbstractArray{T}, yv::AbstractArray{T}) where {T <: Standa
     sum(conj(x)*y for (x,y) = zip(xv, yv))
 
 ## ---
+
 function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
     n = length(r)
     c = zeros(T, n + 1)
@@ -167,63 +174,29 @@ end
 ## ----
 
 function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPolynomial{T, X}}
+
     order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
-
-    # we avoid usage like Base.promote_op(*, T, Int) here, say, as
-    # Base.promote_op(*, Rational, Int) is Any, not Rational in analogy to
-    # Base.promote_op(*, Complex, Int)
-    T′ = real(eltype(T))
-    R = typeof(constantterm(p)*one(T′))
-    Q = ⟒(P){R,X}
-
     order == 0 && return p
-    hasnan(p) && return Q(R[NaN])
-    order > length(p) && return zero(Q)
     d = degree(p)
-    d <= 0 && return zero(Q)
+    order > d  && return 0*p
+    hasnan(p) && return  ⟒(P)(zero(T)/zero(T), X) # NaN{T}
+
     n = d + 1
-    a2 = Vector{R}(undef, n - order)
-    @inbounds for i in order:n - 1
-        a2[i - order + 1] = reduce(*, T′(i - order + 1):T′(i), init = p[i])
-    end
-    Q(a2)
+    dp = [reduce(*, (i - order + 1):i, init = p[i]) for i ∈ order:d]
+    return ⟒(P)(dp, X)
+
 end
 
 function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
 
-    T′ = eltype(T)
-    R = typeof(constantterm(p)/one(T′))
-    Q = ⟒(P){R,X}
+    hasnan(p) && return ⟒(P)(NaN, X)
+    iszero(p) && return zero(p)/1
 
-    hasnan(p) && return Q([NaN])
-    iszero(p) && return zero(Q)
-
-    n = length(p)
-    as = Vector{R}(undef, n + 1)
-    as[1] = zero(constantterm(p))
-    for (i, pᵢ) ∈ pairs(p)
-        i′ = i + 1
-        @inbounds as[i′+1] = pᵢ/T′(i′)
-    end
-    return Q(as)
+    as = [pᵢ/(i+1) for (i, pᵢ) ∈ pairs(p)]
+    pushfirst!(as, zero(constantterm(p)))
+    return ⟒(P)(as, X)
 end
 
-function integrate(p::P) where {T, X, P <: LaurentBasisPolynomial{T, X}}
-    T′ = eltype(T)
-    R = typeof(constantterm(p) / one(T′))
-    Q = ⟒(P){R,X}
-
-    hasnan(p) && return Q([NaN])
-    iszero(p) && return zero(Q)
-
-    ∫p = zero(Q)
-    for (k, pₖ) ∈ pairs(p)
-        iszero(pₖ) && continue
-        k == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
-        ∫p[k+1] = pₖ/T′(k+1)
-    end
-    ∫p
-end
 
 function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
 
@@ -398,6 +371,44 @@ function uvw(::Any, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
     throw(ArgumentError("not defined"))
 end
 
+# Some things lifted from
+# from https://github.com/jmichel7/LaurentPolynomials.jl/blob/main/src/LaurentPolynomials.jl.
+# This follows mostly that of intfuncs.jl which is specialized for integers.
+function Base.gcdx(a::P, b::P) where {T,X,P<:StandardBasisPolynomial{T,X}}
+    # a0, b0=a, b
+    s0, s1=one(a), zero(a)
+    t0, t1 = s1, s0
+    # The loop invariant is: s0*a0 + t0*b0 == a
+    x, y = a, b
+    while y != 0
+        q, r =divrem(x, y)
+        x, y = y, r
+        s0, s1 = s1, s0 - q*s1
+        t0, t1 = t1, t0 - q*t1
+    end
+    (x, s0, t0)./x[end]
+end
+
+Base.gcdx(a::StandardBasisPolynomial{T,X}, b::StandardBasisPolynomial{S,X}) where {S,T,X} =
+    gcdx(promote(a, b)...)
+
+# p^m mod q
+function Base.powermod(p::StandardBasisPolynomial, x::Integer, q::StandardBasisPolynomial)
+    x==0 && return one(q)
+    b=p%q
+    t=prevpow(2, x)
+    r=one(p)
+    while true
+        if x>=t
+            r=(r*b)%q
+            x-=t
+        end
+        t >>>= 1
+        t<=0 && break
+        r=(r*r)%q
+    end
+    r
+end
 
 
 ## --------------------------------------------------
@@ -492,12 +503,6 @@ end
 
 function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     vander(P, x, 0:n)
-    # A = Matrix{T}(undef, length(x), n + 1)
-    # A[:, 1] .= one(T)
-    # @inbounds for i in 1:n
-    #     A[:, i + 1] = A[:, i] .* x
-    # end
-    # return A
 end
 
 # skip some degrees

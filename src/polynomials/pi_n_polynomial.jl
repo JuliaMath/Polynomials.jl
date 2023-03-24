@@ -24,7 +24,7 @@ end
 PnPolynomial{T, X}(coeffs::Tuple) where {T, X} =
     PnPolynomial{T,X}(T[pᵢ for pᵢ ∈ coeffs])
 
-Polynomials.@register PnPolynomial
+@register PnPolynomial
 
 # change broadcast semantics
 Base.broadcastable(p::PnPolynomial) = p.coeffs;
@@ -34,7 +34,7 @@ Base.copyto!(p::PnPolynomial{T, X}, x::S) where
  S<:Union{AbstractVector, Base.AbstractBroadcasted, Tuple} # to avoid an invalidation. Might need to be more general?
  } = copyto!(p.coeffs, x)
 
-function Polynomials.degree(p::PnPolynomial)
+function degree(p::PnPolynomial)
     i = findlast(!iszero, p.coeffs)
     isnothing(i) && return -1
     i - 1

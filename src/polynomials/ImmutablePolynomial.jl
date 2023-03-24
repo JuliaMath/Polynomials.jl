@@ -64,7 +64,7 @@ end
 
 ## Various interfaces
 ## Abstract Vector coefficients
-function ImmutablePolynomial{T,X, N}(coeffs::AbstractVector{T})  where {T,X, N}
+function ImmutablePolynomial{T, X, N}(coeffs::AbstractVector{T})  where {T,X, N}
     cs = NTuple{N,T}(coeffs[i] for i ∈ firstindex(coeffs):N)
     ImmutablePolynomial{T, X, N}(cs)
 
@@ -190,26 +190,26 @@ end
 ## multiplication
 
 function scalar_mult(p::ImmutablePolynomial{T,X,N}, c::S) where {T, X,N, S <: Number}
-    R = eltype(p[0] * c * 0)
-    (N == 0  || iszero(c)) && return zero(ImmutablePolynomial{R,X})
+    R′ = promote_type(T,S)
+    iszero(N) && return zero(ImmutablePolynomial{R′,X})
+    iszero(c) && ImmutablePolynomial([p[0] .* c], X)
     cs = p.coeffs .* c
-    return ImmutablePolynomial(cs, X)
- end
+    R = eltype(cs)
+    P = ImmutablePolynomial{R,X}
+
+    iszero(cs[end]) ? P(cs) : P{N}(cs)
+end
 
 function scalar_mult(c::S, p::ImmutablePolynomial{T,X,N}) where {T, X,N, S <: Number}
-    R = eltype(p[0] * c * 0)
-    (N == 0  || iszero(c)) && return zero(ImmutablePolynomial{R,X})
-    cs = p.coeffs .* c
-    return ImmutablePolynomial(cs, X)
+    R′ = promote_type(T,S)
+    iszero(N) && return zero(ImmutablePolynomial{R′,X})
+    iszero(c) && ImmutablePolynomial([c .* p[0]], X)
+    cs = c .* p.coeffs
+    R = eltype(cs)
+    P = ImmutablePolynomial{R,X}
+    iszero(cs[end]) ? P(cs) : P{N}(cs)
 end
 
-function Base.:/(p::ImmutablePolynomial{T,X,N}, c::S) where {T,X,N,S<:Number}
-    R = eltype(one(T)/one(S))
-    P = ImmutablePolynomial{R,X}
-    (N == 0  || isinf(c)) && return zero(P)
-    cs = p.coeffs ./ c
-    iszero(cs[end]) ? P(cs) : P{N}(cs) # more performant to specify when N is known
-end
 
 
 function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,X,M}) where {T,S,X,N,M}
