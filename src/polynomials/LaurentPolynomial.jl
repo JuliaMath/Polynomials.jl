@@ -511,8 +511,8 @@ end
 
 
 function integrate(p::P) where {T, X, P <: LaurentBasisPolynomial{T, X}}
-    T′ = eltype(T)
-    R = typeof(constantterm(p) / one(T′))
+
+    R = typeof(constantterm(p) / 1)
     Q = ⟒(P){R,X}
 
     hasnan(p) && return Q([NaN])
@@ -522,7 +522,7 @@ function integrate(p::P) where {T, X, P <: LaurentBasisPolynomial{T, X}}
     for (k, pₖ) ∈ pairs(p)
         iszero(pₖ) && continue
         k == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
-        ∫p[k+1] = pₖ/T′(k+1)
+        ∫p[k+1] = pₖ/(k+1)
     end
     ∫p
 end

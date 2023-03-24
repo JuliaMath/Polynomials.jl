@@ -228,7 +228,6 @@ end
             @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
-#            @test_throws MethodError p - p == P([0*a])  # no zeros to make zero polynomial
 
             # poly mult
             @test p * q == P(conv([a,b,c], [a,b]))
@@ -278,7 +277,6 @@ end
             @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
-##            @test_throws MethodError p - p == P([0*a])  # no zero(T) to make zero polynomial
 
             # poly mult
             @test_throws MethodError p * q == P(conv([a,b,c], [a,b])) # Ok, no * for T

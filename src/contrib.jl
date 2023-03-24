@@ -132,12 +132,6 @@ function _zero(x::Matrix)
 end
 _zero(x) = zero(x)
 
-function _eltype(x, n=1)
-    T = eltype(x)
-    eltype(T) == T && return T
-    n > 10 && throw(DomainError())
-    _eltype(T, n+1)
-end
 end
 
 ## get type of parametric composite type without type parameters
