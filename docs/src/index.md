@@ -366,7 +366,7 @@ square free polynomial. For non-square free polynomials:
 
 * The `Polynomials.Multroot.multroot` function is available  for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng.
 
-Here we see `IntervalRootFinding.roots` having trouble isolating the roots due to the multiplicites:
+Here we see `IntervalRootFinding.roots` having trouble isolating the roots due to the multiplicities:
 
 ```
 julia> p = fromroots(Polynomial, [1,2,2,3,3])

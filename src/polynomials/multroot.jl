@@ -167,7 +167,7 @@ end
 
 Find a *pejorative* *root* for `p` given multiplicity structure `ls` and initial guess `zs`.
 
-The pejorative manifold for a multplicity structure `l` is denoted `{Gₗ(z) | z ∈ Cᵐ}`. A pejorative
+The pejorative manifold for a multiplicity structure `l` is denoted `{Gₗ(z) | z ∈ Cᵐ}`. A pejorative
 root is a least squares minimizer of `F(z) = W ⋅ [Gₗ(z) - a]`. Here `a ~ (p_{n-1}, p_{n-2}, …, p_1, p_0) / p_n` and `W` are weights given by `min(1, 1/|aᵢ|)`. When `l` is the mathematically correct structure, then `F` will be `0` for a pejorative root. If `l` is not correct, then the backward error `‖p̃ - p‖_w` is typically large, where `p̃ = Π (x-z̃ᵢ)ˡⁱ`.
 
 This follows Algorithm 1 of [Zeng](https://www.ams.org/journals/mcom/2005-74-250/S0025-5718-04-01692-8/S0025-5718-04-01692-8.pdf)

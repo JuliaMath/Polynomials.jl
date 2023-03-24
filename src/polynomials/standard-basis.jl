@@ -87,7 +87,7 @@ function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) whe
     fastconv(convert(Vector{R}, p), convert(Vector{R},q))
 end
 
-## put here, not with type defintion, in case reuse is possible
+## put here, not with type definition, in case reuse is possible
 ## `conv` can be used with matrix entries, unlike `fastconv`
 function conv(p::Vector{T}, q::Vector{S}) where {T,S}
     as = [p[1]*q[1]]
@@ -824,7 +824,7 @@ end
 
 # Condition number of a standard basis polynomial
 # rule of thumb: p̂ a compute value
-# |p(x) - p̃(x)|/|p(x)| ≤ α(n)⋅u ⋅ cond(p,x), where u = finite precision of compuation (2^-p)
+# |p(x) - p̃(x)|/|p(x)| ≤ α(n)⋅u ⋅ cond(p,x), where u = finite precision of computation (2^-p)
 function LinearAlgebra.cond(p::P, x) where {P <: StandardBasisPolynomial}
     p̃ = map(abs, p)
     p̃(abs(x))/ abs(p(x))

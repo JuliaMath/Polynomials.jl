@@ -46,7 +46,7 @@ Base.eltype(P::Type{<:Poly{T,X}}) where {T, X} = P
 _eltype(::Type{<:Poly{T}}) where  {T} = T
 _eltype(::Type{Poly}) =  Float64
 
-# when interating over poly return monomials
+# when iterating over poly return monomials
 function Base.iterate(p::Poly, state = firstindex(p))
     firstindex(p) <= state <= lastindex(p) || return nothing
     return p[state] * Polynomials.basis(p,state), state+1

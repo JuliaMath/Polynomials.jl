@@ -127,7 +127,7 @@ which ``Θᵏ < ϵ``.
 (In the ``ϵ → 0`` limit, this would be the exact GCD.)
 
 
-Suppose ``(p,q)`` is an ``ϵ`` pertubation from ``(p̂,q̂)`` where ``(p̂,q̂)`` has an exact gcd of degree ``k``, then ``degree(gcdₑ(p,q)) = k``; as ``ϵ → 0``, ``gcdₑ(p,q) → gcd(p̂, q̂)``, and
+Suppose ``(p,q)`` is an ``ϵ`` perturbation from ``(p̂,q̂)`` where ``(p̂,q̂)`` has an exact gcd of degree ``k``, then ``degree(gcdₑ(p,q)) = k``; as ``ϵ → 0``, ``gcdₑ(p,q) → gcd(p̂, q̂)``, and
 
 ``\\limsup_{(p,q)→(p̂,q̂)} \\inf{ ‖ (u,v,w) - (û,v̂,ŵ) ‖} / ‖ (p,q) - (p̂,q̂) ‖ < κₑ(p,q)``.
 
@@ -387,7 +387,7 @@ function smallest_singular_value!(w, R::UpperTriangular{T},
 
 end
 
-# no tolerance; stop when improvment stops
+# no tolerance; stop when improvement stops
 function smallest_singular_value(A)
     R = UpperTriangular(qr(A).R)
     w = Vector{eltype(R)}(undef, size(R, 2))
@@ -488,7 +488,7 @@ end
 
 
 # extend QR to next size
-# Q gets a 1 in nc,nc, 0s should be elswhere
+# Q gets a 1 in nc,nc, 0s should be elsewhere
 function extend_QR!(Q, R, nr, nc, A0)
 
     #old Q is m x m, old R is n x n; we add to these

@@ -84,7 +84,7 @@ Weights may be assigned to the points by specifying a vector or matrix of weight
 
 When specified as a vector, `[w₁,…,wₙ]`, the weights should be
 non-negative as the minimization problem is `argmin_β Σᵢ wᵢ |yᵢ - Σⱼ
-Vᵢⱼ βⱼ|² = argmin_β || √(W)⋅(y - V(x)β)||²`, where, `W` the digonal
+Vᵢⱼ βⱼ|² = argmin_β || √(W)⋅(y - V(x)β)||²`, where, `W` the diagonal
 matrix formed from `[w₁,…,wₙ]`, is used for the solution, `V` being
 the Vandermonde matrix of `x` corresponding to the specified
 degree. This parameterization of the weights is different from that of
@@ -230,7 +230,7 @@ Return the critical points of `p` (real zeros of the derivative) within `I` in s
 * `endpoints::Bool`: if `true`, return the endpoints of `I` along with the critical points
 
 
-Can be used in conjuction with `findmax`, `findmin`, `argmax`, `argmin`, `extrema`, etc.
+Can be used in conjunction with `findmax`, `findmin`, `argmax`, `argmin`, `extrema`, etc.
 
 ## Example
 ```
@@ -1110,7 +1110,7 @@ end
 return `u` the gcd of `p` and `q`, and `v` and `w`, where `u*v = p` and `u*w = q`.
 """
 uvw(p::AbstractPolynomial, q::AbstractPolynomial; kwargs...) = uvw(promote(p,q)...; kwargs...)
-uvw(p1::P, p2::P; kwargs...) where {P <:AbstractPolynomial} = throw(ArgumentError("uvw not defind"))
+uvw(p1::P, p2::P; kwargs...) where {P <:AbstractPolynomial} = throw(ArgumentError("uvw not defined"))
 
 """
     div(::AbstractPolynomial, ::AbstractPolynomial)
