@@ -435,7 +435,7 @@ function add_sub(op, p1::P, p2::Q) where {T, X, P <: LaurentPolynomial{T,X},
     m2,n2 = (extrema ∘ degreerange)(p2)
     m, n = min(m1,m2), max(n1, n2)
 
-    R = promote_type(T,S)
+    R = typeof(p1.coeffs[1] + p2.coeffs[1]) # non-empty
     as = zeros(R, length(m:n))
 
     d = m1 - m2

@@ -7,7 +7,11 @@ function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, firs
 
     pj = printsign(io, pj, first, mimetype)
 
-    if !(_isone(pj) && !(showone(T) || j == 0))
+    if hasone(T)
+        if !(_isone(pj) && !(showone(T) || j == 0))
+            printcoefficient(io, pj, j, mimetype)
+        end
+    else
         printcoefficient(io, pj, j, mimetype)
     end
 

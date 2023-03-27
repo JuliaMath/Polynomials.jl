@@ -57,29 +57,31 @@ Base.zero(::Type{P}) where {T, X, P<:Polynomial{T,X}} =
 
 # scalar +,* faster  than standard-basis/common versions as it avoids a copy
 function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}
-    cs = iszero(c) ? S[] : [c]
-    return p + Polynomial{S,X}(Val(false), cs)
+    if isempty(p.coeffs)
+        as = promote_type(S,T)[c]
+    else
+        R = typeof(c + p.coeffs[1])
+        as = R[isone(i) ? cᵢ + c : cᵢ for (i,cᵢ) ∈ pairs(p.coeffs)]
+    end
+    _polynomial(p, as)
 end
 
 # scalar * is a bit faster (2 to 3 allocations), isave allocations on copying
 function scalar_mult(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Number}
-    as = coeffs(p) .* (c,)
-    R = eltype(as)
-    Q = Polynomial{R, X}
-    isempty(as) && return Q(Val(false), as)
-    iszero(as[end]) ? Q(as) : Q(Val(false), as)
-
+    return _polynomial(p, coeffs(p) .* (c,))
 end
 
 function scalar_mult(c::S, p::P) where {T, X, P <: Polynomial{T,X} , S <: Number}
-    #_polynomial( (c,).* coeffs(p), X )
-    as = (c,).* coeffs(p)
+    _polynomial(p,  (c,).* coeffs(p))
+end
+# much faster than Polynomial(as, X)
+function _polynomial(p::P, as)  where {T, X, P <: Polynomial{T,X}}
     R = eltype(as)
     Q = Polynomial{R, X}
     isempty(as) && return Q(Val(false), as)
     iszero(as[end]) ? Q(as) : Q(Val(false), as)
-
 end
+
 
 # implement, as not copying speeds up multiplication by a factor of 2 or so
 # over the default

@@ -188,43 +188,35 @@ function Base.:+(p1::P, p2::Q) where {T,X,N,P<:ImmutablePolynomial{T,X,N},
 end
 
 ## multiplication
-
 function scalar_mult(p::ImmutablePolynomial{T,X,N}, c::S) where {T, X,N, S <: Number}
-    R′ = promote_type(T,S)
-    iszero(N) && return zero(ImmutablePolynomial{R′,X})
-    iszero(c) && ImmutablePolynomial([p[0] .* c], X)
-    cs = p.coeffs .* c
-    R = eltype(cs)
-    P = ImmutablePolynomial{R,X}
-
-    iszero(cs[end]) ? P(cs) : P{N}(cs)
+    iszero(N) && return zero(ImmutablePolynomial{promote_type(T,S),X})
+    iszero(c) && ImmutablePolynomial([p[0] .* (c,)], X)
+    return _polynomial(p, p.coeffs .* (c,))
 end
 
 function scalar_mult(c::S, p::ImmutablePolynomial{T,X,N}) where {T, X,N, S <: Number}
-    R′ = promote_type(T,S)
-    iszero(N) && return zero(ImmutablePolynomial{R′,X})
-    iszero(c) && ImmutablePolynomial([c .* p[0]], X)
-    cs = c .* p.coeffs
+    iszero(N) && return zero(ImmutablePolynomial{promote_type(T,S),X})
+    iszero(c) && ImmutablePolynomial([(c,) .* p[0]], X)
+    return _polynomial(p, (c,) .* p.coeffs)
+end
+
+function _polynomial(p::ImmutablePolynomial{T,X,N}, cs) where {T, X, N}
     R = eltype(cs)
     P = ImmutablePolynomial{R,X}
     iszero(cs[end]) ? P(cs) : P{N}(cs)
 end
 
-
-
 function Base.:*(p1::ImmutablePolynomial{T,X,N}, p2::ImmutablePolynomial{S,X,M}) where {T,S,X,N,M}
-    R = promote_type(T,S)
-    P = ImmutablePolynomial{R,X}
-
-    (iszero(N) || iszero(M)) && return zero(P)
+    (iszero(N) || iszero(M)) && return zero(ImmutablePolynomial{promote_type(T,S),X})
 
     cs = ⊗(ImmutablePolynomial, p1.coeffs, p2.coeffs) #(p1.coeffs) ⊗ (p2.coeffs)
+    R = eltype(cs)
+    P = ImmutablePolynomial{R,X}
     iszero(cs[end]) ? P(cs) : P{N+M-1}(cs)  # more performant to specify when N is known
 
 end
 
 Base.to_power_type(p::ImmutablePolynomial{T,X,N}) where {T,X,N} = p
-
 
 ## more performant versions borrowed from StaticArrays
 ## https://github.com/JuliaArrays/StaticArrays.jl/blob/master/src/linalg.jl

@@ -23,10 +23,11 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 ==ᵟ(a,b) = (a == b)
 ==ᵟ(a::FactoredPolynomial, b::FactoredPolynomial) = a ≈ b
 
-Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
+_isimmutable(::Type{P}) where {P <: Union{ImmutablePolynomial, FactoredPolynomial}} = true
+_isimmutable(P) = false
 
-isimmutable(p::P) where {P} = P <: ImmutablePolynomial
-isimmutable(::Type{<:ImmutablePolynomial}) = true
+
+Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
 
 @testset "Construction" begin
     @testset for coeff in Any[
@@ -814,7 +815,7 @@ end
 
     X = :x
     @testset for P in Ps
-        if !isimmutable(P)
+        if !(P == ImmutablePolynomial)
             p = P([0,one(Float64)])
             @test P{Complex{Float64},X} == typeof(p + 1im)
             @test P{Complex{Float64},X} == typeof(1im - p)
@@ -1059,7 +1060,7 @@ end
         p2  = P([3, 1.])
         p   = [p1, p2]
         q   = [3, p1]
-        if !isimmutable(p1)
+        if !_isimmutable(P)
             @test q isa Vector{typeof(p1)}
             @test p isa Vector{typeof(p2)}
         else
@@ -1239,7 +1240,7 @@ end
         p2 = conj(p)
         @test coeffs(p2) ==ᵗ⁰ [1 + 1im, 2 + 3im]
         @test transpose(p) == p
-        !isimmutable(p) &&  @test transpose!(p) == p
+        !_isimmutable(P) &&  @test transpose!(p) == p
         @test adjoint(Polynomial(im)) == Polynomial(-im) # issue 215
         @test conj(Polynomial(im)) == Polynomial(-im) # issue 215
 
@@ -1271,8 +1272,8 @@ end
         @test p[:] ==ᵗ⁰ [-1, 3, 5, -2]
 
         # setindex
-        if !(isimmutable(p) || (P <: FactoredPolynomial))
-            p1  = P([1,2,1])
+        p1  = P([1,2,1])
+        if !_isimmutable(P)
             p1[5] = 1
             @test p1[5] == 1
             @test p1 == P([1,2,1,0,0,1])
@@ -1593,7 +1594,7 @@ end
             T1,T2 = Ts[i],Ts[i+1]
             @testset for P in Ps
                 P <: FactoredPolynomial && continue
-                if !isimmutable(P)
+                if P != ImmutablePolynomial
                     p = P{T2}(T1.(rand(1:3,3)))
                     @test typeof(p) == P{T2, :x}
                 else
@@ -1609,7 +1610,7 @@ end
     # test P{T}(...) is P{T} (not always the case for FactoredPolynomial)
     @testset for P in Ps
         P <: FactoredPolynomial && continue
-        if !isimmutable(P)
+        if P != ImmutablePolynomial
             @testset for T in (Int32, Int64, BigInt)
                 p₁ =  P{T}(Float64.(rand(1:3,5)))
                 @test typeof(p₁) == P{T,:x} # conversion works

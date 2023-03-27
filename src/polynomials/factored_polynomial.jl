@@ -175,6 +175,8 @@ function Base.getindex(p::FactoredPolynomial{T}, idx::Int) where {T <: Number}
     coeffs(p)[idx - m + 1]
 end
 
+Base.setindex!(p::FactoredPolynomial, val,  idx::Int) = throw(ArgumentError("FactoredPolynomials are immutable"))
+
 # pairs,keys, values
 Base.keys(p::FactoredPolynomial)   = keys(convert(Polynomial, p))
 Base.values(p::FactoredPolynomial) = values(convert(Polynomial, p))
@@ -276,6 +278,7 @@ function scalar_mult(p::P, c::S) where {S<:Number, T, X, P <: FactoredPolynomial
     copy!(d, p.coeffs)
     FactoredPolynomial{R,X}(d, c * p.c)
 end
+scalar_mult(c::S, p::P) where {S<:Number, T, X, P <: FactoredPolynomial{T, X}} = scalar_mult(p, c) # assume commutative, as we have S <: Number
 
 # scalar division
 function Base.:/(p::P, c::S) where {S<:Number, T, X, P <: FactoredPolynomial{T, X}}

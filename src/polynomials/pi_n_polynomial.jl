@@ -41,6 +41,15 @@ function degree(p::PnPolynomial)
 end
 
 # pre-allocated multiplication
+function LinearAlgebra.lmul!(c::Number, p::PnPolynomial{T,X}) where {T,X}
+    p.coeffs[:] = (c,) .* p.coeffs
+    p
+end
+function LinearAlgebra.rmul!(p::PnPolynomial{T,X}, c::Number) where {T,X}
+    p.coeffs[:] = p.coeffs .* (c,)
+    p
+end
+
 function LinearAlgebra.mul!(pq, p::PnPolynomial{T,X}, q) where {T,X}
     m,n = length(p)-1, length(q)-1
     pq.coeffs .= zero(T)
