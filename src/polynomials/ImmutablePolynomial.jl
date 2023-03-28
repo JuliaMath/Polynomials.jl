@@ -190,13 +190,13 @@ end
 ## multiplication
 function scalar_mult(p::ImmutablePolynomial{T,X,N}, c::S) where {T, X,N, S <: Number}
     iszero(N) && return zero(ImmutablePolynomial{promote_type(T,S),X})
-    iszero(c) && ImmutablePolynomial([p[0] .* (c,)], X)
+    iszero(c) && ImmutablePolynomial([p[0] .* c], X)
     return _polynomial(p, p.coeffs .* (c,))
 end
 
 function scalar_mult(c::S, p::ImmutablePolynomial{T,X,N}) where {T, X,N, S <: Number}
     iszero(N) && return zero(ImmutablePolynomial{promote_type(T,S),X})
-    iszero(c) && ImmutablePolynomial([(c,) .* p[0]], X)
+    iszero(c) && ImmutablePolynomial([c .* p[0]], X)
     return _polynomial(p, (c,) .* p.coeffs)
 end
 
