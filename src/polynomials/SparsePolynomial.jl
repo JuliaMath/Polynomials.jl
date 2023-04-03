@@ -145,7 +145,7 @@ end
 
 function evalpoly(x::S, p::SparsePolynomial{T}) where {T,S}
 
-    tot = zero(T) * EvalPoly._one(x)
+    tot = zero(x*p[0])
     for (k,v) in p.coeffs
         tot = EvalPoly._muladd(x^k, v, tot)
     end
@@ -165,32 +165,34 @@ end
 ## Addition
 function Base.:+(p::SparsePolynomial{T,X}, c::S) where {T, X, S <: Number}
 
-    R = promote_type(T,S)
+    c₀ = p[0] + c
+    R = eltype(c₀)
+
+    D = convert(Dict{Int, R}, copy(p.coeffs))
+    !iszero(c₀) && (@inbounds D[0] = c₀)
+
     P = SparsePolynomial{R,X}
-
-    #D = Dict{Int, R}(kv for kv ∈ p.coeffs)
-    D = Dict{Int, R}()
-    for (k,v) ∈ pairs(p)
-        @inbounds D[k] = v
-    end
-    @inbounds D[0] = get(D,0,zero(R)) + c
-    iszero(D[0]) && pop!(D,0)
-
-    return P(Val(false), D)
-
+    length(keys(D)) > 0 ? P(Val(false), D) : zero(P)
 end
 
-# Implement over fallback. A bit faster as it covers T != S
-function Base.:+(p1::P1, p2::P2) where {T,X, P1<:SparsePolynomial{T,X},
-                                        S,   P2<:SparsePolynomial{S,X}}
+# much faster than default
+function Base.:+(p1::P1, p2::P2) where {T, X, P1<:SparsePolynomial{T,X},
+                                        S,    P2<:SparsePolynomial{S,X}}
 
     R = promote_type(T,S)
-    Q = SparsePolynomial{R,X}
+    D = convert(Dict{Int,R}, copy(p1.coeffs))
+    for (i, pᵢ) ∈  pairs(p2.coeffs)
+        qᵢ =  get(D, i, zero(R))
+        pqᵢ = pᵢ + qᵢ
+        if iszero(pqᵢ)
+            pop!(D,i) # will be zero
+        else
+            D[i] = pᵢ + qᵢ
+        end
+    end
 
-    d1, d2 = degree(p1), degree(p2)
-    cs = d1 > d2 ? ⊕(P1, p1.coeffs, p2.coeffs) : ⊕(P1, p2.coeffs, p1.coeffs)
-
-    return d1 != d2 ? Q(Val(false), cs) : Q(cs)
+    P = SparsePolynomial{R,X}
+    isempty(keys(D)) ? zero(P) : P(Val(false), D)
 
 end
 
@@ -198,6 +200,16 @@ Base.:-(a::SparsePolynomial) = typeof(a)(Dict(k=>-v for (k,v) in a.coeffs))
 
 ## Multiplication
 function scalar_mult(p::P, c::S) where {T, X, P <: SparsePolynomial{T,X}, S<:Number}
+
+    R = promote_type(T,S)
+    iszero(c) && return(zero(SparsePolynomial{R,X}))
+
+    d = convert(Dict{Int, R}, copy(p.coeffs))
+    for (k, pₖ) ∈ pairs(d)
+        @inbounds d[k] = d[k] .* c
+    end
+    return SparsePolynomial{R,X}(Val(false), d)
+
 
     R1 = promote_type(T,S)
     R = typeof(zero(c)*zero(T))
@@ -212,22 +224,20 @@ end
 
 function scalar_mult(c::S, p::P) where {T, X, P <: SparsePolynomial{T,X}, S<:Number}
 
-    R1 = promote_type(T,S)
-    R = typeof(zero(c)*zero(T))
-    Q = ⟒(P){R,X}
-    q = zero(Q)
-    for (k,pₖ) ∈ pairs(p)
-        q[k] = c * pₖ
-    end
-
-    return q
-end
-
-function Base.:*(p::P, q::Q) where {T,X,P<:SparsePolynomial{T,X},
-                                    S,  Q<:SparsePolynomial{S,X}}
     R = promote_type(T,S)
-    SparsePolynomial{R,X}(⊗(P, p.coeffs, q.coeffs))
+    iszero(c) && return(zero(SparsePolynomial{R,X}))
+
+    d = convert(Dict{Int, R}, copy(p.coeffs))
+    for (k, pₖ) ∈ pairs(d)
+        @inbounds d[k] = c .* d[k]
+    end
+    return SparsePolynomial{R,X}(Val(false), d)
+
+    vs = (c,) .* values(p)
+    d = Dict(k=>v for (k,v) ∈ zip(keys(p), vs))
+    return SparsePolynomial{eltype(vs), X}(d)
 end
+
 
 
 function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
@@ -235,7 +245,7 @@ function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
     order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
     order == 0 && return p
 
-    R = eltype(one(T)*1)
+    R = eltype(p[0]*1)
     P = SparsePolynomial
     hasnan(p) && return P{R,X}(Dict(0 => R(NaN)))
 

@@ -116,7 +116,7 @@ end
 
 function Polynomials.integrate(p::P, k::S) where {T, X, P <: Poly{T, X}, S<:Number}
 
-    R = eltype((one(T)+one(S))/1)
+    R = eltype(one(T)/1 + one(S))
     Q = Poly{R,X}
     if hasnan(p) || isnan(k)
         return P([NaN]) # keep for Poly, not Q

@@ -1,5 +1,6 @@
 export LaurentPolynomial
 
+
 """
     LaurentPolynomial{T,X}(coeffs::AbstractVector, [m::Integer = 0], [var = :x])
 
@@ -93,6 +94,11 @@ struct LaurentPolynomial{T, X} <: LaurentBasisPolynomial{T, X}
             (n - m′ + 1  == length(c)) || throw(ArgumentError("Lengths do not match"))
             new{T,X}(c, Ref(m′),  Ref(n))
         end
+    end
+    # non copying version assumes trimmed coeffs
+    function LaurentPolynomial{T,X}(::Val{false}, coeffs::AbstractVector{T},
+                                    m::Integer=0) where {T, X}
+        new{T,X}(coeffs, Ref(m), Ref(m + length(coeffs) - 1))
     end
 end
 
@@ -259,7 +265,7 @@ end
 function showterm(io::IO, ::Type{<:LaurentPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T}
     if iszero(pj) return false end
     pj = printsign(io, pj, first, mimetype)
-    if !(pj == one(T) && !(showone(T) || j == 0))
+    if !(hasone(T) && pj == one(T) && !(showone(T) || j == 0))
         printcoefficient(io, pj, j, mimetype)
     end
     printproductsign(io, pj, j, mimetype)
@@ -413,48 +419,87 @@ function Base.:+(p::LaurentPolynomial{T,X}, c::S) where {T, X, S <: Number}
 end
 
 ##
-## Poly + and  *
-##
-function Base.:+(p1::P, p2::P) where {T,X,P<:LaurentPolynomial{T,X}}
+## Poly +, - and  *
+## uses some ideas from https://github.com/jmichel7/LaurentPolynomials.jl/blob/main/src/LaurentPolynomials.jl for speedups
+Base.:+(p1::LaurentPolynomial, p2::LaurentPolynomial) = add_sub(+, p1, p2)
+Base.:-(p1::LaurentPolynomial, p2::LaurentPolynomial) = add_sub(-, p1, p2)
 
-    isconstant(p1) && return constantterm(p1) + p2
-    isconstant(p2) && return p1 + constantterm(p2)
+function add_sub(op, p1::P, p2::Q) where {T, X, P <: LaurentPolynomial{T,X},
+                                          S, Y, Q <: LaurentPolynomial{S,Y}}
 
+    isconstant(p1) && return op(constantterm(p1), p2)
+    isconstant(p2) && return op(p1, constantterm(p2))
+    assert_same_variable(X, Y)
 
     m1,n1 = (extrema ∘ degreerange)(p1)
     m2,n2 = (extrema ∘ degreerange)(p2)
-    m,n = min(m1,m2), max(n1, n2)
+    m, n = min(m1,m2), max(n1, n2)
 
-    as = zeros(T, length(m:n))
-    for i in m:n
-        as[1 + i-m] = p1[i] + p2[i]
+    R = typeof(p1.coeffs[1] + p2.coeffs[1]) # non-empty
+    as = zeros(R, length(m:n))
+
+    d = m1 - m2
+    d1, d2 = m1 > m2 ? (d,0) : (0, -d)
+
+    for (i, pᵢ) ∈ pairs(p1.coeffs)
+        @inbounds as[d1 + i] = pᵢ
+    end
+    for (i, pᵢ) ∈ pairs(p2.coeffs)
+        @inbounds as[d2 + i] = op(as[d2+i], pᵢ)
     end
 
-    q = P(as, m)
-    chop!(q)
-
+    m = _laurent_chop!(as, m)
+    isempty(as) && return zero(LaurentPolynomial{R,X})
+    q = LaurentPolynomial{R,X}(Val(false), as, m)
     return q
 
 end
 
-function Base.:*(p1::P, p2::P) where {T,X,P<:LaurentPolynomial{T,X}}
+function Base.:*(p1::P, p2::Q) where {T,X,P<:LaurentPolynomial{T,X},
+                                      S,Y,Q<:LaurentPolynomial{S,Y}}
+
+    isconstant(p1) && return constantterm(p1) * p2
+    isconstant(p2) && return p1 * constantterm(p2)
+    assert_same_variable(X, Y)
 
     m1,n1 = (extrema ∘ degreerange)(p1)
     m2,n2 = (extrema ∘ degreerange)(p2)
     m,n = m1 + m2, n1+n2
 
-    as = zeros(T, length(m:n))
-    for i in eachindex(p1)
-        p1ᵢ = p1[i]
-        for j in eachindex(p2)
-            as[1 + i+j - m] = muladd(p1ᵢ, p2[j], as[1 + i + j - m])
+    R = promote_type(T,S)
+    as = zeros(R, length(m:n))
+
+    for (i, p₁ᵢ) ∈ pairs(p1.coeffs)
+        for (j, p₂ⱼ) ∈ pairs(p2.coeffs)
+            @inbounds as[i+j-1] += p₁ᵢ * p₂ⱼ
         end
     end
 
-    p = P(as, m)
-    chop!(p)
+    m = _laurent_chop!(as, m)
+
+    isempty(as) && return zero(LaurentPolynomial{R,X})
+    p = LaurentPolynomial{R,X}(Val(false), as, m)
 
     return p
+end
+
+function _laurent_chop!(as, m)
+    while !isempty(as)
+        if iszero(first(as))
+            m += 1
+            popfirst!(as)
+        else
+            break
+        end
+    end
+    while !isempty(as)
+        if iszero(last(as))
+            pop!(as)
+        else
+            break
+        end
+    end
+    m
 end
 
 function scalar_mult(p::LaurentPolynomial{T,X}, c::Number) where {T,X}
@@ -462,6 +507,24 @@ function scalar_mult(p::LaurentPolynomial{T,X}, c::Number) where {T,X}
 end
 function scalar_mult(c::Number, p::LaurentPolynomial{T,X}) where {T,X}
     LaurentPolynomial(c .* p.coeffs, p.m[], Var(X))
+end
+
+
+function integrate(p::P) where {T, X, P <: LaurentBasisPolynomial{T, X}}
+
+    R = typeof(constantterm(p) / 1)
+    Q = ⟒(P){R,X}
+
+    hasnan(p) && return Q([NaN])
+    iszero(p) && return zero(Q)
+
+    ∫p = zero(Q)
+    for (k, pₖ) ∈ pairs(p)
+        iszero(pₖ) && continue
+        k == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
+        ∫p[k+1] = pₖ/(k+1)
+    end
+    ∫p
 end
 
 ##

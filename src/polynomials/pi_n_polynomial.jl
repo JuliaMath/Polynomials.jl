@@ -24,7 +24,7 @@ end
 PnPolynomial{T, X}(coeffs::Tuple) where {T, X} =
     PnPolynomial{T,X}(T[pᵢ for pᵢ ∈ coeffs])
 
-Polynomials.@register PnPolynomial
+@register PnPolynomial
 
 # change broadcast semantics
 Base.broadcastable(p::PnPolynomial) = p.coeffs;
@@ -34,13 +34,22 @@ Base.copyto!(p::PnPolynomial{T, X}, x::S) where
  S<:Union{AbstractVector, Base.AbstractBroadcasted, Tuple} # to avoid an invalidation. Might need to be more general?
  } = copyto!(p.coeffs, x)
 
-function Polynomials.degree(p::PnPolynomial)
+function degree(p::PnPolynomial)
     i = findlast(!iszero, p.coeffs)
     isnothing(i) && return -1
     i - 1
 end
 
 # pre-allocated multiplication
+function LinearAlgebra.lmul!(c::Number, p::PnPolynomial{T,X}) where {T,X}
+    p.coeffs[:] = (c,) .* p.coeffs
+    p
+end
+function LinearAlgebra.rmul!(p::PnPolynomial{T,X}, c::Number) where {T,X}
+    p.coeffs[:] = p.coeffs .* (c,)
+    p
+end
+
 function LinearAlgebra.mul!(pq, p::PnPolynomial{T,X}, q) where {T,X}
     m,n = length(p)-1, length(q)-1
     pq.coeffs .= zero(T)

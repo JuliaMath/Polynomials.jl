@@ -5,6 +5,8 @@ using Base.Cartesian
 
 # direct version (do not check if threshold is satisfied)
 function fastconv(E::Array{T,N}, k::Array{T,N}) where {T,N}
+    isempty(E) && return E
+    isempty(k) && return k
     retsize = ntuple(n -> size(E, n) + size(k, n) - 1, Val{N}())
     ret = zeros(T, retsize)
     convn!(ret, E, k)
@@ -34,7 +36,6 @@ end
 module EvalPoly
 using LinearAlgebra
 function evalpoly(x::S, p::Tuple) where {S}
-    p == () && return zero(S)
     if @generated
         N = length(p.parameters)
         ex = :(p[end]*_one(S))
@@ -51,14 +52,13 @@ evalpoly(x, p::AbstractVector) = _evalpoly(x, p)
 
 # https://discourse.julialang.org/t/i-have-a-much-faster-version-of-evalpoly-why-is-it-faster/79899; improvement *and* closes #313
 function _evalpoly(x::S, p) where {S}
+
     i = lastindex(p)
-
-    @inbounds out = p[i]*_one(x)
+    @inbounds out = p[i] * _one(x)
     i -= 1
-
     while i >= firstindex(p)
 	@inbounds out = _muladd(out, x, p[i])
-		i -= 1
+	i -= 1
     end
 
     return out
@@ -68,8 +68,8 @@ end
 function evalpoly(z::Complex, p::Tuple)
     if @generated
         N = length(p.parameters)
-        a = :(p[end]*_one(z))
-        b = :(p[end-1]*_one(z))
+        a = :(p[end] .+ _zero(z))  # avoid one(x)
+        b = :(p[end-1] .+ _zero(z))
         as = []
         for i in N-2:-1:1
             ai = Symbol("a", i)
@@ -124,6 +124,14 @@ _muladd(a, b::Matrix, c) = (a*I)*b + c*I
 _one(P::Type{<:Matrix}) = one(eltype(P))*I
 _one(x::Matrix) = one(eltype(x))*I
 _one(x) = one(x)
+
+_zero(P::Type{<:Matrix}) = zero(eltype(P))*I
+function _zero(x::Matrix)
+    m = LinearAlgebra.checksquare(x)
+    zero(eltype(x)) * I(m)
+end
+_zero(x) = zero(x)
+
 end
 
 ## get type of parametric composite type without type parameters

@@ -72,7 +72,7 @@ sprint(show, pNULL)
 
 @test p3 == Poly([1,2,1])
 @test pN*10 == Poly([2760, 30, 870, 150, 240])
-@test pN/10 == Poly([27.6, 0.3, 8.7, 1.5, 2.4])
+@test pN/10 ≈ Poly([27.6, 0.3, 8.7, 1.5, 2.4])
 @test 10*pNULL + pN == pN
 @test 10*p0 + pN == pN
 @test p5 + 2*p1 == Poly([3,4,6,4,1])

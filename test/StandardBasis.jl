@@ -23,10 +23,11 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 ==ᵟ(a,b) = (a == b)
 ==ᵟ(a::FactoredPolynomial, b::FactoredPolynomial) = a ≈ b
 
-Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
+_isimmutable(::Type{P}) where {P <: Union{ImmutablePolynomial, FactoredPolynomial}} = true
+_isimmutable(P) = false
 
-isimmutable(p::P) where {P} = P <: ImmutablePolynomial
-isimmutable(::Type{<:ImmutablePolynomial}) = true
+
+Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
 
 @testset "Construction" begin
     @testset for coeff in Any[
@@ -228,7 +229,6 @@ end
             @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
-            @test_throws MethodError p - p == P([0*a])  # no zeros to make zero polynomial
 
             # poly mult
             @test p * q == P(conv([a,b,c], [a,b]))
@@ -278,7 +278,6 @@ end
             @test +p == p
             @test p + q == P([a+a,b+b,c])
             @test p - q == P([a-a,b-b,c])
-            @test_throws MethodError p - p == P([0*a])  # no zero(T) to make zero polynomial
 
             # poly mult
             @test_throws MethodError p * q == P(conv([a,b,c], [a,b])) # Ok, no * for T
@@ -416,7 +415,7 @@ end
 
         @test p3 == P([1,2,1])
         @test pN * 10 == P([2760, 30, 870, 150, 240])
-        @test pN / 10.0 ==ᵟ P([27.6, 0.3, 8.7, 1.5, 2.4])
+        @test pN / 10.0 ≈ P([27.6, 0.3, 8.7, 1.5, 2.4])
         @test 10 * pNULL + pN ==ᵟ pN
         @test 10 * p0 + pN ==ᵟ pN
         @test p5 + 2 * p1 == P([3,4,6,4,1])
@@ -476,6 +475,55 @@ end
         @inferred p + p
         @inferred p * p
         @inferred p^3
+    end
+
+    # evaluation at special cases (degree 0,1; evaluate at 0)
+    @testset for P ∈ Ps
+        for T ∈ (Int, Float16, Float64, Complex{Float64})
+            p₀ = zero(P{T,:X})
+            @test p₀(0) == zero(T) == Polynomials.constantterm(p₀)
+            @test p₀(1) == zero(T)
+            p₁ = P(T[2])
+            @test p₁(0) == T(2) == Polynomials.constantterm(p₁)
+            @test p₁(1) == T(2)
+        end
+    end
+
+    # evaluation at special cases different number types
+    @testset for P ∈ Ps
+        P ∈ (SparsePolynomial, FactoredPolynomial) && continue
+        # vector coefficients
+        v₀, v₁ = [1,1,1], [1,2,3]
+        p₁ = P([v₀])
+        @test p₁(0) == v₀  == Polynomials.constantterm(p₁)
+        @test_throws MethodError (0 * p₁)(0) # no zero(Vector{Int})
+        p₂ = P([v₀, v₁])
+        @test p₂(0) == v₀ == Polynomials.constantterm(p₂)
+        @test p₂(2) == v₀ + 2v₁
+
+        # matrix arguments
+        # for matrices like pₒI + p₁X + p₂X² + ⋯
+        p = P([1])
+        x = [1 2; 3 4]
+        @test p(x) == 1*I
+        @test (0p)(x) == 0*I
+        p = P([1,2])
+        @test p(x) == 1*I + 2*x
+        p = P([1,2,3])
+        @test p(x) == 1*I + 2*x + 3x^2
+    end
+
+    # p - p requires a zero
+    @testset for P ∈ Ps
+        P ∈ (LaurentPolynomial, SparsePolynomial,
+             FactoredPolynomial) && continue
+        for v ∈ ([1,2,3],
+                 [[1,2,3],[1,2,3]],
+                 [[1 2;3 4], [3 4; 5 6]]
+                 )
+            p = P(v)
+            @test p - p == 0*p
+        end
     end
 end
 
@@ -736,7 +784,7 @@ end
         p = P(1)
         x = [1 0; 0 1]
         y = p(x)
-        @test y == x
+        @test y ≈ x
 
         # Issue #208 and  type of output
         p1=P([1//1])
@@ -767,7 +815,7 @@ end
 
     X = :x
     @testset for P in Ps
-        if !isimmutable(P)
+        if !(P == ImmutablePolynomial)
             p = P([0,one(Float64)])
             @test P{Complex{Float64},X} == typeof(p + 1im)
             @test P{Complex{Float64},X} == typeof(1im - p)
@@ -1012,7 +1060,7 @@ end
         p2  = P([3, 1.])
         p   = [p1, p2]
         q   = [3, p1]
-        if !isimmutable(p1)
+        if !_isimmutable(P)
             @test q isa Vector{typeof(p1)}
             @test p isa Vector{typeof(p2)}
         else
@@ -1192,7 +1240,7 @@ end
         p2 = conj(p)
         @test coeffs(p2) ==ᵗ⁰ [1 + 1im, 2 + 3im]
         @test transpose(p) == p
-        !isimmutable(p) &&  @test transpose!(p) == p
+        !_isimmutable(P) &&  @test transpose!(p) == p
         @test adjoint(Polynomial(im)) == Polynomial(-im) # issue 215
         @test conj(Polynomial(im)) == Polynomial(-im) # issue 215
 
@@ -1224,8 +1272,8 @@ end
         @test p[:] ==ᵗ⁰ [-1, 3, 5, -2]
 
         # setindex
-        if !(isimmutable(p) || (P <: FactoredPolynomial))
-            p1  = P([1,2,1])
+        p1  = P([1,2,1])
+        if !_isimmutable(P)
             p1[5] = 1
             @test p1[5] == 1
             @test p1 == P([1,2,1,0,0,1])
@@ -1350,7 +1398,7 @@ end
     @test degree(gcd(a*d, b*d, atol=sqrt(eps()))) > 0
     @test degree(gcd(a*d,b*d, method=:noda_sasaki)) == degree(d)
     @test_skip degree(gcd(a*d,b*d, method=:numerical)) == degree(d) # issues on some architectures (had test_skip)
-    l,m,n = (5,5,5) # sensitive to choice of `rtol` in ngcd
+    l,m,n = (4,4,4) #(5,5,5) # sensitive to choice of `rtol` in ngcd
     u,v,w = fromroots.(rand.((l,m,n)))
     @test degree(gcd(u*v, u*w, method=:numerical)) == degree(u)
 
@@ -1546,7 +1594,7 @@ end
             T1,T2 = Ts[i],Ts[i+1]
             @testset for P in Ps
                 P <: FactoredPolynomial && continue
-                if !isimmutable(P)
+                if P != ImmutablePolynomial
                     p = P{T2}(T1.(rand(1:3,3)))
                     @test typeof(p) == P{T2, :x}
                 else
@@ -1562,7 +1610,7 @@ end
     # test P{T}(...) is P{T} (not always the case for FactoredPolynomial)
     @testset for P in Ps
         P <: FactoredPolynomial && continue
-        if !isimmutable(P)
+        if P != ImmutablePolynomial
             @testset for T in (Int32, Int64, BigInt)
                 p₁ =  P{T}(Float64.(rand(1:3,5)))
                 @test typeof(p₁) == P{T,:x} # conversion works

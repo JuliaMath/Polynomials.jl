@@ -385,7 +385,7 @@ end
 function chop!(ps::Vector{T};
                rtol::Real = Base.rtoldefault(real(T)),
                atol::Real = 0,) where {T}
-
+    isempty(ps) && return ps
     tol = norm(ps) * rtol + atol
     for i = lastindex(ps):-1:1
         val = ps[i]
@@ -705,6 +705,7 @@ degreerange(p::AbstractPolynomial) = firstindex(p):lastindex(p)
 # getindex
 function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T}
     m,M = firstindex(p), lastindex(p)
+    m > M && return zero(T)
     idx < m && throw(BoundsError(p, idx))
     idx > M && return zero(T)
     p.coeffs[idx - m + 1]
@@ -831,7 +832,7 @@ Returns a representation of 0 as the given polynomial.
 """
 function Base.zero(::Type{P}) where {P<:AbstractPolynomial}
     T,X = eltype(P), indeterminate(P)
-    ⟒(P){T,X}(zeros(T,1))
+    ⟒(P){T,X}(T[])
 end
 Base.zero(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = zero(⟒(P){eltype(P),Symbol(var)}) #default 0⋅b₀
 Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, var)
@@ -1031,7 +1032,7 @@ end
 
 ## -- multiplication
 
-
+# Scalar multiplication; no assumption of commutivity
 function scalar_mult(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T,X}}
     result = coeffs(p) .* (c,)
     ⟒(P){eltype(result), X}(result)
@@ -1044,11 +1045,11 @@ end
 
 scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) = error("scalar_mult(::$(typeof(p1)), ::$(typeof(p2))) is not defined.") # avoid ambiguity, issue #435
 
-function Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S}
-    _convert(p, coeffs(p) ./ c)
-end
+# scalar div
+Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S} = scalar_div(p, c)
+scalar_div(p::AbstractPolynomial, c) = scalar_mult(p, inv(c))
 
-## polynomial p*q
+## Polynomial p*q
 ## Polynomial multiplication formula depend on the particular basis used. The subtype must implement
 function Base.:*(p1::P, p2::Q) where {T,X,P <: AbstractPolynomial{T,X},S,Y,Q <: AbstractPolynomial{S,Y}}
     isconstant(p1) && return constantterm(p1) * p2
@@ -1059,6 +1060,7 @@ function Base.:*(p1::P, p2::Q) where {T,X,P <: AbstractPolynomial{T,X},S,Y,Q <: 
 end
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
+
 
 function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
     n, d = promote(num, den)

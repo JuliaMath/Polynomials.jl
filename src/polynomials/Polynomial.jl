@@ -39,7 +39,7 @@ struct Polynomial{T, X} <: StandardBasisPolynomial{T, X}
             @warn "ignoring the axis offset of the coefficient vector"
         end
         N = findlast(!iszero, coeffs)
-        isnothing(N) && return new{T,X}(zeros(T,1))
+        isnothing(N) && return new{T,X}(T[])
         cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
         new{T,X}(cs)
     end
@@ -51,23 +51,37 @@ end
 
 @register Polynomial
 
-
+# some speedups using non-copying constructor
+Base.zero(::Type{P}) where {T, X, P<:Polynomial{T,X}} =
+    Polynomial{T,X}(Val(false), T[])
 
 # scalar +,* faster  than standard-basis/common versions as it avoids a copy
 function Base.:+(p::P, c::S) where {T, X, P <: Polynomial{T, X}, S<:Number}
-    R = Base.promote_op(+, T, S)
-    Q = Polynomial{R,X}
-    as = convert(Vector{R}, copy(coeffs(p)))
-    as[1] += c
+    if isempty(p.coeffs)
+        as = promote_type(S,T)[c]
+    else
+        R = typeof(c + p.coeffs[1])
+        as = R[isone(i) ? cᵢ + c : cᵢ for (i,cᵢ) ∈ pairs(p.coeffs)]
+    end
+    _polynomial(p, as)
+end
+
+# scalar * is a bit faster (2 to 3 allocations), isave allocations on copying
+function scalar_mult(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Number}
+    return _polynomial(p, coeffs(p) .* (c,))
+end
+
+function scalar_mult(c::S, p::P) where {T, X, P <: Polynomial{T,X} , S <: Number}
+    _polynomial(p,  (c,).* coeffs(p))
+end
+# much faster than Polynomial(as, X)
+function _polynomial(p::P, as)  where {T, X, P <: Polynomial{T,X}}
+    R = eltype(as)
+    Q = Polynomial{R, X}
+    isempty(as) && return Q(Val(false), as)
     iszero(as[end]) ? Q(as) : Q(Val(false), as)
 end
 
-function Base.:*(p::P, c::S) where {T, X, P <: Polynomial{T,X} , S <: Number}
-    R = Base.promote_op(*, T, S) #promote_type(T,S)
-    Q = Polynomial{R, X}
-    as = R[aᵢ * c for aᵢ ∈ coeffs(p)]
-    iszero(as[end]) ? Q(as) : Q(Val(false), as)
-end
 
 # implement, as not copying speeds up multiplication by a factor of 2 or so
 # over the default
@@ -78,6 +92,7 @@ function Base.:+(p1::P1, p2::P2) where {T,X, P1<:Polynomial{T,X},
     Q = Polynomial{R,X}
     if n1 == n2
         cs = ⊕(P1, p1.coeffs, p2.coeffs)
+        isempty(cs) && return Q(Val(false), cs)
         return iszero(cs[end]) ? Q(cs) : Q(Val(false), cs)
     elseif n1 > n2
         cs = ⊕(P1, p1.coeffs, p2.coeffs)
@@ -91,5 +106,6 @@ end
 # redundant, a bit faster
 function Base.:*(p::P, q::P) where {T <: Number,X, P<:Polynomial{T,X}}
     c = fastconv(p.coeffs, q.coeffs)
-    return iszero(c[end]) ? P(c) : P(Val(false), c)
+    (isempty(c) || !iszero(last(c))) && return P(Val(false), c)
+    return P(c)
 end

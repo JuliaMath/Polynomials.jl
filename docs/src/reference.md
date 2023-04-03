@@ -79,7 +79,7 @@ vander
 
 ## Plotting
 
-Polynomials can be plotted directly using [Plots.jl](https://github.com/juliaplots/plots.jl).
+Polynomials can be plotted directly using [Plots.jl](https://github.com/juliaplots/plots.jl) or [Makie.jl](https://github.com/MakieOrg/Makie.jl).
 
 ```julia
 plot(::AbstractPolynomial; kwds...)

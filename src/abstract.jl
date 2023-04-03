@@ -30,8 +30,8 @@ Some `T`s will not be successful
 * scalar mult: `c::T * p::Polynomial{T}` An  ambiguity when `T <: AbstractPolynomial`
 * scalar mult: `p::Polynomial{T} * c::T` need not commute
 
-* scalar add/sub: `p::Polynomial{T} + q::Polynomial{T}` should be defined
-* scalar sub: `p::Polynomial{T} - p::Polynomial{T}`  generally needs `zeros(T,1)` defined for `zero(Polynomial{T})`
+* add/sub: `p::Polynomial{T} + q::Polynomial{T}` should be defined
+* sub: `p -p` sometimes needs `zero{T}` defined
 
 * poly mult: `p::Polynomial{T} * q::Polynomial{T}` Needs "`T * T`" defined (e.g. `Base.promote_op(*, Vector{Int}, Vector{Int}))` needs to be something.)
 * poly powers: `p::Polynomial{T}^2` needs "`T^2`" defined
@@ -41,6 +41,7 @@ Some `T`s will not be successful
 
 * evaluation: `p::Polynomial{T}(s::Number)`
 * evaluation `p::Polynomial{T}(c::T)`   needs `T*T` defined
+* evaluation of a `0` polynomial requires `zero(T)` to be defined.
 
 * derivatives: `derivative(p::Polynomial{T})`
 * integrals: `integrate(p::Polynomial{T})`
