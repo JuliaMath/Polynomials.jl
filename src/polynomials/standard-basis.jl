@@ -284,7 +284,7 @@ Base.gcd(::Val{:noda_sasaki}, p, q; kwargs...) = gcd_noda_sasaki(p,q; kwargs...)
 
 Greatest common divisor of two polynomials.
 Compute the greatest common divisor `d` of two polynomials `a` and `b` using
-the Euclidian Algorithm with scaling as of [1].
+the Euclidean Algorithm with scaling as of [1].
 
 References:
 

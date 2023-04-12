@@ -1,5 +1,5 @@
 ## Plot recipe
-## define a hueristic to work around asymptotes
+## define a heuristic to work around asymptotes
 ## just sort of successful
 @recipe function f(pq::AbstractRationalFunction{T}, a=nothing, b=nothing) where {T}
 
