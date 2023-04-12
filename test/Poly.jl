@@ -1,4 +1,4 @@
-## Tests for compatiability with the old form
+## Tests for compatibility with the old form
 # Create a separate module so that include(file) doesn't import PolyCompat to Main
 module PolyTests
 
@@ -17,7 +17,7 @@ using ..SpecialFunctions
 a = Polynomial(1 .//convert(Vector{BigInt},map(gamma,BigFloat(1):BigFloat(17))),"x")
 @test_throws UndefVarError Pade(a,8,8)
 
-# must load the compatability module to have access
+# must load the compatibility module to have access
 using Polynomials.PolyCompat
 
 ## the methods  `polyval`, `polyint` and `polyder` are only for the

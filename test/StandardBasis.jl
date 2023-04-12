@@ -187,7 +187,7 @@ end
             # poly powers
             @test p^2 == p * p
 
-            # evalution
+            # evaluation
             @test p(s) == a + b * s + c * s * s
             @test p(c) == a + b * c + c * c * c
 
@@ -237,7 +237,7 @@ end
             # poly powers
             @test p^2 == p * p
 
-            # evalution
+            # evaluation
             @test p(s) == a + b * s + c * s * s
             @test p(c) == a + b * c + c * c * c
 
@@ -286,7 +286,7 @@ end
             # poly powers
             @test_throws MethodError p^2 == p * p # Ok, no * for T
 
-            # evalution
+            # evaluation
             @test p(s) == a + b * s + c * s * s
             @test_throws MethodError p(c) == a + b * c + c * c * c # OK, no b * c
 
@@ -340,7 +340,7 @@ end
                 @test p^2 == p * p
 
 
-                # evalution
+                # evaluation
                 @test p(s) == a + b * s + c * s * s
                 @test p(c) == a + b * c + c * c * c
 
@@ -1133,7 +1133,7 @@ end
         @test [λ 1] + [1 λ] == (λ+1) .* [1 1] # (λ+1) not a number, so we broadcast
     end
 
-    # issue 312; using mixed polynomial types withing arrays and promotion
+    # issue 312; using mixed polynomial types within arrays and promotion
     P′ = Polynomial
     r,s = P′([1,2], :x), P′([1,2],:y)
     function _test(x, T,X)

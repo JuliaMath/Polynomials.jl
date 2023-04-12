@@ -319,7 +319,7 @@ Polynomial objects also have other methods:
 
 ## Legacy code
 
-As of v0.7, the internals of this package were greatly generalized and new types and method names were introduced. For compatability purposes, legacy code can be run after issuing `using Polynomials.PolyCompat`.
+As of v0.7, the internals of this package were greatly generalized and new types and method names were introduced. For compatibility purposes, legacy code can be run after issuing `using Polynomials.PolyCompat`.
 
 ## Contributing
 
