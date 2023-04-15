@@ -109,8 +109,10 @@ end
 # overrides from common.jl due to  coeffs being non mutable, N in type parameters
 
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p))
+copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {T, X, S, Y, N, P <:ImmutablePolynomial{S,Y,N}} =
+    ⟒(P){T, Symbol(X),N}(ntuple(i->T(p.coeffs[i]), Val(N)))
 Base.similar(p::ImmutablePolynomial, args...) =
-    similar(collect(oeffs(p)), args...)
+    similar(collect(coeffs(p)), args...)
 # degree, isconstant
 degree(p::ImmutablePolynomial{T,X, N}) where {T,X,N} = N - 1 # no trailing zeros
 isconstant(p::ImmutablePolynomial{T,X,N}) where {T,X,N}  = N <= 1
