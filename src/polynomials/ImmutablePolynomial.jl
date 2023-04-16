@@ -136,14 +136,14 @@ end
 function Base.chop(p::ImmutablePolynomial{T,X};
               rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0)  where {T,X}
-    ps = chop(p.coeffs; rtol=rtol, atol=atol)
+    ps = _chop(p.coeffs; rtol=rtol, atol=atol)
     return ImmutablePolynomial{T,X}(ps)
 end
 
 function Base.truncate(p::ImmutablePolynomial{T,X};
                   rtol::Real = Base.rtoldefault(real(T)),
                   atol::Real = 0)  where {T,X}
-    ps = truncate(p.coeffs; rtol=rtol, atol=atol)
+    ps = _truncate(p.coeffs; rtol=rtol, atol=atol)
     ImmutablePolynomial{T,X}(ps)
 end
 

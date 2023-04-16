@@ -347,8 +347,9 @@ function truncate!(ps::Dict{Int,T};
 end
 
 truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined."))
-Base.truncate(ps::NTuple{0}; kwargs...) = ps
-function Base.truncate(ps::NTuple{N,T};
+
+_truncate(ps::NTuple{0}; kwargs...) = ps
+function _truncate(ps::NTuple{N,T};
               rtol::Real = Base.rtoldefault(real(T)),
               atol::Real = 0,) where {N,T}
     thresh = norm(ps, Inf) * rtol + atol
@@ -415,8 +416,9 @@ function chop!(ps::Dict{Int,T};
 end
 
 chop!(ps::NTuple; kwargs...) = throw(ArgumentError("chop! not defined"))
-Base.chop(ps::NTuple{0}; kwargs...) = ps
-function Base.chop(ps::NTuple{N,T};
+
+_chop(ps::NTuple{0}; kwargs...) = ps
+function _chop(ps::NTuple{N,T};
               rtol::Real = Base.rtoldefault(real(T)),
               atol::Real = 0,) where {N,T}
     thresh = norm(ps, Inf) * rtol + atol
