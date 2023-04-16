@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · Polynomials.jl</title><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href><img src="assets/logo.png" alt="Polynomials.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href>Polynomials.jl</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li><a class="tocitem" href="#Quick-Start"><span>Quick Start</span></a></li><li><a class="tocitem" href="#Relationship-between-the-T-and-P{T,X}"><span>Relationship between the <code>T</code> and <code>P{T,X}</code></span></a></li><li><a class="tocitem" href="#Non-number-types-for-T"><span>Non-number types for <code>T</code></span></a></li><li><a class="tocitem" href="#Rational-functions"><span>Rational functions</span></a></li><li><a class="tocitem" href="#Related-Packages"><span>Related Packages</span></a></li><li><a class="tocitem" href="#Contributing"><span>Contributing</span></a></li></ul></li><li><a class="tocitem" href="reference/">Reference/API</a></li><li><span class="tocitem">Polynomial Types</span><ul><li><a class="tocitem" href="polynomials/polynomial/">Polynomial</a></li><li><a class="tocitem" href="polynomials/chebyshev/">Chebyshev</a></li></ul></li><li><a class="tocitem" href="extending/">Extending</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/JuliaMath/Polynomials.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="Polynomials.jl"><a class="docs-heading-anchor" href="#Polynomials.jl">Polynomials.jl</a><a id="Polynomials.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Polynomials.jl" title="Permalink"></a></h1><p><a href="https://github.com/JuliaMath/Polynomials.jl">Polynomials.jl</a> is a Julia package that provides basic arithmetic, integration, differentiation, evaluation, and root finding for univariate polynomials.</p><p>To install the package, run</p><pre><code class="language-julia hljs">(v1.6) pkg&gt; add Polynomials</code></pre><p>As of version <code>v3.0.0</code> Julia version <code>1.6</code> or higher is required.</p><p>The package can then be loaded into the current session through</p><pre><code class="language-julia hljs">using Polynomials</code></pre><h2 id="Quick-Start"><a class="docs-heading-anchor" href="#Quick-Start">Quick Start</a><a id="Quick-Start-1"></a><a class="docs-heading-anchor-permalink" href="#Quick-Start" title="Permalink"></a></h2><h3 id="Construction-and-Evaluation"><a class="docs-heading-anchor" href="#Construction-and-Evaluation">Construction and Evaluation</a><a id="Construction-and-Evaluation-1"></a><a class="docs-heading-anchor-permalink" href="#Construction-and-Evaluation" title="Permalink"></a></h3><p>Construct a polynomial from its coefficients, lowest order first.</p><pre><code class="language-julia-repl hljs">julia&gt; Polynomial([1,0,3,4])
+Polynomial(1 + 3*x^2 + 4*x^3)</code></pre><p>An optional variable parameter can be added.</p><pre><code class="language-julia-repl hljs">julia&gt; Polynomial([1,2,3], :s)
+Polynomial(1 + 2*s + 3*s^2)</code></pre><p>Construct a polynomial from its roots.</p><pre><code class="language-julia-repl hljs">julia&gt; fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
+Polynomial(-6 + 11*x - 6*x^2 + x^3)</code></pre><p>Evaluate the polynomial <code>p</code> at <code>x</code>.</p><pre><code class="language-julia-repl hljs">julia&gt; p = Polynomial([1, 0, -1])
+Polynomial(1 - x^2)
+
+julia&gt; p(1)
+0
+</code></pre><p>The <code>Polynomial</code> constructor stores all coefficients using the standard basis with a vector. Other types (e.g. <code>ImmutablePolynomial</code>, <code>SparsePolynomial</code>, or <code>FactoredPolynomial</code>) use different back-end containers which may have advantage for some uses.</p><h3 id="Arithmetic"><a class="docs-heading-anchor" href="#Arithmetic">Arithmetic</a><a id="Arithmetic-1"></a><a class="docs-heading-anchor-permalink" href="#Arithmetic" title="Permalink"></a></h3><p>The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.</p><pre><code class="language-julia-repl hljs">julia&gt; p = Polynomial([1,2])
+Polynomial(1 + 2*x)
+
+julia&gt; q = Polynomial([1, 0, -1])
+Polynomial(1 - x^2)
+
+julia&gt; 2p
+Polynomial(2 + 4*x)
+
+julia&gt; 2 + p
+Polynomial(3 + 2*x)
+
+julia&gt; p - q
+Polynomial(2*x + x^2)
+
+julia&gt; p * q
+Polynomial(1 + 2*x - x^2 - 2*x^3)
+
+julia&gt; q / 2
+Polynomial(0.5 - 0.5*x^2)
+
+julia&gt; q ÷ p  # `div`, also `rem` and `divrem`
+Polynomial(0.25 - 0.5*x)</code></pre><p>Note that operations involving polynomials with different variables will error.</p><pre><code class="language-julia-repl hljs">julia&gt; p = Polynomial([1, 2, 3], :x)
+Polynomial(1 + 2*x + 3*x^2)
+
+julia&gt; q = Polynomial([1, 2, 3], :s)
+Polynomial(1 + 2*s + 3*s^2)
+
+julia&gt; p + q
+ERROR: ArgumentError: Polynomials have different indeterminates
+[...]</code></pre><p>Except for operations involving constant polynomials.</p><pre><code class="language-julia-repl hljs">julia&gt; p = Polynomial([1, 2, 3], :x)
+Polynomial(1 + 2*x + 3*x^2)
+
+julia&gt; q = Polynomial(1, :y)
+Polynomial(1)
+
+julia&gt; p+q
+Polynomial(2 + 2*x + 3*x^2)</code></pre><h3 id="Integrals-and-Derivatives"><a class="docs-heading-anchor" href="#Integrals-and-Derivatives">Integrals and Derivatives</a><a id="Integrals-and-Derivatives-1"></a><a class="docs-heading-anchor-permalink" href="#Integrals-and-Derivatives" title="Permalink"></a></h3><p>Integrate the polynomial <code>p</code> term by term, optionally adding constant term <code>C</code>. The degree of the resulting polynomial is one higher than the degree of <code>p</code>.</p><pre><code class="language-julia-repl hljs">julia&gt; integrate(Polynomial([1, 0, -1]))
+Polynomial(1.0*x - 0.3333333333333333*x^3)
+
+julia&gt; integrate(Polynomial([1, 0, -1]), 2)
+Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)</code></pre><p>Differentiate the polynomial <code>p</code> term by term. The degree of the resulting polynomial is one lower than the degree of <code>p</code>, unless <code>p</code> is a zero polynomial.</p><pre><code class="language-julia-repl hljs">julia&gt; derivative(Polynomial([1, 3, -1]))
+Polynomial(3 - 2*x)</code></pre><h3 id="Root-finding"><a class="docs-heading-anchor" href="#Root-finding">Root-finding</a><a id="Root-finding-1"></a><a class="docs-heading-anchor-permalink" href="#Root-finding" title="Permalink"></a></h3><p>Return the <code>d</code> roots (or zeros) of the degree <code>d</code> polynomial <code>p</code>.</p><pre><code class="language-julia-repl hljs">julia&gt; roots(Polynomial([1, 0, -1]))
+2-element Vector{Float64}:
+ -1.0
+  1.0
+
+julia&gt; roots(Polynomial([1, 0, 1]))
+2-element Vector{ComplexF64}:
+ 0.0 - 1.0im
+ 0.0 + 1.0im
+
+julia&gt; roots(Polynomial([0, 0, 1]))
+2-element Vector{Float64}:
+ 0.0
+ 0.0</code></pre><p>By design, this is not type-stable; the returned roots may be real or complex.</p><p>The default <code>roots</code> function uses the eigenvalues of the <a href="https://en.wikipedia.org/wiki/Companion_matrix">companion</a> matrix for a polynomial. This is an <code>𝑶(n^3)</code> operation.</p><p>For polynomials with <code>BigFloat</code> coefficients, the <code>GenericLinearAlgebra</code> package can be seamlessly used:</p><pre><code class="nohighlight hljs">julia&gt; p = fromroots(Polynomial{BigFloat}, [1,2,3])
+Polynomial(-6.0 + 11.0*x - 6.0*x^2 + 1.0*x^3)
+
+julia&gt; roots(p)
+ERROR: MethodError: no method matching eigvals!(::Matrix{BigFloat})
+[...]
+
+julia&gt; using GenericLinearAlgebra
+
+julia&gt; roots(p)
+3-element Vector{Complex{BigFloat}}:
+ 0.9999999999999999999999999999999999999999999999999999999999999999999999999999655 + 0.0im
+  1.999999999999999999999999999999999999999999999999999999999999999999999999999931 - 0.0im
+  2.999999999999999999999999999999999999999999999999999999999999999999999999999793 + 0.0im</code></pre><h4 id="Comments-on-root-finding"><a class="docs-heading-anchor" href="#Comments-on-root-finding">Comments on root finding</a><a id="Comments-on-root-finding-1"></a><a class="docs-heading-anchor-permalink" href="#Comments-on-root-finding" title="Permalink"></a></h4><ul><li>The <a href="https://github.com/giordano/PolynomialRoots.jl">PolynomialRoots.jl</a> package provides an alternative approach for finding complex roots to univariate polynomials that is more performant than <code>roots</code>. It is based on an algorithm of Skowron and Gould.</li></ul><pre><code class="nohighlight hljs">julia&gt; import PolynomialRoots # import as `roots` conflicts
+
+julia&gt; p = fromroots(Polynomial, [1,2,3])
+Polynomial(-6 + 11*x - 6*x^2 + x^3)
+
+julia&gt; PolynomialRoots.roots(coeffs(p))
+3-element Vector{ComplexF64}:
+  3.000000000000001 - 0.0im
+ 1.9999999999999993 + 0.0im
+ 1.0000000000000002 + 0.0im</code></pre><p>The roots are always returned as complex numbers.</p><ul><li>The <a href="https://github.com/andreasnoack/FastPolynomialRoots.jl">FastPolynomialRoots</a> package provides an interface to FORTRAN code implementing an algorithm of Aurentz, Mach, Robol, Vandrebril, and Watkins. that can handle very large polynomials (it is <code>𝑶(n^2)</code> and backward stable). The <a href="https://github.com/jverzani/AMRVW.jl">AMRVW.jl</a> package implements the algorithm in Julia, allowing the use of other number types.</li></ul><pre><code class="nohighlight hljs">julia&gt; import AMRVW # import as `roots` conflicts
+
+julia&gt; AMRVW.roots(float.(coeffs(p)))
+3-element Vector{ComplexF64}:
+ 0.9999999999999997 + 0.0im
+ 2.0000000000000036 + 0.0im
+ 2.9999999999999964 + 0.0im</code></pre><p>The roots are returned as complex numbers.</p><p>Both <code>PolynomialRoots</code> and <code>AMRVW</code> are generic and work with <code>BigFloat</code> coefficients, for example.</p><p>The <code>AMRVW</code> package works with much larger polynomials than either <code>roots</code> or <code>Polynomial.roots</code>. For example, the roots of this 1000 degree random polynomial are quickly and accurately solved for:</p><pre><code class="nohighlight hljs">julia&gt; filter(isreal, AMRVW.roots(rand(1001) .- 1/2))
+2-element Vector{ComplexF64}:
+  0.993739974989572 + 0.0im
+ 1.0014677846996498 + 0.0im</code></pre><ul><li>The <a href="https://github.com/thofma/Hecke.jl/tree/master/src">Hecke</a> package has a <code>roots</code> function. The <code>Hecke</code> package utilizes the <code>Arb</code> library for performant, high-precision numbers:</li></ul><pre><code class="nohighlight hljs">julia&gt; import Hecke # import as `roots` conflicts
+
+julia&gt; Qx, x = Hecke.PolynomialRing(Hecke.QQ)
+(Univariate Polynomial Ring in x over Rational Field, x)
+
+julia&gt; q = (x-1)*(x-2)*(x-3)
+x^3 - 6*x^2 + 11*x - 6
+
+julia&gt; Hecke.roots(q)
+3-element Vector{Nemo.fmpq}:
+ 2
+ 1
+ 3</code></pre><p>This next polynomial has 3 real roots, 2 of which are in a cluster; <code>Hecke</code> quickly identifies them:</p><pre><code class="nohighlight hljs">julia&gt; p = -1 + 254*x - 16129*x^2 + 1*x^17
+x^17 - 16129*x^2 + 254*x - 1
+
+julia&gt; filter(isreal, Hecke._roots(p, 200)) # `_roots` not `roots`
+3-element Vector{Nemo.acb}:
+ [0.007874015748031496052667730054749907629383970426203662570129818116411192289734968717460531379762086419 +/- 3.10e-103]
+ [0.0078740157480314960733165219137540296086246589982151627453855179522742093785877068332663198273096875302 +/- 9.31e-104]
+ [1.9066348541790688341521872066398429982632947292434604847312536201982593209326201234353468172497707769372732739429697289 +/- 7.14e-119]</code></pre><hr/><p>To find just the real roots of a polynomial with real coefficients there are a few additional options to solving for all the roots and filtering by <code>isreal</code>.</p><ul><li>The package <a href="https://github.com/JuliaIntervals/IntervalRootFinding.jl/">IntervalRootFinding</a> identifies real zeros of univariate functions and can be used to find isolating intervals for the real roots. For example,</li></ul><pre><code class="nohighlight hljs">julia&gt; using Polynomials, IntervalArithmetic
+
+julia&gt; import IntervalRootFinding # its `roots` method conflicts with `roots`
+
+julia&gt; p = fromroots(Polynomial, [1,2,3])
+Polynomial(-6 + 11*x - 6*x^2 + x^3)
+
+julia&gt; IntervalRootFinding.roots(x -&gt; p(x), 0..10)
+3-element Vector{IntervalRootFinding.Root{Interval{Float64}}}:
+ Root([0.999999, 1.00001], :unique)
+ Root([1.99999, 2.00001], :unique)
+ Root([2.99999, 3.00001], :unique)</code></pre><p>The output is a set of intervals. Those flagged with <code>:unique</code> are guaranteed to contain a unique root.</p><ul><li>The <code>RealPolynomialRoots</code> package provides a function <code>ANewDsc</code> to find isolating intervals for  the roots of a square-free polynomial, specified through its coefficients:</li></ul><pre><code class="nohighlight hljs">julia&gt; using RealPolynomialRoots
+
+julia&gt; st = ANewDsc(coeffs(p))
+There were 3 isolating intervals found:
+[2.62…, 3.62…]₂₅₆
+[1.5…, 2.62…]₂₅₆
+[-0.50…, 1.5…]₂₅₆</code></pre><p>These isolating intervals can be refined to find numeric estimates for the roots over <code>BigFloat</code> values.</p><pre><code class="nohighlight hljs">julia&gt; refine_roots(st)
+3-element Vector{BigFloat}:
+ 2.99999999999999999999...
+ 2.00000000000000000000...
+ 1.00000000000000000000...</code></pre><p>This specialized algorithm can identify very nearby roots. For example, returning to this Mignotte-type polynomial:</p><pre><code class="nohighlight hljs">julia&gt; p = SparsePolynomial(Dict(0=&gt;-1, 1=&gt;254, 2=&gt;-16129, 17=&gt;1))
+SparsePolynomial(-1 + 254*x - 16129*x^2 + x^17)
+
+julia&gt; ANewDsc(coeffs(p))
+There were 3 isolating intervals found:
+[1.5…, 3.5…]₅₃
+[0.0078740157480314960682066…, 0.0078740157480314960873178…]₁₃₉
+[0.0078740157480314960492543…, 0.0078740157480314960682066…]₁₃₉</code></pre><p><code>IntervalRootFinding</code> has issues disambiguating the clustered roots of this example:</p><pre><code class="nohighlight hljs">julia&gt; IntervalRootFinding.roots(x -&gt; p(x), 0..3.5)
+7-element Vector{IntervalRootFinding.Root{Interval{Float64}}}:
+ Root([1.90663, 1.90664], :unique)
+ Root([0.00787464, 0.00787468], :unknown)
+ Root([0.00787377, 0.00787387], :unknown)
+ Root([0.00787405, 0.00787412], :unknown)
+ Root([0.00787396, 0.00787406], :unknown)
+ Root([0.00787425, 0.00787431], :unknown)
+ Root([0.00787394, 0.00787397], :unknown)</code></pre><p>For this example, <code>filter(isreal, Hecke._roots(p))</code> also isolates the three real roots, but not quite as quickly.</p><hr/><p>Most of the root finding algorithms have issues when the roots have multiplicities. For example, both <code>ANewDsc</code> and <code>Hecke.roots</code> assume a square free polynomial. For non-square free polynomials:</p><ul><li>The <code>Polynomials.Multroot.multroot</code> function is available  for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng.</li></ul><p>Here we see <code>IntervalRootFinding.roots</code> having trouble isolating the roots due to the multiplicities:</p><pre><code class="nohighlight hljs">julia&gt; p = fromroots(Polynomial, [1,2,2,3,3])
+Polynomial(-36 + 96*x - 97*x^2 + 47*x^3 - 11*x^4 + x^5)
+
+julia&gt; IntervalRootFinding.roots(x -&gt; p(x), 0..10)
+335-element Vector{IntervalRootFinding.Root{Interval{Float64}}}:
+ Root([1.99999, 2], :unknown)
+ Root([1.99999, 2], :unknown)
+ Root([3, 3.00001], :unknown)
+ Root([2.99999, 3], :unknown)
+ ⋮
+ Root([2.99999, 3], :unknown)
+ Root([2, 2.00001], :unknown)</code></pre><p>The <code>roots</code> function identifies the roots, but the multiplicities would need identifying:</p><pre><code class="nohighlight hljs">julia&gt; roots(p)
+5-element Vector{Float64}:
+ 1.000000000000011
+ 1.9999995886034314
+ 2.0000004113969276
+ 2.9999995304339646
+ 3.0000004695656672</code></pre><p>Whereas, the roots along with the multiplicity structure are correctly identified with <code>multroot</code>:</p><pre><code class="nohighlight hljs">julia&gt; Polynomials.Multroot.multroot(p)
+(values = [1.0000000000000004, 1.9999999999999984, 3.0000000000000018], multiplicities = [1, 2, 2], κ = 35.11176306900731, ϵ = 0.0)</code></pre><p>The <code>square_free</code> function can help:</p><pre><code class="nohighlight hljs">julia&gt; q = Polynomials.square_free(p)
+ANewDsc(q)
+Polynomial(-0.20751433915978448 + 0.38044295512633425*x - 0.20751433915986722*x^2 + 0.03458572319332053*x^3)
+
+julia&gt; IntervalRootFinding.roots(x -&gt; q(x), 0..10)
+3-element Vector{IntervalRootFinding.Root{Interval{Float64}}}:
+ Root([0.999999, 1.00001], :unique)
+ Root([1.99999, 2.00001], :unique)
+ Root([2.99999, 3.00001], :unique)</code></pre><p>Similarly:</p><pre><code class="nohighlight hljs">julia&gt; ANewDsc(coeffs(q))
+There were 3 isolating intervals found:
+[2.62…, 3.62…]₂₅₆
+[1.5…, 2.62…]₂₅₆
+[-0.50…, 1.5…]₂₅₆</code></pre><h3 id="Fitting-arbitrary-data"><a class="docs-heading-anchor" href="#Fitting-arbitrary-data">Fitting arbitrary data</a><a id="Fitting-arbitrary-data-1"></a><a class="docs-heading-anchor-permalink" href="#Fitting-arbitrary-data" title="Permalink"></a></h3><p>Fit a polynomial (of degree <code>deg</code>) to <code>x</code> and <code>y</code> using polynomial interpolation or a (weighted) least-squares approximation.</p><pre><code class="language-julia hljs">using Plots, Polynomials
+xs = range(0, 10, length=10)
+ys = @. exp(-xs)
+f = fit(xs, ys) # degree = length(xs) - 1
+f2 = fit(xs, ys, 2) # degree = 2
+
+scatter(xs, ys, markerstrokewidth=0, label=&quot;Data&quot;)
+plot!(f, extrema(xs)..., label=&quot;Fit&quot;)
+plot!(f2, extrema(xs)..., label=&quot;Quadratic Fit&quot;)</code></pre><p><img src="polyfit.svg" alt/></p><h3 id="Other-bases"><a class="docs-heading-anchor" href="#Other-bases">Other bases</a><a id="Other-bases-1"></a><a class="docs-heading-anchor-permalink" href="#Other-bases" title="Permalink"></a></h3><p>A polynomial, e.g. <code>a_0 + a_1 x + a_2 x^2 + ... + a_n x^n</code>, can be seen as a collection of coefficients, <code>[a_0, a_1, ..., a_n]</code>, relative to some polynomial basis. The most  familiar basis being  the standard one: <code>1</code>, <code>x</code>, <code>x^2</code>, ...  Alternative bases are possible.  The <code>ChebyshevT</code> polynomials are  implemented, as an example. Instead of <code>Polynomial</code>  or  <code>Polynomial{T}</code>, <code>ChebyshevT</code> or  <code>ChebyshevT{T}</code> constructors are used:</p><pre><code class="language-julia-repl hljs">julia&gt; p1 = ChebyshevT([1.0, 2.0, 3.0])
+ChebyshevT(1.0⋅T_0(x) + 2.0⋅T_1(x) + 3.0⋅T_2(x))
+
+julia&gt; p2 = ChebyshevT{Float64}([0, 1, 2])
+ChebyshevT(1.0⋅T_1(x) + 2.0⋅T_2(x))
+
+julia&gt; p1 + p2
+ChebyshevT(1.0⋅T_0(x) + 3.0⋅T_1(x) + 5.0⋅T_2(x))
+
+julia&gt; p1 * p2
+ChebyshevT(4.0⋅T_0(x) + 4.5⋅T_1(x) + 3.0⋅T_2(x) + 3.5⋅T_3(x) + 3.0⋅T_4(x))
+
+julia&gt; derivative(p1)
+ChebyshevT(2.0⋅T_0(x) + 12.0⋅T_1(x))
+
+julia&gt; integrate(p2)
+ChebyshevT(- 1.0⋅T_1(x) + 0.25⋅T_2(x) + 0.3333333333333333⋅T_3(x))
+
+julia&gt; convert(Polynomial, p1)
+Polynomial(-2.0 + 2.0*x + 6.0*x^2)
+
+julia&gt; convert(ChebyshevT, Polynomial([1.0, 2,  3]))
+ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>The older  <code>Poly</code> type that this package used prior to <code>v0.7</code>  is implemented as an alternate basis  to provide support for older code bases. As of <code>v1.0</code>,  this type will be only available by executing <code>using Polynomials.PolyCompat</code>.</p></div></div><h3 id="Iteration"><a class="docs-heading-anchor" href="#Iteration">Iteration</a><a id="Iteration-1"></a><a class="docs-heading-anchor-permalink" href="#Iteration" title="Permalink"></a></h3><p>If its basis is implicit, then a polynomial may be  seen as just a vector of  coefficients. Vectors are 1-based, but, for convenience, most polynomial types are naturally 0-based, for purposes of indexing (e.g. <code>getindex</code>, <code>setindex!</code>, <code>eachindex</code>). Iteration over a polynomial steps through the underlying coefficients.</p><pre><code class="language-julia-repl hljs">julia&gt; as = [1,2,3,4,5]; p = Polynomial(as);
+
+julia&gt; as[3], p[2], collect(p)[3]
+(3, 3, 3)</code></pre><p>The <code>pairs</code> iterator, iterates over the indices and coefficients, attempting to match how <code>pairs</code> applies to the underlying storage model:</p><pre><code class="language-julia-repl hljs">julia&gt; v = [1,2,0,4]
+4-element Vector{Int64}:
+ 1
+ 2
+ 0
+ 4
+
+julia&gt; p,ip,sp,lp = Polynomial(v), ImmutablePolynomial(v), SparsePolynomial(v), LaurentPolynomial(v, -1);
+
+julia&gt; collect(pairs(p))
+4-element Vector{Pair{Int64, Int64}}:
+ 0 =&gt; 1
+ 1 =&gt; 2
+ 2 =&gt; 0
+ 3 =&gt; 4
+
+julia&gt; collect(pairs(ip)) == collect(pairs(p))
+true
+
+julia&gt; collect(pairs(sp)) # unordered dictionary with only non-zero terms
+3-element Vector{Pair{Int64, Int64}}:
+ 0 =&gt; 1
+ 3 =&gt; 4
+ 1 =&gt; 2
+
+julia&gt; collect(pairs(lp))
+4-element Vector{Pair{Int64, Int64}}:
+ -1 =&gt; 1
+  0 =&gt; 2
+  1 =&gt; 0
+  2 =&gt; 4</code></pre><p>The unexported <code>monomials</code> iterator iterates over the terms (<code>p[i]*Polynomials.basis(p,i)</code>) of the polynomial:</p><pre><code class="language-julia-repl hljs">julia&gt; p = Polynomial([1,2,0,4], :u)
+Polynomial(1 + 2*u + 4*u^3)
+
+julia&gt; collect(Polynomials.monomials(p))
+4-element Vector{Any}:
+ Polynomial(1)
+ Polynomial(2*u)
+ Polynomial(0)
+ Polynomial(4*u^3)</code></pre><p>The <code>map</code> function for polynomials is idiosyncratic, as iteration over polynomials is over the vector of coefficients, but <code>map</code> will also maintain the type of the polynomial. Here we use <code>map</code> to smooth out the round-off error coming from the root-finding algorithm used internally when converting to the <code>FactoredPolynomial</code> type:</p><pre><code class="language-julia-repl hljs">julia&gt; p = Polynomial([24, -50, 35, -10, 1])
+Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
+
+julia&gt; q = convert(FactoredPolynomial, p) # noisy form of `factor`:
+FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
+
+julia&gt; map(x -&gt; round(x, digits=10), q)
+FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))</code></pre><h2 id="Relationship-between-the-T-and-P{T,X}"><a class="docs-heading-anchor" href="#Relationship-between-the-T-and-P{T,X}">Relationship between the <code>T</code> and <code>P{T,X}</code></a><a id="Relationship-between-the-T-and-P{T,X}-1"></a><a class="docs-heading-anchor-permalink" href="#Relationship-between-the-T-and-P{T,X}" title="Permalink"></a></h2><p>The addition of a polynomial and a scalar, such as</p><pre><code class="language-julia-repl hljs">julia&gt; using Polynomials
+
+julia&gt; p = Polynomial([1,2,3], :x)
+Polynomial(1 + 2*x + 3*x^2)
+
+julia&gt; p + 3
+Polynomial(4 + 2*x + 3*x^2)</code></pre><p>seems natural, but in <code>Julia</code>, as <code>3</code> is of type <code>Int</code> and <code>p</code> of type <code>Polynomial{Int,:x}</code> some addition must be defined. The basic idea  is that <code>3</code> is promoted to the <em>constant</em> polynomial <code>3</code> with indeterminate <code>:x</code> as <code>3*one(p)</code> and then addition of <code>p + 3*one(p)</code> is performed.</p><p>This identification of a scalar with a constant polynomial can go both ways. If <code>q</code> is a <em>constant</em> polynomial of type <code>Polynomial{Int, :y}</code> then we should expect that <code>p+q</code> would be defined, as <code>p</code> plus the constant term of <code>q</code>. Indeed this is the case</p><pre><code class="language-julia-repl hljs">julia&gt; q = Polynomial(3, :y)
+Polynomial(3)
+
+julia&gt; p + q
+Polynomial(4 + 2*x + 3*x^2)</code></pre><p>If <code>q</code> is non-constant, such as <code>variable(Polynomial, :y)</code>, then there would be an error due to the mismatched symbols. (The mathematical result would need a multivariate polynomial, not a univariate polynomial, as this package provides.)</p><p>The same conversion is done for polynomial multiplication: constant polynomials are treated as numbers; non-constant polynomials must have their symbols match.</p><p>There is an oddity – though the following two computations look the same, they are technically different:</p><pre><code class="language-julia-repl hljs">julia&gt; one(Polynomial, :x) + one(Polynomial, :y)
+Polynomial(2.0)
+
+julia&gt; one(Polynomial, :y) + one(Polynomial, :x)
+Polynomial(2.0)</code></pre><p>Both are constant polynomials over <code>Int</code>, but the first has the indeterminate <code>:y</code>, the second <code>:x</code>.</p><p>This technical difference causes no issues with polynomial addition or multiplication, as there constant polynomials are treated as numbers, but can be an issue when constant polynomials are used as array elements.</p><p>For arrays, the promotion of numbers to polynomials, allows natural constructions like:</p><pre><code class="language-julia-repl hljs">julia&gt; p = Polynomial([1,2],:x)
+Polynomial(1 + 2*x)
+
+julia&gt; q = Polynomial([1,2],:y)  # non-constant polynomials with different indeterminates
+Polynomial(1 + 2*y)
+
+julia&gt; [1 p]
+1×2 Matrix{Polynomial{Int64, :x}}:
+ Polynomial(1)  Polynomial(1 + 2*x)
+
+julia&gt; [1 one(q)]
+1×2 Matrix{Polynomial{Int64, :y}}:
+ Polynomial(1)  Polynomial(1)</code></pre><p>However, as there would be an ambiguous outcome of the following</p><pre><code class="language-julia-repl hljs">julia&gt; [one(p) one(q)]
+ERROR: ArgumentError: Polynomials have different indeterminates
+[...]</code></pre><p>an error is thrown.</p><p>In general, arrays with mixtures of non-constant polynomials with <em>different</em> indeterminates will error. By default, an error will occur when constant polynomials with different indeterminates are used as components. However, for <em>typed</em> arrays, conversion will allow such constructs to be used.</p><p>Using <code>one(q)</code> for a constant polynomial with indeterminate <code>:y</code> we have:</p><pre><code class="language-julia-repl hljs">julia&gt; P = typeof(p)
+Polynomial{Int64, :x}
+
+julia&gt; P[one(p) one(q)]
+1×2 Matrix{Polynomial{Int64, :x}}:
+ Polynomial(1)  Polynomial(1)</code></pre><p>Of course, by not being explicit, there are sill gotchas. For example, we can construct this matrix without a specific types:</p><pre><code class="language-julia-repl hljs">julia&gt; [one(p), one(q)+one(p)]
+2-element Vector{Polynomial{Int64, :x}}:
+ Polynomial(1)
+ Polynomial(2)</code></pre><p>but not this one:</p><pre><code class="language-julia-repl hljs">julia&gt; [one(p), one(p) + one(q)]
+ERROR: ArgumentError: Polynomials have different indeterminates
+[...]</code></pre><p>Also, mixing types can result in unspecific symbols, as this example shows:</p><pre><code class="language-julia-repl hljs">julia&gt; [1 p; p 1] + [1 2one(q); 3 4] # array{P{T,:x}} + array{P{T,:y}}
+2×2 Matrix{Polynomial{Int64}}:
+ Polynomial(2)        Polynomial(3 + 2*x)
+ Polynomial(4 + 2*x)  Polynomial(5)</code></pre><p>Though were a non-constant polynomial with indeterminate <code>y</code> replacing <code>2one(q)</code> above, that addition would throw an error.</p><h2 id="Non-number-types-for-T"><a class="docs-heading-anchor" href="#Non-number-types-for-T">Non-number types for <code>T</code></a><a id="Non-number-types-for-T-1"></a><a class="docs-heading-anchor-permalink" href="#Non-number-types-for-T" title="Permalink"></a></h2><p>The coefficients of the polynomial may be non-number types, such as matrices or other polynomials, albeit not every operation is fully supported.</p><p>For example, a polynomial with matrix coefficients, might be constructed with:</p><pre><code class="language-julia-repl hljs">julia&gt; using Polynomials
+
+julia&gt; a,b,c = [1 0;2 1], [1 0; 3 1], [1 0; 4 1]
+([1 0; 2 1], [1 0; 3 1], [1 0; 4 1])
+
+julia&gt; p = Polynomial([a,b,c])
+Polynomial([1 0; 2 1] + [1 0; 3 1]*x + [1 0; 4 1]*x^2)
+
+julia&gt; q = derivative(p)
+Polynomial([1 0; 3 1] + [2 0; 8 2]*x)</code></pre><p>Various operations are available, <code>derivative</code> was shown above, here are the vector-space operations:</p><pre><code class="language-julia-repl hljs">julia&gt; 2p
+Polynomial([2 0; 4 2] + [2 0; 6 2]*x + [2 0; 8 2]*x^2)
+
+julia&gt; p + q
+Polynomial([2 0; 5 2] + [3 0; 11 3]*x + [1 0; 4 1]*x^2)</code></pre><p>polynomial multiplication:</p><pre><code class="language-julia-repl hljs">julia&gt; p * q
+Polynomial([1 0; 5 1] + [3 0; 18 3]*x + [3 0; 21 3]*x^2 + [2 0; 16 2]*x^3)</code></pre><p>polynomial evaluation, here either with a scalar or a matrix:</p><pre><code class="language-julia-repl hljs">julia&gt; p(2)
+2×2 Matrix{Int64}:
+  7  0
+ 24  7
+
+julia&gt; p(b)
+2×2 Matrix{Int64}:
+  3  0
+ 18  3</code></pre><p>But if the type <code>T</code> lacks support of some generic functions, such as <code>zero(T)</code> and <code>one(T)</code>, then there may be issues. For example,  when <code>T &lt;: AbstractMatrix</code> the output of <code>p-p</code> is an error, as the implementation assumes <code>zero(T)</code> is defined. For static arrays, this isn&#39;t an issue, as there is support for <code>zero(T)</code>. Other polynomial types, such as <code>SparsePolynomial</code> have less support, as some specialized methods assume more of the generic interface be implemented.</p><p>Similarly, using polynomials for <code>T</code> is a possibility:</p><pre><code class="language-julia-repl hljs">julia&gt; a,b,c = Polynomial([1],:y), Polynomial([0,1],:y), Polynomial([0,0,1],:y)
+(Polynomial(1), Polynomial(y), Polynomial(y^2))
+
+julia&gt; p = Polynomial([a,b,c], :x)
+Polynomial(Polynomial(1) + Polynomial(y)*x + Polynomial(y^2)*x^2)
+
+julia&gt; q = derivative(p)
+Polynomial(Polynomial(y) + Polynomial(2*y^2)*x)</code></pre><p>Again, much works:</p><pre><code class="language-julia-repl hljs">julia&gt; 2p
+Polynomial(Polynomial(2) + Polynomial(2*y)*x + Polynomial(2*y^2)*x^2)
+
+julia&gt; p + q
+Polynomial(Polynomial(1 + y) + Polynomial(y + 2*y^2)*x + Polynomial(y^2)*x^2)
+
+julia&gt; p(2)
+Polynomial(1 + 2*y + 4*y^2)
+
+julia&gt; p(b)
+Polynomial(1 + y^2 + y^4)</code></pre><p>But much doesn&#39;t. For example, implicit promotion can fail. For example, the scalar multiplication <code>p * b</code> will fail,  as the methods assume this is the fallback polynomial multiplication and not the intended scalar multiplication.</p><h2 id="Rational-functions"><a class="docs-heading-anchor" href="#Rational-functions">Rational functions</a><a id="Rational-functions-1"></a><a class="docs-heading-anchor-permalink" href="#Rational-functions" title="Permalink"></a></h2><p>The package provides support for rational functions – fractions of polynomials (for most types). The construction of the basic type mirrors the construction of rational numbers.</p><pre><code class="language-julia-repl hljs">julia&gt; P = FactoredPolynomial
+FactoredPolynomial
+
+julia&gt; p,q = fromroots(P, [1,2,3,4]), fromroots(P, [2,2,3,5])
+(FactoredPolynomial((x - 4) * (x - 2) * (x - 3) * (x - 1)), FactoredPolynomial((x - 5) * (x - 2)² * (x - 3)))
+
+julia&gt; pq = p // q
+((x - 4) * (x - 2) * (x - 3) * (x - 1)) // ((x - 5) * (x - 2)² * (x - 3))
+
+julia&gt; lowest_terms(pq)
+((x - 4.0) * (x - 1.0)) // ((x - 5.0) * (x - 2.0))
+
+julia&gt; d,r = residues(pq); r
+Dict{Float64, Vector{Float64}} with 2 entries:
+  5.0 =&gt; [1.33333]
+  2.0 =&gt; [0.666667]
+
+julia&gt; x = variable(p);
+
+julia&gt; for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
+           for (i,rᵢ) ∈ enumerate(rs)
+               d += rᵢ//(x-λ)^i
+           end
+       end
+
+julia&gt; d
+((x - 4.0) * (x - 1.0000000000000002)) // ((x - 5.0) * (x - 2.0))</code></pre><p>A basic plot recipe is provided.</p><pre><code class="language-julia hljs">using Plots, Polynomials
+P = FactoredPolynomial
+p,q = fromroots(P, [1,2,3]), fromroots(P, [2,3,3,0])
+plot(p//q)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">┌ Warning: Increasing Δ, terminating search
+└ @ Polynomials.Multroot ~/work/Polynomials.jl/Polynomials.jl/src/polynomials/multroot.jl:213</code></pre><p><img src="rational_function.svg" alt/></p><h2 id="Related-Packages"><a class="docs-heading-anchor" href="#Related-Packages">Related Packages</a><a id="Related-Packages-1"></a><a class="docs-heading-anchor-permalink" href="#Related-Packages" title="Permalink"></a></h2><ul><li><p><a href="https://github.com/tkoolen/StaticUnivariatePolynomials.jl">StaticUnivariatePolynomials.jl</a> Fixed-size univariate polynomials backed by a Tuple</p></li><li><p><a href="https://github.com/daviddelaat/MultiPoly.jl">MultiPoly.jl</a> for sparse multivariate polynomials</p></li><li><p><a href="https://github.com/JuliaAlgebra/DynamicPolynomials.jl">DynamicPolynomals.jl</a> Multivariate polynomials implementation of commutative and non-commutative variables</p></li><li><p><a href="https://github.com/JuliaAlgebra/MultivariatePolynomials.jl">MultivariatePolynomials.jl</a> for multivariate polynomials and moments of commutative or non-commutative variables</p></li><li><p><a href="https://github.com/tkluck/PolynomialRings.jl">PolynomialRings.jl</a> A library for arithmetic and algebra with multi-variable polynomials.</p></li><li><p><a href="https://github.com/wbhart/AbstractAlgebra.jl">AbstractAlgebra.jl</a>, <a href="https://github.com/wbhart/Nemo.jl">Nemo.jl</a> for generic polynomial rings, matrix spaces, fraction fields, residue rings, power series, <a href="https://github.com/thofma/Hecke.jl">Hecke.jl</a> for algebraic number theory.</p></li><li><p><a href="https://github.com/jmichel7/LaurentPolynomials.jl">LaurentPolynomials.jl</a> A package for Laurent polynomials.</p></li><li><p><a href="https://github.com/KlausC/CommutativeRings.jl">CommutativeAlgebra.jl</a> the start of a computer algebra system specialized to discrete calculations with support for polynomials.</p></li><li><p><a href="https://github.com/giordano/PolynomialRoots.jl">PolynomialRoots.jl</a> for a fast complex polynomial root finder. For larger degree problems, also <a href="https://github.com/andreasnoack/FastPolynomialRoots.jl">FastPolynomialRoots</a> and <a href="https://github.com/jverzani/AMRVW.jl">AMRVW</a>.</p></li><li><p><a href="https://github.com/jverzani/SpecialPolynomials.jl">SpecialPolynomials.jl</a> A package providing various polynomial types beyond the standard basis polynomials in <code>Polynomials.jl</code>. Includes interpolating polynomials, Bernstein polynomials, and classical orthogonal polynomials.</p></li><li><p><a href="https://github.com/JuliaApproximation/ClassicalOrthogonalPolynomials.jl">ClassicalOrthogonalPolynomials.jl</a> A Julia package for classical orthogonal polynomials and expansions. Includes <code>chebyshevt</code>, <code>chebyshevu</code>, <code>legendrep</code>, <code>jacobip</code>, <code>ultrasphericalc</code>, <code>hermiteh</code>, and <code>laguerrel</code>. The same repository includes <code>FastGaussQuadrature.jl</code>, <code>FastTransforms.jl</code>, and the <code>ApproxFun</code> packages.</p></li></ul><h2 id="Contributing"><a class="docs-heading-anchor" href="#Contributing">Contributing</a><a id="Contributing-1"></a><a class="docs-heading-anchor-permalink" href="#Contributing" title="Permalink"></a></h2><p>If you are interested in this project, feel free to open an issue or pull request! In general, any changes must be thoroughly tested, allow deprecation, and not deviate too far from the common interface. All PR&#39;s must have an updated project version, as well, to keep the continuous delivery cycle up-to-date.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="reference/">Reference/API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Sunday 16 April 2023 20:49">Sunday 16 April 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
