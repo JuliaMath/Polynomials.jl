@@ -525,6 +525,11 @@ end
             @test p - p == 0*p
         end
     end
+
+    # issue #495, (scalar div fix)
+    𝐐 = Rational{Int}
+    v = Polynomial{𝐐}([0//1])
+    @test eltype(integrate(v)) == 𝐐
 end
 
 @testset "Divrem" begin
