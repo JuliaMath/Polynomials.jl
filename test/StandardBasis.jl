@@ -284,7 +284,8 @@ end
             @test_throws MethodError q * p == P(conv([a,b], [a,b, c])) # Ok, no * for T
 
             # poly powers
-            @test_throws MethodError p^2 == p * p # Ok, no * for T
+            @test_throws MethodError p^2  # Ok, no * for T
+            @test_throws MethodError p * p
 
             # evaluation
             @test p(s) == a + b * s + c * s * s
