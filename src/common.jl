@@ -1050,6 +1050,8 @@ scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) = error("scalar_mult
 # scalar div
 Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S} = scalar_div(p, c)
 function scalar_div(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T, X}}
+    iszero(p) && return zero(⟒(P){Base.promote_op(/,T,S), X})
+
     result = coeffs(p) ./ (c,)
     ⟒(P){eltype(result), X}(result)
 end
