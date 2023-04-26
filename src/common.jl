@@ -1048,8 +1048,11 @@ end
 scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) = error("scalar_mult(::$(typeof(p1)), ::$(typeof(p2))) is not defined.") # avoid ambiguity, issue #435
 
 # scalar div
-Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S} = scalar_div(p, c)
-scalar_div(p::AbstractPolynomial, c) = scalar_mult(p, inv(c))
+Base.:/(p::AbstractPolynomial, c) = scalar_div(p, c)
+function scalar_div(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T, X}}
+    iszero(p) && return zero(⟒(P){Base.promote_op(/,T,S), X})
+    _convert(p, coeffs(p) ./ Ref(c))
+end
 
 ## Polynomial p*q
 ## Polynomial multiplication formula depend on the particular basis used. The subtype must implement

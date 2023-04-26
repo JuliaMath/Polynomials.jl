@@ -284,7 +284,8 @@ end
             @test_throws MethodError q * p == P(conv([a,b], [a,b, c])) # Ok, no * for T
 
             # poly powers
-            @test_throws MethodError p^2 == p * p # Ok, no * for T
+            @test_throws MethodError p^2  # Ok, no * for T
+            @test_throws MethodError p * p
 
             # evaluation
             @test p(s) == a + b * s + c * s * s
@@ -525,6 +526,11 @@ end
             @test p - p == 0*p
         end
     end
+
+    # issue #495, (scalar div fix)
+    𝐐 = Rational{Int}
+    v = Polynomial{𝐐}([0//1])
+    @test eltype(integrate(v)) == 𝐐
 end
 
 @testset "Divrem" begin
