@@ -102,7 +102,7 @@ end
 function conv(p::Vector{T}, q::Vector{S}) where {T,S}
     (isempty(p) || isempty(q)) && return promote_type(T, S)[]
     as = [p[1]*q[1]]
-    z = zero(eltype(as)) * as[1]
+    z = zero(as[1])
     n,m = length(p)-1, length(q)-1
     for i ∈ 1:n+m
         Σ = z

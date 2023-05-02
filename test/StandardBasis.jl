@@ -443,6 +443,7 @@ end
     end
 
     @testset "generic arithmetics" begin
+        P = Polynomial
         # define a set algebra
         struct Setalg  # not a number
             content::Vector{Int}
@@ -451,6 +452,8 @@ end
         Base.:(*)(a::Setalg, b::Setalg) = Setalg(vec([x * y for x in a.content, y in b.content]))
         Base.zero(::Setalg) = Setalg(Int[])
         Base.one(::Setalg) = Setalg(Int[1])
+        Base.zero(::Type{Setalg}) = Setalg(Int[])
+        Base.one(::Type{Setalg}) = Setalg(Int[1])
         Base.:(==)(a::Setalg, b::Setalg) = a.content == b.content
 
         a = Setalg([1])
