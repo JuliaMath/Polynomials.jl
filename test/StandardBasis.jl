@@ -442,6 +442,27 @@ end
 
     end
 
+    @testset "generic arithmetics" begin
+        # define a set algebra
+        struct Setalg  # not a number
+            content::Vector{Int}
+        end
+        Base.:(+)(a::Setalg, b::Setalg) = Setalg(a.content ∪ b.content)
+        Base.:(*)(a::Setalg, b::Setalg) = Setalg(vec([x * y for x in a.content, y in b.content]))
+        Base.zero(::Setalg) = Setalg(Int[])
+        Base.one(::Setalg) = Setalg(Int[1])
+        Base.:(==)(a::Setalg, b::Setalg) = a.content == b.content
+
+        a = Setalg([1])
+        b = Setalg([4,2])
+        pNULL = P(Setalg[])
+        p0 = P([a])
+        p1 = P([a, b, b])
+        @test pNULL * p0 == pNULL
+        @test pNULL * p1 == pNULL
+        @test p0 * p1 == p1
+    end
+
     @testset for P in Ps # ensure promotion of scalar +,*,/
         p = P([1,2,3])
         @test p + 0.5 ==ᵟ P([1.5, 2.0, 3.0])
