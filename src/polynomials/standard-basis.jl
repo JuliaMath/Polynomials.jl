@@ -100,8 +100,9 @@ end
 ## put here, not with type definition, in case reuse is possible
 ## `conv` can be used with matrix entries, unlike `fastconv`
 function conv(p::Vector{T}, q::Vector{S}) where {T,S}
+    (isempty(p) || isempty(q)) && return promote_type(T, S)[]
     as = [p[1]*q[1]]
-    z = 0 * as[1]
+    z = zero(as[1])
     n,m = length(p)-1, length(q)-1
     for i ∈ 1:n+m
         Σ = z
