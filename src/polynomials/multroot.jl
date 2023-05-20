@@ -117,7 +117,7 @@ end
 # if roundmul = true, multiplicities are rounded
 # to the closest integer
 
-# Better performing :iterative method by Florent Bréhard, Adrien Poteaux, and Léo Soudant [Validated root enclosures for interval polynomials with multiplicities](preprint)
+# Better performing :direct method by Florent Bréhard, Adrien Poteaux, and Léo Soudant [Validated root enclosures for interval polynomials with multiplicities](preprint)
 
 function pejorative_manifold(
     p::Polynomials.StandardBasisPolynomial{T,X};
@@ -281,16 +281,6 @@ end
 
 # recover the multiplicity of each root approximation
 # using the iterative method of Zeng
-# This is exactly pejorative_manifold_multiplicities in Polynomials.jl
-function pejorative_manifold_iterative_multiplicities(
-    u::Polynomials.PnPolynomial{T},
-    zs, ρⱼ, θ, ρ, ϕ) where {T}
-    return Polynomials.Multroot.pejorative_manifold_multiplicities(
-        u, zs, ρⱼ, θ, ρ, ϕ)
-end
-
-# recover the multiplicity of each root approximation
-# using the iterative method of Zeng
 # but knowing the total multiplicity structure,
 # hence the degree of the approximate GCD at each iteration is known
 # if roundmul=true, round the floating-point multiplicities
@@ -377,11 +367,9 @@ function pejorative_manifold_direct_multiplicities(
 end
 
 
-
-
-
-
-function pejorative_manifold_multiplicities(u::Polynomials.PnPolynomial{T},
+# recover the multiplicity of each root approximation
+# using the iterative method of Zeng
+function pejorative_manifold_iterative_multiplicities(u::Polynomials.PnPolynomial{T},
                                             zs, ρⱼ,
                                             θ, ρ, ϕ) where {T}
     nrts = length(zs)
