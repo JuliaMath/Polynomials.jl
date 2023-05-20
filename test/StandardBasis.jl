@@ -187,7 +187,7 @@ end
             # poly powers
             @test p^2 == p * p
 
-            # evalution
+            # evaluation
             @test p(s) == a + b * s + c * s * s
             @test p(c) == a + b * c + c * c * c
 
@@ -237,7 +237,7 @@ end
             # poly powers
             @test p^2 == p * p
 
-            # evalution
+            # evaluation
             @test p(s) == a + b * s + c * s * s
             @test p(c) == a + b * c + c * c * c
 
@@ -284,9 +284,10 @@ end
             @test_throws MethodError q * p == P(conv([a,b], [a,b, c])) # Ok, no * for T
 
             # poly powers
-            @test_throws MethodError p^2 == p * p # Ok, no * for T
+            @test_throws MethodError p^2  # Ok, no * for T
+            @test_throws MethodError p * p
 
-            # evalution
+            # evaluation
             @test p(s) == a + b * s + c * s * s
             @test_throws MethodError p(c) == a + b * c + c * c * c # OK, no b * c
 
@@ -340,7 +341,7 @@ end
                 @test p^2 == p * p
 
 
-                # evalution
+                # evaluation
                 @test p(s) == a + b * s + c * s * s
                 @test p(c) == a + b * c + c * c * c
 
@@ -441,6 +442,30 @@ end
 
     end
 
+    @testset "generic arithmetics" begin
+        P = Polynomial
+        # define a set algebra
+        struct Setalg  # not a number
+            content::Vector{Int}
+        end
+        Base.:(+)(a::Setalg, b::Setalg) = Setalg(a.content ∪ b.content)
+        Base.:(*)(a::Setalg, b::Setalg) = Setalg(vec([x * y for x in a.content, y in b.content]))
+        Base.zero(::Setalg) = Setalg(Int[])
+        Base.one(::Setalg) = Setalg(Int[1])
+        Base.zero(::Type{Setalg}) = Setalg(Int[])
+        Base.one(::Type{Setalg}) = Setalg(Int[1])
+        Base.:(==)(a::Setalg, b::Setalg) = a.content == b.content
+
+        a = Setalg([1])
+        b = Setalg([4,2])
+        pNULL = P(Setalg[])
+        p0 = P([a])
+        p1 = P([a, b, b])
+        @test pNULL * p0 == pNULL
+        @test pNULL * p1 == pNULL
+        @test p0 * p1 == p1
+    end
+
     @testset for P in Ps # ensure promotion of scalar +,*,/
         p = P([1,2,3])
         @test p + 0.5 ==ᵟ P([1.5, 2.0, 3.0])
@@ -525,6 +550,11 @@ end
             @test p - p == 0*p
         end
     end
+
+    # issue #495, (scalar div fix)
+    𝐐 = Rational{Int}
+    v = Polynomial{𝐐}([0//1])
+    @test eltype(integrate(v)) == 𝐐
 end
 
 @testset "Divrem" begin
@@ -871,11 +901,11 @@ end
         for T in (Float64, Rational)
             xs = [1,2,3]
             p = fromroots(P,xs)
-            @test Polynomials.copy_with_eltype(Val(T), p) == fromroots(P, T.(xs))
-            @test Polynomials.copy_with_eltype(Val(T), Val(:u), p) == fromroots(P, T.(xs); var=:u)
+            @test Polynomials.copy_with_eltype(T, p) == fromroots(P, T.(xs))
+            @test Polynomials.copy_with_eltype(T, Val(:u), p) == fromroots(P, T.(xs); var=:u)
             P == ImmutablePolynomial && continue
-            @inferred Polynomials.copy_with_eltype(Val(T), Val(:u), p)
-            @inferred Polynomials.copy_with_eltype(Val(T), p)
+            @inferred Polynomials.copy_with_eltype(T, Val(:u), p)
+            @inferred Polynomials.copy_with_eltype(T, p)
         end
     end
 end
@@ -1133,7 +1163,7 @@ end
         @test [λ 1] + [1 λ] == (λ+1) .* [1 1] # (λ+1) not a number, so we broadcast
     end
 
-    # issue 312; using mixed polynomial types withing arrays and promotion
+    # issue 312; using mixed polynomial types within arrays and promotion
     P′ = Polynomial
     r,s = P′([1,2], :x), P′([1,2],:y)
     function _test(x, T,X)

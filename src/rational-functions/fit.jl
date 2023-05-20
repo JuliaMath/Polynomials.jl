@@ -33,7 +33,7 @@ Fit a rational function of the form `pq = (a₀ + a₁x¹ + … + aₘxᵐ) / (1
 
     The [RationalApproximations](https://github.com/billmclean/RationalApproximations) package also has implementations of the AAA algorithm.
 
-    A python libary, [polyrat](https://github.com/jeffrey-hokanson/polyrat), has implementations of other algorithms.
+    A python library, [polyrat](https://github.com/jeffrey-hokanson/polyrat), has implementations of other algorithms.
 
 ## Example
 ```

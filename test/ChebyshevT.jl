@@ -201,7 +201,7 @@ end
         @test degree(truncate(p - derivative(integrate(p)), atol=1e-8)) <= 0
     end
 
-    ## issue SpeicalPolynomials #56
+    ## issue SpecialPolynomials #56
     coeffs  = [3 // 4, -2 // 1, 1 // 1]
     p = ChebyshevT(coeffs)
     @test derivative(p) ≈ convert(ChebyshevT, derivative(convert(Polynomial, p)))

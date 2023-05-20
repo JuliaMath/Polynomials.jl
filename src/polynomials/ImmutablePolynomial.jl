@@ -109,8 +109,9 @@ end
 # overrides from common.jl due to  coeffs being non mutable, N in type parameters
 
 Base.copy(p::P) where {P <: ImmutablePolynomial} = P(coeffs(p))
-Base.similar(p::ImmutablePolynomial, args...) =
-    similar(collect(oeffs(p)), args...)
+copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {T, X, S, Y, N, P <:ImmutablePolynomial{S,Y,N}} =
+    ⟒(P){T, Symbol(X),N}(map(T, p.coeffs))
+Base.similar(p::ImmutablePolynomial, args...) = similar(collect(coeffs(p)), args...) # ???
 # degree, isconstant
 degree(p::ImmutablePolynomial{T,X, N}) where {T,X,N} = N - 1 # no trailing zeros
 isconstant(p::ImmutablePolynomial{T,X,N}) where {T,X,N}  = N <= 1
@@ -135,14 +136,14 @@ end
 function Base.chop(p::ImmutablePolynomial{T,X};
               rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0)  where {T,X}
-    ps = chop(p.coeffs; rtol=rtol, atol=atol)
+    ps = _chop(p.coeffs; rtol=rtol, atol=atol)
     return ImmutablePolynomial{T,X}(ps)
 end
 
 function Base.truncate(p::ImmutablePolynomial{T,X};
                   rtol::Real = Base.rtoldefault(real(T)),
                   atol::Real = 0)  where {T,X}
-    ps = truncate(p.coeffs; rtol=rtol, atol=atol)
+    ps = _truncate(p.coeffs; rtol=rtol, atol=atol)
     ImmutablePolynomial{T,X}(ps)
 end
 

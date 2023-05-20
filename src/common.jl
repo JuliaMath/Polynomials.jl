@@ -347,8 +347,9 @@ function truncate!(ps::Dict{Int,T};
 end
 
 truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined."))
-Base.truncate(ps::NTuple{0}; kwargs...) = ps
-function Base.truncate(ps::NTuple{N,T};
+
+_truncate(ps::NTuple{0}; kwargs...) = ps
+function _truncate(ps::NTuple{N,T};
               rtol::Real = Base.rtoldefault(real(T)),
               atol::Real = 0,) where {N,T}
     thresh = norm(ps, Inf) * rtol + atol
@@ -415,8 +416,9 @@ function chop!(ps::Dict{Int,T};
 end
 
 chop!(ps::NTuple; kwargs...) = throw(ArgumentError("chop! not defined"))
-Base.chop(ps::NTuple{0}; kwargs...) = ps
-function Base.chop(ps::NTuple{N,T};
+
+_chop(ps::NTuple{0}; kwargs...) = ps
+function _chop(ps::NTuple{N,T};
               rtol::Real = Base.rtoldefault(real(T)),
               atol::Real = 0,) where {N,T}
     thresh = norm(ps, Inf) * rtol + atol
@@ -530,19 +532,19 @@ function _eltype(P::Type{<:AbstractPolynomial}, p::AbstractPolynomial)
 end
 
 """
-    copy_with_eltype(::Val{T}, [::Val{X}], p::AbstractPolynomial)
+    copy_with_eltype(::Type{T}, [::Val{X}], p::AbstractPolynomial)
 
 Copy polynomial `p` changing the underlying element type and optionally the symbol.
 """
-copy_with_eltype(::Val{T}, ::Val{X}, p::P) where {T, X, S, Y, P <:AbstractPolynomial{S,Y}} =
-    ⟒(P){T, X}(p.coeffs)
-copy_with_eltype(V::Val{T}, p::P) where {T, S, Y, P <:AbstractPolynomial{S,Y}} =
-    copy_with_eltype(V, Val(Y), p)
+copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {T, X, S, Y, P <:AbstractPolynomial{S,Y}} =
+    ⟒(P){T, Symbol(X)}(p.coeffs)
+copy_with_eltype(::Type{T}, p::P) where {T, S, Y, P <:AbstractPolynomial{S,Y}} =
+    copy_with_eltype(T, Val(Y), p)
 # easier to type if performance isn't an issue, but could be dropped
-copy_with_eltype(::Type{T}, X, p::P) where {T, S, Y, P<:AbstractPolynomial{S, Y}} =
-    copy_with_eltype(Val(T), Val(X), p)
-copy_with_eltype(::Type{T}, p::P) where {T, S, X, P<:AbstractPolynomial{S,X}} =
-    copy_with_eltype(Val(T), Val(X), p)
+#copy_with_eltype(::Type{T}, X, p::P) where {T, S, Y, P<:AbstractPolynomial{S, Y}} =
+#    copy_with_eltype(Val(T), Val(X), p)
+#copy_with_eltype(::Type{T}, p::P) where {T, S, X, P<:AbstractPolynomial{S,X}} =
+#    copy_with_eltype(Val(T), Val(X), p)
 
 Base.iszero(p::AbstractPolynomial) = all(iszero, p)
 
@@ -1046,8 +1048,11 @@ end
 scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) = error("scalar_mult(::$(typeof(p1)), ::$(typeof(p2))) is not defined.") # avoid ambiguity, issue #435
 
 # scalar div
-Base.:/(p::P, c::S) where {P <: AbstractPolynomial,S} = scalar_div(p, c)
-scalar_div(p::AbstractPolynomial, c) = scalar_mult(p, inv(c))
+Base.:/(p::AbstractPolynomial, c) = scalar_div(p, c)
+function scalar_div(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T, X}}
+    iszero(p) && return zero(⟒(P){Base.promote_op(/,T,S), X})
+    _convert(p, coeffs(p) ./ Ref(c))
+end
 
 ## Polynomial p*q
 ## Polynomial multiplication formula depend on the particular basis used. The subtype must implement
