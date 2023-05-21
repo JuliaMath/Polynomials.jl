@@ -122,7 +122,7 @@ end
 
 function pejorative_manifold(
     p::Polynomials.StandardBasisPolynomial{T,X};
-    method = :iterative,
+    method = :direct,
     roundmul = true,
     θ = 1e-8,  # zero singular-value threshold
     ρ = 1e-13, #1e-10, # initial residual tolerance
@@ -145,15 +145,15 @@ function pejorative_manifold(
     zs = roots(v)
 
     # recover multiplicities
-    if method == :iterative
-        ls = pejorative_manifold_iterative_multiplicities(
-            u, zs, ρⱼ, θ, ρ, ϕ)
-    elseif method == :direct
-        ls = pejorative_manifold_direct_multiplicities(
-            v, w, zs, roundmul=roundmul)
-    else
-        error("pejorative_manifold: unknown multiplicity recovering method: " * string(method))
-    end
+    ls = pejorative_manifold_multiplicities(Val(method), u, v, w, zs,  ρⱼ, θ, ρ, ϕ; roundmul=roundmul)
+#    if method == :iterative
+#        ls = pejorative_manifold_iterative_multiplicities(
+#            u, zs, ρⱼ, θ, ρ, ϕ)
+#    else
+#        # use direct unless `method = :iterative` is passed in
+#        ls = pejorative_manifold_direct_multiplicities(
+#            v, w, zs, roundmul=roundmul)
+#    end
 
 #    if cofactors
 #        return zs, ls, v, w
@@ -169,7 +169,7 @@ end
 # using least-squares rather than Zeng's AGCD refinement strategy
 function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
     k::Int;
-    method = :iterative,
+    method = :direct,
     leastsquares = false,
     roundmul = true,
     θ = 1e-8,  # zero singular-value threshold
@@ -208,11 +208,9 @@ function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
     if method == :iterative
         ls = pejorative_manifold_iterative_multiplicities(
             u, zs, ρⱼ, θ, ρ, ϕ)
-    elseif method == :direct
+    else
         ls = pejorative_manifold_direct_multiplicities(
             v, w, zs, roundmul=roundmul)
-    else
-        error("pejorative_manifold: unknown multiplicity recovering method: " * string(method))
     end
 
 #    if cofactors
@@ -229,7 +227,7 @@ end
 # using least-squares rather than Zeng's AGCD refinement strategy
 function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
     l::Vector{Int};
-    method = :iterative,
+    method = :direct,
     leastsquares = false,
     roundmul = true,
 #    cofactors=false, # return cofactors v,w?
@@ -262,15 +260,14 @@ function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
     zs = roots(v)
 
     # recover multiplicities
-    if method == :iterative
-        ls = pejorative_manifold_iterative_multiplicities(
-            u, zs, l, roundmul=roundmul)
-    elseif method == :direct
-        ls = pejorative_manifold_direct_multiplicities(
-            v, w, zs, l, roundmul=roundmul)
-    else
-        error("pejorative_manifold: unknown multiplicity recovering method: " * string(method))
-    end
+    ls = pejorative_manifold_multiplicities(Val(method), u,v, w, zs, l, roundmul=roundmul)
+#    if method == :iterative
+#        ls = pejorative_manifold_iterative_multiplicities(
+#            u, zs, l, roundmul=roundmul)
+#    else
+#        ls = pejorative_manifold_direct_multiplicities(
+#            v, w, zs, l, roundmul=roundmul)
+#    end
 
 #    if cofactors
 #        return zs, ls, v, w
@@ -286,9 +283,14 @@ end
 # hence the degree of the approximate GCD at each iteration is known
 # if roundmul=true, round the floating-point multiplicities
 # to the closest integer
-function pejorative_manifold_iterative_multiplicities(
+#function pejorative_manifold_iterative_multiplicities(
+function pejorative_manifold_multiplicities(
+    ::Val{:iterative},
     u::Polynomials.PnPolynomial{T},
-    zs, l::Vector{Int};
+    v,
+    w,
+    zs, l::Vector{Int},
+    args...;
     roundmul = true) where {T}
 
     ls = ones(Int, length(zs))
@@ -320,59 +322,17 @@ function pejorative_manifold_iterative_multiplicities(
     return ls
 end
 
-
-# recover the multiplicity of each root approximation
-# directly from the cofactors v,w s.t. p = u*v and q = u*w
-# if roundmul=true, round the floating-point multiplicities
-# to the closest integer
-function pejorative_manifold_direct_multiplicities(
-    v::Polynomials.PnPolynomial{T}, w::Polynomials.PnPolynomial{T},
-    zs;
-    roundmul = true) where {T}
-
-    dv = derivative(v)
-    ls = w.(zs) ./ dv.(zs)
-
-    if roundmul
-        ls = Int.(round.(real.(ls)))
-    end
-
-    return ls
-end
-
-# recover the multiplicity of each root approximation
-# directly from the cofactors v,w s.t. p = u*v and q = u*w
-# if roundmul=true, round the floating-point multiplicities
-# to the closest integer
-function pejorative_manifold_direct_multiplicities(
-    v::Polynomials.PnPolynomial{T}, w::Polynomials.PnPolynomial{T},
-    zs, l::Vector{Int};
-    roundmul = true) where {T}
-
-    ls = pejorative_manifold_direct_multiplicities(v, w, zs,
-        roundmul = false)
-
-    # if roundmul
-    #     for i ∈ 1:length(ls)
-    #         _, ind = findmin(abs.(l .- ls[i]))
-    #         ls[i] = l[ind]
-    #     end
-    #     ls = Int.(ls)
-    # end
-
-    if roundmul
-        ls = Int.(round.(real.(ls)))
-    end
-
-    return ls
-end
-
-
 # recover the multiplicity of each root approximation
 # using the iterative method of Zeng
-function pejorative_manifold_iterative_multiplicities(u::Polynomials.PnPolynomial{T},
-                                            zs, ρⱼ,
-                                            θ, ρ, ϕ) where {T}
+function pejorative_manifold_multiplicities(
+    ::Val{:iterative},
+    u::Polynomials.PnPolynomial{T},
+    v,
+    w,
+    zs,
+    ρⱼ,θ, ρ, ϕ;
+    kwargs...) where {T}
+
     nrts = length(zs)
     ls = ones(Int, nrts)
 
@@ -399,6 +359,68 @@ function pejorative_manifold_iterative_multiplicities(u::Polynomials.PnPolynomia
     ls
 
 end
+
+
+# recover the multiplicity of each root approximation
+# directly from the cofactors v,w s.t. p = u*v and q = u*w
+# if roundmul=true, round the floating-point multiplicities
+# to the closest integer
+#function pejorative_manifold_direct_multiplicities(
+function pejorative_manifold_multiplicities(
+    ::Val{:direct},
+    u,
+    v::Polynomials.PnPolynomial{T},
+    w::Polynomials.PnPolynomial{T},
+    zs,
+    args...;
+    roundmul = true) where {T}
+
+    dv = derivative(v)
+    ls = w.(zs) ./ dv.(zs)
+
+    if roundmul
+        ls = Int.(round.(real.(ls)))
+    end
+
+    return ls
+end
+
+# recover the multiplicity of each root approximation
+# directly from the cofactors v,w s.t. p = u*v and q = u*w
+# if roundmul=true, round the floating-point multiplicities
+# to the closest integer
+#function pejorative_manifold_direct_multiplicities(
+function pejorative_manifold_direct_multiplicities(
+    ::Val{:direct},
+    u,
+    v::Polynomials.PnPolynomial{T},
+    w::Polynomials.PnPolynomial{T},
+    zs,
+    l::Vector{Int},
+    args...;
+    roundmul = true) where {T}
+
+    @show :unneeded_method
+
+    ls = pejorative_manifold_direct_multiplicities(v, w, zs,
+        roundmul = false)
+
+    # if roundmul
+    #     for i ∈ 1:length(ls)
+    #         _, ind = findmin(abs.(l .- ls[i]))
+    #         ls[i] = l[ind]
+    #     end
+    #     ls = Int.(ls)
+    # end
+
+    if roundmul
+        ls = Int.(round.(real.(ls)))
+    end
+
+    return ls
+end
+
+
 
 
 """
