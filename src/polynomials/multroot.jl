@@ -109,8 +109,9 @@ end
 # compute initial root approximations with multiplicities
 # without any information
 
-# With method = :direct, use the direct method
+# With method = :direct, use the direct method of Brehard, Poteaux, and Soudant
 # based on the cofactors v,w s.t. p = u*v and q = u*w
+
 # With method = :iterative, use the iterative strategy of Zeng
 # to recover the multiplicities associated to the computed roots
 
@@ -121,7 +122,7 @@ end
 
 function pejorative_manifold(
     p::Polynomials.StandardBasisPolynomial{T,X};
-    method = :direct,
+    method = :iterative,
     roundmul = true,
     θ = 1e-8,  # zero singular-value threshold
     ρ = 1e-13, #1e-10, # initial residual tolerance
@@ -168,7 +169,7 @@ end
 # using least-squares rather than Zeng's AGCD refinement strategy
 function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
     k::Int;
-    method = :direct,
+    method = :iterative,
     leastsquares = false,
     roundmul = true,
     θ = 1e-8,  # zero singular-value threshold
@@ -228,7 +229,7 @@ end
 # using least-squares rather than Zeng's AGCD refinement strategy
 function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
     l::Vector{Int};
-    method = :direct,
+    method = :iterative,
     leastsquares = false,
     roundmul = true,
 #    cofactors=false, # return cofactors v,w?
