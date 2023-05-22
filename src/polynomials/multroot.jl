@@ -6,7 +6,7 @@ using ..Polynomials
 using LinearAlgebra
 
 """
-    multroot(p; verbose=false, methods=:direct, kwargs...)
+    multroot(p; verbose=false, method=:direct, kwargs...)
 
 Use `multroot` algorithm of
 [Zeng](https://www.ams.org/journals/mcom/2005-74-250/S0025-5718-04-01692-8/S0025-5718-04-01692-8.pdf)
