@@ -6,7 +6,7 @@ using ..Polynomials
 using LinearAlgebra
 
 """
-    multroot(p; verbose=false, kwargs...)
+    multroot(p; verbose=false, methods=:direct, kwargs...)
 
 Use `multroot` algorithm of
 [Zeng](https://www.ams.org/journals/mcom/2005-74-250/S0025-5718-04-01692-8/S0025-5718-04-01692-8.pdf)
@@ -41,11 +41,13 @@ The algorithm has two stages. First it uses `pejorative_manifold` to
 identify the number of distinct roots and their multiplicities. This
 uses the fact if `p=Π(x-zᵢ)ˡⁱ`, `u=gcd(p, p′)`, and `u⋅v=p` then
 `v=Π(x-zi)` is square free and contains the roots of `p` and `u` holds
-the multiplicity details, which are identified by recursive usage of
-`ncgd`, which identifies `u` and `v` above even if numeric
-uncertainties are present.
+the multiplicity details. The `:iterative` method of Zeng identifies
+the multiplicities by recursive usage of `ncgd`, which identifies `u`
+and `v` above even if numeric uncertainties are present. The, default,
+`:direct` method of Brehard, Poteaux, and Soudant uses division and
+does a better job for polynomials of larger degrees.
 
-Second it uses `pejorative_root` to improve a set of initial guesses
+Second the algorithm uses `pejorative_root` to improve a set of initial guesses
 for the roots under the assumption the multiplicity structure is
 correct using a Newton iteration scheme.
 
@@ -59,7 +61,8 @@ multiplicity structure:
 
 * `ρ`: the initial residual tolerance, set to `1e-13`. This is passed
   to `Polynomials.ngcd`, the GCD finding algorithm as a measure for
-  the absolute tolerance multiplied by `‖p‖₂`.
+  the absolute tolerance multiplied by `‖p‖₂`. (For the `:iterative`
+  method, a suggested value is `1e-10`.
 
 * `ϕ`: A scale factor, set to `100`. As the `ngcd` algorithm is called
   recursively, this allows the residual tolerance to scale up to match
@@ -92,11 +95,13 @@ function multroot(p::Polynomials.StandardBasisPolynomial{T}; verbose=false,
         return (values=zeros(T,1), multiplicities=[nz-1], κ=NaN, ϵ=NaN)
     end
 
+    # Basic algorithm is two steps
     z, l = pejorative_manifold(p; kwargs...)
     z̃ = pejorative_root(p, z, l)
     κ, ϵ = stats(p, z̃, l)
 
     verbose && show_stats(κ, ϵ)
+
     (values = z̃, multiplicities = l, κ = κ, ϵ = ϵ)
 
 end
@@ -115,19 +120,15 @@ end
 # With method = :iterative, use the iterative strategy of Zeng
 # to recover the multiplicities associated to the computed roots
 
-# if roundmul = true, multiplicities are rounded
-# to the closest integer
-
 # Better performing :direct method by Florent Bréhard, Adrien Poteaux, and Léo Soudant [Validated root enclosures for interval polynomials with multiplicities](preprint)
 
 function pejorative_manifold(
     p::Polynomials.StandardBasisPolynomial{T,X};
     method = :direct,
-    roundmul = true,
-    θ = 1e-8,  # zero singular-value threshold
-    ρ = 1e-13, #1e-10, # initial residual tolerance
-    ϕ = 100,   # residual growth factor
-#    cofactors=false, # return cofactors v,w?
+    θ = 1e-8,    # zero singular-value threshold
+    ρ = 1e-13,   # initial residual tolerance, was 1e-10
+    ϕ = 100,      # residual growth factor
+    kwargs...
     )  where {T,X}
 
     S = float(T)
@@ -136,200 +137,37 @@ function pejorative_manifold(
     nu₂ = norm(u, 2)
     θ2, ρ2 =  θ * nu₂, ρ * nu₂
 
-    u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u),
+    u, v, w, ρⱼ, κ = Polynomials.ngcd(
+        u, derivative(u),
         satol = θ2, srtol = zero(real(T)),
-        atol = ρ2, rtol = zero(real(T)))
+        atol = ρ2,  rtol  = zero(real(T)))
     ρⱼ /= nu₂
 
     # root approximations
     zs = roots(v)
 
     # recover multiplicities
-    ls = pejorative_manifold_multiplicities(Val(method), u, v, w, zs,  ρⱼ, θ, ρ, ϕ; roundmul=roundmul)
-#    if method == :iterative
-#        ls = pejorative_manifold_iterative_multiplicities(
-#            u, zs, ρⱼ, θ, ρ, ϕ)
-#    else
-#        # use direct unless `method = :iterative` is passed in
-#        ls = pejorative_manifold_direct_multiplicities(
-#            v, w, zs, roundmul=roundmul)
-#    end
+    ls = pejorative_manifold_multiplicities(Val(method),
+                                            u, v, w,
+                                            zs, nothing,
+                                            ρⱼ, θ, ρ, ϕ;
+                                            kwargs...)
 
-#    if cofactors
-#        return zs, ls, v, w
-#    else
+
     return zs, ls
-#    end
+
 end
 
-
-# compute initial root approximations with multiplicities
-# when the number k of distinct roots is known
-# If method=direct and leastsquares=true, compute the cofactors v,w
-# using least-squares rather than Zeng's AGCD refinement strategy
-function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
-    k::Int;
-    method = :direct,
-    leastsquares = false,
-    roundmul = true,
-    θ = 1e-8,  # zero singular-value threshold
-    ρ = 1e-10, # initial residual tolerance
-    ϕ = 100,   # residual growth factor
-#    cofactors=false, # return cofactors v,w?
-    )  where {T,X}
-
-    S = float(T)
-    u = Polynomials.PnPolynomial{S,X}(S.(coeffs(p)))
-
-    nu₂ = norm(u, 2)
-
-    if method == :direct && leastsquares
-        n = degree(u)
-        Sy = Polynomials.NGCD.SylvesterMatrix(u, derivative(u), n-k)
-        b = Sy[1:end-1,2*k+1] - n * Sy[1:end-1,k] # X^k*p' - n*X^{k-1}*p
-        A = Sy[1:end-1,1:end .∉ [[k,2*k+1]]]
-        x = zeros(S, 2*k-1)
-        Polynomials.NGCD.qrsolve!(x, A, b)
-        # w = n*X^{k-1} + ...
-        w = Polynomials.PnPolynomial([x[1:k-1]; n])
-        # v = X^k + ...
-        v = Polynomials.PnPolynomial([-x[k:2*k-1]; 1])
-
-    else
-        u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u),
-            degree(u)-k)
-        ρⱼ /= nu₂
-    end
-
-    # root approximations
-    zs = roots(v)
-
-    # recover multiplicities
-    if method == :iterative
-        ls = pejorative_manifold_iterative_multiplicities(
-            u, zs, ρⱼ, θ, ρ, ϕ)
-    else
-        ls = pejorative_manifold_direct_multiplicities(
-            v, w, zs, roundmul=roundmul)
-    end
-
-#    if cofactors
-#        return zs, ls, v, w
-#    else
-    return zs, ls
-#    end
-end
-
-
-# compute initial root approximations with multiplicities
-# when the multiplicity structure l is known
-# If method=direct and leastsquares=true, compute the cofactors v,w
-# using least-squares rather than Zeng's AGCD refinement strategy
-function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
-    l::Vector{Int};
-    method = :direct,
-    leastsquares = false,
-    roundmul = true,
-#    cofactors=false, # return cofactors v,w?
-    )  where {T,X}
-
-    S = float(T)
-    u = Polynomials.PnPolynomial{S,X}(S.(coeffs(p)))
-
-    # number of distinct roots
-    k = sum(l .> 0)
-
-    if method == :direct && leastsquares
-        n = degree(u)
-        Sy = Polynomials.NGCD.SylvesterMatrix(u, derivative(u), n-k)
-        b = Sy[1:end-1,2*k+1] - n * Sy[1:end-1,k] # X^k*p' - n*X^{k-1}*p
-        A = Sy[1:end-1,1:end .∉ [[k,2*k+1]]]
-        x = zeros(S, 2*k-1)
-        Polynomials.NGCD.qrsolve!(x, A, b)
-        # w = n*X^{k-1} + ...
-        w = Polynomials.PnPolynomial([x[1:k-1]; n])
-        # v = X^k + ...
-        v = Polynomials.PnPolynomial([-x[k:2*k-1]; 1])
-
-    else
-        u, v, w, _, _ = Polynomials.ngcd(u, derivative(u),
-            degree(u)-k)
-    end
-
-    # root approximations
-    zs = roots(v)
-
-    # recover multiplicities
-    ls = pejorative_manifold_multiplicities(Val(method), u,v, w, zs, l, roundmul=roundmul)
-#    if method == :iterative
-#        ls = pejorative_manifold_iterative_multiplicities(
-#            u, zs, l, roundmul=roundmul)
-#    else
-#        ls = pejorative_manifold_direct_multiplicities(
-#            v, w, zs, l, roundmul=roundmul)
-#    end
-
-#    if cofactors
-#        return zs, ls, v, w
-#    else
-    return zs, ls
-#    end
-end
-
-
+## ------- Step 1, get multiplicities
 # recover the multiplicity of each root approximation
-# using the iterative method of Zeng
-# but knowing the total multiplicity structure,
-# hence the degree of the approximate GCD at each iteration is known
-# if roundmul=true, round the floating-point multiplicities
-# to the closest integer
-#function pejorative_manifold_iterative_multiplicities(
+# using the `:iterative` method of Zeng
 function pejorative_manifold_multiplicities(
     ::Val{:iterative},
     u::Polynomials.PnPolynomial{T},
-    v,
-    w,
-    zs, l::Vector{Int},
-    args...;
-    roundmul = true) where {T}
-
-    ls = ones(Int, length(zs))
-    ll = copy(l)
-
-    while !Polynomials.isconstant(u)
-        # remove 1 to all multiplicities
-        ll .-= 1
-        deleteat!(ll, ll .== 0)
-        k = length(ll)
-        u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u), degree(u)-k)
-        for z ∈ roots(v)
-            _, ind = findmin(abs.(zs .- z))
-            ls[ind] += 1
-        end
-    end
-
-    # if roundmul
-    #     for i ∈ 1:length(ls)
-    #         _, ind = findmin(abs.(l .- ls[i]))
-    #         ls[i] = l[ind]
-    #     end
-    # end
-
-    if roundmul
-        ls = Int.(round.(real.(ls)))
-    end
-
-    return ls
-end
-
-# recover the multiplicity of each root approximation
-# using the iterative method of Zeng
-function pejorative_manifold_multiplicities(
-    ::Val{:iterative},
-    u::Polynomials.PnPolynomial{T},
-    v,
-    w,
+    v::Polynomials.PnPolynomial{T},
+    w::Polynomials.PnPolynomial{T},
     zs,
+    l::Any,
     ρⱼ,θ, ρ, ϕ;
     kwargs...) where {T}
 
@@ -360,66 +198,24 @@ function pejorative_manifold_multiplicities(
 
 end
 
-
-# recover the multiplicity of each root approximation
-# directly from the cofactors v,w s.t. p = u*v and q = u*w
-# if roundmul=true, round the floating-point multiplicities
-# to the closest integer
-#function pejorative_manifold_direct_multiplicities(
+# Use `:direct` method of Bréhard, Poteaux, and Soudant
+# to recover the multiplicity of each approximate root
+# directly from the cofactors v, w s.t. p = u*v and q = u*w
 function pejorative_manifold_multiplicities(
     ::Val{:direct},
-    u,
+    u::Polynomials.PnPolynomial{T},
     v::Polynomials.PnPolynomial{T},
     w::Polynomials.PnPolynomial{T},
     zs,
     args...;
-    roundmul = true) where {T}
+    kwargs...) where {T}
 
     dv = derivative(v)
     ls = w.(zs) ./ dv.(zs)
-
-    if roundmul
-        ls = Int.(round.(real.(ls)))
-    end
+    ls = round.(Int, real.(ls))
 
     return ls
 end
-
-# recover the multiplicity of each root approximation
-# directly from the cofactors v,w s.t. p = u*v and q = u*w
-# if roundmul=true, round the floating-point multiplicities
-# to the closest integer
-#function pejorative_manifold_direct_multiplicities(
-function pejorative_manifold_direct_multiplicities(
-    ::Val{:direct},
-    u,
-    v::Polynomials.PnPolynomial{T},
-    w::Polynomials.PnPolynomial{T},
-    zs,
-    l::Vector{Int},
-    args...;
-    roundmul = true) where {T}
-
-    @show :unneeded_method
-
-    ls = pejorative_manifold_direct_multiplicities(v, w, zs,
-        roundmul = false)
-
-    # if roundmul
-    #     for i ∈ 1:length(ls)
-    #         _, ind = findmin(abs.(l .- ls[i]))
-    #         ls[i] = l[ind]
-    #     end
-    #     ls = Int.(ls)
-    # end
-
-    if roundmul
-        ls = Int.(round.(real.(ls)))
-    end
-
-    return ls
-end
-
 
 
 
@@ -435,9 +231,10 @@ This follows Algorithm 1 of [Zeng](https://www.ams.org/journals/mcom/2005-74-250
 """
 function pejorative_root(p::Polynomials.StandardBasisPolynomial,
                          zs::Vector{S}, ls; kwargs...) where {S}
-    ps = (reverse ∘ coeffs)(p)
+    ps = reverse(coeffs(p))
     pejorative_root(ps, zs, ls; kwargs...)
 end
+
 
 # p is [1, a_{n-1}, a_{n-2}, ..., a_1, a_0]
 function pejorative_root(p, zs::Vector{S}, ls;
@@ -578,5 +375,141 @@ function show_stats(κ, ϵ)
     println("Estimated forward root error ‖z̃ - z‖₂ = ", κ * ϵ)
     println("")
 end
+
+
+## ---- Some alternatives
+# compute initial root approximations with multiplicities
+# when the number k of distinct roots is known
+# If method=direct and leastsquares=true, compute the cofactors v,w
+# using least-squares rather than Zeng's AGCD refinement strategy
+function pejorative_manifold(
+    p::Polynomials.StandardBasisPolynomial{T,X},
+    k::Int;
+    method = :direct,
+    leastsquares = false,
+    roundmul = true,
+    θ = 1e-8,  # zero singular-value threshold
+    ρ = 1e-10, # initial residual tolerance
+    ϕ = 100,   # residual growth factor
+)  where {T,X}
+
+    error("Does this get called?")
+
+    S = float(T)
+    u = Polynomials.PnPolynomial{S,X}(S.(coeffs(p)))
+
+    nu₂ = norm(u, 2)
+
+    if method == :direct && leastsquares
+        v,w = _ngcd(u,k)
+    else
+        u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u), degree(u)-k)
+        ρⱼ /= nu₂
+    end
+
+    # root approximations
+    zs = roots(v)
+
+    # recover multiplicities
+    ls = pejorative_manifold_multiplicities(
+        Val(method),
+        u, v, w,
+        zs, nothing,
+        ρⱼ, θ, ρ, ϕ)
+
+    roundmul && (ls = Int.(round.(real.(ls))))
+    return zs, ls
+
+end
+
+
+# compute initial root approximations with multiplicities
+# when the multiplicity structure l is known
+# If method=direct and leastsquares=true, compute the cofactors v,w
+# using least-squares rather than Zeng's AGCD refinement strategy
+function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
+    l::Vector{Int};
+    method = :direct,
+    leastsquares = false,
+    roundmul = true,
+    )  where {T,X}
+
+    error("Does this one get called?")
+
+
+    S = float(T)
+    u = Polynomials.PnPolynomial{S,X}(S.(coeffs(p)))
+
+    # number of distinct roots
+    k = sum(l .> 0)
+
+    if method == :direct && leastsquares
+        v, w = _ngcd(u, k)
+    else
+        u, v, w, _, _ = Polynomials.ngcd(u, derivative(u), degree(u)-k)
+    end
+
+    # root approximations
+    zs = roots(v)
+
+    # recover multiplicities
+    ls = pejorative_manifold_multiplicities(Val(method), u,v, w, zs, l; leastsquares=leastsquares)
+    roundmul && (ls = Int.(round.(real.(ls))))
+    return zs, ls
+end
+
+
+# use least-squares rather than Zeng's AGCD refinement strategy
+function _ngcd(u, k)
+    @show :_ngcd
+    n = degree(u)
+    Sy = Polynomials.NGCD.SylvesterMatrix(u, derivative(u), n-k)
+    b = Sy[1:end-1,2*k+1] - n * Sy[1:end-1,k] # X^k*p' - n*X^{k-1}*p
+    A = Sy[1:end-1,1:end .∉ [[k,2*k+1]]]
+    x = zeros(S, 2*k-1)
+    Polynomials.NGCD.qrsolve!(x, A, b)
+    # w = n*X^{k-1} + ...
+    w = Polynomials.PnPolynomial([x[1:k-1]; n])
+    # v = X^k + ...
+    v = Polynomials.PnPolynomial([-x[k:2*k-1]; 1])
+    v, w
+end
+
+
+# recover the multiplicity of each root approximation
+# using the iterative method of Zeng
+# but knowing the total multiplicity structure,
+# hence the degree of the approximate GCD at each iteration is known
+# if roundmul=true, round the floating-point multiplicities
+# to the closest integer
+#function pejorative_manifold_iterative_multiplicities(
+function pejorative_manifold_multiplicities(
+    ::Val{:iterative},
+    u::Polynomials.PnPolynomial{T},
+    v::Polynomials.PnPolynomial{T},
+    w::Polynomials.PnPolynomial{T},
+    zs,
+    l::Vector{Int},
+    args...; kwargs...) where {T}
+
+    ls = ones(Int, length(zs))
+    ll = copy(l)
+
+    while !Polynomials.isconstant(u)
+        # remove 1 to all multiplicities
+        ll .-= 1
+        deleteat!(ll, ll .== 0)
+        k = length(ll)
+        u, v, w, ρⱼ, κ = Polynomials.ngcd(u, derivative(u), degree(u)-k)
+        for z ∈ roots(v)
+            _, ind = findmin(abs.(zs .- z))
+            ls[ind] += 1
+        end
+    end
+
+    return ls
+end
+
+## --------
 
 end
