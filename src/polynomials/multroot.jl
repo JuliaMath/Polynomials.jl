@@ -13,6 +13,14 @@ Use `multroot` algorithm of
 to identify roots of polynomials with suspected multiplicities over
 `Float64` values, typically.
 
+* `p`: a standard basis polynomial
+* `method`: If `:direct` uses a method of Brehard, Poteaux, and Soudant to identify the multiplicity structure of the roots, if `:iterative` uses the Zeng method.
+
+The keyword arguments can be used to adjust the floating-point tolerances.
+
+Returns a named tuple with the identified roots (`values`), the corresponding multiplicities (`multiplicities`) and estimates for the condition number (`κ`) and the backward error (`‖p̃ - p‖_w`).
+
+
 Example:
 
 ```jldoctest
@@ -36,6 +44,8 @@ Dict{Float64, Int64} with 2 entries:
   1.41421 => 3
   1.0     => 2
 ```
+
+## Extended help
 
 The algorithm has two stages. First it uses `pejorative_manifold` to
 identify the number of distinct roots and their multiplicities. This
@@ -65,8 +75,8 @@ multiplicity structure:
   method, a suggested value is `1e-10`.
 
 * `ϕ`: A scale factor, set to `100`. As the `ngcd` algorithm is called
-  recursively, this allows the residual tolerance to scale up to match
-  increasing numeric errors.
+  recursively for the `:iterative` method, this allows the residual tolerance
+  to scale up to match increasing numeric errors.
 
 Returns a named tuple with
 
