@@ -241,7 +241,7 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
 end
 
 """
-    gcd(p1::StandardBasisPolynomial, p2::StandardBasisPolynomial; method=:eculidean, kwargs...)
+    gcd(p1::StandardBasisPolynomial, p2::StandardBasisPolynomial; method=:euclidean, kwargs...)
 
 Find the greatest common divisor.
 
