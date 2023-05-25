@@ -513,7 +513,7 @@ end
 # skip some degrees
 function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, degs) where {T <: Number}
     A = Matrix{T}(undef, length(x),  length(degs))
-    Aᵢ = one.(x)
+    Aᵢ = ones(T, length(x))
 
     i′ = 1
     for i ∈ 0:maximum(degs)
