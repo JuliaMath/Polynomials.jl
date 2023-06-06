@@ -494,12 +494,12 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
     if isnothing(K)
         return R[]
     end
-    k =  findfirst(!iszero, as)
+    k =  findfirst(!iszero, as)::Int
 
-    k  == K && return zeros(R, k-1)
+    k == K && return zeros(R, k-1)
 
     # find eigenvalues of the companion matrix of the 0-deflated polynomial
-    comp  = companion(⟒(P)(as[k:K], indeterminate(p)))
+    comp  = companion(⟒(P)(as[k:K], Var(indeterminate(p))))
     L = eigvals(comp; kwargs...)
     append!(L, zeros(eltype(L), k-1))
 
