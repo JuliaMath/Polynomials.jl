@@ -14,7 +14,7 @@ export fromroots,
        integrate,
        derivative,
        variable,
-       @variable,
+       @variable, # deprecated!!
        isintegral,
        ismonic
 
@@ -881,10 +881,12 @@ variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(
 variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 
+# Exported in #470. Exporting was a mistake!
 #@variable x
 #@variable x::Polynomial
 #@variable x::Polynomial{t]
 macro variable(x)
+    Base.depwarn("Export of macro `@variable` is deprecated due to naming conflicts", :variable)
     q = Expr(:block)
     if isa(x, Expr) && x.head == :(::)
         x, P = x.args
