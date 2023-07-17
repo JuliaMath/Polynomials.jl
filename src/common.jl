@@ -712,7 +712,7 @@ function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T}
     idx > M && return zero(T)
     p.coeffs[idx - m + 1]
 end
-Base.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
+#XXXBase.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
 Base.getindex(p::AbstractPolynomial, indices) = [p[i] for i in indices]
 Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 

@@ -3,6 +3,7 @@ module Polynomials
 #  using GenericLinearAlgebra ## remove for now. cf: https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl/pull/71#issuecomment-743928205
 using LinearAlgebra
 import Base: evalpoly
+using Setfield
 
 include("abstract.jl")
 include("show.jl")
@@ -30,6 +31,17 @@ include("rational-functions/rational-function.jl")
 include("rational-functions/fit.jl")
 #include("rational-functions/rational-transfer-function.jl")
 include("rational-functions/plot-recipes.jl")
+
+# polynomials with explicit basis
+include("abstract-polynomial.jl")
+include("basis-utils.jl")
+include("polynomial-basetypes/dense-polynomial.jl")
+include("polynomial-basetypes/immutable-polynomial.jl")
+include("polynomial-basetypes/sparse-polynomial.jl")
+include("standard-basis/standard-basis.jl")
+include("standard-basis/standard-dense.jl")
+include("standard-basis/standard-immutable.jl")
+include("standard-basis/standard-sparse.jl")
 
 
 # compat; opt-in with `using Polynomials.PolyCompat`

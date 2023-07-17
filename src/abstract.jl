@@ -1,5 +1,5 @@
 export AbstractPolynomial
-
+export AbstractUnivariatePolynomial
 
 # *internal* means to pass variable symbol to constructor through 2nd position and keep type stability
 struct Var{T} end
@@ -13,7 +13,7 @@ Base.Symbol(::Val{T}) where {T} = Symbol(T)
 """
     AbstractPolynomial{T,X}
 
-An abstract type for various polynomials.
+An abstract type for various polynomials with an *implicit* basis.
 
 A polynomial type holds an indeterminate `X`; coefficients of type `T`, stored in some container type; and an implicit basis, such as the standard basis.
 
