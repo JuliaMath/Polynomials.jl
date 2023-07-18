@@ -81,7 +81,6 @@ function Base.convert(::Type{<:ImmutableDensePolynomial{B,T,X,N}},
     N < N′ && throw(ArgumentError("Wrong size"))
     N > N′ && return ImmutableDensePolynomial{B,T,X,N}(ntuple(i -> T(p[i-1]), Val(N)))
     ImmutableDensePolynomial{B,T,X,N}(ntuple(i -> T(p[i-1]), Val(N)))
-#    convert(ImmutableDensePolynomial{B,T,X}, p)
 end
 
 Base.copy(p::ImmutableDensePolynomial) = p
@@ -109,12 +108,7 @@ function trim_trailing_zeros(cs::Tuple)
     xs
 end
 
-# doesn't match
-# function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X},
-#                        p2::AbstractUnivariatePolynomial{B,T,X};
-#                        rtol::Real = (Base.rtoldefault(T,T,0)),
-#                        atol::Real = 0,) where {B,T,X}
-
+# isapprox helper
 function normΔ(q1::ImmutableDensePolynomial{B}, q2::ImmutableDensePolynomial{B}, p::Real = 2) where {B}
     iszero(q1) && return norm(q2, p)
     iszero(q2) && return norm(q1, p)
@@ -156,8 +150,8 @@ Base.zero(::Type{<:ImmutableDensePolynomial{B,T,X}}) where {B,T,X} =
     ImmutableDensePolynomial{B,T,X,0}(())
 
 function isconstant(p::ImmutableDensePolynomial)
-    cs = trim_trailing_zeros(p.coeffs)
-    length(cs) ≤ 1
+    i = findlast(!iszero, p.coeffs)
+    return i ≤ 1
 end
 
 Base.firstindex(p::ImmutableDensePolynomial) = 0

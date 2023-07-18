@@ -33,7 +33,7 @@ function variable(P::Type{<:AbstractUnivariatePolynomial{B,T,X}}) where {B<:Stan
     basis(P, 1)
 end
 
-function basis(P::Type{<:AbstractUnivariatePolynomial{B, T, X}}, i) where {B<:StandardBasis,T,X}
+function basis(P::Type{<:AbstractUnivariatePolynomial{B, T, X}}, i::Int) where {B<:StandardBasis,T,X}
     cs = ones(T,1)
     P(cs, i)
 end

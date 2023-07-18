@@ -3,7 +3,12 @@ export AbstractUnivariatePolynomial
 
 # *internal* means to pass variable symbol to constructor through 2nd position and keep type stability
 struct Var{T} end
+Var(x::Var) = x
 Var(x::Symbol) = Var{x}()
+Var(x::Type{Var{u}}) where {u} = x
+Var(x::AbstractString) = Var(Symbol(x))
+Var(x::Char) = Var(Symbol(x))
+
 Symbol(::Var{T}) where {T} = T
 
 const SymbolLike = Union{AbstractString,Char,Symbol, Var{T} where T}

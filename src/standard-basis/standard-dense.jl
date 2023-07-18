@@ -17,12 +17,12 @@ function _evalpoly(p:: MutableDensePolynomial{StandardBasis,T,X}, c) where {T,X}
     Base.evalpoly(c, p.coeffs) * c^p.order
 end
 
-function isconstant(p:: MutableDensePolynomial{StandardBasis})
-    firstindex(p) != 0 && return false
-    i = findlast(!iszero, p.coeffs)
-    i == nothing && return true
-    i == 1 && return true
-end
+# function isconstant(p:: MutableDensePolynomial{StandardBasis})
+#     firstindex(p) != 0 && return false
+#     i = findlast(!iszero, p.coeffs)
+#     i == nothing && return true
+#     i == 1 && return true
+# end
 
 # scalar add
 function scalar_add(c::S, p:: MutableDensePolynomial{StandardBasis,T,X}) where {S, T, X}

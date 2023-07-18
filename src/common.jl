@@ -456,7 +456,7 @@ check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial) =
     (isconstant(p) || isconstant(q)) || indeterminate(p) ==  indeterminate(q)
 
 function assert_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
-    check_same_variable(p,q) || throw(ArgumentError("Polynomials have different indeterminates"))
+    check_same_variable(p,q) || throw(ArgumentError("Non-constant polynomials have different indeterminates"))
 end
 
 function assert_same_variable(X::Symbol, Y::Symbol)
@@ -622,7 +622,7 @@ hasnan(x) = isnan(x)
 
 Is the polynomial  `p` a constant.
 """
-isconstant(p::AbstractPolynomial) = degree(p) <= 0
+isconstant(p::AbstractPolynomial) = degree(p) <= 0 && firstindex(p) == 0
 
 """
     coeffs(::AbstractPolynomial)
@@ -805,11 +805,9 @@ Base.hash(p::AbstractPolynomial, h::UInt) = hash(indeterminate(p), hash(coeffs(p
 # get symbol of polynomial. (e.g. `:x` from 1x^2 + 2x^3...
 _indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
 _indeterminate(::Type{P}) where {T, X, P <: AbstractPolynomial{T,X}} = X
-function indeterminate(::Type{P}) where {P <: AbstractPolynomial}
-    X = _indeterminate(P)
-    isnothing(X) ? :x : X
-end
+indeterminate(::Type{P}) where {P <: AbstractPolynomial} = something(_indeterminate(P), :x)
 indeterminate(p::P) where {P <: AbstractPolynomial} = _indeterminate(P)
+
 function indeterminate(PP::Type{P}, p::AbstractPolynomial{T,Y}) where {P <: AbstractPolynomial, T,Y}
     X = _indeterminate(PP)
     isnothing(X) && return Y
@@ -817,9 +815,7 @@ function indeterminate(PP::Type{P}, p::AbstractPolynomial{T,Y}) where {P <: Abst
     return X
     #X = isnothing(_indeterminate(PP)) ? indeterminate(p) :  _indeterminate(PP)
 end
-function indeterminate(PP::Type{P}, x::Symbol) where {P <: AbstractPolynomial}
-    X = isnothing(_indeterminate(PP)) ? x :  _indeterminate(PP)
-end
+indeterminate(PP::Type{P}, x::Symbol) where {P <: AbstractPolynomial} = something(_indeterminate(PP), x)
 
 #=
 zero, one, variable, basis =#

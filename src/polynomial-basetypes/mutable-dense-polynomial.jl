@@ -89,7 +89,7 @@ end
 
 
 Base.copy(p::MutableDensePolynomial{B,T,X}) where {B,T,X} =
-    MutableDensePolynomial{B,T,Var(X)}(copy(p.coeffs), order(p))
+    MutableDensePolynomial{B,T,Var(X)}(copy(p.coeffs), firstindex(p))
 
 # This is B <: StandardBasis?
 Base.firstindex(p::MutableDensePolynomial) = p.order
@@ -128,6 +128,8 @@ _zeros(::Type{<:MutableDensePolynomial}, z, N)  = fill(z, N)
 
 # iszero, isconstant
 Base.iszero(p::MutableDensePolynomial) = iszero(p.coeffs)::Bool
+
+degree(p::MutableDensePolynomial) = lastindex(p)
 
 # zero, one, variable, basis
 Base.zero(::Type{MutableDensePolynomial{B,T,X}}) where {B,T,X} =

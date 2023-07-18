@@ -28,20 +28,15 @@ Base.lastindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
 Base.iterate(p::AbstractUnivariatePolynomial, args...) = Base.iterate(p.coeffs, args...)
 Base.pairs(p::AbstractUnivariatePolynomial) = XXX()
 
-Base.eltype(::Type{<:AbstractUnivariatePolynomial}) = Float64
+#Base.eltype(::Type{<:AbstractUnivariatePolynomial}) = Float64
 Base.eltype(::Type{<:AbstractUnivariatePolynomial{B,T}}) where {B,T} = T
 
 Base.size(p::AbstractUnivariatePolynomial) = (length(p),)
 Base.size(p::AbstractUnivariatePolynomial, i::Integer) =  i <= 1 ? size(p)[i] : 1
 
 
-hasnan(p::AbstractUnivariatePolynomial) = any(hasnan, p)
+#hasnan(p::AbstractUnivariatePolynomial) = any(hasnan, p)
 
-
-function LinearAlgebra.norm(q::AbstractUnivariatePolynomial, p::Real = 2)
-    vs = values(q)
-    return norm(vs, p) # if vs=() must be handled in special type
-end
 # norm(q1 - q2)
 function normΔ(q1::AbstractUnivariatePolynomial, q2::AbstractUnivariatePolynomial, p::Real = 2)
     iszero(q1) && return norm(q2, p)
@@ -54,6 +49,75 @@ function normΔ(q1::AbstractUnivariatePolynomial, q2::AbstractUnivariatePolynomi
     return tot^(1/p)
 end
 
+
+# map Polynomial terms -> vector terms
+degree(p::AbstractUnivariatePolynomial) = iszero(p) ? -1 : lastindex(p)
+# order(p::AbstractUnivariatePolynomial) = firstindex(p) XXX conflicts with DataFrames.order
+
+# this helps, along with _set, make some storage-generic methods
+_zeros(p::P, z, N) where {P <: AbstractUnivariatePolynomial} = _zeros(P, z, N)
+_set(c::Vector, i, val)  = (c[i] = val; c)
+_set(c::AbstractDict, i, val)  = (c[i] = val; c)
+function _set(c::Tuple, i, val)
+    @set! c[i] = val
+    c
+end
+
+#check_same_variable(p::AbstractUnivariatePolynomial, q::AbstractUnivariatePolynomial) = indeterminate(p) == indeterminate(q)
+
+# The zero polynomial. Typically has no coefficients
+#Base.zero(p::P,args...) where {P <: AbstractUnivariatePolynomial} = zero(P,args...)
+Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){B,eltype(P),indeterminate(P)})
+Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){B,eltype(P),Symbol(var)})
+
+# the polynomial 1
+#Base.one(p::P,args...) where {P <: AbstractUnivariatePolynomial} = one(P,args...)
+Base.one(::Type{P}) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){B,eltype(P),indeterminate(P)})
+Base.one(::Type{P}, var::SymbolLike) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){B,eltype(P),Symbol(var)})
+
+# the variable x
+#variable(p::P) where {P <: AbstractUnivariatePolynomial} = variable(P)
+variable(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = variable(⟒(P){B,eltype(P),indeterminate(P)})
+variable(::Type{P}, var::SymbolLike) where {B,P<:AbstractUnivariatePolynomial{B}} = variable(⟒(P){B,eltype(P),Var(var)})
+
+# i -> basis polynomial
+basis(p::P, i::Int) where {P <: AbstractUnivariatePolynomial} = basis(P, i)
+basis(::Type{P}, i::Int) where {B,P <: AbstractUnivariatePolynomial{B}} = basis(⟒(P){B,eltype(P),indeterminate(P)}, i)
+
+# return dense coefficients (vector or tuple)
+coeffs(p::AbstractUnivariatePolynomial) = [p[i] for i ∈ firstindex(p):lastindex(p)]
+
+# function isconstant(p::AbstractUnivariatePolynomial)
+#     p₀ = trim_trailing_zeros(p)
+#     return (firstindex(p₀) == lastindex(p₀) == 0)
+# end
+
+# chop chops right side of p
+# use trunc for left and right
+# can pass tolerances
+Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
+chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
+
+## --- constant term ---
+
+# arithmetic dispatch
+struct ConstantTerm{T}
+    x::T
+end
+function ConstantTerm(p::AbstractUnivariatePolynomial)
+    isconstant(p) || throw(ArgumentError("Non-constant polynomial"))
+    convert(ConstantTerm, p)
+end
+Base.getindex(b::ConstantTerm) = b.x
+Base.show(io::IO, c::ConstantTerm) = print(io, c.x)
+Base.iszero(b::ConstantTerm) = iszero(b.x)
+isconstant(::ConstantTerm) = true
+Base.convert(::Type{ConstantTerm}, p::AbstractUnivariatePolynomial) = ConstantTerm(constantterm(p))
+Base.convert(::Type{ConstantTerm{T}}, p::AbstractUnivariatePolynomial) where {T} = ConstantTerm(T(constantterm(p)))
+
+## ---
+
+#= Comparisons =#
 # need to promote Number -> Poly
 # Base.isapprox(p1::AbstractUnivariatePolynomial, p2::Number; kwargs...) = isapprox(promote(p1, p2)...; kwargs...)
 # Base.isapprox(p1::Number, p2::AbstractUnivariatePolynomial; kwargs...) = isapprox(promote(p1, p2)...; kwargs...)
@@ -61,11 +125,6 @@ function Base.isapprox(p1::AbstractUnivariatePolynomial, p2::AbstractUnivariateP
     isapprox(promote(p1, p2)...; kwargs...)
 end
 
-function assert_same_variable(p1::AbstractUnivariatePolynomial, p2::AbstractUnivariatePolynomial)
-    (isconstant(p1) || isconstant(p2) ) && return true
-    indeterminate(p1) == indeterminate(p2) && return true
-    throw(ArgumentError("Polynomials have different indeterminates"))
-end
 function Base.isapprox(p1::AbstractUnivariatePolynomial{B}, p2::AbstractUnivariatePolynomial{B}; kwargs...) where {B}
     if isconstant(p1)
         isconstant(p2) && return constantterm(p1) == constantterm(p2)
@@ -100,63 +159,6 @@ function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X}, p2::Number; kwar
 end
 Base.isapprox(p1::Number, p2::AbstractUnivariatePolynomial; kwargs...) = isapprox(p2, p1; kwargs...)
 
-# map Polynomial terms -> vector terms
-degree(p::AbstractUnivariatePolynomial) = iszero(p) ? -1 : lastindex(p)
-order(p::AbstractUnivariatePolynomial) = firstindex(p)
-
-_zeros(p::P, z, N) where {P <: AbstractUnivariatePolynomial} = _zeros(P, z, N)
-
-check_same_variable(p::AbstractUnivariatePolynomial, q::AbstractUnivariatePolynomial) = indeterminate(p) == indeterminate(q)
-
-# The zero polynomial. Typically has no coefficients
-Base.zero(p::P,args...) where {P <: AbstractUnivariatePolynomial} = zero(P,args...)
-Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){B,eltype(P),indeterminate(P)})
-Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){B,eltype(P),Symbol(var)})
-
-# the polynomial 1
-Base.one(p::P,args...) where {P <: AbstractUnivariatePolynomial} = one(P,args...)
-Base.one(::Type{P}) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){B,eltype(P),indeterminate(P)})
-Base.one(::Type{P}, var::SymbolLike) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){B,eltype(P),Symbol(var)})
-
-# the variable x
-variable(p::P) where {P <: AbstractUnivariatePolynomial} = variable(P)
-variable(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = variable(⟒(P){B,eltype(P),indeterminate(P)})
-variable(::Type{P}, var::SymbolLike) where {B,P<:AbstractUnivariatePolynomial{B}} = variable(⟒(P){B,eltype(P),Var(var)})
-
-# i -> basis polynomial
-basis(p::P, i) where {P <: AbstractUnivariatePolynomial} = basis(P, i)
-basis(::Type{P}, i) where {B,P <: AbstractUnivariatePolynomial{B}} = basis(⟒(P){B,eltype(P),indeterminate(P)}, i)
-
-# return dense coefficients (vector or tuple)
-coeffs(p::AbstractUnivariatePolynomial) = [p[i] for i ∈ firstindex(p):lastindex(p)]
-
-function isconstant(p::AbstractUnivariatePolynomial)
-    p₀ = trim_trailing_zeros(p)
-    return (firstindex(p₀) == lastindex(p₀) == 0)
-end
-
-# chop chops right (and left side
-# can pass tolerances
-Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
-chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
-
-
-# arithmetic dispatch
-struct ConstantTerm{T}
-    x::T
-end
-function ConstantTerm(p::AbstractUnivariatePolynomial)
-    isconstant(p) || throw(ArgumentError("Non-constant polynomial"))
-    convert(ConstantTerm, p)
-end
-Base.getindex(b::ConstantTerm) = b.x
-Base.show(io::IO, c::ConstantTerm) = print(io, c.x)
-Base.iszero(b::ConstantTerm) = iszero(b.x)
-isconstant(::ConstantTerm) = true
-Base.convert(::Type{ConstantTerm}, p::AbstractUnivariatePolynomial) = ConstantTerm(constantterm(p))
-Base.convert(::Type{ConstantTerm{T}}, p::AbstractUnivariatePolynomial) where {T} = ConstantTerm(T(constantterm(p)))
-
-#= Comparisons =#
 Base.isequal(p1::P, p2::P) where {P <: AbstractUnivariatePolynomial} = hash(p1) == hash(p2)
 function Base.:(==)(p1::P, p2::P) where {P <: AbstractUnivariatePolynomial}
     iszero(p1) && iszero(p2) && return true
@@ -182,6 +184,7 @@ end
 Base.:(==)(p::AbstractUnivariatePolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
 Base.:(==)(n::Number, p::AbstractUnivariatePolynomial) = p == n
 
+## --- arithmetic operations ---
 
 Base.:-(p::AbstractUnivariatePolynomial) = scalar_mul(-1, p)
 
@@ -198,8 +201,6 @@ Base.:+(p::AbstractUnivariatePolynomial{B, T, X},
 Base.:+(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y} =
             _mixed_symbol_op(+, p, q)
-
-
 
 Base.:-(c::Number, p::AbstractUnivariatePolynomial) = c + (-p)
 Base.:-(p::AbstractUnivariatePolynomial, c::Number) = p + (-c)
@@ -236,14 +237,15 @@ Base.:^(p::AbstractUnivariatePolynomial, n::Integer) = Base.power_by_squaring(p,
 function _mixed_symbol_op(op,
                           p::AbstractUnivariatePolynomial{B, T, X},
                           q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y}
-    X == Y && throw(ArgumentError("dispatch"))
+    X == Y && throw(ArgumentError("dispatch should catch this case"))
     if isconstant(p)
         return  op(convert(ConstantTerm, p), q)
     elseif isconstant(q)
         return  op(p, convert(ConstantTerm, q))
     end
-    throw(ArgumentError("Operation with non-constant polynomials having different indeterminates"))
+    assert_same_variable(X,Y)
 end
+
 
 # only need to define differentiate(p::PolyType)
 function derivative(p::AbstractUnivariatePolynomial, n::Int=0)

@@ -1,7 +1,7 @@
 #const SparsePolynomial = SparseUnivariatePolynomial{StandardBasis} # const is important!
 #export SparsePolynomial
 
-function evalpoly(x, p::SparseUnivariatePolynomial)
+function evalpoly(x, p::MutableSparsePolynomial)
 
     tot = zero(p[0]*x)
     for (i, cᵢ) ∈ p.coeffs
@@ -11,15 +11,15 @@ function evalpoly(x, p::SparseUnivariatePolynomial)
 end
 
 
-function constantterm(p::SparseUnivariatePolynomial{B,T,X}) where {B,T,X}
+function constantterm(p::MutableSparsePolynomial{B,T,X}) where {B,T,X}
     get(p.coeffs, 0, zero(T))
 end
 
-function ⊗(p::SparseUnivariatePolynomial{StandardBasis,T,X},
-           q::SparseUnivariatePolynomial{StandardBasis,S,X}) where {T,S,X}
+function ⊗(p::MutableSparsePolynomial{StandardBasis,T,X},
+           q::MutableSparsePolynomial{StandardBasis,S,X}) where {T,S,X}
     # simple convolution
     R = promote_type(T,S)
-    P = SparseUnivariatePolynomial{StandardBasis,R,X}
+    P = MutableSparsePolynomial{StandardBasis,R,X}
 
     z = zero(R)
     cs = Dict{Int, R}()

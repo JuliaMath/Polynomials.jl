@@ -1,14 +1,3 @@
-# container of zeros
-# make generic so that _set can be used generically
-
-_set(c::Vector, i, val)  = (c[i] = val; c)
-_set(c::AbstractDict, i, val)  = (c[i] = val; c)
-function _set(c::Tuple, i, val)
-    @set! c[i] = val
-    c
-end
-
-
 _norm(x,p=2) = real(sqrt(sum(xᵢ^2 for xᵢ ∈ x)))
 gtτ(x, τ) = abs(x) > τ
 
