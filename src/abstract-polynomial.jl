@@ -4,6 +4,10 @@
 abstract type AbstractUnivariatePolynomial{B, T, X} <: AbstractPolynomial{T,X} end
 abstract type AbstractBasis end
 
+## idea is vector space stuff (scalar_add, scalar_mult, vector +/-, ^) goes here
+## connection (convert, transform) is specific to a basis (storage)
+## ⊗(p::P{T,X}, q::P{S,Y}) is specic to basis/storage
+
 
 basistype(p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = B
 Base.eltype(p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = T
@@ -13,7 +17,7 @@ _indeterminate(::Type{P}) where {B,T, X, P <: AbstractUnivariatePolynomial{B,T,X
 indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = something(_indeterminate(P), :x)
 
 constructorof(::Type{<:AbstractUnivariatePolynomial}) = XXX()
-⟒(P::Type{<:AbstractUnivariatePolynomial})  = constructorof(P)
+⟒(P::Type{<:AbstractUnivariatePolynomial})  = constructorof(P) # returns the Storage{Basis} partially constructed type
 ⟒(p::P) where {P <: AbstractUnivariatePolynomial} = ⟒(P)
 
 ## Julia generics treating coefficients as an abstract vector
@@ -33,6 +37,11 @@ Base.eltype(::Type{<:AbstractUnivariatePolynomial{B,T}}) where {B,T} = T
 
 Base.size(p::AbstractUnivariatePolynomial) = (length(p),)
 Base.size(p::AbstractUnivariatePolynomial, i::Integer) =  i <= 1 ? size(p)[i] : 1
+
+Base.copy(p::AbstractUnivariatePolynomial) = XXX()
+
+# dense collection
+Base.iterate(p::AbstractUnivariatePolynomial, state = firstindex(p)) = _iterate(p, state) # _iterate in common.jl
 
 
 #hasnan(p::AbstractUnivariatePolynomial) = any(hasnan, p)
@@ -67,22 +76,26 @@ end
 
 # The zero polynomial. Typically has no coefficients
 #Base.zero(p::P,args...) where {P <: AbstractUnivariatePolynomial} = zero(P,args...)
-Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){B,eltype(P),indeterminate(P)})
-Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){B,eltype(P),Symbol(var)})
+Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),indeterminate(P)})
+Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),Symbol(var)})
 
 # the polynomial 1
 #Base.one(p::P,args...) where {P <: AbstractUnivariatePolynomial} = one(P,args...)
-Base.one(::Type{P}) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){B,eltype(P),indeterminate(P)})
-Base.one(::Type{P}, var::SymbolLike) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){B,eltype(P),Symbol(var)})
+Base.one(::Type{P}) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){eltype(P),indeterminate(P)})
+Base.one(::Type{P}, var::SymbolLike) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){eltype(P),Symbol(var)})
 
 # the variable x
 #variable(p::P) where {P <: AbstractUnivariatePolynomial} = variable(P)
-variable(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = variable(⟒(P){B,eltype(P),indeterminate(P)})
-variable(::Type{P}, var::SymbolLike) where {B,P<:AbstractUnivariatePolynomial{B}} = variable(⟒(P){B,eltype(P),Var(var)})
+variable(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = variable(⟒(P){eltype(P),indeterminate(P)})
+variable(::Type{P}, var::SymbolLike) where {B,P<:AbstractUnivariatePolynomial{B}} = variable(⟒(P){eltype(P),Var(var)})
 
 # i -> basis polynomial
 basis(p::P, i::Int) where {P <: AbstractUnivariatePolynomial} = basis(P, i)
-basis(::Type{P}, i::Int) where {B,P <: AbstractUnivariatePolynomial{B}} = basis(⟒(P){B,eltype(P),indeterminate(P)}, i)
+basis(::Type{P}, i::Int) where {B,P <: AbstractUnivariatePolynomial{B}} = basis(⟒(P){eltype(P),indeterminate(P)}, i)
+
+_convert(p::P, as) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(as)
+copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {B,T, X, S, Y, P <:AbstractUnivariatePolynomial{B,S,Y}} =
+    ⟒(P){T, Symbol(X)}(p.coeffs)
 
 # return dense coefficients (vector or tuple)
 coeffs(p::AbstractUnivariatePolynomial) = [p[i] for i ∈ firstindex(p):lastindex(p)]
@@ -95,7 +108,7 @@ coeffs(p::AbstractUnivariatePolynomial) = [p[i] for i ∈ firstindex(p):lastinde
 # chop chops right side of p
 # use trunc for left and right
 # can pass tolerances
-Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
+Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = chop!(copy(p))
 chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
 
 ## --- constant term ---
@@ -114,6 +127,7 @@ Base.iszero(b::ConstantTerm) = iszero(b.x)
 isconstant(::ConstantTerm) = true
 Base.convert(::Type{ConstantTerm}, p::AbstractUnivariatePolynomial) = ConstantTerm(constantterm(p))
 Base.convert(::Type{ConstantTerm{T}}, p::AbstractUnivariatePolynomial) where {T} = ConstantTerm(T(constantterm(p)))
+
 
 ## ---
 
@@ -154,7 +168,7 @@ function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X},
 end
 
 function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X}, p2::Number; kwargs...) where {B,T,X}
-    q = p2 * one(⟒(p1){B,T,X})
+    q = p2 * one(⟒(p1){T,X})
     isapprox(p1, q; kwargs...)
 end
 Base.isapprox(p1::Number, p2::AbstractUnivariatePolynomial; kwargs...) = isapprox(p2, p1; kwargs...)
@@ -185,11 +199,18 @@ Base.:(==)(p::AbstractUnivariatePolynomial, n::Number) = degree(p) <= 0 && const
 Base.:(==)(n::Number, p::AbstractUnivariatePolynomial) = p == n
 
 ## --- arithmetic operations ---
+## implement
+## * unary - : here using scalar_mutl
+## * scalar_add : with basis
+## * scalar_mult : with storage type
+## * scalar division: here using scalar_mult
+## * polynomial addition: with storage type
+## * polynomial multiplication: resolstorage type + basis
+##
+Base.:-(p::AbstractUnivariatePolynomial) = scalar_mult(-1, p)
 
-Base.:-(p::AbstractUnivariatePolynomial) = scalar_mul(-1, p)
-
-Base.:+(c::Number, p::AbstractUnivariatePolynomial) = scalar_add(p, c)
-Base.:+(p::AbstractUnivariatePolynomial, c::Number) = scalar_add(p, c)
+Base.:+(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_add(p, c)
+Base.:+(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_add(p, c)
 Base.:+(c::ConstantTerm, p::AbstractUnivariatePolynomial) = scalar_add(p, c[])
 Base.:+(p::AbstractUnivariatePolynomial, c::ConstantTerm) = scalar_add(p, c[])
 scalar_add(p::AbstractUnivariatePolynomial, c) = scalar_add(c,p) # scalar addition is commutative
@@ -202,8 +223,8 @@ Base.:+(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y} =
             _mixed_symbol_op(+, p, q)
 
-Base.:-(c::Number, p::AbstractUnivariatePolynomial) = c + (-p)
-Base.:-(p::AbstractUnivariatePolynomial, c::Number) = p + (-c)
+Base.:-(c::Scalar, p::AbstractUnivariatePolynomial) = c + (-p)
+Base.:-(p::AbstractUnivariatePolynomial, c::Scalar) = p + (-c)
 Base.:-(c::ConstantTerm, p::AbstractUnivariatePolynomial) = (-c[]) + p
 Base.:-(p::AbstractUnivariatePolynomial, c::ConstantTerm) = p - c[]
 
@@ -213,23 +234,24 @@ Base.:-(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y} =
             _mixed_symbol_op(-, p, q)
 
-Base.:*(c::Number, p::ConstantTerm) = ConstantTerm(c*p[])
-Base.:*(p::ConstantTerm, c::Number) = ConstantTerm(p[] * c)
+Base.:*(c::Scalar, p::ConstantTerm) = ConstantTerm(c*p[])
+Base.:*(p::ConstantTerm, c::Scalar) = ConstantTerm(p[] * c)
 
-Base.:*(c::Number, p::AbstractUnivariatePolynomial) = scalar_mul(c, p)
-Base.:*(c::ConstantTerm, p::AbstractUnivariatePolynomial) = scalar_mul(c[], p)
-Base.:*(p::AbstractUnivariatePolynomial, c::Number) = scalar_mul(p, c)
-Base.:*(p::AbstractUnivariatePolynomial, c::ConstantTerm) = scalar_mul(p, c[])
+Base.:*(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_mult(c, p)
+Base.:*(c::ConstantTerm, p::AbstractUnivariatePolynomial) = scalar_mult(c[], p)
+Base.:*(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_mult(p, c)
+Base.:*(p::AbstractUnivariatePolynomial, c::ConstantTerm) = scalar_mult(p, c[])
 
 Base.:*(p::AbstractUnivariatePolynomial{B, T, X},
-        q::AbstractUnivariatePolynomial{B, S, X}) where {B,T,S,X} =
+        q::AbstractUnivariatePolynomial{B, S, X}) where {B,T,S,X} = *(promote(p,q)...)
+Base.:*(p::P, q::P) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} =
             ⊗(p, q)
 Base.:*(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y}  =
             _mixed_symbol_op(*, p, q)
 
-Base.:/(p::AbstractUnivariatePolynomial, c::Number) = scalar_mul(p, one(eltype(p))/c)
-Base.:/(p::AbstractUnivariatePolynomial, c::ConstantTerm) = scalar_mul(p, one(eltype(p))/c)
+Base.:/(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_mult(p, one(eltype(p))/c)
+Base.:/(p::AbstractUnivariatePolynomial, c::ConstantTerm) = scalar_mult(p, one(eltype(p))/c)
 
 Base.:^(p::AbstractUnivariatePolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
@@ -248,8 +270,9 @@ end
 
 
 # only need to define differentiate(p::PolyType)
-function derivative(p::AbstractUnivariatePolynomial, n::Int=0)
-    n <= 0 && return 1p
+function derivative(p::AbstractUnivariatePolynomial, n::Int=1)
+    n < 0 && throw(ArgumentError("n must be non-negative"))
+    iszero(n) && return p
     p′ = differentiate(p)
     for i ∈ 2:n
         p′ = differentiate(p′)
@@ -260,7 +283,7 @@ const differentiate = derivative
 
 # only need to define integrate(p::PolyType)
 function integrate(p::AbstractUnivariatePolynomial, c)
-    integrate(p) + c
+    scalar_add(integrate(p), c)
 end
 
 
@@ -273,38 +296,19 @@ macro poly_register(name)
         #Base.convert(::Type{P}, p::P) where {P<:$poly} = p
         Base.promote(p::P, q::Q) where {B, X, T, P <:$poly{B,T,X}, Q <: $poly{B,T,X}} = p,q
         Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{<:$poly{B,S,X}}) where {B,T,S,X} =  $poly{B,promote_type(T, S),X}
-        Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{S}) where {B,T,S<:Number,X} =
+        Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{S}) where {B,T,S<:Scalar,X} =
             $poly{B,promote_type(T, S), X}
 
-        # $poly{B,T}(x::AbstractVector{S}, var::SymbolLike=Var(:x)) where {B,T,S} =
-        #      $poly{B, T, Symbol(var)}(collect(T,x))
-        # $poly{B}(coeffs::AbstractVector{T}, var::SymbolLike=Var(:x)) where {B,T} =
-        #      $poly{B, T, Symbol(var)}(coeffs)
-
-        # function $poly{B,T}(coeffs::G, var::SymbolLike=Var(x)) where {B,T,G}
-        #      !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
-        #      cs = collect(T, coeffs)
-        #      $poly{B, T, Symbol(var)}(cs)
-        # end
-        # function $poly{B}(coeffs::G, var::SymbolLike=Var(:x)) where {B,G}
-        #      !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
-        #      cs = collect(promote(coeffs...))
-        #      $poly{B, eltype(cs), Symbol(var)}(cs)
-        #  end
-
-        # $poly{B,T,X}(c::AbstractUnivariatePolynomial{B′,S,Y}) where {B,B′,T,X,S,Y} = convert($poly{B,T,X}, c)
-        # $poly{B,T}(c::AbstractUnivariatePolynomial{B′,S,Y}) where {B,B′,T,S,Y} = convert($poly{B,T}, c)
-        # $poly{B}(c::AbstractUnivariatePolynomial{B′,S,Y}) where {B,B′,S,Y} = convert($poly{B}, c)
-
-        $poly{B,T,X}(n::S) where {B, T, X, S<:Number} =
+        # constants
+        $poly{B,T,X}(n::S) where {B, T, X, S<:Scalar} =
             T(n) *  one($poly{B, T, X})
-        $poly{B, T}(n::S, var::SymbolLike = Var(:x)) where {B, T, S<:Number} =
+        $poly{B, T}(n::S, var::SymbolLike = Var(:x)) where {B, T, S<:Scalar} =
             T(n) *  one($poly{B, T, Symbol(var)})
-        $poly{B}(n::S, var::SymbolLike = Var(:x))  where {B, S  <: Number} = n * one($poly{B, S, Symbol(var)})
+        $poly{B}(n::S, var::SymbolLike = Var(:x))  where {B, S  <: Scalar} = n * one($poly{B, S, Symbol(var)})
 
         $poly{B,T}(var::SymbolLike=Var(:x)) where {B,T} = variable($poly{B, T, Symbol(var)})
         $poly{B}(var::SymbolLike=Var(:x)) where {B} = variable($poly{B}, Symbol(var))
 
-        (p::$poly)(x) = _evalpoly(p, x)
+        (p::$poly)(x) = evalpoly(x, p)
     end
 end

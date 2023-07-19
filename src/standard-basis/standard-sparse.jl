@@ -17,19 +17,21 @@ end
 
 function ⊗(p::MutableSparsePolynomial{StandardBasis,T,X},
            q::MutableSparsePolynomial{StandardBasis,S,X}) where {T,S,X}
-    # simple convolution
+
+    # simple convolution same as ⊗(Polynomial, p.coeffs, q.coeffs) (DRY)
     R = promote_type(T,S)
     P = MutableSparsePolynomial{StandardBasis,R,X}
 
     z = zero(R)
     cs = Dict{Int, R}()
 
-    @inbounds for (i, pᵢ) ∈ pairs(p)
+    for (i, pᵢ) ∈ pairs(p)
         for (j, qⱼ) ∈ pairs(q)
             cᵢⱼ = get(cs, i+j, z)
-            cs[i+j] = muladd(pᵢ, qⱼ, cᵢⱼ)
+            val = muladd(pᵢ, qⱼ, cᵢⱼ)
+            iszero(val) && continue
+            @inbounds cs[i+j] = val
         end
     end
-
-    P(cs)
+    P(Val(false), cs)
 end

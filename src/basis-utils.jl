@@ -4,7 +4,7 @@ gtτ(x, τ) = abs(x) > τ
 
 # return index or nothing of last non "zdero"
 # chop! then considers cases i==nothing, i=length(x), i < length(x)
-function chop_right_index(x::AbstractVector{T}; rtol=nothing, atol=nothing) where {T}
+function chop_right_index(x; rtol=nothing, atol=nothing)
 
     isempty(x) && return nothing
     δ = something(rtol,0)
@@ -17,7 +17,7 @@ end
 
 
 
-function chop_left_index(x::AbstractVector{T}; rtol=nothing, atol=nothing) where {T}
+function chop_left_index(x; rtol=nothing, atol=nothing)
     isempty(x) && return nothing
     δ = something(rtol,0)
     ϵ = something(atol,0)

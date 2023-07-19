@@ -27,6 +27,10 @@ end
 
 # abstract vector has order/symbol
 function MutableSparsePolynomial{B,T,X}(coeffs::AbstractVector{S}, order::Int=0) where {B,T,S,X}
+    if Base.has_offset_axes(coeffs)
+        @warn "ignoring the axis offset of the coefficient vector"
+        coeffs = parent(coeffs)
+    end
 
     P = MutableSparsePolynomial{B,T,X}
     n = length(coeffs)
@@ -40,7 +44,7 @@ function MutableSparsePolynomial{B,T}(xs::AbstractVector{S}, order::Int, var::Sy
     MutableSparsePolynomial{B,T,Symbol(var)}(xs)
 end
 
-function MutableSparsePolynomial{B,T}(coeffs::AbstractVector{S}, var::SymbolLike) where {B,T,S}
+function MutableSparsePolynomial{B,T}(xs::AbstractVector{S}, var::SymbolLike) where {B,T,S}
     MutableSparsePolynomial{B,T,Symbol(var)}(xs)
 end
 
@@ -66,7 +70,7 @@ end
 
 
 @poly_register MutableSparsePolynomial
-constructorof(::Type{<:MutableSparsePolynomial}) = MutableSparsePolynomial
+constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B} = MutableSparsePolynomial{B}
 
 
 # cs iterable of pairs
@@ -82,16 +86,15 @@ function MutableSparsePolynomial{B}(cs::Tuple, var::SymbolLike=:x) where {B}
     else
         c₁, c... = cs
         T = typeof(last(c₁))
-        for (a,b) ∈ c
+        for b ∈ c
             T = promote_type(T, typeof(b))
         end
-        ks = Base.Generator(first, cs)
-        vs = Base.Generator(last, cs)
+        ks = 0:length(cs)-1
+        vs = cs
         d = Dict{Int,T}(Base.Generator(=>, ks, vs))
         return MutableSparsePolynomial{B,T,X}(d)
     end
 end
-
 
 
 Base.copy(p::MutableSparsePolynomial{B,T,X}) where {B,T,X} = MutableSparsePolynomial{B,T,X}(copy(p.coeffs))
@@ -120,7 +123,6 @@ function Base.setindex!(p::MutableSparsePolynomial{B,T,X}, value, i::Int) where 
 end
 
 hasnan(p::MutableSparsePolynomial) = any(hasnan, values(p.coeffs))
-Base.iterate(p::MutableSparsePolynomial, args...) = Base.iterate(p.coeffs, args...)
 Base.pairs(p::MutableSparsePolynomial) = pairs(p.coeffs)
 
 ## Not properly named!!! truncate? chop? skip?
@@ -131,10 +133,11 @@ function trim_trailing_zeros(d::Dict)
     d
 end
 
-function Base.chop(p::MutableSparsePolynomial; atol=nothing, rtol=nothing)
+function chop!(p::MutableSparsePolynomial; atol=nothing, rtol=nothing)
+    isempty(p.coeffs) && return p
     δ = something(rtol,0)
     ϵ = something(atol,0)
-    τ = max(ϵ, _norm(x,2) * δ)
+    τ = max(ϵ, _norm(values(p.coeffs),2) * δ)
     for (i,pᵢ) ∈ pairs(p)
         abs(pᵢ) ≤ τ && delete!(p.coeffs, i)
     end
@@ -178,7 +181,7 @@ function scalar_add(c::S, p::MutableSparsePolynomial{B,T,X}) where {B,T,X,S}
     return P(Val(false), D)
 end
 
-function scalar_mul(c::S, p::MutableSparsePolynomial{B,T,X}) where {B,T,X,S}
+function scalar_mult(c::S, p::MutableSparsePolynomial{B,T,X}) where {B,T,X,S}
 
     R = promote_type(T,S)
     P = MutableSparsePolynomial{B,R,X}
@@ -193,7 +196,7 @@ function scalar_mul(c::S, p::MutableSparsePolynomial{B,T,X}) where {B,T,X,S}
 
 end
 
-function scalar_mul(p::MutableSparsePolynomial{B,T,X}, c::S) where {B,T,X,S}
+function scalar_mult(p::MutableSparsePolynomial{B,T,X}, c::S) where {B,T,X,S}
         R = promote_type(T,S)
     P = MutableSparsePolynomial{B,R,X}
     (iszero(p) || iszero(c)) && return(zero(P))

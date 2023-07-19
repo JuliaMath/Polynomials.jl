@@ -5,17 +5,11 @@
 #LaurentPolynomial = MutableDensePolynomial{StandardBasis}
 #export LaurentPolynomial
 
-constantterm(p:: MutableDensePolynomial{StandardBasis}) = p[0]
-
 function evalpoly(c, p::MutableDensePolynomial{StandardBasis,T,X}) where {T,X}
     iszero(p) && return zero(T)*zero(c)
     EvalPoly.evalpoly(c, p.coeffs) * c^p.order
 end
 
-function _evalpoly(p:: MutableDensePolynomial{StandardBasis,T,X}, c) where {T,X}
-    iszero(p) && return zero(T)*zero(c)
-    Base.evalpoly(c, p.coeffs) * c^p.order
-end
 
 # function isconstant(p:: MutableDensePolynomial{StandardBasis})
 #     firstindex(p) != 0 && return false
@@ -70,7 +64,7 @@ function ⊗(p:: MutableDensePolynomial{StandardBasis,T,X},
         end
     end
     if iszero(last(cs))
-        cs = trime_trailing_zeros(cs)
+        cs = trim_trailing_zeros(cs)
     end
     P(Val(false), cs, a)
 end

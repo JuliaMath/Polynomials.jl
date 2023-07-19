@@ -25,53 +25,59 @@ function print_basis(io::IO, p::AbstractUnivariatePolynomial{<:StandardBasis, T,
     print_unicode_exponent(io, i)
 end
 
-function Base.one(::Type{P}) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}}
-    ⟒(P){B,T,X}([1])
+# XXX For now need 3 convert methods for standard basis
+function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: AbstractUnivariatePolynomial{B}, Q<:AbstractUnivariatePolynomial{B}}
+    if isa(q, PP)
+        return q
+    else
+        minimumexponent(P) <= minimumexponent(q) ||
+            throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
+        T = _eltype(P,q)
+        X = indeterminate(P,q)
+        return ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
+    end
+end
+function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B<:StandardBasis,T,X, Q<:AbstractUnivariatePolynomial{B,T,X}}
+    isa(q, PP) && return p
+    T′ = _eltype(P,q)
+    X′ = indeterminate(P,q)
+    if firstindex(q) >= 0
+        cs = [q[i] for i ∈ 0:lastindex(q)]
+        o = 0
+    else
+        cs = [q[i] for i ∈ eachindex(q)]
+        o = firstindex(q)
+    end
+    ⟒(P){T′,X′}(cs, o)
+end
+function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: AbstractUnivariatePolynomial{B}, Q<:StandardBasisPolynomial}
+    isa(q, PP) && return p
+    T = _eltype(P,q)
+    X = indeterminate(P,q)
+    ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
 end
 
-function variable(P::Type{<:AbstractUnivariatePolynomial{B,T,X}}) where {B<:StandardBasis,T,X}
-    basis(P, 1)
-end
+Base.one(p::P) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}([one(p[0])])
+Base.one(::Type{P}) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(ones(T,1))
 
-function basis(P::Type{<:AbstractUnivariatePolynomial{B, T, X}}, i::Int) where {B<:StandardBasis,T,X}
-    cs = ones(T,1)
-    P(cs, i)
-end
+variable(P::Type{<:AbstractUnivariatePolynomial{B,T,X}}) where {B<:StandardBasis,T,X} =  basis(P, 1)
+
+basis(P::Type{<:AbstractUnivariatePolynomial{B, T, X}}, i::Int) where {B<:StandardBasis,T,X} = P(ones(T,1), i)
+
+domain(::Type{P}) where {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B}} = Interval{Open,Open}(-Inf, Inf)
+
+mapdomain(::Type{P}, x::AbstractArray) where  {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B}} = x
 
 constantterm(p::AbstractUnivariatePolynomial{B}) where {B <: StandardBasis} = p[0]
 
 
-
-# # storage independent scalar add
-# # faster alternatives for basic types
-# function scalar_add(c::S, p::AbstractUnivariatePolynomial{B,T,X}) where {B<:StandardBasis, S, T, X}
-#     R = promote_type(T,S)
-#     P = ⟒(p){B,R,X}
-
-#     iszero(p) && return P((c,), 0)
-#     iszero(c) && return convert(P, p)
-
-#     a,b = firstindex(p), lastindex(p)
-#     a′ = min(0,a)
-#     z = zero(last(first(p.coeffs)) + c)
-#     cs = _zeros(p, zero(z), length(a′:b))
-
-#     # i -> idx mapping
-#     o = offset(p)*(-a+1) # offset for dict is 0; o/w -a + 1
-#     for (i, cᵢ) ∈ pairs(p)
-#         cs = _set(cs, i+o, R(cᵢ))
-#     end
-#     cs = _set(cs, 0+o, cs[0+o] + R(c))
-#     cs = trim_trailing_zeros(cs)
-#     P(Val(false), cs, a′)
-# end
-
+## Multiplication
 # special cases are faster
 function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
            q::AbstractUnivariatePolynomial{B,S,X}) where {B <: StandardBasis, T,S,X}
     # simple convolution with order shifted
     R = promote_type(T,S)
-    P = ⟒(p){B,R,X}
+    P = ⟒(p){R,X}
 
     iszero(p) && return zero(P)
     iszero(q) && return zero(P)
@@ -83,24 +89,34 @@ function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
     P(cs, a)
 end
 
-# maybe do same for, say, Laguerre? Though that may push everything to Dense
-function differentiate(p::AbstractUnivariatePolynomial{B,T,X}) where {B<:StandardBasis,T,X}
+# dense
+function differentiate(p::P′) where {B<:StandardBasis,T,X, P′ <: AbstractUnivariatePolynomial{B,T,X}}
+
     N = lastindex(p) - firstindex(p) + 1
     R = promote_type(T, Int)
-    P = ⟒(p){B,T,X}
-    iszero(p) && return zero(P)
-    z = zero(1 * p[1])
-    cs = _zeros(p, z, N)
-    os = offset(p)
-    @inbounds for (i, cᵢ) ∈ pairs(p)
-        iszero(i) && continue
-        #cs[i - 1 + os] = i * cᵢ
-        cs = _set(cs, i - 1 + os, i * cᵢ)
-    end
+    P = ⟒(p){R,X}
+    hasnan(p) && return P(zero(T)/zero(T)) # NaN{T}
+    iszero(p) && return P(0*p[0])
 
-    o = firstindex(p)
-    o = o < 0 ? o - 1 : max(0, o - 1)
-    ⟒(p){B,T,X}(cs, o)
+    ps = p.coeffs
+    cs = [i*pᵢ for (i,pᵢ) ∈ pairs(p)]
+    return P(cs, p.order-1)
+end
+
+# sparse
+function differentiate(p::P′) where {B<:StandardBasis,T,X, P′ <: MutableSparsePolynomial{B,T,X}}
+    N = lastindex(p) - firstindex(p) + 1
+    R = promote_type(T, Int)
+    P = ⟒(p){R,X}
+    hasnan(p) && return  P(zero(T)/zero(T)) # NaN{T}
+    iszero(p) && return zero(P)
+
+    d = Dict{Int,R}()
+    for (i, pᵢ) ∈ pairs(p)
+        iszero(i) && continue
+        d[i-1] = i*pᵢ
+    end
+    return P(d)
 end
 
 
@@ -109,11 +125,12 @@ function integrate(p::AbstractUnivariatePolynomial{B,T,X}) where {B <: StandardB
     # no offset! XXX
 
     iszero(p) && return p/1
-
     N = lastindex(p) - firstindex(p) + 1
     R = typeof(one(T)/1)
     z = zero(R)
-    P = ⟒(p){B,R,X}
+    P = ⟒(p){R,X}
+    hasnan(p) && return  P(zero(T)/zero(T)) # NaN{T}
+
     cs = _zeros(p, z, N+1)
     os =  offset(p)
     @inbounds for (i, cᵢ) ∈ pairs(p)
@@ -123,3 +140,114 @@ function integrate(p::AbstractUnivariatePolynomial{B,T,X}) where {B <: StandardB
     end
     P(cs, firstindex(p))
 end
+
+function Base.divrem(num::P, den::Q) where {B<:StandardBasis,
+                                            T, P <: AbstractUnivariatePolynomial{B,T},
+                                            S, Q <: AbstractUnivariatePolynomial{B,S}}
+
+    assert_same_variable(num, den)
+    @assert ⟒(P) == ⟒(Q)
+
+    X = indeterminate(num)
+    R = Base.promote_op(/, T, S)
+    PP = ⟒(P){R,X}
+
+
+    n = degree(num)
+    m = degree(den)
+
+    m == -1 && throw(DivideError())
+    if m == 0 && den[0] ≈ 0 throw(DivideError()) end
+
+    R = eltype(one(T)/one(S))
+
+    deg = n - m + 1
+
+    if deg ≤ 0
+        return zero(P), num
+    end
+
+    q_coeff = zeros(R, deg)
+    r_coeff = R[ num[i-1] for i in 1:n+1 ]
+
+    @inbounds for i in n:-1:m
+        q = r_coeff[i + 1] / den[m]
+        q_coeff[i - m + 1] = q
+        @inbounds for j in 0:m
+            elem = den[j] * q
+            r_coeff[i - m + j + 1] -= elem
+        end
+    end
+    resize!(r_coeff, min(length(r_coeff), m))
+    return PP(q_coeff), PP(r_coeff)
+
+end
+
+## XXX copy or pass along to other system for now
+function vander(p::Type{<:P}, x::AbstractVector{T}, degs) where {B<:StandardBasis, P<:AbstractUnivariatePolynomial{B}, T <: Number}
+    vander(StandardBasisPolynomial, x, degs)
+end
+
+function LinearAlgebra.cond(p::P, x) where {B<:StandardBasis, P<:AbstractUnivariatePolynomial{B}}
+    p̃ = map(abs, p)
+    p̃(abs(x))/ abs(p(x))
+end
+
+function ngcd(p::P, q::Q,
+              args...;
+              kwargs...) where {B <: StandardBasis,
+                                T,X,P<:AbstractUnivariatePolynomial{B,T,X},
+                                S,Y,Q<:AbstractUnivariatePolynomial{B,S,Y}}
+    ngcd(PnPolynomial(p.coeffs), PnPolynomial(q.coeffs), args...; kwargs...)
+end
+
+# XXX p.coeffs isn't right
+function Multroot.multroot(p::AbstractUnivariatePolynomial{B}, args...;
+                           kwargs...) where {B<:StandardBasis}
+    cs = coeffs(p)
+    if firstindex(p) > 0
+        cs = vcat(zeros(firstindex(p)), cs)
+    elseif firstindex(p) < 0
+        @warn "Laurent Polynomial; finding values after factoring out leading term"
+    end
+    Multroot.multroot(Polynomial(cs), args...; kwargs...)
+end
+
+Polynomials.Multroot.pejorative_root(q::AbstractUnivariatePolynomial{<:StandardBasis}, zs::Vector{S}, ls; kwargs...) where {S} =
+    Polynomials.Multroot.pejorative_root(convert(Polynomial, q), zs, ls; kwargs...)
+
+Polynomials.Multroot.stats(q::AbstractUnivariatePolynomial{<:StandardBasis}, zs::Vector{S}, ls; kwargs...) where {S} =
+    Polynomials.Multroot.stats(convert(Polynomial, q), zs, ls; kwargs...)
+
+function fit(::Type{P},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             deg::Int;
+             kwargs...) where {T, P<:AbstractUnivariatePolynomial{<:StandardBasis}}
+    convert(P, fit(Polynomial, x, y, deg; kwargs...))
+end
+
+# for one ambigous test!
+function fit(::Type{P},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             deg::AbstractVector;
+             kwargs...) where {T, P<:AbstractUnivariatePolynomial{<:StandardBasis}}
+    convert(P, fit(Polynomial, x, y, deg; kwargs...))
+end
+
+function fit(::Type{P},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             deg::AbstractVector,
+             cs::Dict;
+             kwargs...) where {T, P<:AbstractUnivariatePolynomial{<:StandardBasis}}
+    convert(P, fit(Polynomial, x, y, deg, cs; kwargs...))
+end
+
+# new constructors taking order in second position
+SparsePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int) where {T, X, S} = SparsePolynomial{T,X}(coeffs)
+Polynomial{T, X}(coeffs::AbstractVector{S},order::Int) where {T, X, S} = Polynomial{T,X}(coeffs)
+ImmutablePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int)  where {T,X,S} = ImmutablePolynomial{T,X}(coeffs)
+FactoredPolynomial{T,X}(coeffs::AbstractVector{S}, order::Int) where {T,S,X} = FactoredPolynomial{T,X}(coeffs)
+PnPolynomial{T, X}(coeffs::AbstractVector, order::Int) where {T, X} = PnPolynomial(coeffs) # for generic programming

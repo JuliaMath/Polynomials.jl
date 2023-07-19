@@ -55,7 +55,7 @@ constantterm(p::StandardBasisPolynomial) = p[0]
 domain(::Type{<:StandardBasisPolynomial}) = Interval{Open,Open}(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 
-function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial)
+function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial{T′, X′}) where {T′, X′}
     if isa(q, P)
         return q
     else
@@ -63,7 +63,7 @@ function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolyno
             throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
         T = _eltype(P,q)
         X = indeterminate(P,q)
-        return ⟒(P){T,X}([q[i] for i in eachindex(q)])
+        return ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
     end
 end
 
@@ -88,7 +88,7 @@ Base.:+(p::P, c::T) where {T, X, P<:StandardBasisPolynomial{T, X}} = p + ⟒(P)(
 ## default multiplication between same type.
 ## subtypes might relax to match T,S to avoid one conversion
 function Base.:*(p::P, q::P) where {T,X, P<:StandardBasisPolynomial{T,X}}
-    cs = ⊗(P, coeffs(p), coeffs(q))
+    cs = ⊗(P, p.coeffs, q.coeffs) #coeffs(p), coeffs(q))
     P(cs)
 end
 

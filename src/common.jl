@@ -34,9 +34,9 @@ julia> fromroots(r)
 Polynomial(6 - 5*x + x^2)
 ```
 """
-function fromroots(P::Type{<:AbstractPolynomial}, roots::AbstractVector; var::SymbolLike = :x)
+function fromroots(P::Type{<:AbstractPolynomial}, rs::AbstractVector; var::SymbolLike = :x)
     x = variable(P, var)
-    p =  prod(x - r for r in roots)
+    p = prod(x-r for r ∈ rs; init=one(x))
     return truncate!(p)
 end
 fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
@@ -335,6 +335,7 @@ function truncate!(ps::Dict{Int,T};
                    rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0,) where {T}
 
+    isempty(ps) && return nothing
     max_coeff = norm(values(ps), Inf)
     thresh = max_coeff * rtol + atol
 
@@ -346,7 +347,18 @@ function truncate!(ps::Dict{Int,T};
     nothing
 end
 
-truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined."))
+function truncate!(ps::NTuple{N,T};
+                   rtol::Real = Base.rtoldefault(real(T)),
+                   atol::Real = 0,) where {N,T}
+    #throw(ArgumentError("`truncate!` not defined."))
+    thresh = norm(ps, Inf) * rtol + atol
+    for (i, pᵢ) ∈ enumerate(ps)
+        if abs(pᵢ) ≤ thresh
+            ps = _set(ps, i, zero(pᵢ))
+        end
+    end
+    ps
+end
 
 _truncate(ps::NTuple{0}; kwargs...) = ps
 function _truncate(ps::NTuple{N,T};
@@ -470,9 +482,9 @@ Linear Algebra =#
 
 Calculates the p-norm of the polynomial's coefficients
 """
-function LinearAlgebra.norm(q::AbstractPolynomial, p::Real = 2)
-    vs = values(q)
-    return norm(vs, p) # if vs=() must be handled in special type
+function LinearAlgebra.norm(q::AbstractPolynomial{T,X}, p::Real = 2) where {T,X}
+    iszero(q) && return zero(real(T))^(1/p)
+    return norm(values(q), p)
 end
 
 """
@@ -811,6 +823,7 @@ indeterminate(p::P) where {P <: AbstractPolynomial} = _indeterminate(P)
 function indeterminate(PP::Type{P}, p::AbstractPolynomial{T,Y}) where {P <: AbstractPolynomial, T,Y}
     X = _indeterminate(PP)
     isnothing(X) && return Y
+    isconstant(p) && return X
     assert_same_variable(X,Y)
     return X
     #X = isnothing(_indeterminate(PP)) ? indeterminate(p) :  _indeterminate(PP)
@@ -916,17 +929,19 @@ basis(p::P, k::Int, _var=indeterminate(p); var=_var) where {P<:AbstractPolynomia
 
 #=
 arithmetic =#
+Scalar = Union{Number, Matrix}
+
 Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p))
 
-Base.:*(p::AbstractPolynomial, c::Number) = scalar_mult(p, c)
-Base.:*(c::Number, p::AbstractPolynomial) = scalar_mult(c, p)
+Base.:*(p::AbstractPolynomial, c::Scalar) = scalar_mult(p, c)
+Base.:*(c::Scalar, p::AbstractPolynomial) = scalar_mult(c, p)
 Base.:*(c::T, p::P) where {T, X, P <: AbstractPolynomial{T,X}} = scalar_mult(c, p)
 Base.:*(p::P, c::T) where {T, X, P <: AbstractPolynomial{T,X}} = scalar_mult(p, c)
 
-# implicitly identify c::Number with a constant polynomials
-Base.:+(c::Number, p::AbstractPolynomial) = +(p, c)
-Base.:-(p::AbstractPolynomial, c::Number) = +(p, -c)
-Base.:-(c::Number, p::AbstractPolynomial) = +(-p, c)
+# implicitly identify c::Scalar with a constant polynomials
+Base.:+(c::Scalar, p::AbstractPolynomial) = +(p, c)
+Base.:-(p::AbstractPolynomial, c::Scalar) = +(p, -c)
+Base.:-(c::Scalar, p::AbstractPolynomial) = +(-p, c)
 
 # scalar operations
 # no generic p+c, as polynomial addition falls back to scalar ops
@@ -938,13 +953,13 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 ## addition
 ## Fall back addition is possible as vector addition with padding by 0s
 ## Subtypes will likely want to implement both:
-## +(p::P,c::Number) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
+## +(p::P,c::Scalar) and +(p::P, q::Q) where {T,S,X,P<:SubtypePolynomial{T,X},Q<:SubtypePolynomial{S,X}}
 ## though the default for poly+poly isn't terrible
 
 Base.:+(p::AbstractPolynomial) = p
 
-# polynomial + scalar; implicit identification of c with c*one(P)
-Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = p + c * one(P)
+# polynomial + scalar; implicit identification of c with c*one(p)
+Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = scalar_add(p, c)#p + c * one(p)
 
 function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
     R = promote_type(T,S)
@@ -1148,8 +1163,8 @@ function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
     check_same_variable(p1, p2) || return false
     ==(promote(p1,p2)...)
 end
-Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
-Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
+Base.:(==)(p::AbstractPolynomial, n::Scalar) = degree(p) <= 0 && constantterm(p) == n
+Base.:(==)(n::Scalar, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial, p2::AbstractPolynomial; kwargs...)
     if isconstant(p1)

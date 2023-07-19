@@ -150,16 +150,19 @@ function LaurentPolynomial{T,X}(p::OffsetCoeffs) where {T, X}
     LaurentPolynomial{T,X}(p.coeffs, p.m)
 end
 
-function Base.convert(::Type{P}, q::StandardBasisPolynomial{S}) where {P <:LaurentPolynomial,S}
+# function Base.convert(::Type{P}, q::StandardBasisPolynomial{S,X}) where {P <:LaurentPolynomial,S,X}
 
-     T = _eltype(P, q)
-     X = indeterminate(P, q)
-     ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
- end
+#      T = _eltype(P, q)
+#      X = indeterminate(P, q)
+#      ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
+#  end
 
-function Base.convert(::Type{P}, q::AbstractPolynomial{T,X}) where {T,X,P <:LaurentPolynomial}
-    convert(P, convert(Polynomial, q))
-end
+
+# #function Base.convert(::Type{P}, q::AbstractPolynomial{T,X}) where {T,X,P <:LaurentPolynomial{T,X}}
+# function Base.convert(::Type{P}, q::AbstractPolynomial) where {P <:LaurentPolynomial}
+#     convert(P, convert(Polynomial, q))
+# end
+Base.convert(::Type{LaurentPolynomial{T, X}}, p::LaurentPolynomial{T, X}) where {T, X} = p
 
 # Ambiguity, issue #435
 function Base.convert(𝑷::Type{P}, p::ArnoldiFit{T, M, X}) where {P<:LaurentPolynomial, T, M, X}

@@ -1,5 +1,3 @@
-#const ImmutablePolynomial = ImmutableDensePolynomial{StandardBasis}
-#export ImmutablePolynomial
 
 function evalpoly(x, p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}
     N == 0 && return zero(T) * zero(x)
@@ -27,7 +25,7 @@ end
 end
 
 
-
+# faster
 function scalar_add(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B<:StandardBasis,T,X,S,N}
     R = promote_type(T,S)
     P = ImmutableDensePolynomial{B,R,X}
@@ -36,7 +34,7 @@ function scalar_add(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B<:Standa
     N == 1 && return P{N}((p[0]+c,))
 
     #cs = tuple_sum(convert(NTuple{N,R}, p.coeffs), NTuple{1,R}(c))
-    cs = _tuple_combine(+, convert(NTuple{N,R}, p.coeffs), NTuple{1,R}(c))
+    cs = _tuple_combine(+, convert(NTuple{N,R}, p.coeffs), NTuple{1,R}((c,)))
     q = P{N}(cs)
 
     return q
@@ -51,17 +49,12 @@ function scalar_add(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B<:Standa
 end
 
 
-function XXscalar_add(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B,T,X,S,N}
-    R = promote_type(T,S)
-    P = ImmutableDensePolynomial{B,R,X}
-    iszero(N) && return P{1}((c,))
-
-    xs = convert(NTuple{N,R}, p.coeffs)
-    @set! xs[1] = xs[1] + c
-    P{N}(xs)
-end
-
 # return N*M
+# intercept promotion call
+function Base.:*(p::ImmutableDensePolynomial{StandardBasis,T,X,N},
+                 q::ImmutableDensePolynomial{StandardBasis,S,X,M}) where {T,S,X,N,M}
+    ⊗(p,q)
+end
 function ⊗(p::ImmutableDensePolynomial{StandardBasis,T,X,N},
            q::ImmutableDensePolynomial{StandardBasis,S,X,M}) where {T,S,X,N,M}
 
@@ -101,7 +94,8 @@ end
 
 
 function differentiate(p::ImmutableDensePolynomial{StandardBasis,T,X,N}) where {T,X,N}
-    N == 0 && return 1p
+    N == 0 && return p
+    hasnan(p) && return ⟒(p)(zero(T)/zero(T),X) # NaN{T}
     cs = ntuple(i -> i*p.coeffs[i+1], Val(N-1))
     R = eltype(cs)
     ImmutableDensePolynomial{StandardBasis,R,X,N-1}(cs)
@@ -109,7 +103,10 @@ end
 
 
 function integrate(p::ImmutableDensePolynomial{StandardBasis,T,X,N}) where {T,X,N}
-    cs = ntuple(i -> i > 1 ? p.coeffs[i-1]/(i-1) : zero(T)/1, Val(N+1))
+    N == 0 && return p # different type
+    hasnan(p) && return ⟒(p)(zero(T)/zero(T), X) # NaN{T}
+    z = zero(first(p.coeffs))
+    cs = ntuple(i -> i > 1 ? p.coeffs[i-1]/(i-1) : z/1, Val(N+1))
     R = eltype(cs)
     ImmutableDensePolynomial{StandardBasis,R,X,N+1}(cs)
 end
