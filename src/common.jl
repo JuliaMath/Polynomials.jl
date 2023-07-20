@@ -927,13 +927,19 @@ function basis(::Type{P}, k::Int, _var::SymbolLike; var=_var) where {P <: Abstra
 end
 basis(p::P, k::Int, _var=indeterminate(p); var=_var) where {P<:AbstractPolynomial} = basis(P, k, var)
 
-#= composition =#
+#=
+composition
+cf. https://github.com/JuliaMath/Polynomials.jl/issues/511 for a paper with implentations
+
+=#
 """
     polynomial_composition(p, q)
 
 Evaluate `p(q)`, possibly exploiting a faster evaluation scheme, defaulting to `evalpoly`.
 """
-polynomial_composition(p::AbstractPolynomial, q::AbstractPolynomial) = p(q)
+function polynomial_composition(p::AbstractPolynomial, q::AbstractPolynomial)
+    evalpoly(q, p)
+end
 
 #=
 arithmetic =#
