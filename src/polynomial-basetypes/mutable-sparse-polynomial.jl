@@ -1,9 +1,10 @@
+# dictionary to store (i, cᵢ)
+# ensure cᵢ ≠ 0 in constructor
 struct MutableSparsePolynomial{B,T,X} <:  AbstractUnivariatePolynomial{B, T,X}
     coeffs::Dict{Int, T}
-    function MutableSparsePolynomial{B,T,X}(coeffs::AbstractDict{Int,T},order::Int=0) where {B,T,X}
-        for (i, cᵢ) ∈ pairs(coeffs)
-            iszero(cᵢ) && delete!(coeffs, i)
-        end
+    function MutableSparsePolynomial{B,T,X}(cs::AbstractDict{Int,S},order::Int=0) where {B,T,S,X}
+        coeffs = convert(Dict{Int,T}, cs)
+        chop_exact_zeros!(coeffs)
         new{B,T,Symbol(X)}(coeffs)
     end
     function MutableSparsePolynomial{B,T,X}(checked::Val{:false}, coeffs::AbstractDict{Int,T},order::Int=0) where {B,T,X}
@@ -16,12 +17,11 @@ function MutableSparsePolynomial{B,T,X}(checked::Val{:true}, coeffs::AbstractDic
 end
 
 # Dict
-function MutableSparsePolynomial{B,T,X}(coeffs::AbstractDict{Int,S}) where {B,T,S,X}
-    cs = convert(Dict{Int,T}, coeffs)
-    MutableSparsePolynomial{B,T,X}(cs)
+function MutableSparsePolynomial{B,T}(coeffs::AbstractDict{Int,S}, var::SymbolLike=Var(:x)) where {B,T,S}
+    MutableSparsePolynomial{B,T,Symbol(var)}(coeffs)
 end
 
-function MutableSparsePolynomial{B}(cs::AbstractDict{Int,T}, var::SymbolLike=:x) where {B,T}
+function MutableSparsePolynomial{B}(cs::AbstractDict{Int,T}, var::SymbolLike=Var(:x)) where {B,T}
     MutableSparsePolynomial{B,T,Symbol(var)}(cs)
 end
 
@@ -56,6 +56,7 @@ function MutableSparsePolynomial{B}(xs::AbstractVector{T}, var::SymbolLike) wher
     MutableSparsePolynomial{B,T,Symbol(var)}(xs)
 end
 
+# iterable
 function MutableSparsePolynomial{B,T}(xs, var::SymbolLike=Var(:x)) where {B,T}
     cs = collect(T, xs)
     cs = trim_trailing_zeros(cs)
@@ -65,16 +66,11 @@ end
 function MutableSparsePolynomial{B}(xs, var::SymbolLike=Var(:x)) where {B}
     cs = collect(xs)
     cs = trim_trailing_zeros(cs)
-    MutableSparsePolynomial{B,T,Symbol(var)}(cs)
+    MutableSparsePolynomial{B,eltype(cs),Symbol(var)}(cs)
 end
 
 
-@poly_register MutableSparsePolynomial
-constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B} = MutableSparsePolynomial{B}
-
-
-# cs iterable of pairs
-# XXX enure tight value of T
+# cs iterable of pairs; ensuring tight value of T
 function MutableSparsePolynomial{B}(cs::Tuple, var::SymbolLike=:x) where {B}
     isempty(cs) && throw(ArgumentError("No type attached"))
     X = Var(var)
@@ -96,6 +92,11 @@ function MutableSparsePolynomial{B}(cs::Tuple, var::SymbolLike=:x) where {B}
     end
 end
 
+@poly_register MutableSparsePolynomial
+
+constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B} = MutableSparsePolynomial{B}
+
+## ---
 
 Base.copy(p::MutableSparsePolynomial{B,T,X}) where {B,T,X} = MutableSparsePolynomial{B,T,X}(copy(p.coeffs))
 
@@ -103,16 +104,19 @@ function Base.convert(::Type{MutableSparsePolynomial{B,T,X}}, p::MutableSparsePo
     d = Dict{Int,T}(k => v for (k,v) ∈ pairs(p.coeffs))
     MutableSparsePolynomial{B,T,X}(Val(false), d)
 end
+
 # ---
 
 function Base.firstindex(p::MutableSparsePolynomial)
     isempty(p.coeffs) && return 0
     i = minimum(keys(p.coeffs))
 end
+
 function Base.lastindex(p::MutableSparsePolynomial)
     isempty(p.coeffs) && return 0
     maximum(keys(p.coeffs))
 end
+
 function Base.getindex(p::MutableSparsePolynomial{B,T,X}, i::Int) where {B,T,X}
     get(p.coeffs, i, zero(T))
 end
@@ -125,42 +129,37 @@ end
 hasnan(p::MutableSparsePolynomial) = any(hasnan, values(p.coeffs))
 Base.pairs(p::MutableSparsePolynomial) = pairs(p.coeffs)
 
-## Not properly named!!! truncate? chop? skip?
-function trim_trailing_zeros(d::Dict)
+offset(p::MutableSparsePolynomial) = 0
+
+## ---
+
+function chop_exact_zeros!(d::Dict)
     for (k,v) ∈ pairs(d)
-        iszero(v) && deletat!(d, k)
+        iszero(v) && delete!(d, k)
     end
     d
 end
+trim_trailing_zeros(d::Dict) = chop_exact_zeros!(d) # Not properly named, but what is expected in other constructors
 
 function chop!(p::MutableSparsePolynomial; atol=nothing, rtol=nothing)
     isempty(p.coeffs) && return p
     δ = something(rtol,0)
     ϵ = something(atol,0)
-    τ = max(ϵ, _norm(values(p.coeffs),2) * δ)
+    τ = max(ϵ, norm(values(p.coeffs),2) * δ)
     for (i,pᵢ) ∈ pairs(p)
         abs(pᵢ) ≤ τ && delete!(p.coeffs, i)
     end
     p
 end
 
-_zeros(::Type{MutableSparsePolynomial{B,T,X}}, z::S, N) where {B,T,X,S} = Dict{Int, S}()
-
-Base.iszero(p::MutableSparsePolynomial) = all(iszero, values(p.coeffs))
-
-Base.zero(::Type{MutableSparsePolynomial{B,T,X}}) where {B,T,X} = MutableSparsePolynomial{B,T,X}(Dict{Int,T}())
 ## ---
 
-function _evalpoly(p::MutableSparsePolynomial, x)
+_zeros(::Type{MutableSparsePolynomial{B,T,X}}, z::S, N) where {B,T,X,S} = Dict{Int, S}()
 
-    tot = zero(p[0]*x)
-    for (i, cᵢ) ∈ p.coeffs
-        tot = muladd(cᵢ, x^i, tot)
-    end
-    return tot
-end
+Base.zero(::Type{MutableSparsePolynomial{B,T,X}}) where {B,T,X} = MutableSparsePolynomial{B,T,X}(Dict{Int,T}())
 
-offset(p::MutableSparsePolynomial) = 0
+## ---
+
 function isconstant(p::MutableSparsePolynomial)
     n = length(p.coeffs)
     n == 0 && return true

@@ -1,22 +1,9 @@
 # Dense + StandardBasis
-#const Polynomial = MutableDensePolynomial{StandardBasis} # const is important!
-#export Polynomial
-
-#LaurentPolynomial = MutableDensePolynomial{StandardBasis}
-#export LaurentPolynomial
 
 function evalpoly(c, p::MutableDensePolynomial{StandardBasis,T,X}) where {T,X}
-    iszero(p) && return zero(T)*zero(c)
+    iszero(p) && return zero(T) * zero(c)
     EvalPoly.evalpoly(c, p.coeffs) * c^p.order
 end
-
-
-# function isconstant(p:: MutableDensePolynomial{StandardBasis})
-#     firstindex(p) != 0 && return false
-#     i = findlast(!iszero, p.coeffs)
-#     i == nothing && return true
-#     i == 1 && return true
-# end
 
 # scalar add
 function scalar_add(c::S, p:: MutableDensePolynomial{StandardBasis,T,X}) where {S, T, X}
@@ -43,6 +30,7 @@ end
 function ⊗(p:: MutableDensePolynomial{StandardBasis,T,X},
            q:: MutableDensePolynomial{StandardBasis,S,X}) where {T,S,X}
     # simple convolution
+    # This is ⊗(P,p,q) from polynomial standard-basis
     R = promote_type(T,S)
     P =  MutableDensePolynomial{StandardBasis,R,X}
 
@@ -69,30 +57,25 @@ function ⊗(p:: MutableDensePolynomial{StandardBasis,T,X},
     P(Val(false), cs, a)
 end
 
-# function ⊗(p:: MutableDensePolynomial{StandardBasis}{T,X},
-#            q:: MutableDensePolynomial{StandardBasis}{S,X}) where {T,S,X}
-#     # simple convolution
-#     R = promote_type(T,S)
-#     P =  MutableDensePolynomial{StandardBasis}{R,X}
 
-#     iszero(p) && return zero(P)
-#     iszero(q) && return zero(P)
+function derivative(p::MutableDensePolynomial{B,T,X}) where {B<:StandardBasis,T,X}
 
-#     a₁, a₂ = firstindex(p), firstindex(q)
-#     b₁, b₂ = lastindex(p), lastindex(q)
-#     a, b = a₁ + a₂, b₁ + b₂
+    N = lastindex(p) - firstindex(p) + 1
+    R = promote_type(T, Int)
+    P = ⟒(p){R,X}
+    hasnan(p) && return P(zero(T)/zero(T)) # NaN{T}
+    iszero(p) && return P(0*p[0])
 
-#     z = zero(first(p) * first(q))
-#     cs = _zeros(p, z, length(a:b))
+    ps = p.coeffs
+    cs = [i*pᵢ for (i,pᵢ) ∈ pairs(p)]
+    return P(cs, p.order-1)
+end
 
-#     # convolve and shift order
-#     @inbounds for (i, pᵢ) ∈ enumerate(p.coeffs)
-#         for (j, qⱼ) ∈ enumerate(q.coeffs)
-#             ind = i + j - 1
-#             cs[ind] += pᵢ * qⱼ
-#         end
-#     end
 
-#     iszero(last(cs)) && chop_right!(cs)
-#     P(Val(false), cs, a)
-# end
+## XXX ----
+
+# resolve ambiguity
+function Base.convert(::Type{P}, q::Q) where {T, X, P<:LaurentPolynomial, B<:StandardBasis, Q<:AbstractUnivariatePolynomial{B, T, X}}
+    p = convert(Polynomial, q)
+    LaurentPolynomial{eltype(p), indeterminate(p)}(p.coeffs, 0)
+end

@@ -1,26 +1,6 @@
 struct StandardBasis <: AbstractBasis end
 
-function showterm(io::IO, ::Type{P}, pj::T, var, j, first::Bool, mimetype) where {B<:StandardBasis, T, P<:AbstractUnivariatePolynomial{B,T}}
-
-    if _iszero(pj) return false end
-
-    pj = printsign(io, pj, first, mimetype)
-
-    if hasone(T)
-        if !(_isone(pj) && !(showone(T) || j == 0))
-            printcoefficient(io, pj, j, mimetype)
-        end
-    else
-        printcoefficient(io, pj, j, mimetype)
-    end
-
-    printproductsign(io, pj, j, mimetype)
-    printexponent(io, var, j, mimetype)
-    return true
-end
-
-
-function print_basis(io::IO, p::AbstractUnivariatePolynomial{<:StandardBasis, T, X}, i) where {T,X}
+function print_basis(io::IO, p::AbstractUnivariatePolynomial{<:StandardBasis}, i)
     print(io, X)
     print_unicode_exponent(io, i)
 end
@@ -58,71 +38,28 @@ function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: Abstract
 end
 
 Base.one(p::P) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}([one(p[0])])
+Base.one(::Type{P}) where {B<:StandardBasis,T,P <: AbstractUnivariatePolynomial{B,T}} = ⟒(P){T}(ones(T,1), indeterminate(P))
 Base.one(::Type{P}) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(ones(T,1))
 
 variable(P::Type{<:AbstractUnivariatePolynomial{B,T,X}}) where {B<:StandardBasis,T,X} =  basis(P, 1)
 
 basis(P::Type{<:AbstractUnivariatePolynomial{B, T, X}}, i::Int) where {B<:StandardBasis,T,X} = P(ones(T,1), i)
 
+constantterm(p::AbstractUnivariatePolynomial{B}) where {B <: StandardBasis} = p[0]
+
 domain(::Type{P}) where {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B}} = Interval{Open,Open}(-Inf, Inf)
 
 mapdomain(::Type{P}, x::AbstractArray) where  {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B}} = x
-
-constantterm(p::AbstractUnivariatePolynomial{B}) where {B <: StandardBasis} = p[0]
-
 
 ## Multiplication
 # special cases are faster
 function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
            q::AbstractUnivariatePolynomial{B,S,X}) where {B <: StandardBasis, T,S,X}
     # simple convolution with order shifted
-    R = promote_type(T,S)
-    P = ⟒(p){R,X}
-
-    iszero(p) && return zero(P)
-    iszero(q) && return zero(P)
-
-    cs = fastconv(p.coeffs, q.coeffs)
-    R = eltype(P)
-    a = firstindex(p) + firstindex(q)
-
-    P(cs, a)
+    XXX()
 end
-
-# dense
-function differentiate(p::P′) where {B<:StandardBasis,T,X, P′ <: AbstractUnivariatePolynomial{B,T,X}}
-
-    N = lastindex(p) - firstindex(p) + 1
-    R = promote_type(T, Int)
-    P = ⟒(p){R,X}
-    hasnan(p) && return P(zero(T)/zero(T)) # NaN{T}
-    iszero(p) && return P(0*p[0])
-
-    ps = p.coeffs
-    cs = [i*pᵢ for (i,pᵢ) ∈ pairs(p)]
-    return P(cs, p.order-1)
-end
-
-# sparse
-function differentiate(p::P′) where {B<:StandardBasis,T,X, P′ <: MutableSparsePolynomial{B,T,X}}
-    N = lastindex(p) - firstindex(p) + 1
-    R = promote_type(T, Int)
-    P = ⟒(p){R,X}
-    hasnan(p) && return  P(zero(T)/zero(T)) # NaN{T}
-    iszero(p) && return zero(P)
-
-    d = Dict{Int,R}()
-    for (i, pᵢ) ∈ pairs(p)
-        iszero(i) && continue
-        d[i-1] = i*pᵢ
-    end
-    return P(d)
-end
-
-
 
 function integrate(p::AbstractUnivariatePolynomial{B,T,X}) where {B <: StandardBasis,T,X}
-    # no offset! XXX
 
     iszero(p) && return p/1
     N = lastindex(p) - firstindex(p) + 1
@@ -183,7 +120,8 @@ function Base.divrem(num::P, den::Q) where {B<:StandardBasis,
 
 end
 
-## XXX copy or pass along to other system for now
+## XXX This needs resolving!
+## XXX copy or pass along to other system for now where things are defined fro StandardBasisPolynomial
 function vander(p::Type{<:P}, x::AbstractVector{T}, degs) where {B<:StandardBasis, P<:AbstractUnivariatePolynomial{B}, T <: Number}
     vander(StandardBasisPolynomial, x, degs)
 end

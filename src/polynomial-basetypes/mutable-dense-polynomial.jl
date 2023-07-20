@@ -1,6 +1,6 @@
 # * has order
 # * leading 0s are trimmed
-# * pass Val(true) to bypass trimmings
+# * pass checked::Val(false) to bypass trimmings
 struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
     coeffs::Vector{T}
     order::Int # lowest degree, typically 0
@@ -27,42 +27,24 @@ struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
         end
         new{B,T,Symbol(X)}(cs, order)
     end
+    function MutableDensePolynomial{B,T,X}(checked::Val{true}, cs::Vector{T}, order::Int=0) where {B,T,X}
+        MutableDensePolynomial{B,T,X}(cs, order)
+    end
 end
 
-
-MutableDensePolynomial{B,T,X}(checked::Val{true}, cs::Vector{T}, order::Int=0) where {B,T,X} = MutableDensePolynomial{B,T,X}(cs, order)
-
 function MutableDensePolynomial{B,T}(xs::AbstractVector{S}, order::Int=0, var::SymbolLike=Var(:x)) where {T, S, B}
-    if Base.has_offset_axes(xs)
-        @warn "Using the axis offset of the coefficient vector"
-        xs, order = xs.parent, first(xs.offsets)
-    end
-
-    cs = convert(Vector{T}, xs)
-    cs = trim_trailing_zeros(cs)
-    MutableDensePolynomial{B,T,Symbol(var)}(Val(true),cs, order)
+    MutableDensePolynomial{B,T,Symbol(var)}(xs, order)
 end
 
 function MutableDensePolynomial{B}(xs::AbstractVector{T}, order::Int=0, var::SymbolLike=Var(:x)) where {B, T}
-    MutableDensePolynomial{B,T}(xs, order, var)
+    MutableDensePolynomial{B,T,Symbol(var)}(xs, order)
 end
 
-# function MutableDensePolynomial{B,X}(xs::AbstractVector{T}, order::Int) where {T, B,X}
-#     MutableDensePolynomial{B,T,X}(xs,order)
-# end
 
-# function MutableDensePolynomial{B,X}(xs, order::Int) where {B,X}
-#     cs = collect(xs)
-#     T = eltype(cs)
-#     MutableDensePolynomial{B,T,X}(cs, order)
-# end
-
-function MutableDensePolynomial{B,T}(xs, var::SymbolLike) where {B,T}
-    cs = convert(Vector{T}, xs)
-    MutableDensePolynomial{B,T,Symbol(var)}(cs, 0)
+function MutableDensePolynomial{B,T}(xs, var::SymbolLike=Var(:x)) where {B,T}
+    MutableDensePolynomial{B,T,Symbol(var)}(xs, 0)
 end
 
-# allow specification of codefficients, order, symbol or coefficients, symbol
 function MutableDensePolynomial{B}(xs, order::Int=0, var::SymbolLike=Var(:x)) where {B}
     cs = collect(promote(xs...))
     T = eltype(cs)
@@ -70,9 +52,7 @@ function MutableDensePolynomial{B}(xs, order::Int=0, var::SymbolLike=Var(:x)) wh
 end
 
 function MutableDensePolynomial{B}(xs, var::SymbolLike) where {B}
-    cs = collect(xs)
-    T = eltype(cs)
-    MutableDensePolynomial{B, T, Symbol(var)}(cs)
+    MutableDensePolynomial{B}(xs, 0, var)
 end
 
 function _polynomial(p::P, as::Vector{S})  where {B,T, X, P <: MutableDensePolynomial{B,T,X}, S}
@@ -85,25 +65,19 @@ end
 @poly_register MutableDensePolynomial
 constructorof(::Type{<:MutableDensePolynomial{B}}) where {B} = MutableDensePolynomial{B}
 
-
+## ---
 
 ## Generics for polynomials
 function Base.convert(::Type{MutableDensePolynomial{B,T,X}}, q::MutableDensePolynomial{B,T′,X′}) where {B,T,T′,X,X′}
     MutableDensePolynomial{B,T,X}(Val(false), convert(Vector{T},q.coeffs), q.order)
 end
 
-# function Base.convert(::Type{MutableDensePolynomial{B,T}}, q::MutableDensePolynomial{B,T′,X′}) where {B,T,T′,X′}
-#     convert(Val(false), MutableDensePolynomial{B,T,X′}, q)
-# end
-
-
 Base.copy(p::MutableDensePolynomial{B,T,X}) where {B,T,X} =
     MutableDensePolynomial{B,T,Var(X)}(copy(p.coeffs), firstindex(p))
 
-# This is B <: StandardBasis?
 Base.firstindex(p::MutableDensePolynomial) = p.order
 Base.length(p::MutableDensePolynomial) = length(p.coeffs)
-offset(p::MutableDensePolynomial) = 1 - firstindex(p)
+Base.lastindex(p::MutableDensePolynomial) = firstindex(p) + length(p) - 1
 function Base.getindex(p::MutableDensePolynomial{B,T,X}, i::Int) where {B,T,X}
     (i < firstindex(p) || i > lastindex(p)) && return zero(T)
     p.coeffs[i + offset(p)]
@@ -126,18 +100,18 @@ function Base.setindex!(p::P, value, i::Int) where {B,T,X,P<:MutableDensePolynom
     P(p.coeffs, o)
 end
 
-Base.lastindex(p::MutableDensePolynomial) = firstindex(p) + length(p) - 1
+offset(p::MutableDensePolynomial) = 1 - firstindex(p)
 Base.eachindex(p::MutableDensePolynomial) = firstindex(p):1:lastindex(p)
 Base.iterate(p::MutableDensePolynomial, args...) = Base.iterate(p.coeffs, args...)
 Base.pairs(p::MutableDensePolynomial) =
     Base.Generator(=>, firstindex(p):lastindex(p), p.coeffs)
-#    (i - offset(p) => cᵢ for (i, cᵢ) ∈ enumerate(p))
+
 # return a container of zeros based on basis type
 _zeros(::Type{<:MutableDensePolynomial}, z, N)  = fill(z, N)
 
 Base.similar(p::MutableDensePolynomial, args...) = similar(p.coeffs, args...)
 
-# iszero, isconstant
+# iszero
 Base.iszero(p::MutableDensePolynomial) = iszero(p.coeffs)::Bool
 
 function degree(p::MutableDensePolynomial)
@@ -147,8 +121,8 @@ function degree(p::MutableDensePolynomial)
 end
 
 # zero, one, variable, basis
-Base.zero(::Type{MutableDensePolynomial{B,T,X}}) where {B,T,X} =
-    MutableDensePolynomial{B,T,X}(T[])
+# Base.zero(::Type{MutableDensePolynomial{B,T,X}}) where {B,T,X} =
+#     MutableDensePolynomial{B,T,X}(T[])
 
 coeffs(p::MutableDensePolynomial) = p.coeffs
 
@@ -173,6 +147,7 @@ end
 
 Base.chop(p::MutableDensePolynomial{B,T,X}; kwargs...) where {B,T,X} = chop!(copy(p);kwargs...)
 
+# trims left **and right**
 function chop!(p::MutableDensePolynomial{B,T,X};
                atol=nothing, rtol=Base.rtoldefault(float(real(T)))) where {B,T,X}
     iᵣ = chop_right_index(p.coeffs; atol=atol, rtol=rtol) # nothing -- nothing to chop
@@ -252,15 +227,8 @@ function offset_vector_combine(op, p::MutableDensePolynomial{B,T,X}, q::MutableD
 
 end
 
-# slower
-# function Base.:+(p::MutableDensePolynomial{B,T,X}, q::MutableDensePolynomial{B,S,X}) where {B,T,S,X}
-#     a = min(firstindex(p), firstindex(q))
-#     b = max(lastindex(p), lastindex(q))
-#     x = collect(p[i] - q[i] for i ∈ a:b)
-#     MutableDensePolynomial{B,eltype(x),X}(x,a)
-# end
 
-# scalar
+# scalar mult
 function scalar_mult(p::MutableDensePolynomial{B,T,X}, c::S) where {B,T,X,S}
     cs = p.coeffs .* (c,) # works with T[]
     return _polynomial(p, cs)
@@ -270,11 +238,19 @@ function scalar_mult(c::S, p::MutableDensePolynomial{B,T,X}) where {B,T,X,S}
     return _polynomial(p, cs)
 end
 
-#XXX need to add LinearAlgebra
-# function LinearAlgebra.lmul!(c::Number, p::MutableDensePolynomial{B,T,X}) where {B,T,X}
-#     MutableDensePolynomial{B,T,X}(Val(false), lmul!(c, p.coeffs), firstindex(p))
-# end
+## ---
+function LinearAlgebra.lmul!(c::Scalar, p::MutableDensePolynomial{B,T,X}) where {B,T,X}
+    if iszero(c)
+        empty!(p.coeffs)
+    else
+        MutableDensePolynomial{B,T,X}(Val(false), lmul!(c, p.coeffs), firstindex(p))
+    end
+end
 
-# function LinearAlgebra.rmul!(c::Number, p::MutableDensePolynomial{B,T,X}) where {B,T,X}
-#     MutableDensePolynomial{B,T,X}(rmul!(c, p.coeffs), firstindex(p))
-# end
+function LinearAlgebra.rmul!(p::MutableDensePolynomial{B,T,X}, c::Scalar) where {B,T,X}
+    if iszero(c)
+        empty!(p.coeffs)
+    else
+        MutableDensePolynomial{B,T,X}(Val(false), rmul!(c, p.coeffs), firstindex(p))
+    end
+end

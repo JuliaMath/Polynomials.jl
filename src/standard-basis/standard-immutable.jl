@@ -1,9 +1,13 @@
 
+evalpoly(x, p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X} = zero(T)*zero(x)
 function evalpoly(x, p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}
-    N == 0 && return zero(T) * zero(x)
-    z = zero(x * zero(p[0]))
-    typeof(z)(EvalPoly.evalpoly(x, p.coeffs))
+#    z = zero(x * zero(p[0]))
+#    typeof(z)(EvalPoly.evalpoly(x, p.coeffs))
+    EvalPoly.evalpoly(x, p.coeffs)
 end
+
+constantterm(p::ImmutableDensePolynomial{B,T,X,N}) where {B <: StandardBasis,T,X,N} = p.coeffs[1] # this is oddly slow
+constantterm(p::ImmutableDensePolynomial{B,T,X,0}) where {B <: StandardBasis,T,X} = zero(T)
 
 # Padded vector sum of two tuples assuming N ≥ M
 @generated function tuple_sum(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
@@ -33,7 +37,6 @@ function scalar_add(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B<:Standa
     N == 0 && return P{1}(NTuple{1,R}(c))
     N == 1 && return P{N}((p[0]+c,))
 
-    #cs = tuple_sum(convert(NTuple{N,R}, p.coeffs), NTuple{1,R}(c))
     cs = _tuple_combine(+, convert(NTuple{N,R}, p.coeffs), NTuple{1,R}((c,)))
     q = P{N}(cs)
 
@@ -93,7 +96,7 @@ end
 end
 
 
-function differentiate(p::ImmutableDensePolynomial{StandardBasis,T,X,N}) where {T,X,N}
+function derivative(p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}
     N == 0 && return p
     hasnan(p) && return ⟒(p)(zero(T)/zero(T),X) # NaN{T}
     cs = ntuple(i -> i*p.coeffs[i+1], Val(N-1))

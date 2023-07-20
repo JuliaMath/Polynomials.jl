@@ -10,11 +10,6 @@ function evalpoly(x, p::MutableSparsePolynomial)
     return tot
 end
 
-
-function constantterm(p::MutableSparsePolynomial{B,T,X}) where {B,T,X}
-    get(p.coeffs, 0, zero(T))
-end
-
 function ⊗(p::MutableSparsePolynomial{StandardBasis,T,X},
            q::MutableSparsePolynomial{StandardBasis,S,X}) where {T,S,X}
 
@@ -34,4 +29,21 @@ function ⊗(p::MutableSparsePolynomial{StandardBasis,T,X},
         end
     end
     P(Val(false), cs)
+end
+
+
+# sparse
+function derivative(p:: MutableSparsePolynomial{B,T,X}) where {B<:StandardBasis,T,X}
+    N = lastindex(p) - firstindex(p) + 1
+    R = promote_type(T, Int)
+    P = ⟒(p){R,X}
+    hasnan(p) && return  P(zero(T)/zero(T)) # NaN{T}
+    iszero(p) && return zero(P)
+
+    d = Dict{Int,R}()
+    for (i, pᵢ) ∈ pairs(p)
+        iszero(i) && continue
+        d[i-1] = i*pᵢ
+    end
+    return P(d)
 end

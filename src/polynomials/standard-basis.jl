@@ -55,7 +55,7 @@ constantterm(p::StandardBasisPolynomial) = p[0]
 domain(::Type{<:StandardBasisPolynomial}) = Interval{Open,Open}(-Inf, Inf)
 mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
 
-function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial{T′, X′}) where {T′, X′}
+function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial)
     if isa(q, P)
         return q
     else
@@ -66,6 +66,7 @@ function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolyno
         return ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
     end
 end
+
 
 # treat p as a *vector* of coefficients
 Base.similar(p::StandardBasisPolynomial, args...) = similar(coeffs(p), args...)

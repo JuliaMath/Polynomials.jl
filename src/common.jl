@@ -558,7 +558,7 @@ copy_with_eltype(::Type{T}, p::P) where {T, S, Y, P <:AbstractPolynomial{S,Y}} =
 #copy_with_eltype(::Type{T}, p::P) where {T, S, X, P<:AbstractPolynomial{S,X}} =
 #    copy_with_eltype(Val(T), Val(X), p)
 
-Base.iszero(p::AbstractPolynomial) = all(iszero, p)
+Base.iszero(p::AbstractPolynomial) = all(iszero, values(p))
 
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
@@ -1163,7 +1163,7 @@ function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
     check_same_variable(p1, p2) || return false
     ==(promote(p1,p2)...)
 end
-Base.:(==)(p::AbstractPolynomial, n::Scalar) = degree(p) <= 0 && constantterm(p) == n
+Base.:(==)(p::AbstractPolynomial, n::Scalar) = isconstant(p) && constantterm(p) == n
 Base.:(==)(n::Scalar, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial, p2::AbstractPolynomial; kwargs...)
@@ -1178,9 +1178,9 @@ function Base.isapprox(p1::AbstractPolynomial, p2::AbstractPolynomial; kwargs...
 end
 
 function Base.isapprox(p1::AbstractPolynomial{T,X},
-                       p2::AbstractPolynomial{T,X};
-                       rtol::Real = (Base.rtoldefault(T,T,0)),
-                       atol::Real = 0,) where {T,X}
+                       p2::AbstractPolynomial{S,X};
+                       rtol::Real = (Base.rtoldefault(T,S,0)),
+                       atol::Real = 0,) where {T,S,X}
     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
     # copy over from abstractarray.jl
     Δ  = norm(p1-p2)

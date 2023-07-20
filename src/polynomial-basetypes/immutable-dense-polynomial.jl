@@ -1,5 +1,5 @@
-# Keep order=0
-# Try to keep length based on N,M so no chopping by default
+# Try to keep length based on N,M so no removal of trailing zeros by default
+# order is ignored, firstindex is always 0
 struct ImmutableDensePolynomial{B,T,X,N} <: AbstractUnivariatePolynomial{B,T,X}
     coeffs::NTuple{N,T}
     function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N,T}) where {B,N,T,X}
@@ -10,26 +10,28 @@ struct ImmutableDensePolynomial{B,T,X,N} <: AbstractUnivariatePolynomial{B,T,X}
     end
 end
 
-ImmutableDensePolynomial{B,T,X,N}(::Type{Val{false}}, cs::NTuple{N,T}) where {B,N, T,X} =
+ImmutableDensePolynomial{B,T,X,N}(::Type{Val{false}}, cs::NTuple{N,T}) where {B,N,T,X} =
     ImmutableDensePolynomial{B,T,X}(cs)
 
 ImmutableDensePolynomial{B,T,X,N}(::Type{Val{true}}, cs::NTuple{N,T}) where {B,N, T,X} =
     ImmutableDensePolynomial{B,T,X,N}(cs)
 
-# tuple
+# tuple with mis-matched size
+function ImmutableDensePolynomial{B,T,X,N}(xs::NTuple{M,S}) where {B,T,S,X,N,M}
+    convert(ImmutableDensePolynomial{B,T,X,N}, ImmutableDensePolynomial{B,T,X,M}(xs))
+end
+
 function ImmutableDensePolynomial{B,T,X}(xs::NTuple{N,S}) where {B,T,S,X,N}
     cs = convert(NTuple{N,T}, xs)
-    cs = trim_trailing_zeros(cs)
-    N′ = length(cs)
-    ImmutableDensePolynomial{B,T,X,N′}(cs)
+    ImmutableDensePolynomial{B,T,X,N}(cs)
 end
 
 function ImmutableDensePolynomial{B,T}(xs::NTuple{N,S}, var::SymbolLike=Var(:x)) where {B,T,S,N}
-    ImmutableDensePolynomial{B,T,Var(var)}(xs)
+    ImmutableDensePolynomial{B,T,Var(var),N}(xs)
 end
 
 function ImmutableDensePolynomial{B}(xs::NTuple{N,T}, var::SymbolLike=Var(:x)) where {B,T,N}
-    ImmutableDensePolynomial{B,T,Var(var)}(xs)
+    ImmutableDensePolynomial{B,T,Var(var),N}(xs)
 end
 
 # abstract vector
@@ -53,7 +55,7 @@ function ImmutableDensePolynomial{B,T}(xs::AbstractVector{S}, var::SymbolLike) w
 end
 
 function ImmutableDensePolynomial{B}(xs::AbstractVector{T}, order::Int, var::SymbolLike=Var(:x)) where {B,T}
-    ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
+    ImmutableDensePolynomial{B,T,Symbol(var)}(xs)
 end
 
 function ImmutableDensePolynomial{B}(xs::AbstractVector{T}, var::SymbolLike=Var(:x)) where {B,T}
@@ -93,6 +95,9 @@ end
 @poly_register ImmutableDensePolynomial
 constructorof(::Type{<:ImmutableDensePolynomial{B}})  where {B} = ImmutableDensePolynomial{B}
 
+## ----
+
+# need to promote to larger
 Base.promote_rule(::Type{<:ImmutableDensePolynomial{B,T,X,N}}, ::Type{<:ImmutableDensePolynomial{B,S,X,M}}) where {B,T,S,X,N,M} =
     ImmutableDensePolynomial{B,promote_type(T,S), X, max(N,M)}
 Base.promote_rule(::Type{<:ImmutableDensePolynomial{B,T,X,N}}, ::Type{<:S}) where {B,T,S<:Number,X,N} =
@@ -110,7 +115,7 @@ end
 
 
 Base.copy(p::ImmutableDensePolynomial) = p
-Base.similar(p::ImmutableDensePolynomial, args...) = similar(p.coeffs, args...)
+Base.similar(p::ImmutableDensePolynomial, args...) = p.coeffs
 
 ## chop
 function Base.chop(p::ImmutableDensePolynomial{B,T,X,N};
@@ -127,7 +132,7 @@ function Base.chop(p::ImmutableDensePolynomial{B,T,X,N};
     ImmutableDensePolynomial{B,T,X,N′}(xs)
 end
 
-
+# misnamed!
 chop!(p::ImmutableDensePolynomial; kwargs...) = chop(p; kwargs...)
 
 function truncate!(p::ImmutableDensePolynomial{B,T,X,N};
@@ -145,9 +150,6 @@ function truncate!(p::ImmutableDensePolynomial{B,T,X,N};
     end
     ImmutableDensePolynomial{B,T,X,N}(ps)
 end
-
-
-
 
 
 # not type stable, as N is value dependent
@@ -172,39 +174,31 @@ function normΔ(q1::ImmutableDensePolynomial{B}, q2::ImmutableDensePolynomial{B}
     return tot^(1/p)
 end
 
-function Base.isapprox(p1::ImmutableDensePolynomial{B,T,X}, p2::ImmutableDensePolynomial{B,T′,X};
-                       atol=nothing, rtol = nothing
-                       ) where {B,T,T′,X}
+# function Base.isapprox(p1::ImmutableDensePolynomial{B,T,X}, p2::ImmutableDensePolynomial{B,T′,X};
+#                        atol=nothing, rtol = nothing
+#                        ) where {B,T,T′,X}
 
-    (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
-    R = real(float(promote_type(T,T′)))
-    atol = something(atol, zero(R))
-    rtol = something(rtol, Base.rtoldefault(R))
-    # copy over from abstractarray.jl
-    Δ  = normΔ(p1,p2)
-    if isfinite(Δ)
-        return Δ <= max(atol, rtol * max(norm(p1), norm(p2)))
-    else
-        for i in 0:max(degree(p1), degree(p2))
-            isapprox(p1[i], p2[i]; rtol=rtol, atol=atol) || return false
-        end
-        return true
-    end
-end
+#     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
+#     R = real(float(promote_type(T,T′)))
+#     atol = something(atol, zero(R))
+#     rtol = something(rtol, Base.rtoldefault(R))
+#     # copy over from abstractarray.jl
+#     Δ  = normΔ(p1,p2)
+#     if isfinite(Δ)
+#         return Δ <= max(atol, rtol * max(norm(p1), norm(p2)))
+#     else
+#         for i in 0:max(degree(p1), degree(p2))
+#             isapprox(p1[i], p2[i]; rtol=rtol, atol=atol) || return false
+#         end
+#         return true
+#     end
+# end
 
 ## ---
 
 _zeros(::Type{<:ImmutableDensePolynomial}, z::S, N) where {S} =
     ntuple(_ -> zero(S), Val(N))
 
-Base.iszero(p::ImmutableDensePolynomial) = all(iszero,p.coeffs)
-Base.zero(::Type{<:ImmutableDensePolynomial{B,T,X}}) where {B,T,X} =
-    ImmutableDensePolynomial{B,T,X,0}(())
-
-function isconstant(p::ImmutableDensePolynomial)
-    i = findlast(!iszero, p.coeffs)
-    return isnothing(i) || i ≤ 1
-end
 
 Base.firstindex(p::ImmutableDensePolynomial) = 0
 Base.lastindex(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N} = N - 1
@@ -219,6 +213,7 @@ function Base.getindex(p::ImmutableDensePolynomial{B,T,X,N}, i::Int) where {B,T,
     (i < firstindex(p) || i > lastindex(p)) && return zero(p.coeffs[1])
     p.coeffs[i + offset(p)]
 end
+
 Base.setindex!(p::ImmutableDensePolynomial, value, i::Int) =
     throw(ArgumentError("ImmutableDensePolynomial has no setindex! method"))
 
@@ -246,7 +241,11 @@ function degree(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N}
     isnothing(i) && return -1
     return i - 1
 end
+
 # zero, one
+Base.zero(::Type{<:ImmutableDensePolynomial{B,T,X}}) where {B,T,X} =
+    ImmutableDensePolynomial{B,T,X,0}(())
+
 Base.zero(::Type{ImmutableDensePolynomial{B,T,X,N}}) where {B,T,X,N} =
     ImmutableDensePolynomial{B,T,X,0}(())
 
@@ -317,13 +316,6 @@ function scalar_mult(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B,T,X,S,
     cs = p.coeffs .* (c,)
     R = eltype(cs)
     return ImmutableDensePolynomial{B,R,X,N}(cs)
-
-    # R = promote_type(T,S)
-    # P = ImmutableDensePolynomial{B,R,X}
-    # (iszero(N) || iszero(c)) && return nothing#zero(p)
-    # #iszero(c) && return zero(p) #convert(P, p)
-    # cs = p.coeffs .* (c,)
-    # return ImmutableDensePolynomial{B,R,X,N}(cs)
 end
 
 function scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,S,N}

@@ -1,8 +1,29 @@
+# XXX todo, merge in with common.jl
 """
     Abstract type for polynomials with an explicit basis.
 """
 abstract type AbstractUnivariatePolynomial{B, T, X} <: AbstractPolynomial{T,X} end
 abstract type AbstractBasis end
+
+function showterm(io::IO, ::Type{P}, pj::T, var, j, first::Bool, mimetype) where {B, T, P<:AbstractUnivariatePolynomial{B,T}}
+
+    if _iszero(pj) return false end
+
+    pj = printsign(io, pj, first, mimetype)
+
+    if hasone(T)
+        if !(_isone(pj) && !(showone(T) || j == 0))
+            printcoefficient(io, pj, j, mimetype)
+        end
+    else
+        printcoefficient(io, pj, j, mimetype)
+    end
+
+    printproductsign(io, pj, j, mimetype)
+    printexponent(io, var, j, mimetype)
+    return true
+end
+
 
 ## idea is vector space stuff (scalar_add, scalar_mult, vector +/-, ^) goes here
 ## connection (convert, transform) is specific to a basis (storage)
@@ -76,16 +97,17 @@ end
 
 # The zero polynomial. Typically has no coefficients
 #Base.zero(p::P,args...) where {P <: AbstractUnivariatePolynomial} = zero(P,args...)
-Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),indeterminate(P)})
-Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),Symbol(var)})
+#Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),indeterminate(P)})
+#Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),Symbol(var)})
 
 # the polynomial 1
-#Base.one(p::P,args...) where {P <: AbstractUnivariatePolynomial} = one(P,args...)
+# one(P) is basis dependent
+Base.one(p::P,args...) where {P <: AbstractUnivariatePolynomial} = one(P,args...)
 Base.one(::Type{P}) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){eltype(P),indeterminate(P)})
 Base.one(::Type{P}, var::SymbolLike) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){eltype(P),Symbol(var)})
 
 # the variable x
-#variable(p::P) where {P <: AbstractUnivariatePolynomial} = variable(P)
+variable(p::P) where {P <: AbstractUnivariatePolynomial} = variable(P)
 variable(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = variable(⟒(P){eltype(P),indeterminate(P)})
 variable(::Type{P}, var::SymbolLike) where {B,P<:AbstractUnivariatePolynomial{B}} = variable(⟒(P){eltype(P),Var(var)})
 
@@ -133,8 +155,6 @@ Base.convert(::Type{ConstantTerm{T}}, p::AbstractUnivariatePolynomial) where {T}
 
 #= Comparisons =#
 # need to promote Number -> Poly
-# Base.isapprox(p1::AbstractUnivariatePolynomial, p2::Number; kwargs...) = isapprox(promote(p1, p2)...; kwargs...)
-# Base.isapprox(p1::Number, p2::AbstractUnivariatePolynomial; kwargs...) = isapprox(promote(p1, p2)...; kwargs...)
 function Base.isapprox(p1::AbstractUnivariatePolynomial, p2::AbstractUnivariatePolynomial; kwargs...)
     isapprox(promote(p1, p2)...; kwargs...)
 end
@@ -167,36 +187,34 @@ function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X},
     end
 end
 
-function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X}, p2::Number; kwargs...) where {B,T,X}
-    q = p2 * one(⟒(p1){T,X})
-    isapprox(p1, q; kwargs...)
-end
-Base.isapprox(p1::Number, p2::AbstractUnivariatePolynomial; kwargs...) = isapprox(p2, p1; kwargs...)
+# function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X}, p2::Scalar; kwargs...) where {B,T,X}
+#     q = p2 * one(⟒(p1){T,X})
+#     isapprox(p1, q; kwargs...)
+# end
+# Base.isapprox(p1::Scalar, p2::AbstractUnivariatePolynomial; kwargs...) = isapprox(p2, p1; kwargs...)
 
-Base.isequal(p1::P, p2::P) where {P <: AbstractUnivariatePolynomial} = hash(p1) == hash(p2)
-function Base.:(==)(p1::P, p2::P) where {P <: AbstractUnivariatePolynomial}
-    iszero(p1) && iszero(p2) && return true
-    lastindex(p1) == lastindex(p2) || return false
-    # coeffs(p1) == coeffs(p2), but non-allocating
-    for i ∈ union(keys(p1), keys(p2))
-        p1[i] == p2[i] || return false
-#    for ((i,pᵢ), (j, pⱼ)) ∈ zip(pairs(p1), pairs(p2))
-#        i == j && pᵢ == pⱼ || return false
-    end
-    return true
-end
-function Base.:(==)(p1::AbstractUnivariatePolynomial, p2::AbstractUnivariatePolynomial)
-    if isconstant(p1)
-        isconstant(p2) && return constantterm(p1) == constantterm(p2)
-        return false
-    elseif isconstant(p2)
-        return false # p1 is not constant
-    end
-    check_same_variable(p1, p2) || return false
-    ==(promote(p1,p2)...)
-end
-Base.:(==)(p::AbstractUnivariatePolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
-Base.:(==)(n::Number, p::AbstractUnivariatePolynomial) = p == n
+#Base.isequal(p1::P, p2::P) where {P <: AbstractUnivariatePolynomial} = hash(p1) == hash(p2)
+# function Base.:(==)(p1::P, p2::P) where {P <: AbstractUnivariatePolynomial}
+#     iszero(p1) && iszero(p2) && return true
+#     lastindex(p1) == lastindex(p2) || return false
+#     # coeffs(p1) == coeffs(p2), but non-allocating
+#     for i ∈ union(keys(p1), keys(p2))
+#         p1[i] == p2[i] || return false
+#     end
+#     return true
+# end
+# function Base.:(==)(p1::AbstractUnivariatePolynomial, p2::AbstractUnivariatePolynomial)
+#     if isconstant(p1)
+#         isconstant(p2) && return constantterm(p1) == constantterm(p2)
+#         return false
+#     elseif isconstant(p2)
+#         return false # p1 is not constant
+#     end
+#     check_same_variable(p1, p2) || return false
+#     ==(promote(p1,p2)...)
+# end
+#Base.:(==)(p::AbstractUnivariatePolynomial, n::Scalar) = isconstant(p) && constantterm(p) == n
+#Base.:(==)(n::Scalar, p::AbstractUnivariatePolynomial) = p == n
 
 ## --- arithmetic operations ---
 ## implement
@@ -286,10 +304,7 @@ function integrate(p::AbstractUnivariatePolynomial, c)
     scalar_add(integrate(p), c)
 end
 
-
-
-
-
+# promote, promote_rule, handle constants
 macro poly_register(name)
     poly = esc(name)
     quote
