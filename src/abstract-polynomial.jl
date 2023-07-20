@@ -324,6 +324,7 @@ macro poly_register(name)
         $poly{B,T}(var::SymbolLike=Var(:x)) where {B,T} = variable($poly{B, T, Symbol(var)})
         $poly{B}(var::SymbolLike=Var(:x)) where {B} = variable($poly{B}, Symbol(var))
 
+        (p::$poly)(x::AbstractPolynomial) = polynomial_composition(p, x)
         (p::$poly)(x) = evalpoly(x, p)
     end
 end
