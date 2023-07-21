@@ -233,6 +233,8 @@ function Base.:(==)(p1::ImmutableDensePolynomial{B}, p2::ImmutableDensePolynomia
     return true
 end
 
+minimumexponent(::Type{<:ImmutableDensePolynomial}) =  0
+
 
 ## ---
 function degree(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N}

@@ -7,7 +7,7 @@ struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
     function MutableDensePolynomial{B,T,X}(cs, order::Int=0) where {B,T,X}
         if Base.has_offset_axes(cs)
             @warn "Using the axis offset of the coefficient vector"
-            cs, order = cs.parent, first(cs.offsets)
+            cs, order = cs.parent, firstindex(cs)
         end
 
         i = findlast(!iszero, cs)
@@ -64,6 +64,9 @@ end
 
 @poly_register MutableDensePolynomial
 constructorof(::Type{<:MutableDensePolynomial{B}}) where {B} = MutableDensePolynomial{B}
+
+Base.promote_rule(::Type{P},::Type{Q}) where {B,T, X, P <: AbstractUnivariatePolynomial{B,T,X}, S, Q <: AbstractUnivariatePolynomial{B, S, X}} = MutableDensePolynomial{B,promote_type(T, S), X}
+
 
 ## ---
 
@@ -181,6 +184,9 @@ function normΔ(q1::MutableDensePolynomial{B}, q2::MutableDensePolynomial{B}, p:
     end
     return tot^(1/p)
 end
+
+minimumexponent(::Type{<:MutableDensePolynomial}) =  typemin(Int)
+
 
 
 # vector ops +, -, c*x

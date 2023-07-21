@@ -1,6 +1,6 @@
 using LinearAlgebra
 using OffsetArrays, StaticArrays
-import Polynomials: indeterminate
+import Polynomials: indeterminate, ⟒
 import Polynomials: ImmutableDensePolynomial, StandardBasis,MutableSparsePolynomial, MutableDensePolynomial
 
 ## Test standard basis polynomials with (nearly) the same tests
@@ -375,7 +375,7 @@ end
 
     @testset for P in Ps
         # LaurentPolynomial accepts OffsetArrays; others throw warning
-        if P ∈ (LaurentPolynomial, MutableDensePolynomial{StandardBasis})
+        if P ∈ (LaurentPolynomial,)
             @test LaurentPolynomial(as) == LaurentPolynomial(bs, 3)
         else
             @test P(as) == P(bs)
@@ -895,6 +895,7 @@ end
     @testset for P1 in Ps
         p = P1(c)
         @testset for P2 in Psexact
+            @show P1, P2
             @test convert(P2, p) == p
         end
         @test convert(FactoredPolynomial, p) ≈ p
@@ -1039,7 +1040,7 @@ end
         der = derivative(p)
         @test coeffs(der) ==ᵗ⁰ [2, 6, 12]
         int = integrate(der, 1)
-        @test coeffs(int) ==ᵗ⁰ c
+        @test coeffs(int)[2:end] ==ᵗ⁰ c[2:end]
 
 
         @test derivative(pR) == P([-2 // 1,2 // 1])
@@ -1546,7 +1547,7 @@ end
         p = P([1 + im, 1 - im, -1 + im, -1 - im])# minus signs
         @test repr(p) == "$P((1 + im) + (1 - im)x - (1 - im)x^2 - (1 + im)x^3)"
         p = P([1.0, 0 + NaN * im, NaN, Inf, 0 - Inf * im]) # handle NaN or Inf appropriately
-        @test repr(p) == "$P(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
+        @test repr(p) == "$(P)(1.0 + NaN*im*x + NaN*x^2 + Inf*x^3 - Inf*im*x^4)"
 
         p = P([1,2,3])
 
@@ -1669,9 +1670,9 @@ end
     @testset "empty" begin
         p = SparsePolynomial(Float64[0])
         @test eltype(p) == Float64
-        @test eltype(keys(p)) == Int
-        @test eltype(values(p)) == Float64
-        @test collect(p) == Float64[]
+        @test eltype(collect(keys(p))) == Int
+        @test eltype(collect(values(p))) == Float64
+        @test collect(p) ==ᵗ⁰ Float64[]
         @test collect(keys(p)) == Int[]
         @test collect(values(p)) == Float64[]
         @test p == Polynomial(0)

@@ -113,3 +113,8 @@ function integrate(p::ImmutableDensePolynomial{StandardBasis,T,X,N}) where {T,X,
     R = eltype(cs)
     ImmutableDensePolynomial{StandardBasis,R,X,N+1}(cs)
 end
+
+
+## ---
+ImmutablePolynomial = ImmutableDensePolynomial{StandardBasis}
+export ImmutablePolynomial

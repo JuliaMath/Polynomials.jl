@@ -99,7 +99,8 @@ function coeffs(p::SparsePolynomial{T})  where {T}
     n = degree(p)
     cs = zeros(T, length(p))
     keymin = firstindex(p)
-    for (k,v) in p.coeffs
+    for k in sort(collect(keys(p.coeffs)))
+        v = p.coeffs[k]
         cs[k - keymin + 1] = v
     end
     cs
@@ -258,4 +259,20 @@ function derivative(p::SparsePolynomial{T,X}, order::Integer = 1) where {T,X}
 
     return dpn
 
+end
+
+function integrate(p:: SparsePolynomial{T,X}) where {T,X}
+
+    R = Base.promote_op(/, T, Int)
+    P = SparsePolynomial{R,X}
+    hasnan(p) && return ⟒(P)(NaN)
+    iszero(p) && return zero(p)/1
+
+    d = Dict{Int, R}()
+    for (i, pᵢ) ∈ pairs(p.coeffs)
+        i == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
+        cᵢ₊₁ = pᵢ/(i+1)
+        !iszero(cᵢ₊₁) && (d[i+1] = cᵢ₊₁)
+    end
+    return P(d)
 end

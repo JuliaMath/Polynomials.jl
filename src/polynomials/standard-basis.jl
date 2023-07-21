@@ -59,8 +59,10 @@ function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolyno
     if isa(q, P)
         return q
     else
-        minimumexponent(P) <= minimumexponent(q) ||
-            throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
+        #        minimumexponent(P) <= minimumexponent(q) ||
+        #            throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
+        minimumexponent(P) > firstindex(q) &&
+            throw(ArgumentError("Can't convert to a polynomial of type $(⟒(P)) as the degree of the polynomial is too small"))
         T = _eltype(P,q)
         X = indeterminate(P,q)
         return ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))

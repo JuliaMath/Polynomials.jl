@@ -79,7 +79,6 @@ function normΔ(q1::AbstractUnivariatePolynomial, q2::AbstractUnivariatePolynomi
     return tot^(1/p)
 end
 
-
 # map Polynomial terms -> vector terms
 degree(p::AbstractUnivariatePolynomial) = iszero(p) ? -1 : lastindex(p)
 # order(p::AbstractUnivariatePolynomial) = firstindex(p) XXX conflicts with DataFrames.order
@@ -324,6 +323,7 @@ macro poly_register(name)
         $poly{B,T}(var::SymbolLike=Var(:x)) where {B,T} = variable($poly{B, T, Symbol(var)})
         $poly{B}(var::SymbolLike=Var(:x)) where {B} = variable($poly{B}, Symbol(var))
 
+        $poly{B}(c::AbstractPolynomial{S,Y}) where {B,S,Y} = convert($poly{B}, c)
         (p::$poly)(x::AbstractPolynomial) = polynomial_composition(p, x)
         (p::$poly)(x) = evalpoly(x, p)
     end

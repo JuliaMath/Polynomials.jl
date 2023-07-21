@@ -1,6 +1,3 @@
-#const SparsePolynomial = SparseUnivariatePolynomial{StandardBasis} # const is important!
-#export SparsePolynomial
-
 function evalpoly(x, p::MutableSparsePolynomial)
 
     tot = zero(p[0]*x)
@@ -47,3 +44,23 @@ function derivative(p:: MutableSparsePolynomial{B,T,X}) where {B<:StandardBasis,
     end
     return P(d)
 end
+
+function integrate(p:: MutableSparsePolynomial{B,T,X}) where {B<:StandardBasis,T,X}
+
+    R = Base.promote_op(/, T, Int)
+    P = MutableSparsePolynomial{B,R,X}
+    hasnan(p) && return ⟒(P)(NaN)
+    iszero(p) && return zero(p)/1
+
+    d = Dict{Int, R}()
+    for (i, pᵢ) ∈ pairs(p.coeffs)
+        i == -1 && throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term"))
+        cᵢ₊₁ = pᵢ/(i+1)
+        !iszero(cᵢ₊₁) && (d[i+1] = cᵢ₊₁)
+    end
+    return P(d)
+end
+
+## ---
+const SparsePolynomial = MutableSparsePolynomial{StandardBasis} # const is important!
+export SparsePolynomial

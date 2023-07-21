@@ -18,6 +18,9 @@ function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: Abstract
     end
 end
 function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B<:StandardBasis,T,X, Q<:AbstractUnivariatePolynomial{B,T,X}}
+    minimumexponent(P) > firstindex(q) &&
+        throw(ArgumentError("Degree of polynomial less than minimum degree of polynomial type $(⟒(P))"))
+
     isa(q, PP) && return p
     T′ = _eltype(P,q)
     X′ = indeterminate(P,q)
@@ -71,7 +74,7 @@ function integrate(p::AbstractUnivariatePolynomial{B,T,X}) where {B <: StandardB
     cs = _zeros(p, z, N+1)
     os =  offset(p)
     @inbounds for (i, cᵢ) ∈ pairs(p)
-        i == -1 && throw(ArgumentError("Laurent polynomial with 1/x term"))
+        i == -1 && (iszero(cᵢ) ? continue : throw(ArgumentError("Laurent polynomial with 1/x term")))
         #cs[i + os] = cᵢ / (i+1)
         cs = _set(cs, i + 1 + os,  cᵢ / (i+1))
     end
@@ -184,8 +187,8 @@ function fit(::Type{P},
 end
 
 # new constructors taking order in second position
-SparsePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int) where {T, X, S} = SparsePolynomial{T,X}(coeffs)
+#SparsePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int) where {T, X, S} = SparsePolynomial{T,X}(coeffs)
 Polynomial{T, X}(coeffs::AbstractVector{S},order::Int) where {T, X, S} = Polynomial{T,X}(coeffs)
-ImmutablePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int)  where {T,X,S} = ImmutablePolynomial{T,X}(coeffs)
+#ImmutablePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int)  where {T,X,S} = ImmutablePolynomial{T,X}(coeffs)
 FactoredPolynomial{T,X}(coeffs::AbstractVector{S}, order::Int) where {T,S,X} = FactoredPolynomial{T,X}(coeffs)
 PnPolynomial{T, X}(coeffs::AbstractVector, order::Int) where {T, X} = PnPolynomial(coeffs) # for generic programming

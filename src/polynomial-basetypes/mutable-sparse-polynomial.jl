@@ -98,6 +98,8 @@ constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B} = MutableSparsePol
 
 ## ---
 
+minimumexponent(::Type{<:MutableSparsePolynomial}) =  typemin(Int)
+
 Base.copy(p::MutableSparsePolynomial{B,T,X}) where {B,T,X} = MutableSparsePolynomial{B,T,X}(copy(p.coeffs))
 
 function Base.convert(::Type{MutableSparsePolynomial{B,T,X}}, p::MutableSparsePolynomial{B,S,X}) where {B,T,S,X}
