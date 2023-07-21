@@ -1032,9 +1032,17 @@ end
         c = [1, 2, 3, 4]
         p = P(c)
 
-        der = derivative(p)
+        der = if P == ImmutablePolynomial # poor inference
+            derivative(p)
+        else
+            @inferred derivative(p)
+        end
         @test coeffs(der) ==ᵗ⁰ [2, 6, 12]
-        int = integrate(der, 1)
+        int = if P == ImmutablePolynomial
+            integrate(der, 1)
+        else
+            @inferred integrate(der, 1)
+        end
         @test coeffs(int) ==ᵗ⁰ c
 
 
