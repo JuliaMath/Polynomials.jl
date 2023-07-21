@@ -184,22 +184,22 @@ function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPol
     order == 0 && return p
     d = degree(p)
     order > d  && return 0*p
-    hasnan(p) && return  ⟒(P)(zero(T)/zero(T), X) # NaN{T}
+    hasnan(p) && return  ⟒(P)(zero(T)/zero(T), Var(X)) # NaN{T}
 
     n = d + 1
     dp = [reduce(*, (i - order + 1):i, init = p[i]) for i ∈ order:d]
-    return ⟒(P)(dp, X)
+    return ⟒(P)(dp, Var(X))
 
 end
 
 function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
 
-    hasnan(p) && return ⟒(P)(NaN, X)
+    hasnan(p) && return ⟒(P)(NaN, Var(X))
     iszero(p) && return zero(p)/1
 
     as = [pᵢ/(i+1) for (i, pᵢ) ∈ pairs(p)]
     pushfirst!(as, zero(constantterm(p)))
-    return ⟒(P)(as, X)
+    return ⟒(P)(as, Var(X))
 end
 
 
