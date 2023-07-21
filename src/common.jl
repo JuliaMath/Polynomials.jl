@@ -546,7 +546,7 @@ copy_with_eltype(::Type{T}, p::P) where {T, S, Y, P <:AbstractPolynomial{S,Y}} =
 #copy_with_eltype(::Type{T}, p::P) where {T, S, X, P<:AbstractPolynomial{S,X}} =
 #    copy_with_eltype(Val(T), Val(X), p)
 
-Base.iszero(p::AbstractPolynomial) = all(iszero, p)
+Base.iszero(p::AbstractPolynomial) = all(iszero, values(p))
 
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
@@ -622,7 +622,7 @@ hasnan(x) = isnan(x)
 
 Is the polynomial  `p` a constant.
 """
-isconstant(p::AbstractPolynomial) = degree(p) <= 0
+isconstant(p::AbstractPolynomial) = degree(p) <= 0 && iszero(firstindex(p))
 
 """
     coeffs(::AbstractPolynomial)
@@ -1152,7 +1152,7 @@ function Base.:(==)(p1::AbstractPolynomial, p2::AbstractPolynomial)
     check_same_variable(p1, p2) || return false
     ==(promote(p1,p2)...)
 end
-Base.:(==)(p::AbstractPolynomial, n::Number) = degree(p) <= 0 && constantterm(p) == n
+Base.:(==)(p::AbstractPolynomial, n::Number) = isconstant(p) && constantterm(p) == n
 Base.:(==)(n::Number, p::AbstractPolynomial) = p == n
 
 function Base.isapprox(p1::AbstractPolynomial, p2::AbstractPolynomial; kwargs...)

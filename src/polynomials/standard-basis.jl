@@ -88,7 +88,7 @@ Base.:+(p::P, c::T) where {T, X, P<:StandardBasisPolynomial{T, X}} = p + ⟒(P)(
 ## default multiplication between same type.
 ## subtypes might relax to match T,S to avoid one conversion
 function Base.:*(p::P, q::P) where {T,X, P<:StandardBasisPolynomial{T,X}}
-    cs = ⊗(P, coeffs(p), coeffs(q))
+    cs = ⊗(P, p.coeffs, q.coeffs)
     P(cs)
 end
 
