@@ -1,10 +1,10 @@
 # * has order
 # * leading 0s are trimmed
-# * pass checked::Val(false) to bypass trimmings
+# * pass check::Val(false) to bypass trimmings
 struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
     coeffs::Vector{T}
     order::Int # lowest degree, typically 0
-    function MutableDensePolynomial{B,T,X}(cs, order::Int=0) where {B,T,X}
+    function MutableDensePolynomial{B,T,X}(cs::AbstractVector{S}, order::Int=0) where {B,T,X,S}
         if Base.has_offset_axes(cs)
             @warn "Using the axis offset of the coefficient vector"
             cs, order = cs.parent, firstindex(cs)
@@ -20,39 +20,16 @@ struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
         end
         new{B,T,Symbol(X)}(xs, order)
     end
-    function MutableDensePolynomial{B,T,X}(checked::Val{false}, cs::Vector{T}, order::Int=0) where {B,T,X}
+    function MutableDensePolynomial{B,T,X}(check::Val{false}, cs::Vector{T}, order::Int=0) where {B,T,X}
         if Base.has_offset_axes(cs)
             @warn "Using the axis offset of the coefficient vector"
             cs, order = cs.parent, first(cs.offsets)
         end
         new{B,T,Symbol(X)}(cs, order)
     end
-    function MutableDensePolynomial{B,T,X}(checked::Val{true}, cs::Vector{T}, order::Int=0) where {B,T,X}
+    function MutableDensePolynomial{B,T,X}(check::Val{true}, cs::Vector{T}, order::Int=0) where {B,T,X}
         MutableDensePolynomial{B,T,X}(cs, order)
     end
-end
-
-function MutableDensePolynomial{B,T}(xs::AbstractVector{S}, order::Int=0, var::SymbolLike=Var(:x)) where {T, S, B}
-    MutableDensePolynomial{B,T,Symbol(var)}(xs, order)
-end
-
-function MutableDensePolynomial{B}(xs::AbstractVector{T}, order::Int=0, var::SymbolLike=Var(:x)) where {B, T}
-    MutableDensePolynomial{B,T,Symbol(var)}(xs, order)
-end
-
-
-function MutableDensePolynomial{B,T}(xs, var::SymbolLike=Var(:x)) where {B,T}
-    MutableDensePolynomial{B,T,Symbol(var)}(xs, 0)
-end
-
-function MutableDensePolynomial{B}(xs, order::Int=0, var::SymbolLike=Var(:x)) where {B}
-    cs = collect(promote(xs...))
-    T = eltype(cs)
-    MutableDensePolynomial{B, T, Symbol(var)}(cs, order)
-end
-
-function MutableDensePolynomial{B}(xs, var::SymbolLike) where {B}
-    MutableDensePolynomial{B}(xs, 0, var)
 end
 
 function _polynomial(p::P, as::Vector{S})  where {B,T, X, P <: MutableDensePolynomial{B,T,X}, S}

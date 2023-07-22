@@ -587,7 +587,7 @@ Transform coefficients of `p` by applying a function (or other callables) `fn` t
 
 You can implement `real`, etc., to a `Polynomial` by using `map`.
 """
-Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial} = _convert(p, map(fn, coeffs(p), args...))
+Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial} = _convert(p, map(fn, coeffs(p),args...))
 
 
 """

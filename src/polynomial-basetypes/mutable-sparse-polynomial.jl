@@ -40,35 +40,6 @@ function MutableSparsePolynomial{B,T,X}(coeffs::AbstractVector{S}, order::Int=0)
     P(d)
 end
 
-function MutableSparsePolynomial{B,T}(xs::AbstractVector{S}, order::Int, var::SymbolLike=Var(:x)) where {B,T,S}
-    MutableSparsePolynomial{B,T,Symbol(var)}(xs)
-end
-
-function MutableSparsePolynomial{B,T}(xs::AbstractVector{S}, var::SymbolLike) where {B,T,S}
-    MutableSparsePolynomial{B,T,Symbol(var)}(xs)
-end
-
-function MutableSparsePolynomial{B}(xs::AbstractVector{T}, order::Int, var::SymbolLike=Var(:x)) where {B,T}
-    MutableSparsePolynomial{B,T,Symbol(var)}(xs)
-end
-
-function MutableSparsePolynomial{B}(xs::AbstractVector{T}, var::SymbolLike) where {B,T}
-    MutableSparsePolynomial{B,T,Symbol(var)}(xs)
-end
-
-# iterable
-function MutableSparsePolynomial{B,T}(xs, var::SymbolLike=Var(:x)) where {B,T}
-    cs = collect(T, xs)
-    cs = trim_trailing_zeros(cs)
-    MutableSparsePolynomial{B,T,Symbol(var)}(cs)
-end
-
-function MutableSparsePolynomial{B}(xs, var::SymbolLike=Var(:x)) where {B}
-    cs = collect(xs)
-    cs = trim_trailing_zeros(cs)
-    MutableSparsePolynomial{B,eltype(cs),Symbol(var)}(cs)
-end
-
 
 # cs iterable of pairs; ensuring tight value of T
 function MutableSparsePolynomial{B}(cs::Tuple, var::SymbolLike=:x) where {B}

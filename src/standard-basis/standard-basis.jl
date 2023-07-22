@@ -5,12 +5,15 @@ function print_basis(io::IO, p::AbstractUnivariatePolynomial{<:StandardBasis}, i
     print_unicode_exponent(io, i)
 end
 
+Base.promote_rule(p::Type{<:AbstractUnivariatePolynomial{B}}, q::Type{AbstractUnivariatePolynomial{B′}}) where {B,B′} =
+    MutableDensePolynomial{StandardBasis}
+
 # XXX For now need 3 convert methods for standard basis
 function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: AbstractUnivariatePolynomial{B}, Q<:AbstractUnivariatePolynomial{B}}
     if isa(q, PP)
         return q
     else
-        minimumexponent(P) <= minimumexponent(q) ||
+        minimumexponent(P) <= firstindex(q) ||
             throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
         T = _eltype(P,q)
         X = indeterminate(P,q)
@@ -188,7 +191,11 @@ end
 
 # new constructors taking order in second position
 #SparsePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int) where {T, X, S} = SparsePolynomial{T,X}(coeffs)
-Polynomial{T, X}(coeffs::AbstractVector{S},order::Int) where {T, X, S} = Polynomial{T,X}(coeffs)
 #ImmutablePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int)  where {T,X,S} = ImmutablePolynomial{T,X}(coeffs)
+
+
+Polynomial{T, X}(coeffs::AbstractVector{S},order::Int) where {T, X, S} = Polynomial{T,X}(coeffs)
 FactoredPolynomial{T,X}(coeffs::AbstractVector{S}, order::Int) where {T,S,X} = FactoredPolynomial{T,X}(coeffs)
 PnPolynomial{T, X}(coeffs::AbstractVector, order::Int) where {T, X} = PnPolynomial(coeffs) # for generic programming
+PnPolynomial{T}(coeffs::AbstractVector, order::Int,var) where {T} = PnPolynomial(coeffs,var) # for generic programming
+PnPolynomial(coeffs::AbstractVector, order::Int,var)  = PnPolynomial(coeffs,var) # for generic programming

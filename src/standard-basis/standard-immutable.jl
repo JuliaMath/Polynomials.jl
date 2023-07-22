@@ -95,7 +95,7 @@ end
 
 end
 
-
+derivative(p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X} = p
 function derivative(p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}
     N == 0 && return p
     hasnan(p) && return ⟒(p)(zero(T)/zero(T),X) # NaN{T}
@@ -104,7 +104,8 @@ function derivative(p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasi
     ImmutableDensePolynomial{StandardBasis,R,X,N-1}(cs)
 end
 
-
+integrate(p::ImmutableDensePolynomial{StandardBasis,T,X,0}) where {T,X} =
+    ImmutableDensePolynomial{StandardBasis,Base.promote_op(/,T,Int),X,1}((0/1,))
 function integrate(p::ImmutableDensePolynomial{StandardBasis,T,X,N}) where {T,X,N}
     N == 0 && return p # different type
     hasnan(p) && return ⟒(p)(zero(T)/zero(T), X) # NaN{T}

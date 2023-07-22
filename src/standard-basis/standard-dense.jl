@@ -81,13 +81,6 @@ function Base.inv(p::MutableDensePolynomial{StandardBasis})
     LaurentPolynomial{eltype(cs), indeterminate(p)}(cs, -m)
 end
 
-## XXX ----
-#const Polynomial = MutableDensePolynomial{StandardBasis}
-#export Polynomial
-
-const LaurentPolynomial = MutableDensePolynomial{StandardBasis}
-export LaurentPolynomial
-
 """
     paraconj(p)
 
@@ -119,11 +112,11 @@ true
 julia> Polynomials.paraconj(h)(z) ≈ (conj ∘ h ∘ conj ∘ inv)(z)
 true
 """
-function paraconj(p::LaurentPolynomial)
+function paraconj(p::MutableDensePolynomial{B,T,X}) where {B <: StandardBasis, T,X}
     cs = p.coeffs
     ds = adjoint.(cs)
     n = degree(p)
-    LaurentPolynomial(reverse(ds), -n, indeterminate(p))
+    MutableDensePolynomial{B,T,X}(reverse(ds), -n)
 end
 
 """
@@ -164,17 +157,25 @@ true
 ```
 
 """
-function cconj(p::LaurentPolynomial)
+function cconj(p::MutableDensePolynomial{B,T,X}) where {B <: StandardBasis, T,X}
     ps = conj.(coeffs(p))
-    m,n = (extrema ∘ degreerange)(p)
+    m,n = firstindex(p), lastindex(p)
     for i in m:n
         if isodd(i)
             ps[i+1-m] *= -1
         end
     end
-    LaurentPolynomial(ps, m, indeterminate(p))
+    MutableDensePolynomial{B,T,X}(ps, m)
 end
 
+
+
+## XXX ----
+#const Polynomial = MutableDensePolynomial{StandardBasis}
+#export Polynomial
+
+const LaurentPolynomial = MutableDensePolynomial{StandardBasis}
+export LaurentPolynomial
 
 
 # resolve ambiguity

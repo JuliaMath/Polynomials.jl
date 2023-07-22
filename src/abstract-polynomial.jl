@@ -24,6 +24,7 @@ function showterm(io::IO, ::Type{P}, pj::T, var, j, first::Bool, mimetype) where
     return true
 end
 
+_convert(p::P, as) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(as, firstindex(p))
 
 ## idea is vector space stuff (scalar_add, scalar_mult, vector +/-, ^) goes here
 ## connection (convert, transform) is specific to a basis (storage)
@@ -114,7 +115,6 @@ variable(::Type{P}, var::SymbolLike) where {B,P<:AbstractUnivariatePolynomial{B}
 basis(p::P, i::Int) where {P <: AbstractUnivariatePolynomial} = basis(P, i)
 basis(::Type{P}, i::Int) where {B,P <: AbstractUnivariatePolynomial{B}} = basis(⟒(P){eltype(P),indeterminate(P)}, i)
 
-_convert(p::P, as) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(as)
 copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {B,T, X, S, Y, P <:AbstractUnivariatePolynomial{B,S,Y}} =
     ⟒(P){T, Symbol(X)}(p.coeffs)
 
@@ -298,10 +298,6 @@ function derivative(p::AbstractUnivariatePolynomial, n::Int=1)
 end
 const differentiate = derivative
 
-# only need to define integrate(p::PolyType)
-function integrate(p::AbstractUnivariatePolynomial, c)
-    scalar_add(integrate(p), c)
-end
 
 # promote, promote_rule, handle constants
 macro poly_register(name)
@@ -312,6 +308,23 @@ macro poly_register(name)
         Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{<:$poly{B,S,X}}) where {B,T,S,X} =  $poly{B,promote_type(T, S),X}
         Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{S}) where {B,T,S<:Scalar,X} =
             $poly{B,promote_type(T, S), X}
+
+        # vector
+        $poly{B,T}(xs::AbstractVector{S}, order::Int, var::SymbolLike=Var(:x)) where {B,T,S} = $poly{B,T,Symbol(var)}(xs,order)
+        $poly{B,T}(xs::AbstractVector{S}, var::SymbolLike) where {B,T,S} = $poly{B,T,Symbol(var)}(xs,0)
+        $poly{B}(xs::AbstractVector{T}, order::Int, var::SymbolLike=Var(:x)) where {B,T} = $poly{B,T,Symbol(var)}(xs,order)
+        $poly{B}(xs::AbstractVector{T}, var::SymbolLike) where {B,T} = $poly{B,T,Symbol(var)}(xs,0)
+
+        # untyped
+        $poly{B,T,X}(xs, order::Int=0) where {B,T,X} = $poly{B,T,X}(collect(T,xs), order)
+        $poly{B,T}(xs, order::Int=0, var::SymbolLike=Var(:x)) where {B,T} = $poly{B,T,Var(var)}(collect(T,xs), order)
+        $poly{B,T}(xs, var::SymbolLike) where {B,T} = $poly{B,T}(xs, 0, var)
+        function $poly{B}(xs, order::Int=0, var::SymbolLike=Var(:x)) where {B}
+            cs = collect(promote(xs...))
+            T = eltype(cs)
+            $poly{B,T,Symbol(var)}(cs, order)
+        end
+        $poly{B}(xs, var::SymbolLike) where {B} = $poly{B}(xs, 0, var)
 
         # constants
         $poly{B,T,X}(n::S) where {B, T, X, S<:Scalar} =
