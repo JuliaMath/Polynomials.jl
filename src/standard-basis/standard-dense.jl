@@ -8,16 +8,17 @@ end
 
 
 # scalar add
-function scalar_add(c::S, p:: MutableDensePolynomial{StandardBasis,T,X}) where {S, T, X}
+function scalar_add(c::S, p:: MutableDensePolynomial{B,T,X}) where {B<:StandardBasis, S, T, X}
     R = promote_type(T,S)
-    P =  MutableDensePolynomial{StandardBasis,R,X}
+    P =  MutableDensePolynomial{B,R,X}
 
     iszero(p) && return P([c], 0)
     iszero(c) && return convert(P, p)
 
     a,b = firstindex(p), lastindex(p)
     a′ = min(0,a)
-    cs = _zeros(p, zero(first(p.coeffs)+c), length(a′:b))
+    b′ = max(0,b)
+    cs = _zeros(p, zero(first(p.coeffs)+c), length(a′:b′))
     o = offset(p) + a - a′
     for (i, cᵢ) ∈ pairs(p)
         cs[i+o] = cᵢ

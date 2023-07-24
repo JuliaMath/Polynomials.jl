@@ -446,6 +446,7 @@ end
 
     end
 
+
     # test inferrability
     @testset "Inferrability" for P ∈ (ImmutablePolynomial, LaurentPolynomial, SparsePolynomial, Polynomial)
 
@@ -532,16 +533,27 @@ end
         @test p*q ==ᵟ P(im*[1,2,3])
     end
 
-    # Laurent polynomials and scalar operations
-    cs = [1,2,3,4]
-    p = LaurentPolynomial(cs, -3)
-    @test p*3 == LaurentPolynomial(cs .* 3, -3)
-    @test 3*p == LaurentPolynomial(3 .* cs, -3)
+    @testset "Laurent" begin
+        P = LaurentPolynomial
+        x = variable(P)
+        x⁻ = inv(x)
+        p = P([1,2,3], -4)
+        @test p + 4 == P([1,2,3,0,4],-4)
+        p = P([1,2,3], 4)
+        @test p + 4 == P([4,0,0,0,1,2,3])
+        @test P([1,2,3],-4) + P([1,2,3]) == P([1,2,3,0,1,2,3],-4)
 
-    # LaurentPolynomial has an inverse for monomials
-    x = variable(LaurentPolynomial)
-    @test Polynomials.isconstant(x * inv(x))
-    @test_throws ArgumentError inv(x + x^2)
+        # Laurent polynomials and scalar operations
+        cs = [1,2,3,4]
+        p = LaurentPolynomial(cs, -3)
+        @test p*3 == LaurentPolynomial(cs .* 3, -3)
+        @test 3*p == LaurentPolynomial(3 .* cs, -3)
+
+        # LaurentPolynomial has an inverse for monomials
+        x = variable(LaurentPolynomial)
+        @test Polynomials.isconstant(x * inv(x))
+        @test_throws ArgumentError inv(x + x^2)
+    end
 
     # issue #395
     @testset for P ∈ Ps
