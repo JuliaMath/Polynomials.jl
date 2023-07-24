@@ -971,7 +971,9 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 Base.:+(p::AbstractPolynomial) = p
 
 # polynomial + scalar; implicit identification of c with c*one(p)
-Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = scalar_add(p, c)#p + c * one(p)
+Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = scalar_add(p, c)
+scalar_add(p::AbstractPolynomial, c) = p + c * one(p)
+
 
 function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
     R = promote_type(T,S)
