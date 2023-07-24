@@ -42,7 +42,9 @@ end
 @poly_register MutableDensePolynomial
 constructorof(::Type{<:MutableDensePolynomial{B}}) where {B} = MutableDensePolynomial{B}
 
-Base.promote_rule(::Type{P},::Type{Q}) where {B,T, X, P <: AbstractUnivariatePolynomial{B,T,X}, S, Q <: AbstractUnivariatePolynomial{B, S, X}} = MutableDensePolynomial{B,promote_type(T, S), X}
+# # promote to mutable dense
+# Base.promote_rule(::Type{<:AbstractUnivariatePolynomial{B,T,X}},::Type{<:AbstractUnivariatePolynomial{B,S,X}}) where {B,T,S,X} =
+#                                                   MutableDensePolynomial{B, promote_type(T, S), X}
 
 
 ## ---
@@ -138,7 +140,7 @@ function chop!(p::MutableDensePolynomial{B,T,X};
 
     N = length(p.coeffs)
 
-    o = order(p)
+    o = firstindex(p)
     for i ∈ 1:(iₗ-1)
         popfirst!(p.coeffs)
         o += 1
@@ -208,6 +210,19 @@ function offset_vector_combine(op, p::MutableDensePolynomial{B,T,X}, q::MutableD
     b₁ == b₂ && (x = trim_trailing_zeros(x))
     P(Val(false), x, a)
 
+end
+
+
+function Base.numerator(p::MutableDensePolynomial{B,T,X}) where {B,T,X}
+    o = firstindex(p)
+    o ≥ 0 && return p
+    MutableDensePolynomial{B,T,X}(p.coeffs, 0)
+end
+
+function Base.denominator(p::MutableDensePolynomial{B,T,X}) where {B,T,X}
+    o = firstindex(p)
+    o ≥ 0 && return one(p)
+    basis(MutableDensePolynomial{B,T,X}, -o)
 end
 
 

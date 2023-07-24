@@ -21,9 +21,9 @@ include("polynomials/Polynomial.jl")
 #include("polynomials/LaurentPolynomial.jl")
 
 include("polynomials/pi_n_polynomial.jl")
-include("polynomials/factored_polynomial.jl")
 include("polynomials/ngcd.jl")
 include("polynomials/multroot.jl")
+include("polynomials/factored_polynomial.jl")
 include("polynomials/ChebyshevT.jl")
 
 # polynomials with explicit basis
@@ -32,11 +32,15 @@ include("basis-utils.jl")
 include("polynomial-basetypes/mutable-dense-polynomial.jl")
 include("polynomial-basetypes/immutable-dense-polynomial.jl")
 include("polynomial-basetypes/mutable-sparse-polynomial.jl")
+
+
+
 include("standard-basis/standard-basis.jl")
 include("standard-basis/standard-dense.jl")
 include("standard-basis/standard-immutable.jl")
 include("standard-basis/standard-sparse.jl")
 
+include("promotions.jl")
 
 
 

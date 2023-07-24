@@ -29,7 +29,9 @@ constantterm(p::ImmutableDensePolynomial{B,T,X,0}) where {B <: StandardBasis,T,X
 end
 
 
-# faster
+# faster (need special case for inference)
+scalar_add(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B<:StandardBasis,T,X,S} =
+    ImmutableDensePolynomial{B,promote_type(T,S),X,1}((c,))
 function scalar_add(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B<:StandardBasis,T,X,S,N}
     R = promote_type(T,S)
     P = ImmutableDensePolynomial{B,R,X}
@@ -94,6 +96,14 @@ end
     end
 
 end
+
+#
+function polynomial_composition(p::ImmutableDensePolynomial{B,T,X,N}, q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
+    P = ImmutableDensePolynomial{B, promote_type(T,S), X, N*M}
+    cs = evalpoly(q, p.coeffs)
+    convert(P, cs)
+end
+
 
 derivative(p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X} = p
 function derivative(p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}

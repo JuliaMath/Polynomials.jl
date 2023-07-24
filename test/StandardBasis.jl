@@ -480,16 +480,15 @@ end
                 @inferred p/2
                 @inferred p + q
                 @inferred p * q
-                @inferred p^2
+                P != ImmutablePolynomial && @inferred p^2
+                P != ImmutablePolynomial && @inferred p^3
             end
         end
 
-        if P != Polynomial # XXX
-            @testset "integrate/differentiation" begin
-                p = P(x)
-                @inferred integrate(p)
-                @inferred derivative(p)
-            end
+        @testset "integrate/differentiation" begin
+            p = P(x)
+            @inferred integrate(p)
+            @inferred derivative(p)
         end
 
     end
@@ -1087,9 +1086,8 @@ end
 
         der = derivative(p)
         @test coeffs(der) ==ᵗ⁰ [2, 6, 12]
-        int = integrate(der, 1)
-        @test coeffs(int)[2:end] ==ᵗ⁰ c[2:end]
-
+        int = @inferred integrate(der, 1)
+        @test coeffs(int) ==ᵗ⁰ c
 
         @test derivative(pR) == P([-2 // 1,2 // 1])
         @test derivative(p3) == P([2,2])
@@ -1729,11 +1727,11 @@ end
     @testset "negative indices" begin
         d = Dict(-2=>4, 5=>10)
         p = SparsePolynomial(d)
+        q = LaurentPolynomial(p)
         @test length(p) == 8
         @test firstindex(p) == -2
         @test lastindex(p) == 5
         @test eachindex(p) == -2:5
-        q = LaurentPolynomial(p)
         @test p == q
         @test SparsePolynomial(q) == p
         @test_throws ArgumentError Polynomial(p)

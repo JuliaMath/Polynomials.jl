@@ -35,7 +35,7 @@ Base.copyto!(p::PnPolynomial{T, X}, x::S) where
  } = copyto!(p.coeffs, x)
 
 function degree(p::PnPolynomial)
-    i = findlast(!iszero, p.coeffs)
+    i = findlast(!iszero, coeffs(p))
     isnothing(i) && return -1
     i - 1
 end

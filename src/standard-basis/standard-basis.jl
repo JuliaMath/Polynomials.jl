@@ -5,19 +5,21 @@ function print_basis(io::IO, p::AbstractUnivariatePolynomial{<:StandardBasis}, i
     print_unicode_exponent(io, i)
 end
 
-Base.promote_rule(p::Type{<:AbstractUnivariatePolynomial{B}}, q::Type{AbstractUnivariatePolynomial{B′}}) where {B,B′} =
-    MutableDensePolynomial{StandardBasis}
 
 # XXX For now need 3 convert methods for standard basis
 function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: AbstractUnivariatePolynomial{B}, Q<:AbstractUnivariatePolynomial{B}}
-    if isa(q, PP)
-        return q
+    isa(q, PP) && return q
+    minimumexponent(P) <= firstindex(q) ||
+        throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
+
+    T = _eltype(P,q)
+    X = indeterminate(P,q)
+
+    i₀ = firstindex(q)
+    if i₀ < 0
+        return ⟒(P){T,X}([q[i] for i in eachindex(q)], i₀)
     else
-        minimumexponent(P) <= firstindex(q) ||
-            throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
-        T = _eltype(P,q)
-        X = indeterminate(P,q)
-        return ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
+        return ⟒(P){T,X}([q[i] for i in 0:lastindex(q)]) # full poly
     end
 end
 function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B<:StandardBasis,T,X, Q<:AbstractUnivariatePolynomial{B,T,X}}
@@ -62,7 +64,7 @@ mapdomain(::Type{P}, x::AbstractArray) where  {B <: StandardBasis, P <: Abstract
 function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
            q::AbstractUnivariatePolynomial{B,S,X}) where {B <: StandardBasis, T,S,X}
     # simple convolution with order shifted
-    XXX()
+    throw(ArgumentError("Method not defined"))
 end
 
 function integrate(p::AbstractUnivariatePolynomial{B,T,X}) where {B <: StandardBasis,T,X}
@@ -142,7 +144,7 @@ function ngcd(p::P, q::Q,
               kwargs...) where {B <: StandardBasis,
                                 T,X,P<:AbstractUnivariatePolynomial{B,T,X},
                                 S,Y,Q<:AbstractUnivariatePolynomial{B,S,Y}}
-    ngcd(PnPolynomial(p.coeffs), PnPolynomial(q.coeffs), args...; kwargs...)
+    ngcd(PnPolynomial(coeffs(p)), PnPolynomial(coeffs(q)), args...; kwargs...)
 end
 
 # XXX p.coeffs isn't right

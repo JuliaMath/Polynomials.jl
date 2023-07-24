@@ -502,18 +502,16 @@ LinearAlgebra.transpose!(p::AbstractPolynomial) = p
 Conversions =#
 Base.convert(::Type{P}, p::P) where {P <: AbstractPolynomial} = p
 Base.convert(P::Type{<:AbstractPolynomial}, x) = P(x)
+function Base.convert(P::Type{<:AbstractPolynomial}, q::AbstractPolynomial)
+    X = indeterminate(P,q)
+    x = variable(P, X)
+    q(x)
+end
 function Base.convert(::Type{T}, p::AbstractPolynomial{T,X}) where {T <: Number,X}
     isconstant(p) && return T(constantterm(p))
     throw(ArgumentError("Can't convert a nonconstant polynomial to type $T"))
 end
 
-# Methods to ensure that matrices of polynomials behave as desired
-Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
-                                              S,   Q<:AbstractPolynomial{S,X}} =
-                                                   Polynomial{promote_type(T, S),X}
-Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
-                                              S,Y, Q<:AbstractPolynomial{S,Y}} =
-                                                  assert_same_variable(X,Y)
 
 
 #=
@@ -1144,7 +1142,7 @@ end
 return `u` the gcd of `p` and `q`, and `v` and `w`, where `u*v = p` and `u*w = q`.
 """
 uvw(p::AbstractPolynomial, q::AbstractPolynomial; kwargs...) = uvw(promote(p,q)...; kwargs...)
-uvw(p1::P, p2::P; kwargs...) where {P <:AbstractPolynomial} = throw(ArgumentError("uvw not defined"))
+#uvw(p1::P, p2::P; kwargs...) where {P <:AbstractPolynomial} = throw(ArgumentError("uvw not defined"))
 
 """
     div(::AbstractPolynomial, ::AbstractPolynomial)

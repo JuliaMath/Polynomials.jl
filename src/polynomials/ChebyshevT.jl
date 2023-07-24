@@ -129,6 +129,10 @@ function evalpoly(x::S, ch::ChebyshevT{T}) where {T,S}
     evalpoly(x, ch, false)
 end
 
+function evalpoly(x::AbstractPolynomial, ch::ChebyshevT)
+    evalpoly(x, ch, false)
+end
+
 # no checking, so can be called directly through any third argument
 function evalpoly(x::S, ch::ChebyshevT{T}, checked) where {T,S}
     R = promote_type(T, S)

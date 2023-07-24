@@ -434,7 +434,7 @@ By default, `AbstractRationalFunction` types do not cancel common factors. This 
 
 """
 function lowest_terms(pq::PQ; method=:numerical, kwargs...) where {T,X,
-                                                                   P<:StandardBasisPolynomial{T,X},
+                                                                   P<:Union{StandardBasisPolynomial{T,X},AbstractUnivariatePolynomial{<:StandardBasis}},
                                                                    PQ<:AbstractRationalFunction{T,X,P}}
     p,q = pqs(pq)
     u,v,w = uvw(p,q; method=method, kwargs...)
