@@ -1,4 +1,5 @@
 # XXX todo, merge in with common.jl
+# used by LaurentPolynomial, ImmutablePolynomial, SparsePolynomial
 """
     Abstract type for polynomials with an explicit basis.
 """
@@ -124,25 +125,26 @@ basis(::Type{P}, i::Int) where {B,P <: AbstractUnivariatePolynomial{B}} = basis(
 copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {B,T, X, S, Y, P <:AbstractUnivariatePolynomial{B,S,Y}} =
     ⟒(P){T, Symbol(X)}(p.coeffs)
 
+# XXX something feels off here...
 # coefficients
 # return dense coefficients (vector or tuple)
-# if laurent type, coefficients are just stored values, there may be an offset
-# if not laurent type, then return coefficients p_0, p_1, ... padding out with zeros, as neede
+# if laurent type and of lowest degree (after chopping) 0 or greater,
+# *or* not of laurent type return p_0, ..., p_n (padded out on left)
+# if laurent type and lowest degree < 0 (after chopping) return p.coeffs (user needs to get offset)
 # return Val(::Bool) to indicate if laurent type. This should compile away, unlike the check
 laurenttype(P::Type{<:AbstractPolynomial}) = Val(minimumexponent(P) < 0)
 
 coeffs(p::P) where {P <: AbstractUnivariatePolynomial} = coeffs(laurenttype(P), p)
-coeffs(laurent::Val{true}, p) = p.coeffs
+function coeffs(laurent::Val{true}, p)
+    q = chop(p)
+    firstindex(q) ≥ 0 && return [q[i] for i ∈ 0:lastindex(q)]
+    return q.coeffs
+end
 function coeffs(laurent::Val{false}, p)
     firstindex(p) == 0 && return p.coeffs
     firstindex(p) > 0 && return [p[i] for i ∈ 0:lastindex(p)]
     throw(ArgumentError("Polynomial type does not support negative degree terms"))
 end
-
-# function isconstant(p::AbstractUnivariatePolynomial)
-#     p₀ = trim_trailing_zeros(p)
-#     return (firstindex(p₀) == lastindex(p₀) == 0)
-# end
 
 # chop chops right side of p
 # use trunc for left and right
@@ -204,6 +206,7 @@ function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X},
     end
 end
 
+# XXX in common.jl
 # function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X}, p2::Scalar; kwargs...) where {B,T,X}
 #     q = p2 * one(⟒(p1){T,X})
 #     isapprox(p1, q; kwargs...)
