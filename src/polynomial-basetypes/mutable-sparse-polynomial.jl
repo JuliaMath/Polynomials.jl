@@ -1,5 +1,9 @@
-# dictionary to store (i, cᵢ)
-# ensure cᵢ ≠ 0 in constructor
+"""
+
+This polynomial type uses an `Dict{Int,T}` to store the coefficients of a polynomial relative to the basis `B` with indeterminate `X`.
+Explicit `0` coefficients are not stored. This type can be used for Laurent polynomials.
+
+"""
 struct MutableSparsePolynomial{B,T,X} <:  AbstractUnivariatePolynomial{B, T,X}
     coeffs::Dict{Int, T}
     function MutableSparsePolynomial{B,T,X}(cs::AbstractDict{Int,S},order::Int=0) where {B,T,S,X}
@@ -70,6 +74,7 @@ constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B} = MutableSparsePol
 ## ---
 
 minimumexponent(::Type{<:MutableSparsePolynomial}) =  typemin(Int)
+laurenttype(::Type{<:MutableSparsePolynomial}) = Val(true)
 
 Base.copy(p::MutableSparsePolynomial{B,T,X}) where {B,T,X} = MutableSparsePolynomial{B,T,X}(copy(p.coeffs))
 
@@ -98,6 +103,19 @@ function Base.setindex!(p::MutableSparsePolynomial{B,T,X}, value, i::Int) where 
     iszero(value) && delete!(p.coeffs, i)
     p.coeffs[i] = value
 end
+
+# return coeffs as  a vector
+# use p.coeffs to get Dictionary
+function coeffs(p::MutableSparsePolynomial{B,T})  where {B,T}
+    a,b = firstindex(p), lastindex(p)
+    cs = zeros(T, length(a:b))
+    for k in sort(collect(keys(p.coeffs)))
+        v = p.coeffs[k]
+        cs[k - a + 1] = v
+    end
+    cs
+end
+
 
 hasnan(p::MutableSparsePolynomial) = any(hasnan, values(p.coeffs))
 Base.pairs(p::MutableSparsePolynomial) = pairs(p.coeffs)
@@ -139,19 +157,6 @@ function isconstant(p::MutableSparsePolynomial)
     n == 1 && haskey(p.coeffs, 0)
 end
 
-# much faster than default
-function scalar_add(c::S, p::MutableSparsePolynomial{B,T,X}) where {B,T,X,S}
-    c₀ = c + p[0]
-    R = eltype(c₀)
-    P = MutableSparsePolynomial{B,R,X}
-    D = convert(Dict{Int, R}, copy(p.coeffs))
-    if iszero(c₀)
-        delete!(D,0)
-    else
-        @inbounds D[0] = c₀
-    end
-    return P(Val(false), D)
-end
 
 function scalar_mult(c::S, p::MutableSparsePolynomial{B,T,X}) where {B,T,X,S}
 

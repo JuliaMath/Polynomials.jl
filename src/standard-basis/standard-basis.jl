@@ -1,8 +1,11 @@
 struct StandardBasis <: AbstractBasis end
 
-function print_basis(io::IO, p::AbstractUnivariatePolynomial{<:StandardBasis}, i)
-    print(io, X)
-    print_unicode_exponent(io, i)
+basis_symbol(::Type{<:AbstractUnivariatePolynomial{StandardBasis}}) = "x"
+function printbasis(io::IO, ::Type{P}, j::Int, m::MIME) where {B<:StandardBasis, P <: AbstractUnivariatePolynomial{B}}
+    iszero(j) && return # no x^0
+    print(io, basis_symbol(P))
+    hasone(typeof(j)) && isone(j) && return # no 2x^1, just 2x
+    print(io, exponent_text(j, m))
 end
 
 
@@ -22,6 +25,7 @@ function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: Abstract
         return ⟒(P){T,X}([q[i] for i in 0:lastindex(q)]) # full poly
     end
 end
+
 function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B<:StandardBasis,T,X, Q<:AbstractUnivariatePolynomial{B,T,X}}
     minimumexponent(P) > firstindex(q) &&
         throw(ArgumentError("Degree of polynomial less than minimum degree of polynomial type $(⟒(P))"))
@@ -38,6 +42,7 @@ function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B
     end
     ⟒(P){T′,X′}(cs, o)
 end
+
 function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: AbstractUnivariatePolynomial{B}, Q<:StandardBasisPolynomial}
     isa(q, PP) && return p
     T = _eltype(P,q)
@@ -66,6 +71,8 @@ function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
     # simple convolution with order shifted
     throw(ArgumentError("Method not defined"))
 end
+
+# implemented derivative case by case
 
 function integrate(p::AbstractUnivariatePolynomial{B,T,X}) where {B <: StandardBasis,T,X}
 
@@ -129,7 +136,7 @@ function Base.divrem(num::P, den::Q) where {B<:StandardBasis,
 end
 
 ## XXX This needs resolving!
-## XXX copy or pass along to other system for now where things are defined fro StandardBasisPolynomial
+## XXX copy or pass along to other system for now where things are defined for StandardBasisPolynomial
 function vander(p::Type{<:P}, x::AbstractVector{T}, degs) where {B<:StandardBasis, P<:AbstractUnivariatePolynomial{B}, T <: Number}
     vander(StandardBasisPolynomial, x, degs)
 end
@@ -182,20 +189,8 @@ function fit(::Type{P},
     convert(P, fit(Polynomial, x, y, deg; kwargs...))
 end
 
-function fit(::Type{P},
-             x::AbstractVector{T},
-             y::AbstractVector{T},
-             deg::AbstractVector,
-             cs::Dict;
-             kwargs...) where {T, P<:AbstractUnivariatePolynomial{<:StandardBasis}}
-    convert(P, fit(Polynomial, x, y, deg, cs; kwargs...))
-end
-
 # new constructors taking order in second position
-#SparsePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int) where {T, X, S} = SparsePolynomial{T,X}(coeffs)
-#ImmutablePolynomial{T,X}(coeffs::AbstractVector{S}, ::Int)  where {T,X,S} = ImmutablePolynomial{T,X}(coeffs)
-
-
+# these are
 Polynomial{T, X}(coeffs::AbstractVector{S},order::Int) where {T, X, S} = Polynomial{T,X}(coeffs)
 FactoredPolynomial{T,X}(coeffs::AbstractVector{S}, order::Int) where {T,S,X} = FactoredPolynomial{T,X}(coeffs)
 PnPolynomial{T, X}(coeffs::AbstractVector, order::Int) where {T, X} = PnPolynomial(coeffs) # for generic programming

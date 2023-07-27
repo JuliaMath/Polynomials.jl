@@ -37,8 +37,7 @@ module EvalPoly
 using LinearAlgebra
 function evalpoly(x::S, p::Tuple) where {S}
     if @generated
-        N = length(p.parameters)
-        ex = :(p[end]*_one(S))
+        ex = :(p[N]*_one(x))
         for i in N-1:-1:1
             ex = :(_muladd($ex, x, p[$i]))
         end
@@ -52,15 +51,13 @@ evalpoly(x, p::AbstractVector) = _evalpoly(x, p)
 
 # https://discourse.julialang.org/t/i-have-a-much-faster-version-of-evalpoly-why-is-it-faster/79899; improvement *and* closes #313
 function _evalpoly(x::S, p) where {S}
-
-    i = lastindex(p)
+    a,i = firstindex(p), lastindex(p)
     @inbounds out = p[i] * _one(x)
     i -= 1
-    while i >= firstindex(p)
+    while i >= a #firstindex(p)
 	@inbounds out = _muladd(out, x, p[i])
 	i -= 1
     end
-
     return out
 end
 
@@ -206,3 +203,60 @@ function Base.in(x, I::Interval{T,L,R}) where {T, L, R}
 end
 
 Base.isopen(I::Interval{T,L,R}) where {T,L,R} = (L != Closed && R != Closed)
+
+
+
+#=
+zseries -- for ChebyshevT example
+=#
+
+function _c_to_z(cs::AbstractVector{T}) where {T}
+    n = length(cs)
+    U = typeof(one(T) / 2)
+    zs = zeros(U, 2n - 1)
+    zs[n:end] = cs ./ 2
+    return zs .+ reverse(zs)
+end
+
+function _z_to_c(z::AbstractVector{T}) where {T}
+    n = (length(z) + 1) ÷ 2
+    cs = z[n:end]
+    cs[2:n] *= 2
+    return cs
+end
+
+function _z_division(z1::AbstractVector{T}, z2::AbstractVector{S}) where {T,S}
+    R = eltype(one(T) / one(S))
+    length(z1)
+    length(z2)
+    if length(z2) == 1
+        z1 ./= z2
+        return z1, zero(R)
+    elseif length(z1) < length(z2)
+        return zero(R), R.(z1)
+    end
+    dlen = length(z1) - length(z2)
+    scl = z2[1]
+    z2 ./= scl
+    quo = Vector{R}(undef, dlen + 1)
+    i = 1
+    j = dlen + 1
+    while i < j
+        r = z1[i]
+        quo[i] = z1[i]
+        quo[end - i + 1] = r
+        tmp = r .* z2
+        z1[i:i + length(z2) - 1] .-= tmp
+        z1[j:j + length(z2) - 1] .-= tmp
+        i += 1
+        j -= 1
+    end
+
+    r = z1[i]
+    quo[i] = r
+    tmp = r * z2
+    z1[i:i + length(z2) - 1] .-= tmp
+    quo ./= scl
+    rem = z1[i + 1:i - 2 + length(z2)]
+    return quo, rem
+end

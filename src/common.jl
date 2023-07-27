@@ -347,18 +347,19 @@ function truncate!(ps::Dict{Int,T};
     nothing
 end
 
-function truncate!(ps::NTuple{N,T};
-                   rtol::Real = Base.rtoldefault(real(T)),
-                   atol::Real = 0,) where {N,T}
-    #throw(ArgumentError("`truncate!` not defined."))
-    thresh = norm(ps, Inf) * rtol + atol
-    for (i, pᵢ) ∈ enumerate(ps)
-        if abs(pᵢ) ≤ thresh
-            ps = _set(ps, i, zero(pᵢ))
-        end
-    end
-    ps
-end
+truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined."))
+# function truncate!(ps::NTuple{N,T};
+#                    rtol::Real = Base.rtoldefault(real(T)),
+#                    atol::Real = 0,) where {N,T}
+#     #throw(ArgumentError("`truncate!` not defined."))
+#     thresh = norm(ps, Inf) * rtol + atol
+#     for (i, pᵢ) ∈ enumerate(ps)
+#         if abs(pᵢ) ≤ thresh
+#             ps = _set(ps, i, zero(pᵢ))
+#         end
+#     end
+#     ps
+# end
 
 _truncate(ps::NTuple{0}; kwargs...) = ps
 function _truncate(ps::NTuple{N,T};
@@ -585,7 +586,7 @@ Transform coefficients of `p` by applying a function (or other callables) `fn` t
 
 You can implement `real`, etc., to a `Polynomial` by using `map`.
 """
-Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial} = _convert(p, map(fn, coeffs(p),args...))
+Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial} = _convert(p, map(fn, coeffs(p), args...))
 
 
 """

@@ -42,7 +42,7 @@ include("standard-basis/standard-sparse.jl")
 
 include("promotions.jl")
 
-
+include("polynomials/chebyshev.jl") # wrong place
 
 
 # Rational functions

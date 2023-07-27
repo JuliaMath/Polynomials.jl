@@ -1,11 +1,16 @@
 # Dense + StandardBasis
 
+# XXX for now, use older Polynomial type
+#const Polynomial = MutableDensePolynomial{StandardBasis}
+#export Polynomial
+
+const LaurentPolynomial = MutableDensePolynomial{StandardBasis}
+export LaurentPolynomial
 
 function evalpoly(c, p::MutableDensePolynomial{StandardBasis,T,X}) where {T,X}
     iszero(p) && return zero(T) * zero(c)
     EvalPoly.evalpoly(c, p.coeffs) * c^p.order
 end
-
 
 # scalar add
 function scalar_add(c::S, p:: MutableDensePolynomial{B,T,X}) where {B<:StandardBasis, S, T, X}
@@ -27,8 +32,6 @@ function scalar_add(c::S, p:: MutableDensePolynomial{B,T,X}) where {B<:StandardB
     iszero(last(cs)) && (cs = trim_trailing_zeros(cs))
     P(Val(false), cs, a′)
 end
-
-
 
 function ⊗(p:: MutableDensePolynomial{StandardBasis,T,X},
            q:: MutableDensePolynomial{StandardBasis,S,X}) where {T,S,X}
@@ -59,7 +62,6 @@ function ⊗(p:: MutableDensePolynomial{StandardBasis,T,X},
     end
     P(Val(false), cs, a)
 end
-
 
 function derivative(p::MutableDensePolynomial{B,T,X}) where {B<:StandardBasis,T,X}
 
@@ -172,18 +174,6 @@ end
 
 
 ## XXX ----
-#const Polynomial = MutableDensePolynomial{StandardBasis}
-#export Polynomial
-
-const LaurentPolynomial = MutableDensePolynomial{StandardBasis}
-export LaurentPolynomial
-
-
-# resolve ambiguity
-# function Base.convert(::Type{P}, q::Q) where {T, X, P<:LaurentPolynomial, B<:StandardBasis, Q<:AbstractUnivariatePolynomial{B, T, X}}
-#     p = convert(Polynomial, q)
-#     LaurentPolynomial{eltype(p), indeterminate(p)}(p.coeffs, 0)
-# end
 
 ## ----
 ## XXX needs to be incorporated if Polynomial =  MutableDensePolynomial{StandardBasis}

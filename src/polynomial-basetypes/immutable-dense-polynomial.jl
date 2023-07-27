@@ -1,5 +1,15 @@
 # Try to keep length based on N,M so no removal of trailing zeros by default
 # order is ignored, firstindex is always 0
+
+"""
+    ImmutableDensePolynomial{B,T,X,N}
+
+This polynomial type uses an `NTuple{N,T}` to store the coefficients of a polynomial relative to the basis `B` with indeterminate `X`.
+For type stability, these polynomials may have trailing zeros. For example, the polynomial `p-p` will have the same size
+coefficient tuple as `p`. The `chop` function will trim off trailing zeros, when desired.
+
+Immutable is a bit of a misnomer, as using the `@set!` macro from `Setfield.jl` one can modify elements, as in `@set! p[i] = value`.
+"""
 struct ImmutableDensePolynomial{B,T,X,N} <: AbstractUnivariatePolynomial{B,T,X}
     coeffs::NTuple{N,T}
     function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N,S}) where {B,N,T,X,S}
@@ -71,7 +81,18 @@ end
 Base.copy(p::ImmutableDensePolynomial) = p
 Base.similar(p::ImmutableDensePolynomial, args...) = p.coeffs
 
-## chop
+
+# not type stable, as N is value dependent
+function trim_trailing_zeros(cs::Tuple)
+    isempty(cs) && return cs
+    !iszero(last(cs)) && return cs
+    i = findlast(!iszero, cs)
+    i == nothing && return ()
+    xs = ntuple(Base.Fix1(getindex,cs), Val(i))
+    xs
+end
+
+## chop. Also, not type stable
 function Base.chop(p::ImmutableDensePolynomial{B,T,X,N};
                    rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0) where {B,T,X,N}
@@ -86,9 +107,10 @@ function Base.chop(p::ImmutableDensePolynomial{B,T,X,N};
     ImmutableDensePolynomial{B,T,X,N′}(xs)
 end
 
-# misnamed!
+# misnamed, should be chop!!
 chop!(p::ImmutableDensePolynomial; kwargs...) = chop(p; kwargs...)
 
+# truncate!!; keeps length replacing values with zeros
 function truncate!(p::ImmutableDensePolynomial{B,T,X,N};
                    rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0) where {B,T,X,N}
@@ -105,16 +127,6 @@ function truncate!(p::ImmutableDensePolynomial{B,T,X,N};
     ImmutableDensePolynomial{B,T,X,N}(ps)
 end
 
-
-# not type stable, as N is value dependent
-function trim_trailing_zeros(cs::Tuple)
-    isempty(cs) && return cs
-    !iszero(last(cs)) && return cs
-    i = findlast(!iszero, cs)
-    i == nothing && return ()
-    xs = ntuple(Base.Fix1(getindex,cs), Val(i))
-    xs
-end
 
 # isapprox helper
 function normΔ(q1::ImmutableDensePolynomial{B}, q2::ImmutableDensePolynomial{B}, p::Real = 2) where {B}
@@ -134,6 +146,8 @@ end
 _zeros(::Type{<:ImmutableDensePolynomial}, z::S, N) where {S} =
     ntuple(_ -> zero(S), Val(N))
 
+minimumexponent(::Type{<:ImmutableDensePolynomial}) =  0
+laurenttype(::Type{<:ImmutableDensePolynomial}) = Val(false)
 
 Base.firstindex(p::ImmutableDensePolynomial) = 0
 Base.lastindex(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N} = N - 1
@@ -149,8 +163,17 @@ function Base.getindex(p::ImmutableDensePolynomial{B,T,X,N}, i::Int) where {B,T,
     p.coeffs[i + offset(p)]
 end
 
+# need to call with Setfield as in
+# @set! p[i] = value
+function Base.setindex(p::ImmutableDensePolynomial{B,T,X,N}, value, i::Int) where {B,T,X,N}
+    ps = p.coeffs
+    @set! ps[i] = value
+    ImmutableDensePolynomial{B,T,X,N}(ps)
+end
+
 Base.setindex!(p::ImmutableDensePolynomial, value, i::Int) =
-    throw(ArgumentError("ImmutableDensePolynomial has no setindex! method"))
+    throw(ArgumentError("Use the `@set!` macro from `Setfield` to mutate coefficients."))
+
 
 # can't promote to same N if trailing zeros
 function Base.:(==)(p1::ImmutableDensePolynomial{B}, p2::ImmutableDensePolynomial{B}) where {B}
@@ -168,7 +191,6 @@ function Base.:(==)(p1::ImmutableDensePolynomial{B}, p2::ImmutableDensePolynomia
     return true
 end
 
-minimumexponent(::Type{<:ImmutableDensePolynomial}) =  0
 
 
 ## ---
@@ -194,8 +216,6 @@ function basis(P::Type{<:ImmutableDensePolynomial{B}}, i::Int) where {B}
     ImmutableDensePolynomial{B,eltype(P),indeterminate(P)}(xs)
 end
 
-coeffs(p::ImmutableDensePolynomial) = p.coeffs
-
 
 
 ## Vector space operations
@@ -214,20 +234,34 @@ function Base.:-(p::ImmutableDensePolynomial{B,T,X,N}, q::ImmutableDensePolynomi
     _tuple_combine(-, p, q)
 end
 
-# handle +, -; Assum N >= M
+# handle +, -; Assume N >= M
+_tuple_combine(op, p::ImmutableDensePolynomial{B,T,X,0}, q::ImmutableDensePolynomial{B,S,X,M}) where{B,X,T,S,M} =
+    zero(ImmutableDensePolynomial{B,T,X,0})
 function _tuple_combine(op, p::ImmutableDensePolynomial{B,T,X,N}, q::ImmutableDensePolynomial{B,S,X,M}) where{B,X,T,S,N,M}
-
     @assert N >= M
-    R = promote_type(T,S)
-    P = ImmutableDensePolynomial{B,R,X}
-
-    iszero(p) && return zero(P{N})
-    #xs = ntuple(i -> i <= M ? R(op(p.coeffs[i],q.coeffs[i])) : R(p.coeffs[i]), Val(N))
     xs = _tuple_combine(op, p.coeffs, q.coeffs)
-    P{N}(xs)
-
+    R = eltype(xs)
+    ImmutableDensePolynomial{B,R,X,N}(xs)
 end
 
+
+# scalar
+scalar_mult(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B,T,X,S} = zero(ImmutableDensePolynomial{B,T,X,0})
+function scalar_mult(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B,T,X,S,N}
+    cs = p.coeffs .* (c,)
+    R = eltype(cs)
+    return ImmutableDensePolynomial{B,R,X,N}(cs)
+end
+
+scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,0}) where {B,T,X,S} = zero(ImmutableDensePolynomial{B,T,X,0})
+function scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,S,N}
+    cs = (c,) .* p.coeffs
+    R = eltype(cs)
+    return ImmutableDensePolynomial{B,R,X,N}(cs)
+end
+
+
+## ---
 # Padded vector combination of two homogeneous tuples assuming N ≥ M
 @generated function _tuple_combine(op, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
 
@@ -235,7 +269,7 @@ end
     for i in  1:M
         exprs[i] = :(op(p1[$i],p2[$i]))
     end
-    for i in M+1:N
+    for i in (M+1):N
         exprs[i] =:(p1[$i])
     end
 
@@ -247,20 +281,26 @@ end
 
 end
 
-# scalar
+## Static size of product makes generated functions  a good choice
+## from https://github.com/tkoolen/StaticUnivariatePolynomials.jl/blob/master/src/monomial_basis.jl
+## convolution of two tuples
+@generated function fastconv(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+    P = M + N - 1
+    exprs = Any[nothing for i = 1 : P]
+    for i in 1 : N
+        for j in 1 : M
+            k = i + j - 1
+            if isnothing(exprs[k])
+                exprs[k] = :(p1[$i] * p2[$j])
+            else
+                exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
+            end
+        end
+    end
 
-function scalar_mult(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B,T,X,S,N}
-    iszero(N) && return zero(ImmutableDensePolynomial{B,T,X})
-    iszero(c) && ImmutableDensePolynomial{B}([p[0] .* c], X)
-    cs = p.coeffs .* (c,)
-    R = eltype(cs)
-    return ImmutableDensePolynomial{B,R,X,N}(cs)
-end
+    return quote
+        Base.@_inline_meta # 1.8 deprecation
+        tuple($(exprs...))
+    end
 
-function scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,S,N}
-    iszero(N) && return zero(ImmutableDensePolynomial{B,T,X})
-    iszero(c) && ImmutableDensePolynomial{B}([c .* p[0]],X)
-    cs = (c,) .* p.coeffs
-    R = eltype(cs)
-    return ImmutableDensePolynomial{B,R,X,N}(cs)
 end

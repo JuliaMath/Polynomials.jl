@@ -458,17 +458,17 @@ end
             T, S = Float64, Int
             if P == ImmutablePolynomial
                 x = (1,2,3)
-                @inferred P{T,:x,4}(x)
-                @inferred P{S,:x,4}(x)
-                @inferred P{T,:x,3}(x)
-                @inferred P{S,:x,3}(x)
+                @inferred P{T,:x,4}(x) == P{T,:x,4}(x)
+                @inferred P{S,:x,4}(x) == P{S,:x,4}(x)
+                @inferred P{T,:x,3}(x) == P{T,:x,3}(x)
+                @inferred P{S,:x,3}(x) == P{S,:x,3}(x)
             end
 
-            @inferred P{T,:x}(x)
-            @inferred P{S,:x}(x)
-            @inferred P{T}(x)
-            @inferred P{S}(x)
-            @inferred P(x)
+            @inferred P{T,:x}(x) == P{T,:x}(x)
+            @inferred P{S,:x}(x) == P{S,:x}(x)
+            @inferred P{T}(x) == P{T}(x)
+            @inferred P{S}(x) == P{S}(x)
+            @inferred P(x) == P(x)
         end
 
         @testset "arithmetic" begin

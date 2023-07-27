@@ -47,7 +47,7 @@ julia> p.(0:3)
 function evalpoly(x, p::StandardBasisPolynomial{T}) where {T}
     # the zero polynomial is a *special case*
     iszero(p) && return zero(x) * zero(T)
-    EvalPoly.evalpoly(x, p.coeffs) # allows  broadcast  issue #209
+    EvalPoly.evalpoly(x, coeffs(p)) # allows  broadcast  issue #209
 end
 
 constantterm(p::StandardBasisPolynomial) = p[0]

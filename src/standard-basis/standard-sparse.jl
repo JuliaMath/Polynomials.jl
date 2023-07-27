@@ -1,3 +1,7 @@
+## Standard basis + sparse storage
+const SparsePolynomial = MutableSparsePolynomial{StandardBasis} # const is important!
+export SparsePolynomial
+
 function evalpoly(x, p::MutableSparsePolynomial)
 
     tot = zero(p[0]*x)
@@ -6,6 +10,21 @@ function evalpoly(x, p::MutableSparsePolynomial)
     end
     return tot
 end
+
+# much faster than default
+function scalar_add(c::S, p::MutableSparsePolynomial{B,T,X}) where {B<:StandardBasis,T,X,S}
+    c₀ = c + p[0]
+    R = eltype(c₀)
+    P = MutableSparsePolynomial{B,R,X}
+    D = convert(Dict{Int, R}, copy(p.coeffs))
+    if iszero(c₀)
+        delete!(D,0)
+    else
+        @inbounds D[0] = c₀
+    end
+    return P(Val(false), D)
+end
+
 
 function ⊗(p::MutableSparsePolynomial{StandardBasis,T,X},
            q::MutableSparsePolynomial{StandardBasis,S,X}) where {T,S,X}
@@ -60,7 +79,3 @@ function integrate(p:: MutableSparsePolynomial{B,T,X}) where {B<:StandardBasis,T
     end
     return P(d)
 end
-
-## ---
-const SparsePolynomial = MutableSparsePolynomial{StandardBasis} # const is important!
-export SparsePolynomial

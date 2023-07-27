@@ -1,6 +1,13 @@
-# * has order
-# * leading 0s are trimmed
-# * pass check::Val(false) to bypass trimmings
+"""
+    MutableDensePolynomial{B,T,X}
+
+This polynomial type essentially uses an offset vector (`Vector{T}`,`order`) to store the coefficients of a polynomial relative to the basis `B` with indeterminate `X`.
+
+The typical offset is to have `0` as the order, but, say, to accomodate Laurent polynomials, or more efficient storage of basis elements any order may be specified.
+
+This type trims trailing zeros and when the offset is not 0, trims the leading zeros.
+
+"""
 struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
     coeffs::Vector{T}
     order::Int # lowest degree, typically 0
@@ -13,7 +20,9 @@ struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
         i = findlast(!iszero, cs)
         if i == nothing
             xs = T[]
-        else
+        elseif iszero(order)
+            xs = T[cs[i] for i ∈ 1:i]
+        else # shift if not 0
             j = findfirst(!iszero, cs)
             xs = T[cs[i] for i ∈ j:i]
             order = order + j - 1
@@ -41,11 +50,6 @@ end
 
 @poly_register MutableDensePolynomial
 constructorof(::Type{<:MutableDensePolynomial{B}}) where {B} = MutableDensePolynomial{B}
-
-# # promote to mutable dense
-# Base.promote_rule(::Type{<:AbstractUnivariatePolynomial{B,T,X}},::Type{<:AbstractUnivariatePolynomial{B,S,X}}) where {B,T,S,X} =
-#                                                   MutableDensePolynomial{B, promote_type(T, S), X}
-
 
 ## ---
 
@@ -102,12 +106,10 @@ function degree(p::MutableDensePolynomial)
     firstindex(p) + i - 1
 end
 
-# zero, one, variable, basis
-# Base.zero(::Type{MutableDensePolynomial{B,T,X}}) where {B,T,X} =
-#     MutableDensePolynomial{B,T,X}(T[])
 
-coeffs(p::MutableDensePolynomial) = p.coeffs
+laurenttype(::Type{<:MutableDensePolynomial}) = Val(true)
 
+basis(::Type{MutableDensePolynomial{B,T,X}},i::Int) where {B,T,X} = MutableDensePolynomial{B,T,X}([1],i)
 
 function trim_trailing_zeros(cs::Vector{T}) where {T}
     isempty(cs) && return cs

@@ -6,11 +6,9 @@ abstract type AbstractUnivariatePolynomial{B, T, X} <: AbstractPolynomial{T,X} e
 abstract type AbstractBasis end
 
 function showterm(io::IO, ::Type{P}, pj::T, var, j, first::Bool, mimetype) where {B, T, P<:AbstractUnivariatePolynomial{B,T}}
-
     if _iszero(pj) return false end
 
     pj = printsign(io, pj, first, mimetype)
-
     if hasone(T)
         if !(_isone(pj) && !(showone(T) || j == 0))
             printcoefficient(io, pj, j, mimetype)
@@ -20,8 +18,15 @@ function showterm(io::IO, ::Type{P}, pj::T, var, j, first::Bool, mimetype) where
     end
 
     printproductsign(io, pj, j, mimetype)
-    printexponent(io, var, j, mimetype)
+    printbasis(io, P, j, mimetype)
     return true
+end
+
+# overload basis_symbol for most types
+# overload printbasis to see a subscript, as Tᵢ... or if there are parameters in basis
+function printbasis(io::IO, ::Type{P}, j::Int, m::MIME) where {P <: AbstractUnivariatePolynomial}
+    print(io, basis_symbol(P))
+    print(io, subscript_text(j, m))
 end
 
 _convert(p::P, as) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(as, firstindex(p))
@@ -100,6 +105,7 @@ end
 #Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),indeterminate(P)})
 #Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),Symbol(var)})
 
+
 # the polynomial 1
 # one(P) is basis dependent
 Base.one(p::P,args...) where {P <: AbstractUnivariatePolynomial} = one(P,args...)
@@ -118,8 +124,20 @@ basis(::Type{P}, i::Int) where {B,P <: AbstractUnivariatePolynomial{B}} = basis(
 copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {B,T, X, S, Y, P <:AbstractUnivariatePolynomial{B,S,Y}} =
     ⟒(P){T, Symbol(X)}(p.coeffs)
 
+# coefficients
 # return dense coefficients (vector or tuple)
-coeffs(p::AbstractUnivariatePolynomial) = [p[i] for i ∈ firstindex(p):lastindex(p)]
+# if laurent type, coefficients are just stored values, there may be an offset
+# if not laurent type, then return coefficients p_0, p_1, ... padding out with zeros, as neede
+# return Val(::Bool) to indicate if laurent type. This should compile away, unlike the check
+laurenttype(P::Type{<:AbstractPolynomial}) = Val(minimumexponent(P) < 0)
+
+coeffs(p::P) where {P <: AbstractUnivariatePolynomial} = coeffs(laurenttype(P), p)
+coeffs(laurent::Val{true}, p) = p.coeffs
+function coeffs(laurent::Val{false}, p)
+    firstindex(p) == 0 && return p.coeffs
+    firstindex(p) > 0 && return [p[i] for i ∈ 0:lastindex(p)]
+    throw(ArgumentError("Polynomial type does not support negative degree terms"))
+end
 
 # function isconstant(p::AbstractUnivariatePolynomial)
 #     p₀ = trim_trailing_zeros(p)
@@ -298,8 +316,36 @@ function derivative(p::AbstractUnivariatePolynomial, n::Int=1)
 end
 const differentiate = derivative
 
+function fit(::Type{P},
+             x::AbstractVector{T},
+             y::AbstractVector{T},
+             deg::AbstractVector,
+             cs::Dict;
+             kwargs...) where {T, P<:AbstractUnivariatePolynomial}
+    convert(P, fit(Polynomial, x, y, deg, cs; kwargs...))
+end
 
-# promote, promote_rule, handle constants
+
+## Interface
+## These must be implemented for a storage type / basis
+# minimumexponent(::Type{P}) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
+# Base.one(::Type{P}) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
+# variable(::Type{P}) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
+# evalpoly(x, p::P) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
+# scalar_add(c, p::P) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
+# ⊗(p::P, q::Q) where {B,P<:AbstractUnivariatePolynomial{B},Q<:AbstractUnivariatePolynomial{B}} = XXX()
+
+# these *may* be implemented for a basis type
+# * basis_symbol/printbasis
+# * one, variable, constantterm, domain, mapdomain
+# * derivative
+# * integrate
+# * divrem
+# * vander
+# *
+
+# promote, promote_rule, vector specification, untyped specification, handle constants,  conversion of Q(p)
+# poly composition, calling a polynomial
 macro poly_register(name)
     poly = esc(name)
     quote
@@ -336,7 +382,12 @@ macro poly_register(name)
         $poly{B,T}(var::SymbolLike=Var(:x)) where {B,T} = variable($poly{B, T, Symbol(var)})
         $poly{B}(var::SymbolLike=Var(:x)) where {B} = variable($poly{B}, Symbol(var))
 
+        # conversion via P(q)
+        $poly{B,T,X}(c::AbstractPolynomial{S,Y}) where {B,T,X,S,Y} = convert($poly{B,T,X}, c)
+        $poly{B,T}(c::AbstractPolynomial{S,Y}) where {B,T,S,Y} = convert($poly{B,T}, c)
         $poly{B}(c::AbstractPolynomial{S,Y}) where {B,S,Y} = convert($poly{B}, c)
+
+        # poly composition and evaluation
         (p::$poly)(x::AbstractPolynomial) = polynomial_composition(p, x)
         (p::$poly)(x) = evalpoly(x, p)
     end

@@ -1,37 +1,17 @@
+## Immutable dense / standard basis specific polynomial code
+ImmutablePolynomial = ImmutableDensePolynomial{StandardBasis}
+export ImmutablePolynomial
+
 
 evalpoly(x, p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X} = zero(T)*zero(x)
-function evalpoly(x, p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}
-#    z = zero(x * zero(p[0]))
-#    typeof(z)(EvalPoly.evalpoly(x, p.coeffs))
-    EvalPoly.evalpoly(x, p.coeffs)
-end
+evalpoly(x, p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N} = EvalPoly.evalpoly(x, p.coeffs)
 
-constantterm(p::ImmutableDensePolynomial{B,T,X,N}) where {B <: StandardBasis,T,X,N} = p.coeffs[1] # this is oddly slow
 constantterm(p::ImmutableDensePolynomial{B,T,X,0}) where {B <: StandardBasis,T,X} = zero(T)
+constantterm(p::ImmutableDensePolynomial{B,T,X,N}) where {B <: StandardBasis,T,X,N} = p.coeffs[1]
 
-# Padded vector sum of two tuples assuming N ≥ M
-@generated function tuple_sum(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
-
-    exprs = Any[nothing for i = 1:N]
-    for i in  1:M
-        exprs[i] = :(p1[$i] + p2[$i])
-    end
-    for i in M+1:N
-        exprs[i] =:(p1[$i])
-    end
-
-    return quote
-        Base.@_inline_meta
-        #Base.@inline
-        tuple($(exprs...))
-    end
-
-end
-
-
-# faster (need special case for inference)
 scalar_add(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B<:StandardBasis,T,X,S} =
     ImmutableDensePolynomial{B,promote_type(T,S),X,1}((c,))
+
 function scalar_add(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B<:StandardBasis,T,X,S,N}
     R = promote_type(T,S)
     P = ImmutableDensePolynomial{B,R,X}
@@ -60,42 +40,20 @@ function Base.:*(p::ImmutableDensePolynomial{StandardBasis,T,X,N},
                  q::ImmutableDensePolynomial{StandardBasis,S,X,M}) where {T,S,X,N,M}
     ⊗(p,q)
 end
-function ⊗(p::ImmutableDensePolynomial{StandardBasis,T,X,N},
-           q::ImmutableDensePolynomial{StandardBasis,S,X,M}) where {T,S,X,N,M}
 
-    # simple convolution
-    R = promote_type(T,S)
-    P = ImmutableDensePolynomial{StandardBasis,R,X}
-
-    (iszero(N) || iszero(M)) && return zero(P)
-
+⊗(p::ImmutableDensePolynomial{B,T,X,0},
+  q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,M} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+⊗(p::ImmutableDensePolynomial{B,T,X,N},
+  q::ImmutableDensePolynomial{B,S,X,0}) where {B<:StandardBasis,T,S,X,N} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+⊗(p::ImmutableDensePolynomial{B,T,X,0},
+  q::ImmutableDensePolynomial{B,S,X,0}) where {B<:StandardBasis,T,S,X} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+function ⊗(p::ImmutableDensePolynomial{B,T,X,N},
+           q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
     cs = fastconv(p.coeffs, q.coeffs)
-    P{N+M-1}(cs)
+    R = eltype(cs)
+    ImmutableDensePolynomial{B,R,X,N+M-1}(cs)
 end
 
-## Static size of product makes generated functions  a good choice
-## from https://github.com/tkoolen/StaticUnivariatePolynomials.jl/blob/master/src/monomial_basis.jl
-## convolution of two tuples
-@generated function fastconv(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
-    P = M + N - 1
-    exprs = Any[nothing for i = 1 : P]
-    for i in 1 : N
-        for j in 1 : M
-            k = i + j - 1
-            if isnothing(exprs[k])
-                exprs[k] = :(p1[$i] * p2[$j])
-            else
-                exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
-            end
-        end
-    end
-
-    return quote
-        Base.@_inline_meta # 1.8 deprecation
-        tuple($(exprs...))
-    end
-
-end
 
 #
 function polynomial_composition(p::ImmutableDensePolynomial{B,T,X,N}, q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
@@ -104,6 +62,8 @@ function polynomial_composition(p::ImmutableDensePolynomial{B,T,X,N}, q::Immutab
     convert(P, cs)
 end
 
+# special cases of polynomial composition
+# ... TBD ...
 
 derivative(p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X} = p
 function derivative(p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}
@@ -124,8 +84,3 @@ function integrate(p::ImmutableDensePolynomial{StandardBasis,T,X,N}) where {T,X,
     R = eltype(cs)
     ImmutableDensePolynomial{StandardBasis,R,X,N+1}(cs)
 end
-
-
-## ---
-ImmutablePolynomial = ImmutableDensePolynomial{StandardBasis}
-export ImmutablePolynomial

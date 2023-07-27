@@ -63,7 +63,7 @@ function Base.convert(P::Type{<:Polynomial}, ch::ChebyshevT)
     Q = ⟒(P){T,X}
 
     if length(ch) < 3
-        return Q(ch.coeffs)
+        return Q(coeffs(ch))
     end
 
     c0 = Q(ch[end - 1])
@@ -219,7 +219,8 @@ function companion(p::ChebyshevT{T}) where T
     diag = vcat(√0.5, fill(R(0.5), d - 2))
     comp = diagm(1 => diag,
                  -1 => diag)
-    monics = p.coeffs ./ p.coeffs[end]
+    ps = coeffs(p)
+    monics = ps ./ ps[end]
     comp[:, end] .-= monics[1:d] .* scl ./ scl[end] ./ 2
     return R.(comp)
 end
@@ -246,8 +247,8 @@ end
 
 
 function Base.:*(p1::ChebyshevT{T,X}, p2::ChebyshevT{T,X}) where {T,X}
-    z1 = _c_to_z(p1.coeffs)
-    z2 = _c_to_z(p2.coeffs)
+    z1 = _c_to_z(coeffs(p1))
+    z2 = _c_to_z(coeffs(p2))
     prod = fastconv(z1, z2)
     cs = _z_to_c(prod)
     ret = ChebyshevT(cs,X)
@@ -269,8 +270,8 @@ function Base.divrem(num::ChebyshevT{T,X}, den::ChebyshevT{S,Y}) where {T,X,S,Y}
         return num ./ den[end], zero(P)
     end
 
-    znum = _c_to_z(num.coeffs)
-    zden = _c_to_z(den.coeffs)
+    znum = _c_to_z(coeffs(num))
+    zden = _c_to_z(coeffs(den))
     quo, rem = _z_division(znum, zden)
     q_coeff = _z_to_c(quo)
     r_coeff = _z_to_c(rem)
@@ -287,59 +288,4 @@ function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, m
         print(io, "+ ", "$(pj)⋅T_$j($var)")
     end
     return true
-end
-
-
-#=
-zseries =#
-
-function _c_to_z(cs::AbstractVector{T}) where {T}
-    n = length(cs)
-    U = typeof(one(T) / 2)
-    zs = zeros(U, 2n - 1)
-    zs[n:end] = cs ./ 2
-    return zs .+ reverse(zs)
-end
-
-function _z_to_c(z::AbstractVector{T}) where {T}
-    n = (length(z) + 1) ÷ 2
-    cs = z[n:end]
-    cs[2:n] *= 2
-    return cs
-end
-
-function _z_division(z1::AbstractVector{T}, z2::AbstractVector{S}) where {T,S}
-    R = eltype(one(T) / one(S))
-    length(z1)
-    length(z2)
-    if length(z2) == 1
-        z1 ./= z2
-        return z1, zero(R)
-    elseif length(z1) < length(z2)
-        return zero(R), R.(z1)
-    end
-    dlen = length(z1) - length(z2)
-    scl = z2[1]
-    z2 ./= scl
-    quo = Vector{R}(undef, dlen + 1)
-    i = 1
-    j = dlen + 1
-    while i < j
-        r = z1[i]
-        quo[i] = z1[i]
-        quo[end - i + 1] = r
-        tmp = r .* z2
-        z1[i:i + length(z2) - 1] .-= tmp
-        z1[j:j + length(z2) - 1] .-= tmp
-        i += 1
-        j -= 1
-    end
-
-    r = z1[i]
-    quo[i] = r
-    tmp = r * z2
-    z1[i:i + length(z2) - 1] .-= tmp
-    quo ./= scl
-    rem = z1[i + 1:i - 2 + length(z2)]
-    return quo, rem
 end

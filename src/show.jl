@@ -306,16 +306,26 @@ end
 exponent_text(i, ::MIME) = "^$(i)"
 exponent_text(i, ::MIME"text/html") = "<sup>$(i)</sup>"
 exponent_text(i, ::MIME"text/latex") = "^{$(i)}"
+subscript_text(i, ::MIME) = "_$(i)"
+subscript_text(i, ::MIME"text/html") = "<sub>$(i)</sub>"
+subscript_text(i, ::MIME"text/latex") = "_{$(i)}"
+
 
 function printexponent(io, var, i, mimetype::MIME)
     if i == 0
         return
     elseif i == 1
-        print(io,var)
+        print(io, var)
     else
         print(io, var, exponent_text(i, mimetype))
     end
 end
+function printsubscript(io, var, i, mimetype::MIME)
+    print(io, var, subscript_text(i, mimetype))
+end
+
+ascii_exponent(io, j) = print(io, "^", j)
+ascii_subscript(io, j) = print(io, "_", j)
 
 function unicode_exponent(io, j)
     a = ("⁻","","","⁰","¹","²","³","⁴","⁵","⁶","⁷","⁸","⁹")
