@@ -179,7 +179,7 @@ end
 ## XXX needs to be incorporated if Polynomial =  MutableDensePolynomial{StandardBasis}
 function  roots(p::P; kwargs...)  where  {T, X, P <: MutableDensePolynomial{StandardBasis,T,X}}
     iszero(p) && return float(T)[]
-    c = coeffs(p)
+    c = p.coeffs
     r = degreerange(p)
     d = r[end] - min(0, r[1]) + 1    # Length of the coefficient vector, taking into consideration
                                      # the case when the lower degree is strictly positive

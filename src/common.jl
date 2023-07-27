@@ -810,8 +810,8 @@ Base.length(v::Monomials) = length(keys(v.p))
 
 #=
 identity =#
-Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(coeffs(p)))
-Base.hash(p::AbstractPolynomial, h::UInt) = hash(indeterminate(p), hash(coeffs(p), h))
+Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(p.coeffs))
+Base.hash(p::AbstractPolynomial{T,X}, h::UInt) where {T,X} = hash(indeterminate(p), hash(p.coeffs, hash(X,h)))
 
 # get symbol of polynomial. (e.g. `:x` from 1x^2 + 2x^3...
 _indeterminate(::Type{P}) where {P <: AbstractPolynomial} = nothing
