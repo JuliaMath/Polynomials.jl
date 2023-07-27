@@ -127,18 +127,15 @@ copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {B,T, X, S, Y, P <:AbstractUni
 
 # XXX something feels off here...
 # coefficients
-# return dense coefficients (vector or tuple)
-# if laurent type and of lowest degree (after chopping) 0 or greater,
-# *or* not of laurent type return p_0, ..., p_n (padded out on left)
+# if laurent type trim, return coeffs
+# if not laurent, return all
 # if laurent type and lowest degree < 0 (after chopping) return p.coeffs (user needs to get offset)
 # return Val(::Bool) to indicate if laurent type. This should compile away, unlike the check
 laurenttype(P::Type{<:AbstractPolynomial}) = Val(minimumexponent(P) < 0)
 
 coeffs(p::P) where {P <: AbstractUnivariatePolynomial} = coeffs(laurenttype(P), p)
 function coeffs(laurent::Val{true}, p)
-    q = chop(p)
-    firstindex(q) ≥ 0 && return [q[i] for i ∈ 0:lastindex(q)]
-    return q.coeffs
+    p.coeffs
 end
 function coeffs(laurent::Val{false}, p)
     firstindex(p) == 0 && return p.coeffs
