@@ -59,10 +59,13 @@ showone(::Type{<:AbstractPolynomial{S}}) where {S} = false
 Common Printing
 =#
 
+_typealias(::Type{P}) where {P<:AbstractPolynomial} = P.name.wrapper # allows for override
+
 Base.show(io::IO, p::AbstractPolynomial) = show(io, MIME("text/plain"), p)
 
 function Base.show(io::IO, mimetype::MIME"text/plain", p::P) where {P<:AbstractPolynomial}
-    print(io,"$(P.name.wrapper)(")
+    print(io, _typealias(P))
+    print(io, "(")
     printpoly(io, p, mimetype)
     print(io,")")
 end

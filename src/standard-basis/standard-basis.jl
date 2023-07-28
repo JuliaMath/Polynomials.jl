@@ -1,6 +1,6 @@
 struct StandardBasis <: AbstractBasis end
 
-basis_symbol(::Type{<:AbstractUnivariatePolynomial{StandardBasis}}) = "x"
+basis_symbol(::Type{P}) where {P<:AbstractUnivariatePolynomial{StandardBasis}} = string(indeterminate(P))
 function printbasis(io::IO, ::Type{P}, j::Int, m::MIME) where {B<:StandardBasis, P <: AbstractUnivariatePolynomial{B}}
     iszero(j) && return # no x^0
     print(io, basis_symbol(P))
@@ -28,7 +28,7 @@ end
 
 function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B<:StandardBasis,T,X, Q<:AbstractUnivariatePolynomial{B,T,X}}
     minimumexponent(P) > firstindex(chop(q)) &&
-        throw(ArgumentError("Degree of polynomial less than minimum degree of polynomial type $(⟒(P))"))
+        throw(ArgumentError("Lowest degree term of polynomial less than the minimum degree of the polynomial type $(⟒(P))"))
 
     isa(q, PP) && return p
     T′ = _eltype(P,q)
@@ -86,7 +86,7 @@ function integrate(p::AbstractUnivariatePolynomial{B,T,X}) where {B <: StandardB
     cs = _zeros(p, z, N+1)
     os =  offset(p)
     @inbounds for (i, cᵢ) ∈ pairs(p)
-        i == -1 && (iszero(cᵢ) ? continue : throw(ArgumentError("Laurent polynomial with 1/x term")))
+        i == -1 && (iszero(cᵢ) ? continue : throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term")))
         #cs[i + os] = cᵢ / (i+1)
         cs = _set(cs, i + 1 + os,  cᵢ / (i+1))
     end
