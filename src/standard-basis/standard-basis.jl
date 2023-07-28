@@ -27,7 +27,7 @@ function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: Abstract
 end
 
 function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B<:StandardBasis,T,X, Q<:AbstractUnivariatePolynomial{B,T,X}}
-    minimumexponent(P) > firstindex(q) &&
+    minimumexponent(P) > firstindex(chop(q)) &&
         throw(ArgumentError("Degree of polynomial less than minimum degree of polynomial type $(⟒(P))"))
 
     isa(q, PP) && return p
