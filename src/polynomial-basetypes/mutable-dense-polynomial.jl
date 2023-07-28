@@ -5,7 +5,7 @@ This polynomial type essentially uses an offset vector (`Vector{T}`,`order`) to 
 
 The typical offset is to have `0` as the order, but, say, to accomodate Laurent polynomials, or more efficient storage of basis elements any order may be specified.
 
-This type trims trailing zeros and when the offset is not 0, trims the leading zeros.
+This type trims trailing zeros and the leading zeros on construction.
 
 """
 struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
@@ -20,9 +20,7 @@ struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
         i = findlast(!iszero, cs)
         if i == nothing
             xs = T[]
-        elseif iszero(order)
-            xs = T[cs[i] for i ∈ 1:i]
-        else # shift if not 0
+        else
             j = findfirst(!iszero, cs)
             xs = T[cs[i] for i ∈ j:i]
             order = order + j - 1

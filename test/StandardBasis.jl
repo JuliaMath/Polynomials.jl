@@ -1237,8 +1237,9 @@ end
     @testset for P in (Polynomial, ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
 
         p,q = P([1,2], :x), P([1,2], :y)
+        P′′ = P <: Polynomials.AbstractUnivariatePolynomial ? LaurentPolynomial : Polynomial
         #P′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
-        P′′ = P′ #XXX treat LaurentPolynomial no differently
+        P′′ = Polynomial #XXX
 
         # * should promote to Polynomial type if mixed (save Laurent Polynomial)
         @testset "promote mixed polys" begin
@@ -1636,7 +1637,7 @@ end
     @test printpoly_to_string(Polynomial(BigInt[1,0,1], :y)) == "1 + y^2"
 
     # negative indices
-    @test printpoly_to_string(LaurentPolynomial([-1:3;], -2)) == "-x^-2 + 1 + 2*x + 3*x^2" # "-x⁻² + 1 + 2*x + 3*x²"
+    @test printpoly_to_string(LaurentPolynomial([-1:3;], -2)) == "-x⁻² + 1 + 2*x + 3*x²"
     @test printpoly_to_string(SparsePolynomial(Dict(.=>(-2:2, -1:3)))) == "-x^-2 + 1 + 2*x + 3*x^2"
 end
 
