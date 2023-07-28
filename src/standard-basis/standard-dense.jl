@@ -9,7 +9,7 @@ export LaurentPolynomial
 
 function evalpoly(c, p::MutableDensePolynomial{StandardBasis,T,X}) where {T,X}
     iszero(p) && return zero(T) * zero(c)
-    EvalPoly.evalpoly(c, p.coeffs) * c^p.order
+    EvalPoly.evalpoly(c, p.coeffs) * c^p.order[]
 end
 
 # scalar add
@@ -73,7 +73,7 @@ function derivative(p::MutableDensePolynomial{B,T,X}) where {B<:StandardBasis,T,
 
     ps = p.coeffs
     cs = [i*pᵢ for (i,pᵢ) ∈ pairs(p)]
-    return P(cs, p.order-1)
+    return P(cs, p.order[]-1)
 end
 
 # LaurentPolynomials have `inv` defined for monomials

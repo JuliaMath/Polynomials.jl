@@ -135,7 +135,7 @@ laurenttype(P::Type{<:AbstractPolynomial}) = Val(minimumexponent(P) < 0)
 
 coeffs(p::P) where {P <: AbstractUnivariatePolynomial} = coeffs(laurenttype(P), p)
 function coeffs(laurent::Val{true}, p)
-    chop(p).coeffs
+    p.coeffs
 end
 function coeffs(laurent::Val{false}, p)
     firstindex(p) == 0 && return p.coeffs
