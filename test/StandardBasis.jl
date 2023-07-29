@@ -1238,8 +1238,8 @@ end
 
         p,q = P([1,2], :x), P([1,2], :y)
         P′′ = P <: Polynomials.AbstractUnivariatePolynomial ? LaurentPolynomial : Polynomial
-        #P′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
-        P′′ = Polynomial #XXX
+        P′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
+        #P′′ = Polynomial #XXX
 
         # * should promote to Polynomial type if mixed (save Laurent Polynomial)
         @testset "promote mixed polys" begin
