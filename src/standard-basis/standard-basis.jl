@@ -28,7 +28,7 @@ end
 
 function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B<:StandardBasis,T,X, Q<:AbstractUnivariatePolynomial{B,T,X}}
     minimumexponent(P) > firstindex(chop(q)) &&
-        throw(ArgumentError("Lowest degree term of polynomial less than the minimum degree of the polynomial type $(⟒(P))"))
+        throw(ArgumentError("Lowest degree term of polynomial ($(q), $(firstindex(q)), $(q.coeffs)) less than the minimum degree of the polynomial type $(⟒(P)), $(minimumexponent(p))"))
 
     isa(q, PP) && return p
     T′ = _eltype(P,q)
