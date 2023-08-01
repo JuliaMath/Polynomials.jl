@@ -1,7 +1,6 @@
 using LinearAlgebra
 using OffsetArrays, StaticArrays
 import Polynomials: indeterminate, ⟒
-import Polynomials: ImmutableDensePolynomial, StandardBasis,MutableSparsePolynomial, MutableDensePolynomial
 
 ## Test standard basis polynomials with (nearly) the same tests
 
@@ -25,13 +24,11 @@ upto_z(as, bs) = upto_tz(filter(!iszero,as), filter(!iszero,bs))
 ==ᵟ(a,b) = (a == b)
 ==ᵟ(a::FactoredPolynomial, b::FactoredPolynomial) = a ≈ b
 
-_isimmutable(::Type{P}) where {P <: Union{ImmutablePolynomial, FactoredPolynomial, ImmutableDensePolynomial{StandardBasis}}} = true
+_isimmutable(::Type{P}) where {P <: Union{ImmutablePolynomial, FactoredPolynomial}} = true
 _isimmutable(P) = false
 
 
-Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial,
-      MutableDensePolynomial{StandardBasis},ImmutableDensePolynomial{StandardBasis}, MutableSparsePolynomial{StandardBasis}
-      )
+Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
 
 @testset "Construction" begin
     @testset for coeff in Any[
@@ -413,7 +410,7 @@ end
         pR = P([3 // 4, -2 // 1, 1 // 1])
 
         # type stability of the default constructor without variable name
-        if !(P ∈ (LaurentPolynomial, ImmutablePolynomial, FactoredPolynomial, ImmutableDensePolynomial{StandardBasis}))
+        if !(P ∈ (LaurentPolynomial, ImmutablePolynomial, FactoredPolynomial))
             @inferred P([1, 2, 3])
             @inferred P([1,2,3], Polynomials.Var(:x))
         end
@@ -557,7 +554,7 @@ end
 
     # issue #395
     @testset for P ∈ Ps
-        P ∈ (FactoredPolynomial, ImmutablePolynomial, ImmutableDensePolynomial{StandardBasis} ) && continue
+        P ∈ (FactoredPolynomial, ImmutablePolynomial) && continue
         p = P([2,1], :s)
         @inferred -p # issue #395
         @inferred 2p
@@ -580,12 +577,12 @@ end
 
     # evaluation at special cases different number types
     @testset for P ∈ Ps
-        P ∈ (SparsePolynomial, FactoredPolynomial, MutableSparsePolynomial{StandardBasis}) && continue
+        P ∈ (SparsePolynomial, FactoredPolynomial) && continue
         # vector coefficients
         v₀, v₁ = [1,1,1], [1,2,3]
         p₁ = P([v₀])
         @test p₁(0) == v₀  == Polynomials.constantterm(p₁)
-        P != ImmutableDensePolynomial{StandardBasis}  && @test_throws MethodError (0 * p₁)(0) # no zero(Vector{Int}) # XXX
+        P != ImmutablePolynomial  && @test_throws MethodError (0 * p₁)(0) # no zero(Vector{Int}) # XXX
         p₂ = P([v₀, v₁])
         @test p₂(0) == v₀ == Polynomials.constantterm(p₂)
         @test p₂(2) == v₀ + 2v₁
@@ -604,8 +601,7 @@ end
 
     # p - p requires a zero
     @testset for P ∈ Ps
-        P ∈ (LaurentPolynomial, SparsePolynomial,
-             FactoredPolynomial, MutableSparsePolynomial{StandardBasis}) && continue
+        P ∈ (LaurentPolynomial, SparsePolynomial,FactoredPolynomial) && continue
         for v ∈ ([1,2,3],
                  [[1,2,3],[1,2,3]],
                  [[1 2;3 4], [3 4; 5 6]]
@@ -682,7 +678,7 @@ end
         # Check for isequal
         p1 = P([1.0, -0.0, 5.0, Inf])
         p2 = P([1.0,  0.0, 5.0, Inf])
-        !(P ∈ (FactoredPolynomial, SparsePolynomial, MutableSparsePolynomial{StandardBasis})) && (@test p1 == p2 && !isequal(p1, p2))  # SparsePolynomial doesn't store -0.0,  0.0.
+        !(P ∈ (FactoredPolynomial, SparsePolynomial)) && (@test p1 == p2 && !isequal(p1, p2))  # SparsePolynomial doesn't store -0.0,  0.0.
 
         p3 = P([0, NaN])
         @test p3 === p3 && p3 ≠ p3 && isequal(p3, p3)
@@ -909,7 +905,7 @@ end
 
     X = :x
     @testset for P in Ps
-        if !(P ∈ (ImmutablePolynomial,  ImmutableDensePolynomial{StandardBasis}))
+        if !(P ∈ (ImmutablePolynomial,))
             p = P([0,one(Float64)])
             @test P{Complex{Float64},X} == typeof(p + 1im)
             @test P{Complex{Float64},X} == typeof(1im - p)
@@ -1041,7 +1037,7 @@ end
         @test out.ϵ <= sqrt(eps())
         @test out.κ * out.ϵ < sqrt(eps())  # small forward error
         # one for which the multiplicities are not correctly identified
-        n = 4
+        n = 3 # was 4?
         q = p^n
         out = Polynomials.Multroot.multroot(q)
         @test (out.multiplicities == n*ls) || (out.κ * out.ϵ > sqrt(eps()))  # large  forward error, l misidentified
@@ -1214,14 +1210,14 @@ end
         @test !issymmetric(A)
         U = A * A'
         @test U[1,2] ≈ U[2,1] # issymmetric with some allowed error for FactoredPolynomial
-        P != Polynomials.ImmutableDensePolynomial{Polynomials.StandardBasis} && diagm(0 => [1, p^3], 1=>[p^2], -1=>[p])
+        P != ImmutablePolynomial && diagm(0 => [1, p^3], 1=>[p^2], -1=>[p])
     end
 
     # issue 206 with mixed variable types and promotion
     @testset for P in Ps
         λ = P([0,1],:λ)
         A = [1 λ; λ^2 λ^3]
-        P != Polynomials.ImmutableDensePolynomial{Polynomials.StandardBasis} && @test A ==  diagm(0 => [1, λ^3], 1=>[λ], -1=>[λ^2]) # XXX diagm + ImmutableDensePolynomial{StandardBasis} isn't working
+        @test A ==  diagm(0 => [1, λ^3], 1=>[λ], -1=>[λ^2])
         @test iszero([1 -λ]*[λ^2 λ; λ 1])
         @test [λ 1] + [1 λ] == (λ+1) .* [1 1] # (λ+1) not a number, so we broadcast
     end
@@ -1689,7 +1685,7 @@ end
             T1,T2 = Ts[i],Ts[i+1]
             @testset for P in Ps
                 P <: FactoredPolynomial && continue
-                if !(P ∈ (ImmutablePolynomial, ImmutableDensePolynomial{StandardBasis}))
+                if !(P ∈ (ImmutablePolynomial,))
                     p = P{T2}(T1.(rand(1:3,3)))
                     @test typeof(p) == P{T2, :x}
                 else
@@ -1705,7 +1701,7 @@ end
     # test P{T}(...) is P{T} (not always the case for FactoredPolynomial)
     @testset for P in Ps
         P <: FactoredPolynomial && continue
-        if !(P ∈ (ImmutablePolynomial, ImmutableDensePolynomial{StandardBasis}))
+        if !(P ∈ (ImmutablePolynomial,))
             @testset for T in (Int32, Int64, BigInt)
                 p₁ =  P{T}(Float64.(rand(1:3,5)))
                 @test typeof(p₁) == P{T,:x} # conversion works

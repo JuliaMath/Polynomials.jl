@@ -377,7 +377,7 @@ function uvw(V::Val{:euclidean}, p::P, q::P; kwargs...) where {P <: AbstractPoly
 end
 
 function uvw(::Any, p::P, q::P; kwargs...) where {P <: AbstractPolynomial}
-    throw(ArgumentError("not defined"))
+     throw(ArgumentError("not defined"))
 end
 
 # Some things lifted from

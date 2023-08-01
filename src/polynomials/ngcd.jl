@@ -10,8 +10,8 @@ In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call on
 """
 function ngcd(p::P, q::Q,
               args...;
-              kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
-                                         S,Y,Q<:StandardBasisPolynomial{S,Y}}
+              kwargs...) where {T,X,P<:StandardBasisType{T,X},
+                                S,Y,Q<:StandardBasisType{S,Y}}
     if (degree(q) > degree(p))
         u,w,v,Θ,κ =  ngcd(q,p,args...;kwargs...)
         return (u=u,v=v,w=w, Θ=Θ, κ=κ)
@@ -45,12 +45,15 @@ function ngcd(p::P, q::Q,
     end
 
     ## call ngcd
-    p′ = PnPolynomial{R,X}(ps[nz:end])
-    q′ = PnPolynomial{R,X}(qs[nz:end])
+    #P′ = PnPolynomial
+    P′ = MutableDenseViewPolynomial{StandardBasis}
+    p′ = P′{R,X}(ps[nz:end])
+    q′ = P′{R,X}(qs[nz:end])
     out = NGCD.ngcd(p′, q′, args...; kwargs...)
-
     ## convert to original polynomial type
+
     𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X}
+    𝑷 = MutableDenseViewPolynomial{StandardBasis,R,X}
     u,v,w = convert.(𝑷, (out.u,out.v,out.w))
     if nz > 1
         u *= variable(u)^(nz-1)
@@ -91,7 +94,11 @@ end
 
 module NGCD
 using Polynomials, LinearAlgebra
-import Polynomials: PnPolynomial, constructorof
+import Polynomials: constructorof, MutableDenseViewPolynomial, StandardBasis
+
+#PnPolynomial = Polynomials.PnPolynomial
+PnPolynomial = MutableDenseViewPolynomial{StandardBasis}
+
 
 """
     ngcd(p::PnPolynomial{T,X}, q::PnPolynomial{T,X}, [k::Int];

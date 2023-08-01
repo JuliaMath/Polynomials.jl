@@ -3,7 +3,13 @@ module Multroot
 export multroot
 
 using ..Polynomials
+
 using LinearAlgebra
+
+
+PnPolynomial = Polynomials.PnPolynomial
+StandardBasisType = Polynomials.StandardBasisType
+#PnPolynomial = Polynomials.MutableDenseViewPolynomial{Polynomials.StandardBasis}
 
 """
     multroot(p; verbose=false, method=:direct, kwargs...)
@@ -94,7 +100,7 @@ For polynomials of degree 20 or higher, it is often the case the `l`
 is misidentified.
 
 """
-function multroot(p::Polynomials.StandardBasisPolynomial{T}; verbose=false,
+function multroot(p::StandardBasisType{T}; verbose=false,
                   kwargs...) where {T}
 
     # degenerate case, constant
@@ -133,7 +139,7 @@ end
 # Better performing :direct method by Florent Bréhard, Adrien Poteaux, and Léo Soudant [Validated root enclosures for interval polynomials with multiplicities](preprint)
 
 function pejorative_manifold(
-    p::Polynomials.StandardBasisPolynomial{T,X};
+    p::StandardBasisType{T,X}; #::Polynomials.StandardBasisPolynomial{T,X};
     method = :direct,
     θ = 1e-8,    # zero singular-value threshold
     ρ = 1e-13,   # initial residual tolerance, was 1e-10
@@ -142,7 +148,7 @@ function pejorative_manifold(
     )  where {T,X}
 
     S = float(T)
-    u = Polynomials.PnPolynomial{S,X}(S.(coeffs(p)))
+    u = PnPolynomial{S,X}(S.(coeffs(p)))
 
     nu₂ = norm(u, 2)
     θ2, ρ2 =  θ * nu₂, ρ * nu₂
@@ -173,9 +179,9 @@ end
 # using the `:iterative` method of Zeng
 function pejorative_manifold_multiplicities(
     ::Val{:iterative},
-    u::Polynomials.PnPolynomial{T},
-    v::Polynomials.PnPolynomial{T},
-    w::Polynomials.PnPolynomial{T},
+    u::PnPolynomial{T},
+    v::PnPolynomial{T},
+    w::PnPolynomial{T},
     zs,
     l::Any,
     ρⱼ,θ, ρ, ϕ;
@@ -213,9 +219,9 @@ end
 # directly from the cofactors v, w s.t. p = u*v and q = u*w
 function pejorative_manifold_multiplicities(
     ::Val{:direct},
-    u::Polynomials.PnPolynomial{T},
-    v::Polynomials.PnPolynomial{T},
-    w::Polynomials.PnPolynomial{T},
+    u::PnPolynomial{T},
+    v::PnPolynomial{T},
+    w::PnPolynomial{T},
     zs,
     args...;
     kwargs...) where {T}
@@ -239,7 +245,7 @@ root is a least squares minimizer of `F(z) = W ⋅ [Gₗ(z) - a]`. Here `a ~ (p_
 
 This follows Algorithm 1 of [Zeng](https://www.ams.org/journals/mcom/2005-74-250/S0025-5718-04-01692-8/S0025-5718-04-01692-8.pdf)
 """
-function pejorative_root(p::Polynomials.StandardBasisPolynomial,
+function pejorative_root(p::StandardBasisType, #::Polynomials.StandardBasisPolynomial,
                          zs::Vector{S}, ls; kwargs...) where {S}
     ps = reverse(coeffs(p))
     pejorative_root(ps, zs, ls; kwargs...)
@@ -361,7 +367,7 @@ function cond_zl(p, zs::Vector{S}, ls) where {S}
     1 / σ
 end
 
-backward_error(p::AbstractPolynomial, zs::Vector{S}, ls) where {S}  =
+backward_error(p::StandardBasisType, zs::Vector{S}, ls) where {S}  =
     backward_error(reverse(coeffs(p)), zs, ls)
 
 function backward_error(p, z̃s::Vector{S}, ls) where {S}
@@ -393,7 +399,7 @@ end
 # If method=direct and leastsquares=true, compute the cofactors v,w
 # using least-squares rather than Zeng's AGCD refinement strategy
 function pejorative_manifold(
-    p::Polynomials.StandardBasisPolynomial{T,X},
+    p::StandardBasisType{T,X}, #::Polynomials.StandardBasisPolynomial{T,X},
     k::Int;
     method = :direct,
     leastsquares = false,
@@ -406,7 +412,7 @@ function pejorative_manifold(
     error("Does this get called?")
 
     S = float(T)
-    u = Polynomials.PnPolynomial{S,X}(S.(coeffs(p)))
+    u = PnPolynomial{S,X}(S.(coeffs(p)))
 
     nu₂ = norm(u, 2)
 
@@ -437,7 +443,7 @@ end
 # when the multiplicity structure l is known
 # If method=direct and leastsquares=true, compute the cofactors v,w
 # using least-squares rather than Zeng's AGCD refinement strategy
-function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
+function pejorative_manifold(p::StandardBasisType{T,X}, #Polynomials.StandardBasisPolynomial{T,X},
     l::Vector{Int};
     method = :direct,
     leastsquares = false,
@@ -448,7 +454,7 @@ function pejorative_manifold(p::Polynomials.StandardBasisPolynomial{T,X},
 
 
     S = float(T)
-    u = Polynomials.PnPolynomial{S,X}(S.(coeffs(p)))
+    u = PnPolynomial{S,X}(S.(coeffs(p)))
 
     # number of distinct roots
     k = sum(l .> 0)
@@ -479,9 +485,9 @@ function _ngcd(u, k)
     x = zeros(S, 2*k-1)
     Polynomials.NGCD.qrsolve!(x, A, b)
     # w = n*X^{k-1} + ...
-    w = Polynomials.PnPolynomial([x[1:k-1]; n])
+    w = PnPolynomial([x[1:k-1]; n])
     # v = X^k + ...
-    v = Polynomials.PnPolynomial([-x[k:2*k-1]; 1])
+    v = PnPolynomial([-x[k:2*k-1]; 1])
     v, w
 end
 
@@ -495,9 +501,9 @@ end
 #function pejorative_manifold_iterative_multiplicities(
 function pejorative_manifold_multiplicities(
     ::Val{:iterative},
-    u::Polynomials.PnPolynomial{T},
-    v::Polynomials.PnPolynomial{T},
-    w::Polynomials.PnPolynomial{T},
+    u::PnPolynomial{T},
+    v::PnPolynomial{T},
+    w::PnPolynomial{T},
     zs,
     l::Vector{Int},
     args...; kwargs...) where {T}

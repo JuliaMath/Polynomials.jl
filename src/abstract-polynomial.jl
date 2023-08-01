@@ -1,10 +1,11 @@
-# XXX todo, merge in with common.jl
+# XXX todo, merge in with common.jl, abstract.jl
 # used by LaurentPolynomial, ImmutablePolynomial, SparsePolynomial
 """
     Abstract type for polynomials with an explicit basis.
 """
 abstract type AbstractUnivariatePolynomial{B, T, X} <: AbstractPolynomial{T,X} end
 abstract type AbstractBasis end
+export AbstractUnivariatePolynomial
 
 function showterm(io::IO, ::Type{P}, pj::T, var, j, first::Bool, mimetype) where {B, T, P<:AbstractUnivariatePolynomial{B,T}}
     if _iszero(pj) return false end
@@ -78,10 +79,10 @@ Base.iterate(p::AbstractUnivariatePolynomial, state = firstindex(p)) = _iterate(
 function normΔ(q1::AbstractUnivariatePolynomial, q2::AbstractUnivariatePolynomial, p::Real = 2)
     iszero(q1) && return norm(q2, p)
     iszero(q2) && return norm(q1, p)
-    r = zero(q1[end] + q2[end])
+    r = abs(zero(q1[end] + q2[end]))
     tot = zero(r)
     for i ∈ union(keys(q1), keys(q2))
-       @inbounds tot += (q1[i] - q2[i])^p
+       @inbounds tot += abs(q1[i] - q2[i])^p
     end
     return tot^(1/p)
 end
@@ -148,23 +149,6 @@ end
 # can pass tolerances
 Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = chop!(copy(p))
 chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
-
-## --- constant term ---
-
-# arithmetic dispatch
-struct ConstantTerm{T}
-    x::T
-end
-function ConstantTerm(p::AbstractUnivariatePolynomial)
-    isconstant(p) || throw(ArgumentError("Non-constant polynomial"))
-    convert(ConstantTerm, p)
-end
-Base.getindex(b::ConstantTerm) = b.x
-Base.show(io::IO, c::ConstantTerm) = print(io, c.x)
-Base.iszero(b::ConstantTerm) = iszero(b.x)
-isconstant(::ConstantTerm) = true
-Base.convert(::Type{ConstantTerm}, p::AbstractUnivariatePolynomial) = ConstantTerm(constantterm(p))
-Base.convert(::Type{ConstantTerm{T}}, p::AbstractUnivariatePolynomial) where {T} = ConstantTerm(T(constantterm(p)))
 
 
 ## ---
@@ -246,8 +230,6 @@ Base.:-(p::AbstractUnivariatePolynomial) = scalar_mult(-1, p)
 
 Base.:+(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_add(p, c)
 Base.:+(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_add(p, c)
-Base.:+(c::ConstantTerm, p::AbstractUnivariatePolynomial) = scalar_add(p, c[])
-Base.:+(p::AbstractUnivariatePolynomial, c::ConstantTerm) = scalar_add(p, c[])
 scalar_add(p::AbstractUnivariatePolynomial, c) = scalar_add(c,p) # scalar addition is commutative
 
 Base.:+(p::AbstractUnivariatePolynomial) = p
@@ -260,8 +242,6 @@ Base.:+(p::AbstractUnivariatePolynomial{B, T, X},
 
 Base.:-(c::Scalar, p::AbstractUnivariatePolynomial) = c + (-p)
 Base.:-(p::AbstractUnivariatePolynomial, c::Scalar) = p + (-c)
-Base.:-(c::ConstantTerm, p::AbstractUnivariatePolynomial) = (-c[]) + p
-Base.:-(p::AbstractUnivariatePolynomial, c::ConstantTerm) = p - c[]
 
 Base.:-(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, X}) where {B,T,S,X} = p + (-q)
@@ -269,13 +249,8 @@ Base.:-(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y} =
             _mixed_symbol_op(-, p, q)
 
-Base.:*(c::Scalar, p::ConstantTerm) = ConstantTerm(c*p[])
-Base.:*(p::ConstantTerm, c::Scalar) = ConstantTerm(p[] * c)
-
 Base.:*(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_mult(c, p)
-Base.:*(c::ConstantTerm, p::AbstractUnivariatePolynomial) = scalar_mult(c[], p)
 Base.:*(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_mult(p, c)
-Base.:*(p::AbstractUnivariatePolynomial, c::ConstantTerm) = scalar_mult(p, c[])
 
 Base.:*(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, X}) where {B,T,S,X} = *(promote(p,q)...)
@@ -286,20 +261,21 @@ Base.:*(p::AbstractUnivariatePolynomial{B, T, X},
             _mixed_symbol_op(*, p, q)
 
 Base.:/(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_mult(p, one(eltype(p))/c)
-Base.:/(p::AbstractUnivariatePolynomial, c::ConstantTerm) = scalar_mult(p, one(eltype(p))/c)
 
 Base.:^(p::AbstractUnivariatePolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
-# treat constant polynomials as ConstantTerm when symbols mixed
+# treat constant polynomials as when symbols mixed
+scalar_op(::typeof(*)) = scalar_mult
+scalar_op(::typeof(+)) = scalar_add
+scalar_op(::typeof(/)) = scalar_div
 function _mixed_symbol_op(op,
-                          p::AbstractUnivariatePolynomial{B, T, X},
-                          q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y}
+                          p::P,
+                          q::Q) where {B,T,S,X,Y,
+                                       P<:AbstractUnivariatePolynomial{B, T, X},
+                                       Q<:AbstractUnivariatePolynomial{B, S, Y}}
     X == Y && throw(ArgumentError("dispatch should catch this case"))
-    if isconstant(p)
-        return  op(convert(ConstantTerm, p), q)
-    elseif isconstant(q)
-        return  op(p, convert(ConstantTerm, q))
-    end
+    isconstant(p) && return scalar_op(op)(constantterm(p), q)
+    isconstant(q) && return scalar_op(op)(p, constantterm(q))
     assert_same_variable(X,Y)
 end
 

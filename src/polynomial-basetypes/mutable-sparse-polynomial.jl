@@ -107,7 +107,7 @@ end
 # return coeffs as  a vector
 # use p.coeffs to get Dictionary
 function coeffs(p::MutableSparsePolynomial{B,T})  where {B,T}
-    a,b = firstindex(p), lastindex(p)
+    a,b = min(0,firstindex(p)), lastindex(p)
     cs = zeros(T, length(a:b))
     for k in sort(collect(keys(p.coeffs)))
         v = p.coeffs[k]

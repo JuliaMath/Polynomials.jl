@@ -1,4 +1,5 @@
 struct StandardBasis <: AbstractBasis end
+const StandardBasisType = Union{Polynomials.StandardBasisPolynomial{T,X}, Polynomials.AbstractUnivariatePolynomial{<:Polynomials.StandardBasis,T,X}} where {T,X}
 
 basis_symbol(::Type{P}) where {P<:AbstractUnivariatePolynomial{StandardBasis}} = string(indeterminate(P))
 function printbasis(io::IO, ::Type{P}, j::Int, m::MIME) where {B<:StandardBasis, P <: AbstractUnivariatePolynomial{B}}
@@ -146,31 +147,13 @@ function LinearAlgebra.cond(p::P, x) where {B<:StandardBasis, P<:AbstractUnivari
     p̃(abs(x))/ abs(p(x))
 end
 
-function ngcd(p::P, q::Q,
-              args...;
-              kwargs...) where {B <: StandardBasis,
-                                T,X,P<:AbstractUnivariatePolynomial{B,T,X},
-                                S,Y,Q<:AbstractUnivariatePolynomial{B,S,Y}}
-    ngcd(PnPolynomial(coeffs(p)), PnPolynomial(coeffs(q)), args...; kwargs...)
-end
-
-# XXX p.coeffs isn't right
-function Multroot.multroot(p::AbstractUnivariatePolynomial{B}, args...;
-                           kwargs...) where {B<:StandardBasis}
-    cs = coeffs(p)
-    if firstindex(p) > 0
-        cs = vcat(zeros(firstindex(p)), cs)
-    elseif firstindex(p) < 0
-        @warn "Laurent Polynomial; finding values after factoring out leading term"
-    end
-    Multroot.multroot(Polynomial(cs), args...; kwargs...)
-end
-
-Polynomials.Multroot.pejorative_root(q::AbstractUnivariatePolynomial{<:StandardBasis}, zs::Vector{S}, ls; kwargs...) where {S} =
-    Polynomials.Multroot.pejorative_root(convert(Polynomial, q), zs, ls; kwargs...)
-
-Polynomials.Multroot.stats(q::AbstractUnivariatePolynomial{<:StandardBasis}, zs::Vector{S}, ls; kwargs...) where {S} =
-    Polynomials.Multroot.stats(convert(Polynomial, q), zs, ls; kwargs...)
+# function ngcd(p::P, q::Q,
+#               args...;
+#               kwargs...) where {B <: StandardBasis,
+#                                 T,X,P<:AbstractUnivariatePolynomial{B,T,X},
+#                                 S,Y,Q<:AbstractUnivariatePolynomial{B,S,Y}}
+#     ngcd(PnPolynomial(coeffs(p)), PnPolynomial(coeffs(q)), args...; kwargs...)
+# end
 
 function fit(::Type{P},
              x::AbstractVector{T},
@@ -193,6 +176,6 @@ end
 # these are
 Polynomial{T, X}(coeffs::AbstractVector{S},order::Int) where {T, X, S} = Polynomial{T,X}(coeffs)
 FactoredPolynomial{T,X}(coeffs::AbstractVector{S}, order::Int) where {T,S,X} = FactoredPolynomial{T,X}(coeffs)
-PnPolynomial{T, X}(coeffs::AbstractVector, order::Int) where {T, X} = PnPolynomial(coeffs) # for generic programming
-PnPolynomial{T}(coeffs::AbstractVector, order::Int,var) where {T} = PnPolynomial(coeffs,var) # for generic programming
-PnPolynomial(coeffs::AbstractVector, order::Int,var)  = PnPolynomial(coeffs,var) # for generic programming
+#PnPolynomial{T, X}(coeffs::AbstractVector, order::Int) where {T, X} = PnPolynomial(coeffs) # for generic programming
+#PnPolynomial{T}(coeffs::AbstractVector, order::Int,var) where {T} = PnPolynomial(coeffs,var) # for generic programming
+#PnPolynomial(coeffs::AbstractVector, order::Int,var)  = PnPolynomial(coeffs,var) # for generic programming

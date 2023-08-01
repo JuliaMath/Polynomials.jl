@@ -20,9 +20,9 @@ include("polynomials/Polynomial.jl")
 #include("polynomials/SparsePolynomial.jl")
 #include("polynomials/LaurentPolynomial.jl")
 
-include("polynomials/pi_n_polynomial.jl")
-include("polynomials/ngcd.jl")
-include("polynomials/multroot.jl")
+#include("polynomials/pi_n_polynomial.jl")
+#include("polynomials/ngcd.jl")
+#include("polynomials/multroot.jl")
 include("polynomials/factored_polynomial.jl")
 include("polynomials/ChebyshevT.jl")
 
@@ -32,17 +32,21 @@ include("basis-utils.jl")
 include("polynomial-basetypes/mutable-dense-polynomial.jl")
 include("polynomial-basetypes/immutable-dense-polynomial.jl")
 include("polynomial-basetypes/mutable-sparse-polynomial.jl")
-
+include("polynomial-basetypes/mutable-dense-view-polynomial.jl")
 
 
 include("standard-basis/standard-basis.jl")
 include("standard-basis/standard-dense.jl")
 include("standard-basis/standard-immutable.jl")
 include("standard-basis/standard-sparse.jl")
+include("standard-basis/standard-dense-view.jl")
 
 include("promotions.jl")
 
-include("polynomials/chebyshev.jl") # wrong place
+include("polynomials/ngcd.jl")
+include("polynomials/multroot.jl")
+
+include("polynomials/chebyshev.jl")
 
 
 # Rational functions
@@ -61,6 +65,6 @@ if !isdefined(Base, :get_extension)
     include("../ext/PolynomialsMutableArithmeticsExt.jl")
 end
 
-include("precompiles.jl")
+#include("precompiles.jl")
 
 end # module

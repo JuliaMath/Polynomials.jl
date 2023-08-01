@@ -66,26 +66,19 @@ constantterm(p::ImmutableDensePolynomial{B,T,X,N}) where {B <: StandardBasis,T,X
 
 scalar_add(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B<:StandardBasis,T,X,S} =
     ImmutableDensePolynomial{B,promote_type(T,S),X,1}((c,))
-
+function scalar_add(p::ImmutableDensePolynomial{B,T,X,1}, c::S) where {B<:StandardBasis,T,X,S}
+    R = promote_type(T,S)
+    ImmutableDensePolynomial{B,R,X}(NTuple{1,R}(p[0] + c))
+end
 function scalar_add(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B<:StandardBasis,T,X,S,N}
     R = promote_type(T,S)
     P = ImmutableDensePolynomial{B,R,X}
     iszero(c) && return P{N}(convert(NTuple{N,R}, p.coeffs))
-    N == 0 && return P{1}(NTuple{1,R}(c))
-    N == 1 && return P{N}((p[0]+c,))
 
     cs = _tuple_combine(+, convert(NTuple{N,R}, p.coeffs), NTuple{1,R}((c,)))
     q = P{N}(cs)
 
     return q
-
-
-    P = ImmutableDensePolynomial{B,R,X}
-    iszero(N) && return P{1}((c,))
-
-    xs = convert(NTuple{N,R}, p.coeffs)
-    @set! xs[1] = xs[1] + c
-    P{N}(xs)
 end
 
 

@@ -1,5 +1,4 @@
 export AbstractPolynomial
-export AbstractUnivariatePolynomial
 
 # *internal* means to pass variable symbol to constructor through 2nd position and keep type stability
 struct Var{T} end
