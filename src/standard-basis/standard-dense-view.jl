@@ -71,7 +71,7 @@ end
 
 
 
-# This is for standard basis XXX
+# This is for standard basis
 function LinearAlgebra.mul!(pq::PnPolynomial, p::PnPolynomial, q::PnPolynomial)
     m,n = length(p)-1, length(q)-1
     cs = pq.coeffs

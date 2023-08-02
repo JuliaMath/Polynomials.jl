@@ -153,7 +153,6 @@ _zeros(::Type{<:ImmutableDensePolynomial}, z::S, N) where {S} =
     ntuple(_ -> zero(S), Val(N))
 
 minimumexponent(::Type{<:ImmutableDensePolynomial}) =  0
-#XXXlaurenttype(::Type{<:ImmutableDensePolynomial}) = Val(false)
 
 Base.firstindex(p::ImmutableDensePolynomial) = 0
 Base.lastindex(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N} = N - 1

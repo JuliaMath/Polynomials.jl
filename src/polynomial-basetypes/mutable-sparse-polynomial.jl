@@ -81,7 +81,6 @@ end
 ## ---
 
 minimumexponent(::Type{<:MutableSparsePolynomial}) =  typemin(Int)
-#XXXlaurenttype(::Type{<:MutableSparsePolynomial}) = Val(true)
 
 Base.copy(p::MutableSparsePolynomial{B,T,X}) where {B,T,X} = MutableSparsePolynomial{B,T,X}(copy(p.coeffs))
 
@@ -166,35 +165,6 @@ function isconstant(p::MutableSparsePolynomial)
     n == 0 && return true
     n == 1 && haskey(p.coeffs, 0)
 end
-
-
-# function scalar_mult(c::S, p::MutableSparsePolynomial{B,T,X}) where {B,T,X,S<:Scalar}
-
-#     R = promote_type(T,S)
-#     P = MutableSparsePolynomial{B,R,X}
-#     (iszero(p) || iszero(c)) && return(zero(P))
-
-#     d = convert(Dict{Int, R}, copy(p.coeffs))
-#     for (k, pₖ) ∈ pairs(d)
-#         @inbounds d[k] = c .* d[k]
-#     end
-
-#     return P(Val(false), d)
-
-# end
-
-# function scalar_mult(p::MutableSparsePolynomial{B,T,X}, c::S) where {B,T,X,S<:Scalar}
-#     R = promote_type(T,S)
-#     P = MutableSparsePolynomial{B,R,X}
-#     (iszero(p) || iszero(c)) && return(zero(P))
-
-#     d = convert(Dict{Int, R}, copy(p.coeffs))
-#     for (k, pₖ) ∈ pairs(d)
-#         @inbounds d[k] = d[k] .* c
-#     end
-
-#     return P(Val(false), d)
-# end
 
 Base.:+(p::MutableSparsePolynomial{B,T,X}, q::MutableSparsePolynomial{B,S,X}) where{B,X,T,S} =
     _dict_combine(+, p, q)

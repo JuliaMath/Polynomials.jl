@@ -115,7 +115,6 @@ function degree(p::MutableDensePolynomial)
 end
 
 
-#XXXlaurenttype(::Type{<:MutableDensePolynomial}) = Val(true)
 
 basis(::Type{MutableDensePolynomial{B,T,X}},i::Int) where {B,T,X} = MutableDensePolynomial{B,T,X}([1],i)
 
@@ -188,16 +187,12 @@ minimumexponent(::Type{<:MutableDensePolynomial}) =  typemin(Int)
 
 
 # vector ops +, -, c*x
-## unary (faster than map(-,p)
-#Base.:-(p::MutableDensePolynomial{B,T,X}) where {B,T,X} =
-#    MutableDensePolynomial{B,T,X}(Val(false), -p.coeffs, p.order[])
-
-## binary
+## unary - (map is as fast)
+## binary +
 Base.:+(p::MutableDensePolynomial{B,T,X}, q::MutableDensePolynomial{B,S,X}) where{B,X,T,S} =
     offset_vector_combine(+, p, q)
 Base.:-(p::MutableDensePolynomial{B,T,X}, q::MutableDensePolynomial{B,S,X}) where{B,X,T,S} =
     offset_vector_combine(-, p, q)
-# handle +, -
 # modified from  https://github.com/jmichel7/LaurentPolynomials.jl/
 function offset_vector_combine(op, p::MutableDensePolynomial{B,T,X}, q::MutableDensePolynomial{B,S,X}) where{B,X,T,S}
     R = promote_type(T,S)
@@ -231,29 +226,21 @@ function offset_vector_combine(op, p::MutableDensePolynomial{B,T,X}, q::MutableD
 
 end
 
-
-function Base.numerator(p::MutableDensePolynomial{B,T,X}) where {B,T,X}
+function Base.numerator(q::MutableDensePolynomial{B,T,X}) where {B,T,X}
+    p = chop(q)
     o = firstindex(p)
     o ≥ 0 && return p
     MutableDensePolynomial{B,T,X}(p.coeffs, 0)
 end
 
-function Base.denominator(p::MutableDensePolynomial{B,T,X}) where {B,T,X}
+function Base.denominator(q::MutableDensePolynomial{B,T,X}) where {B,T,X}
+    p = chop(q)
     o = firstindex(p)
     o ≥ 0 && return one(p)
     basis(MutableDensePolynomial{B,T,X}, -o)
 end
 
 
-# scalar mult.
-# function scalar_mult(p::MutableDensePolynomial{B,T,X}, c::S) where {B,T,X,S}
-#     cs = p.coeffs .* (c,) # works with T[]
-#     return _polynomial(p, cs)
-# end
-#function scalar_mult(c::S, p::MutableDensePolynomial{B,T,X}) where {B,T,X,S}
-#     cs = (c,) .* p.coeffs
-#     return _polynomial(p, cs)
-#end
 
 ## ---
 function LinearAlgebra.lmul!(c::Scalar, p::MutableDensePolynomial{B,T,X}) where {B,T,X}

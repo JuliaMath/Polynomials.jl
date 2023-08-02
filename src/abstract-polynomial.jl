@@ -201,35 +201,6 @@ function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X},
     end
 end
 
-# XXX in common.jl
-# function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X}, p2::Scalar; kwargs...) where {B,T,X}
-#     q = p2 * one(⟒(p1){T,X})
-#     isapprox(p1, q; kwargs...)
-# end
-# Base.isapprox(p1::Scalar, p2::AbstractUnivariatePolynomial; kwargs...) = isapprox(p2, p1; kwargs...)
-
-#Base.isequal(p1::P, p2::P) where {P <: AbstractUnivariatePolynomial} = hash(p1) == hash(p2)
-# function Base.:(==)(p1::P, p2::P) where {P <: AbstractUnivariatePolynomial}
-#     iszero(p1) && iszero(p2) && return true
-#     lastindex(p1) == lastindex(p2) || return false
-#     # coeffs(p1) == coeffs(p2), but non-allocating
-#     for i ∈ union(keys(p1), keys(p2))
-#         p1[i] == p2[i] || return false
-#     end
-#     return true
-# end
-# function Base.:(==)(p1::AbstractUnivariatePolynomial, p2::AbstractUnivariatePolynomial)
-#     if isconstant(p1)
-#         isconstant(p2) && return constantterm(p1) == constantterm(p2)
-#         return false
-#     elseif isconstant(p2)
-#         return false # p1 is not constant
-#     end
-#     check_same_variable(p1, p2) || return false
-#     ==(promote(p1,p2)...)
-# end
-#Base.:(==)(p::AbstractUnivariatePolynomial, n::Scalar) = isconstant(p) && constantterm(p) == n
-#Base.:(==)(n::Scalar, p::AbstractUnivariatePolynomial) = p == n
 
 ## --- arithmetic operations ---
 ## implement

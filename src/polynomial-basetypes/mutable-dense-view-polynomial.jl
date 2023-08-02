@@ -42,7 +42,6 @@ end
 
 
 minimumexponent(::Type{<:MutableDenseViewPolynomial}) =  0
-#XXXlaurenttype(::Type{<:MutableDenseViewPolynomial}) = Val(false)
 _zeros(::Type{<:MutableDenseViewPolynomial}, z, N)  = fill(z, N)
 Base.copy(p::MutableDenseViewPolynomial{B,T,X}) where {B,T,X} = MutableDenseViewPolynomial{B,T,X}(copy(p.coeffs))
 # change broadcast semantics

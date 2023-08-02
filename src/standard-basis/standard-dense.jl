@@ -1,9 +1,5 @@
 # Dense + StandardBasis
 
-# XXX for now, use older Polynomial type
-#const Polynomial = MutableDensePolynomial{StandardBasis}
-#export Polynomial
-
 """
     LaurentPolynomial{T,X}(coeffs::AbstractVector, [m::Integer = 0], [var = :x])
 
@@ -268,19 +264,18 @@ end
 
 
 
-## XXX ----
-
 ## ----
 ## XXX needs to be incorporated if Polynomial =  MutableDensePolynomial{StandardBasis}
 function  roots(p::P; kwargs...)  where  {T, X, P <: MutableDensePolynomial{StandardBasis,T,X}}
-    iszero(p) && return float(T)[]
-    c = p.coeffs
-    r = degreerange(p)
-    d = r[end] - min(0, r[1]) + 1    # Length of the coefficient vector, taking into consideration
-                                     # the case when the lower degree is strictly positive
-                                     # (like p=3z^2).
-    z = zeros(T, d)                  # Reserves space for the coefficient vector.
-    z[max(0, r[1]) + 1:end] = c      # Leaves the coeffs of the lower powers as zeros.
-    a = Polynomial{T,X}(z)           # The root is then the root of the numerator polynomial.
-    return roots(a; kwargs...)
+    return roots(convert(Polynomial, numerator(p)), kwargs...)
+    # iszero(p) && return float(T)[]
+    # c = p.coeffs
+    # r = degreerange(p)
+    # d = r[end] - min(0, r[1]) + 1    # Length of the coefficient vector, taking into consideration
+    #                                  # the case when the lower degree is strictly positive
+    #                                  # (like p=3z^2).
+    # z = zeros(T, d)                  # Reserves space for the coefficient vector.
+    # z[max(0, r[1]) + 1:end] = c      # Leaves the coeffs of the lower powers as zeros.
+    # a = Polynomial{T,X}(z)           # The root is then the root of the numerator polynomial.
+    # return roots(a; kwargs...)
 end
