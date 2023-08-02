@@ -146,8 +146,7 @@ function pejorative_manifold(
     )  where {T,X}
 
     S = float(T)
-    u = PnPolynomial{S,X}(S.(coeffs(p)))
-    chop!(u)
+    u = convert(PnPolynomial{S,X}, p)
     nu₂ = norm(u, 2)
     θ2, ρ2 =  θ * nu₂, ρ * nu₂
     u, v, w, ρⱼ, κ = Polynomials.ngcd(

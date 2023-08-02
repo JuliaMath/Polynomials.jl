@@ -26,7 +26,7 @@ function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: Abstract
     if i₀ < 0
         return ⟒(P){T,X}([q[i] for i in eachindex(q)], i₀)
     else
-        return ⟒(P){T,X}([q[i] for i in 0:lastindex(q)]) # full poly
+        return ⟒(P){T,X}([q[i] for i in 0:max(0,degree(q))]) # should trim trailing 0s
     end
 end
 
