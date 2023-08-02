@@ -51,8 +51,8 @@ end
 
     as = ones(3:4)
     bs = parent(as)
-    @test_broken ChebyshevT(as) == ChebyshevT(bs)
-    @test_broken ChebyshevT{Float64}(as) == ChebyshevT{Float64}(bs)
+    @test ChebyshevT(as) == ChebyshevT(bs)
+    @test ChebyshevT{Float64}(as) == ChebyshevT{Float64}(bs)
 
     a = [1,1]
     b = OffsetVector(a, axes(a))
@@ -160,7 +160,7 @@ end
     c2 = ChebyshevT([0, 1, 2, 3])
     d, r = divrem(c2, c1)
 
-    @test_broken d.coeffs ≈ [0, 2]
+    @test d.coeffs ≈ [0, 2]
     @test coeffs(d) ≈ [0, 2]
     @test r.coeffs ≈ [-2, -4]
 

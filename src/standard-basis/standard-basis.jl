@@ -44,9 +44,9 @@ function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B
     else
         cs = [q[i] for i ∈ eachindex(q)]
         o = firstindex(q)
-        throw(ArgumentError("Do we need this??? If not, can remove two defs at end"))
+        @warn "This can be removed, right?"
     end
-    #⟒(P){T′,X′}(cs, o)
+    ⟒(P){T′,X′}(cs, o)
 end
 
 function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: AbstractUnivariatePolynomial{B}, Q<:StandardBasisPolynomial}
@@ -72,10 +72,12 @@ mapdomain(::Type{P}, x::AbstractArray) where  {B <: StandardBasis, P <: Abstract
 
 
 ## Evaluation, Scalar addition, Multiplication, integration, differentiation
+## may be no good fallback
 function evalpoly(c::S, p::P) where {B<:StandardBasis, S, T, X, P<:AbstractDenseUnivariatePolynomial{B,T,X}}
     iszero(p) && return zero(T) * zero(c)
     EvalPoly.evalpoly(c, p.coeffs)
 end
+evalpoly(c::S, p::AbstractLaurentUnivariatePolynomial{StandardBasis}) where {S} = throw(ArgumentError("Default method not defined"))
 
 function scalar_add(c::S, p::P) where {B<:StandardBasis, S, T, X, P<:AbstractDenseUnivariatePolynomial{B,T,X}}
     R = promote_type(T,S)
@@ -91,9 +93,10 @@ function scalar_add(c::S, p::P) where {B<:StandardBasis, S, T, X, P<:AbstractDen
         cs =  _set(cs, i+o, cᵢ)
     end
     cs = _set(cs, 0+o, cs[0+o] + c)
-    iszero(last(cs)) && (cs = trim_trailing_zeros(cs))
+    iszero(last(cs)) && (cs = trim_trailing_zeros!!(cs))
     P′(Val(false), cs)
 end
+scalar_add(c::S, p::AbstractLaurentUnivariatePolynomial{StandardBasis}) where {S} = throw(ArgumentError("Default method not defined"))
 
 # special cases are faster
 function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
@@ -102,23 +105,51 @@ function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
     throw(ArgumentError("Default method not defined"))
 end
 
+# for dense 0-based polys with p.coeffs
+function ⊗(p::P, q::P) where {B <: StandardBasis,T,X, P<:AbstractDenseUnivariatePolynomial{B,T,X}}
+
+    P′ = ⟒(P){T,X}
+
+    iszero(p) && return zero(P′)
+    iszero(q) && return zero(P′)
+
+    n,m = length(p), length(q)
+    cs = _zeros(p, zero(p[0] + q[0]), n + m - 1)
+    mul!(cs, p, q)
+    P′(Val(false), cs)
+end
+
+#
+function LinearAlgebra.mul!(cs, p::AbstractDenseUnivariatePolynomial, q::AbstractDenseUnivariatePolynomial)
+    m,n = length(p)-1, length(q)-1
+    cs .= 0
+    @inbounds for (i, pᵢ) ∈ enumerate(p.coeffs)
+        for (j, qⱼ) ∈ enumerate(q.coeffs)
+            ind = i + j - 1
+            cs[ind] = muladd(pᵢ, qⱼ, cs[ind])
+        end
+    end
+    nothing
+end
+
+
 # implemented derivative case by case
 function derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractDenseUnivariatePolynomial{B,T,X}}
-    R = promote_type(T, Int)
+    R = Base.promote_type(T, Int)
     N = length(p.coeffs)
     P′ = ⟒(P){R,X}
     iszero(N) && return zero(P)
+    hasnan(p) && return P′(NaN)
     z = 0*p[0]
     cs = _zeros(p,z,N-1)
     o = offset(p)
-#    cs = Vector{R}(undef, N-1)
     for (i, pᵢ) ∈ Base.Iterators.drop(pairs(p),1)
         _set(cs, i - 1 + o, i * pᵢ)
-#        cs[i] = i * pᵢ
     end
     P′(Val(false), cs)
 end
-derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractLaurentUnivariatePolynomial{B,T,X}} = XXX()
+derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractLaurentUnivariatePolynomial{B,T,X}} =
+    throw(ArgumentError("Default method not defined"))
 
 function integrate(p::P) where {B <: StandardBasis,T,X,P<:AbstractDenseUnivariatePolynomial{B,T,X}}
 
@@ -200,7 +231,6 @@ function Base.divrem(num::P, den::Q) where {B<:StandardBasis,
 
 end
 
-## XXX This needs resolving!
 ## XXX copy or pass along to other system for now where things are defined for StandardBasisPolynomial
 function vander(p::Type{<:P}, x::AbstractVector{T}, degs) where {B<:StandardBasis, P<:AbstractUnivariatePolynomial{B}, T <: Number}
     vander(StandardBasisPolynomial, x, degs)
@@ -229,6 +259,5 @@ function fit(::Type{P},
 end
 
 # new constructors taking order in second position for the `convert` method above (to work with LaurentPolynomial)
-# these are
 Polynomial{T, X}(coeffs::AbstractVector{S},order::Int) where {T, X, S} = Polynomial{T,X}(coeffs)
 FactoredPolynomial{T,X}(coeffs::AbstractVector{S}, order::Int) where {T,S,X} = FactoredPolynomial{T,X}(coeffs)

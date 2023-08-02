@@ -16,30 +16,14 @@ This type is useful for reducing copies and allocations in some algorithms.
 const PnPolynomial = MutableDenseViewPolynomial{StandardBasis}
 _typealias(::Type{P}) where {P<:PnPolynomial} = "PnPolynomial"
 
-function ⊗(p:: PnPolynomial{T,X},
-           q:: PnPolynomial{S,X}) where {T,S,X}
-    R = promote_type(T,S)
-    P =  PnPolynomial{R,X}
-
-    N,M = length(p), length(q)
-    iszero(N) && return zero(P)
-    iszero(M) && return zero(P)
-
-    cs = Vector{R}(undef, N+M-1)
-    pq = P(cs)
-    mul!(pq, p, q)
-    return pq
-end
-
-# This is for standard basis
-function LinearAlgebra.mul!(pq::PnPolynomial, p::PnPolynomial, q::PnPolynomial)
+# used by multroot
+function LinearAlgebra.mul!(pq::PnPolynomial, p::PnPolynomial{T,X}, q::PnPolynomial) where {T,X}
     m,n = length(p)-1, length(q)-1
-    cs = pq.coeffs
-    cs .= 0
-    @inbounds for (i, pᵢ) ∈ enumerate(p.coeffs)
-        for (j, qⱼ) ∈ enumerate(q.coeffs)
-            ind = i + j - 1
-            cs[ind] = muladd(pᵢ, qⱼ, cs[ind])
+    pq.coeffs .= zero(T)
+    for i ∈ 0:m
+        for j ∈ 0:n
+            k = i + j
+            @inbounds pq.coeffs[1+k] = muladd(p.coeffs[1+i], q.coeffs[1+j], pq.coeffs[1+k])
         end
     end
     nothing

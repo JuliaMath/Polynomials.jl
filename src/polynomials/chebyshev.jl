@@ -108,7 +108,7 @@ end
 function scalar_add(c::S, p::MutableDensePolynomial{B,T,X}) where {B<:ChebyshevTBasis,T,X, S<:Scalar}
     R = promote_type(T,S)
     P = MutableDensePolynomial{ChebyshevTBasis,R,X}
-    cs = convert(Vector{R}, coeffs(p))
+    cs = convert(Vector{R}, copy(coeffs(p)))
     n = length(cs)
     iszero(n) && return P([c])
     isone(n) && return P([cs[1] + c])

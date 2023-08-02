@@ -39,7 +39,7 @@ end
 function _polynomial(p::P, as::Vector{S})  where {B,T, X, P <: MutableDenseLaurentPolynomial{B,T,X}, S}
     R = eltype(as)
     Q = MutableDenseLaurentPolynomial{B, R, X}
-    as = trim_trailing_zeros(as)
+    as = trim_trailing_zeros!!(as)
     Q(Val(false), as, p.order[])
 end
 
@@ -55,7 +55,7 @@ end
 
 function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDenseLaurentPolynomial{B,T,X}}
     xs = map(fn, p.coeffs, args...)
-    xs = trim_trailing_zeros(xs)
+    xs = trim_trailing_zeros!!(xs)
     R = eltype(xs)
     return ⟒(P){R,X}(Val(false), xs, p.order[])
 end
@@ -200,7 +200,7 @@ function offset_vector_combine(op, p::MutableDenseLaurentPolynomial{B,T,X}, q::M
         x[i] = op(x[i], cᵢ)
     end
 
-    b₁ == b₂ && (x = trim_trailing_zeros(x))
+    b₁ == b₂ && (x = trim_trailing_zeros!!(x))
     P(Val(false), x, a)
 
 end

@@ -35,11 +35,11 @@ include("polynomial-basetypes/immutable-dense-polynomial.jl")
 include("polynomial-basetypes/mutable-sparse-polynomial.jl")
 
 include("standard-basis/standard-basis.jl")
-include("standard-basis/standard-dense.jl")
-include("standard-basis/standard-dense-view.jl")
-include("standard-basis/standard-dense-laurent.jl")
-include("standard-basis/standard-immutable.jl")
-include("standard-basis/standard-sparse.jl")
+include("standard-basis/polynomial.jl")
+include("standard-basis/pn-polynomial.jl")
+include("standard-basis/laurent-polynomial.jl")
+include("standard-basis/immutable-polynomial.jl")
+include("standard-basis/sparse-polynomial.jl")
 
 include("promotions.jl")
 
@@ -65,6 +65,6 @@ if !isdefined(Base, :get_extension)
     include("../ext/PolynomialsMutableArithmeticsExt.jl")
 end
 
-#include("precompiles.jl")
+include("precompiles.jl")
 
 end # module

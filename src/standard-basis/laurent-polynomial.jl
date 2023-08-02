@@ -8,13 +8,9 @@ A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of t
 The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`.
 The argument `m` represents the lowest exponent of the variable in the series, and is taken to be zero by default.
 
-Laurent polynomials and standard basis polynomials promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`
-.
+Laurent polynomials and standard basis polynomials promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`,
 
 Integration will fail if there is a `x⁻¹` term in the polynomial.
-
-!!! note
-    `LaurentPolynomial` is an alias for `MutableDensePolynomial{StandardBasis}`.
 
 !!! note
     `LaurentPolynomial` is axis-aware, unlike the other polynomial types in this package.
@@ -120,7 +116,7 @@ function scalar_add(c::S, p::LaurentPolynomial{T,X}) where {S, T, X}
         cs[i + o] = cᵢ
     end
     cs[0 + o] += c
-    iszero(last(cs)) && (cs = trim_trailing_zeros(cs))
+    iszero(last(cs)) && (cs = trim_trailing_zeros!!(cs))
     P(Val(false), cs, a′)
 end
 
@@ -149,7 +145,7 @@ function ⊗(p::LaurentPolynomial{T,X},
         end
     end
     if iszero(last(cs))
-        cs = trim_trailing_zeros(cs)
+        cs = trim_trailing_zeros!!(cs)
     end
     P(Val(false), cs, a)
 end
@@ -168,11 +164,11 @@ function derivative(p::LaurentPolynomial{T,X}) where {T,X}
 end
 
 # LaurentPolynomials have `inv` defined for monomials
-function Base.inv(p::LaurentPolynomial)
+function Base.inv(p::LaurentPolynomial{T,X}) where {T,X}
     m,n =  firstindex(p), lastindex(p)
     m != n && throw(ArgumentError("Only monomials can be inverted"))
-    cs = [1/p for p in p.coeffs]
-    LaurentPolynomial{eltype(cs), indeterminate(p)}(cs, -m)
+    c = 1/p[n]
+    return LaurentPolynomial(c, -m, X)
 end
 
 """

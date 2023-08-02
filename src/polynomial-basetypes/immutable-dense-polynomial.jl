@@ -93,7 +93,7 @@ Base.similar(p::ImmutableDensePolynomial, args...) = p.coeffs
 
 
 # not type stable, as N is value dependent
-function trim_trailing_zeros(cs::Tuple)
+function trim_trailing_zeros!!(cs::Tuple)
     isempty(cs) && return cs
     !iszero(last(cs)) && return cs
     i = findlast(!iszero, cs)
@@ -117,10 +117,9 @@ function Base.chop(p::ImmutableDensePolynomial{B,T,X,N};
     ImmutableDensePolynomial{B,T,X,N′}(xs)
 end
 
-# misnamed, should be chop!!
-chop!(p::ImmutableDensePolynomial; kwargs...) = chop(p; kwargs...)
+chop!(p::ImmutableDensePolynomial; kwargs...) = chop(p; kwargs...) ## misnamed, should be chop!!
+chop!!(p::ImmutableDensePolynomial; kwargs...) = chop(p; kwargs...)
 
-# truncate!!; keeps length replacing values with zeros
 function truncate!(p::ImmutableDensePolynomial{B,T,X,N};
                    rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0) where {B,T,X,N}
@@ -211,7 +210,7 @@ function degree(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N}
 end
 
 function coeffs(p::P) where {P <: ImmutableDensePolynomial}
-    trim_trailing_zeros(p.coeffs)
+    trim_trailing_zeros!!(p.coeffs)
 end
 
 # zero, one

@@ -46,7 +46,6 @@ export SparsePolynomial
 _typealias(::Type{P}) where {P<:SparsePolynomial} = "SparsePolynomial"
 
 function evalpoly(x, p::MutableSparsePolynomial)
-
     tot = zero(p[0]*x)
     for (i, cᵢ) ∈ p.coeffs
         tot = muladd(cᵢ, x^i, tot)
@@ -54,7 +53,6 @@ function evalpoly(x, p::MutableSparsePolynomial)
     return tot
 end
 
-# much faster than default
 function scalar_add(c::S, p::MutableSparsePolynomial{B,T,X}) where {B<:StandardBasis,T,X,S}
     c₀ = c + p[0]
     R = eltype(c₀)
@@ -67,7 +65,6 @@ function scalar_add(c::S, p::MutableSparsePolynomial{B,T,X}) where {B<:StandardB
     end
     return P(Val(false), D)
 end
-
 
 function ⊗(p::MutableSparsePolynomial{StandardBasis,T,X},
            q::MutableSparsePolynomial{StandardBasis,S,X}) where {T,S,X}
@@ -89,7 +86,6 @@ function ⊗(p::MutableSparsePolynomial{StandardBasis,T,X},
     end
     P(Val(false), cs)
 end
-
 
 # sparse
 function derivative(p:: MutableSparsePolynomial{B,T,X}) where {B<:StandardBasis,T,X}

@@ -7,9 +7,7 @@ using ..Polynomials
 using LinearAlgebra
 
 
-PnPolynomial = Polynomials.PnPolynomial
-StandardBasisType = Polynomials.StandardBasisType
-#PnPolynomial = Polynomials.MutableDenseViewPolynomial{Polynomials.StandardBasis}
+import ..Polynomials: PnPolynomial, StandardBasisType
 
 """
     multroot(p; verbose=false, method=:direct, kwargs...)
@@ -103,6 +101,7 @@ is misidentified.
 function multroot(p::StandardBasisType{T}; verbose=false,
                   kwargs...) where {T}
 
+    p = chop(p)
     # degenerate case, constant
     degree(p) == 0 && return (values=T[], multiplicities=Int[], κ=NaN, ϵ=NaN)
 
@@ -149,10 +148,8 @@ function pejorative_manifold(
 
     S = float(T)
     u = PnPolynomial{S,X}(S.(coeffs(p)))
-
     nu₂ = norm(u, 2)
     θ2, ρ2 =  θ * nu₂, ρ * nu₂
-
     u, v, w, ρⱼ, κ = Polynomials.ngcd(
         u, derivative(u),
         satol = θ2, srtol = zero(real(T)),
@@ -367,7 +364,7 @@ function cond_zl(p, zs::Vector{S}, ls) where {S}
     1 / σ
 end
 
-backward_error(p::StandardBasisType, zs::Vector{S}, ls) where {S}  =
+backward_error(p::AbstractPolynomial, zs::Vector{S}, ls) where {S}  =
     backward_error(reverse(coeffs(p)), zs, ls)
 
 function backward_error(p, z̃s::Vector{S}, ls) where {S}
@@ -380,7 +377,7 @@ function backward_error(p, z̃s::Vector{S}, ls) where {S}
     norm(W*u,2)
 end
 
-function stats(p, zs, ls)
+function stats(p::AbstractPolynomial, zs, ls)
     cond_zl(p, zs, ls), backward_error(p, zs, ls)
 end
 
@@ -477,7 +474,7 @@ end
 
 # use least-squares rather than Zeng's AGCD refinement strategy
 function _ngcd(u, k)
-    @show :_ngcd
+    # @show :_ngcd
     n = degree(u)
     Sy = Polynomials.NGCD.SylvesterMatrix(u, derivative(u), n-k)
     b = Sy[1:end-1,2*k+1] - n * Sy[1:end-1,k] # X^k*p' - n*X^{k-1}*p

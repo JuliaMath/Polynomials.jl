@@ -25,10 +25,11 @@ MutableDenseViewPolynomial{B,T,X}(check::Val{true}, cs::AbstractVector{S}) where
 MutableDenseViewPolynomial{B,T,X}(cs::AbstractVector{S}) where {B,T,S,X} = MutableDenseViewPolynomial{B,T,X}(Val(false), cs)
 
 function MutableDenseViewPolynomial{B, T, X}(coeffs::AbstractVector{S}, order::Int) where {B, T,S, X}
-    iszero(order) && return MutableDenseViewPolynomial{B,T,X}(coeffs)
+    iszero(order) && return MutableDenseViewPolynomial{B,T,X}(Val(false), coeffs)
     order < 0 && throw(ArgumentError("Not a Laurent type"))
-    prepend!(coeffs, zeros(T,order))
-    MutableDenseViewPolynomial{B,T,X}(coeffs)
+    cs = convert(Vector{T}, coeffs)
+    prepend!(cs, zeros(T,order))
+    MutableDenseViewPolynomial{B,T,X}(Val(false), cs)
 end
 
 @poly_register MutableDenseViewPolynomial

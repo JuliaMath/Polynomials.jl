@@ -152,6 +152,9 @@ end
 Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = chop!(copy(p))
 chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
 
+chop!!(p::AbstractUnivariatePolynomial; kwargs...) = chop!(p)
+truncate!!(p::AbstractUnivariatePolynomial; kwargs...) = truncate!(p)
+
 
 ## ---
 
@@ -213,9 +216,9 @@ end
 ##
 Base.:-(p::AbstractUnivariatePolynomial) = map(-, p) #scalar_mult(-1, p)
 
-Base.:+(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_add(p, c)
-Base.:+(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_add(p, c)
-scalar_add(p::AbstractUnivariatePolynomial, c) = scalar_add(c,p) # scalar addition is commutative
+Base.:+(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_add(c, p)
+Base.:+(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_add(c, p)
+scalar_add(p::AbstractUnivariatePolynomial, c) = scalar_add(c, p) # scalar addition is commutative
 
 Base.:+(p::AbstractUnivariatePolynomial) = p
 Base.:+(p::AbstractUnivariatePolynomial{B, T, X},

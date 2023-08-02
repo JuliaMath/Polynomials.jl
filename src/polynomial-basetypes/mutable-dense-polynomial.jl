@@ -32,7 +32,7 @@ end
 function _polynomial(p::P, as::Vector{S})  where {B,T, X, P <: MutableDensePolynomial{B,T,X}, S}
     R = eltype(as)
     Q = MutableDensePolynomial{B, R, X}
-    as = trim_trailing_zeros(as)
+    as = trim_trailing_zeros!!(as)
     Q(Val(false), as, p.order[])
 end
 
@@ -48,7 +48,7 @@ end
 
 function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDensePolynomial{B,T,X}}
     xs = map(fn, p.coeffs, args...)
-    xs = trim_trailing_zeros(xs)
+    xs = trim_trailing_zeros!!(xs)
     R = eltype(xs)
     return ⟒(P){R,X}(Val(false), xs)
 end
@@ -100,7 +100,7 @@ end
 
 basis(::Type{MutableDensePolynomial{B,T,X}},i::Int) where {B,T,X} = MutableDensePolynomial{B,T,X}([1],i)
 
-function trim_trailing_zeros(cs::Vector{T}) where {T}
+function trim_trailing_zeros!!(cs::Vector{T}) where {T}
     isempty(cs) && return cs
     !iszero(last(cs)) && return cs
     i = findlast(!iszero, cs)
@@ -138,7 +138,7 @@ function normΔ(q1::MutableDensePolynomial{B}, q2::MutableDensePolynomial{B}) wh
     iszero(q2) && return norm(q1,2)
     r = abs(zero(q1[end] + q2[end]))
     tot = zero(r)
-    for i ∈ o:maximum(lastindex, (q1,q2))
+    for i ∈ 0:maximum(lastindex, (q1,q2))
        @inbounds tot += abs2(q1[i] - q2[i])
     end
     return sqrt(tot)
@@ -177,7 +177,7 @@ function _vector_combine(op, p::MutableDensePolynomial{B,T,X}, q::MutableDensePo
         x[i] = op(x[i], cᵢ)
     end
 
-    b₁ == b₂ && (x = trim_trailing_zeros(x))
+    b₁ == b₂ && (x = trim_trailing_zeros!!(x))
     P(Val(false), x, a)
 
 end

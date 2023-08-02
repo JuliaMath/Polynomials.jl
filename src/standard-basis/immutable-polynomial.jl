@@ -33,8 +33,8 @@ are precluded from use in rational functions.
 
 # Examples
 
-```jldoctest
-julia> using  Polynomials
+```jldoctest immutable_polynomials
+julia> using Polynomials
 
 julia> ImmutablePolynomial((1, 0, 3, 4))
 ImmutablePolynomial(1 + 3*x^2 + 4*x^3)
@@ -49,30 +49,27 @@ ImmutablePolynomial(1.0)
 !!! note
     This was modeled after [StaticUnivariatePolynomials](https://github.com/tkoolen/StaticUnivariatePolynomials.jl) by `@tkoolen`.
 
-!!! note
-    `ImmutablePolynomial` is an alias for `ImmutableDensePolynomial{StandardBasis}`.
-
 """
 ImmutablePolynomial = ImmutableDensePolynomial{StandardBasis}
 export ImmutablePolynomial
 
 _typealias(::Type{P}) where {P<:ImmutablePolynomial} = "ImmutablePolynomial"
 
-evalpoly(x, p::ImmutablePolynomial{T,X,0}) where {T,X} = zero(T)*zero(x)
-evalpoly(x, p::ImmutablePolynomial{T,X,N}) where {T,X,N} = EvalPoly.evalpoly(x, p.coeffs)
+evalpoly(x, p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X} = zero(T)*zero(x)
+evalpoly(x, p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N} = EvalPoly.evalpoly(x, p.coeffs)
 
-constantterm(p::ImmutablePolynomial{T,X,0}) where {T,X} = zero(T)
-constantterm(p::ImmutablePolynomial{T,X,N}) where {T,X,N} = p.coeffs[1]
+constantterm(p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X} = zero(T)
+constantterm(p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N} = p.coeffs[1]
 
-scalar_add(p::ImmutablePolynomial{T,X,0}, c::S) where {T,X,S} =
-    ImmutablePolynomial{promote_type(T,S),X,1}((c,))
-function scalar_add(p::ImmutablePolynomial{T,X,1}, c::S) where {T,X,S}
+scalar_add(c::S, p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X,S} =
+    ImmutableDensePolynomial{B,promote_type(T,S),X,1}((c,))
+function scalar_add(c::S, p::ImmutableDensePolynomial{B,T,X,1}) where {B<:StandardBasis,T,X,S}
     R = promote_type(T,S)
-    ImmutablePolynomial{R,X,1}(NTuple{1,R}(p[0] + c))
+    ImmutableDensePolynomial{B,R,X,1}(NTuple{1,R}(p[0] + c))
 end
-function scalar_add(p::ImmutablePolynomial{T,X,N}, c::S) where {T,X,S,N}
+function scalar_add(c::S, p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,S,N}
     R = promote_type(T,S)
-    P = ImmutablePolynomial{R,X}
+    P = ImmutableDensePolynomial{B,R,X}
     iszero(c) && return P{N}(convert(NTuple{N,R}, p.coeffs))
 
     cs = _tuple_combine(+, convert(NTuple{N,R}, p.coeffs), NTuple{1,R}((c,)))
@@ -84,28 +81,28 @@ end
 
 # return N*M
 # intercept promotion call
-function Base.:*(p::ImmutablePolynomial{T,X,N},
-                 q::ImmutablePolynomial{S,X,M}) where {T,S,X,N,M}
+function Base.:*(p::ImmutableDensePolynomial{B,T,X,N},
+                 q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
     ⊗(p,q)
 end
 
-⊗(p::ImmutablePolynomial{T,X,0},
-  q::ImmutablePolynomial{S,X,M}) where {T,S,X,M} = zero(ImmutablePolynomial{promote_type(T,S),X,0})
-⊗(p::ImmutablePolynomial{T,X,N},
-  q::ImmutablePolynomial{S,X,0}) where {T,S,X,N} = zero(ImmutablePolynomial{promote_type(T,S),X,0})
-⊗(p::ImmutablePolynomial{T,X,0},
-  q::ImmutablePolynomial{S,X,0}) where {T,S,X} = zero(ImmutablePolynomial{promote_type(T,S),X,0})
-function ⊗(p::ImmutablePolynomial{T,X,N},
-           q::ImmutablePolynomial{S,X,M}) where {T,S,X,N,M}
+⊗(p::ImmutableDensePolynomial{B,T,X,0},
+  q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,M} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+⊗(p::ImmutableDensePolynomial{B,T,X,N},
+  q::ImmutableDensePolynomial{B,S,X,0}) where {B<:StandardBasis,T,S,X,N} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+⊗(p::ImmutableDensePolynomial{B,T,X,0},
+  q::ImmutableDensePolynomial{B,S,X,0}) where {B<:StandardBasis,T,S,X} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+function ⊗(p::ImmutableDensePolynomial{B,T,X,N},
+           q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
     cs = fastconv(p.coeffs, q.coeffs)
     R = eltype(cs)
-    ImmutablePolynomial{R,X,N+M-1}(cs)
+    ImmutableDensePolynomial{B,R,X,N+M-1}(cs)
 end
 
 
 #
-function polynomial_composition(p::ImmutablePolynomial{T,X,N}, q::ImmutablePolynomial{S,X,M}) where {T,S,X,N,M}
-    P = ImmutablePolynomial{promote_type(T,S), X, N*M}
+function polynomial_composition(p::ImmutableDensePolynomial{B,T,X,N}, q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
+    P = ImmutableDensePolynomial{B,promote_type(T,S), X, N*M}
     cs = evalpoly(q, p.coeffs)
     convert(P, cs)
 end
@@ -113,23 +110,25 @@ end
 # special cases of polynomial composition
 # ... TBD ...
 
+
 # special cases are much more performant
-derivative(p::ImmutablePolynomial{T,X,0}) where {T,X} = p
-function derivative(p::ImmutablePolynomial{T,X,N}) where {T,X,N}
+derivative(p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X} = p
+function derivative(p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}
     N == 0 && return p
-    hasnan(p) && return ⟒(p)(zero(T)/zero(T),X) # NaN{T}
+    hasnan(p) && return ImmutableDensePolynomial{B,T,X,1}(zero(T)/zero(T)) # NaN{T}
     cs = ntuple(i -> i*p.coeffs[i+1], Val(N-1))
     R = eltype(cs)
-    ImmutablePolynomial{R,X,N-1}(cs)
+    ImmutableDensePolynomial{B,R,X,N-1}(cs)
 end
 
-integrate(p::ImmutablePolynomial{T,X,0}) where {T,X} =
-    ImmutablePolynomial{Base.promote_op(/,T,Int),X,1}((0/1,))
-function integrate(p::ImmutablePolynomial{T,X,N}) where {T,X,N}
+integrate(p::ImmutableDensePolynomial{B, T,X,0}) where {B<:StandardBasis,T,X} =
+    ImmutableDensePolynomial{B,Base.promote_op(/,T,Int),X,1}((0/1,))
+function integrate(p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}
     N == 0 && return p # different type
-    hasnan(p) && return ⟒(p)(zero(T)/zero(T), X) # NaN{T}
+    R′ = Base.promote_op(/,T,Int)
+    hasnan(p) && return ImmutableDensePolynomial{B,R′,X,1}(zero(T)/zero(T)) # NaN{T}
     z = zero(first(p.coeffs))
     cs = ntuple(i -> i > 1 ? p.coeffs[i-1]/(i-1) : z/1, Val(N+1))
     R = eltype(cs)
-    ImmutablePolynomial{R,X,N+1}(cs)
+    ImmutableDensePolynomial{B,R,X,N+1}(cs)
 end

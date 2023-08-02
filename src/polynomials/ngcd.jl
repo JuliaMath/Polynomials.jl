@@ -45,15 +45,13 @@ function ngcd(p::P, q::Q,
     end
 
     ## call ngcd
-    #P′ = PnPolynomial
-    P′ = MutableDenseViewPolynomial{StandardBasis}
+    P′ = PnPolynomial
     p′ = P′{R,X}(ps[nz:end])
     q′ = P′{R,X}(qs[nz:end])
     out = NGCD.ngcd(p′, q′, args...; kwargs...)
-    ## convert to original polynomial type
 
+    ## convert to original polynomial type
     𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X}
-    𝑷 = MutableDenseViewPolynomial{StandardBasis,R,X}
     u,v,w = convert.(𝑷, (out.u,out.v,out.w))
     if nz > 1
         u *= variable(u)^(nz-1)
@@ -94,10 +92,7 @@ end
 
 module NGCD
 using Polynomials, LinearAlgebra
-import Polynomials: constructorof, MutableDenseViewPolynomial, StandardBasis
-
-#PnPolynomial = Polynomials.PnPolynomial
-PnPolynomial = MutableDenseViewPolynomial{StandardBasis}
+import Polynomials: constructorof, PnPolynomial
 
 
 """
@@ -298,6 +293,7 @@ function ngcd(p::PnPolynomial{T,X},
                 u, v, w = initial_uvw(Val(:ispossible), j, p, q, xx)
             end
             ϵₖ, κ = refine_uvw!(u, v, w, p, q, uv, uw)
+
             # we have limsup Θᵏ / ‖(p,q) - (p̃,q̃)‖ = κ, so
             # ‖Θᵏ‖ ≤ κ ⋅ ‖(p,q)‖ ⋅ ϵ seems a reasonable heuristic.
             # Too tight a tolerance and the right degree will be missed; too
@@ -307,7 +303,6 @@ function ngcd(p::PnPolynomial{T,X},
             ϵ = max(atol, npq₂ * κ * rtol)
             #@show ϵₖ, ϵ, κ
             if ϵₖ ≤ ϵ
-                #@show :success, σ₋₁, ϵₖ
                 return (u=u, v=v, w=w, Θ=ϵₖ, κ=κ)
             end
             #@show :failure, j
@@ -454,9 +449,10 @@ end
 ## Find u₀,v₀,w₀ from right singular vector
 function initial_uvw(::Val{:ispossible}, j, p::P, q::Q, x) where {T,X,
                                                               P<:PnPolynomial{T,X},
-                                                              Q<:PnPolynomial{T,X}}
+                                                                  Q<:PnPolynomial{T,X}}
     # Sk*[w;-v] = 0, so pick out v,w after applying permutation
     m, n = length(p)-1, length(q)-1
+
     vᵢ = vcat(2:m-n+2, m-n+4:2:length(x))
     wᵢ = m-n+3 > length(x) ? [1] : vcat(1, (m-n+3):2:length(x))
 
@@ -533,7 +529,6 @@ end
 function refine_uvw!(u::P, v::P, w::P,
                      p, q, uv, uw) where {T,X,
                                           P<:PnPolynomial{T,X}}
-
     mul!(uv, u, v)
     mul!(uw, u, w)
     ρ₁ = residual_error(p, q, uv, uw)
