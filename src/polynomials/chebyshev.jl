@@ -2,10 +2,10 @@
 struct ChebyshevTBasis <: AbstractBasis end
 
 # This is the same as ChebyshevT
-#const ChebyshevT = MutableDensePolynomial{ChebyshevTBasis}
-#export ChebyshevT
+const ChebyshevT = MutableDensePolynomial{ChebyshevTBasis}
+export ChebyshevT
 
-basis_symbol(::Type{<:AbstractUnivariatePolynomial{ChebyshevTBasis}}) = "T"
+basis_symbol(::Type{<:AbstractUnivariatePolynomial{ChebyshevTBasis,T,X}}) where {T,X} = "T" # "T($X)" is better.
 
 function Base.convert(P::Type{<:Polynomial}, ch::MutableDensePolynomial{ChebyshevTBasis})
 
@@ -36,7 +36,15 @@ function Base.convert(C::Type{<:MutableDensePolynomial{ChebyshevTBasis}}, p::Pol
 end
 
 # lowest degree is always 0
-laurenttype(::Type{<:MutableDensePolynomial{ChebyshevTBasis}}) = Val(false)
+function coeffs(p::MutableDensePolynomial{ChebyshevTBasis})
+    a = firstindex(p)
+    iszero(a) && return p.coeffs
+    a > 0 && return [p[i] for i ∈ 0:degree(p)]
+    a < 0 && throw(ArgumentError("Type does not support Laurent polynomials"))
+end
+
+
+
 minimumexponent(::Type{<:MutableDensePolynomial{ChebyshevTBasis}}) = 0
 domain(::Type{<:MutableDensePolynomial{ChebyshevTBasis}}) = Interval(-1, 1)
 
@@ -86,8 +94,8 @@ end
 # no checking, so can be called directly through any third argument
 function evalpoly(x::S, ch::MutableDensePolynomial{ChebyshevTBasis,T}, checked) where {T,S}
     R = promote_type(T, S)
-    length(ch) == 0 && return zero(R)
-    length(ch) == 1 && return R(ch[0])
+    degree(ch) == -1 && return zero(R)
+    degree(ch) == 0 && return R(ch[0])
     c0 = ch[end - 1]
     c1 = ch[end]
     @inbounds for i in lastindex(ch) - 2:-1:0
@@ -99,9 +107,13 @@ end
 # scalar +
 function scalar_add(c::S, p::MutableDensePolynomial{B,T,X}) where {B<:ChebyshevTBasis,T,X, S<:Scalar}
     R = promote_type(T,S)
-    cs = collect(R, values(p))
+    P = MutableDensePolynomial{ChebyshevTBasis,R,X}
+    cs = convert(Vector{R}, coeffs(p))
+    n = length(cs)
+    iszero(n) && return P([c])
+    isone(n) && return P([cs[1] + c])
     cs[1] += c
-    MutableDensePolynomial{ChebyshevTBasis,R,X}(cs)
+    return P(cs)
 end
 
 # product
@@ -114,17 +126,15 @@ function ⊗(p1::MutableDensePolynomial{B,T,X}, p2::MutableDensePolynomial{B,T,X
     return ret
 end
 
-function derivative(p::P, order::Integer = 1) where {B<:ChebyshevTBasis,T,X,P<:MutableDensePolynomial{B,T,X}}
-    order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
+function derivative(p::P) where {B<:ChebyshevTBasis,T,X,P<:MutableDensePolynomial{B,T,X}}
     R  = eltype(one(T)/1)
     Q = MutableDensePolynomial{ChebyshevTBasis,R,X}
-    order == 0 && return convert(Q, p)
+    isconstant(p) && return zero(Q)
     hasnan(p) && return Q(R[NaN])
-    order > length(p) && return zero(Q)
 
 
-    q =  convert(P{R,X}, copy(p))
-    n = length(p)
+    q = convert(Q, copy(p))
+    n = degree(p) + 1
     der = Vector{R}(undef, n)
 
     for j in n:-1:3
@@ -136,8 +146,7 @@ function derivative(p::P, order::Integer = 1) where {B<:ChebyshevTBasis,T,X,P<:M
     end
     der[1] = q[1]
 
-    pp = Q(der)
-    return order > 1 ?  derivative(pp, order - 1) : pp
+    return  Q(der)
 
 end
 
@@ -147,7 +156,7 @@ function integrate(p::P) where {B<:ChebyshevTBasis,T,X,P<:MutableDensePolynomial
     if hasnan(p)
         return Q([NaN])
     end
-    n = length(p)
+    n = degree(p) + 1
     if n == 1
         return Q([zero(R), p[0]])
     end
@@ -176,7 +185,8 @@ function vander(P::Type{<:MutableDensePolynomial{ChebyshevTBasis}}, x::AbstractV
 end
 
 function companion(p::MutableDensePolynomial{ChebyshevTBasis,T}) where T
-    d = length(p) - 1
+    d = degree(p)
+    #d = length(p) - 1
     d < 1 && throw(ArgumentError("Series must have degree greater than 1"))
     d == 1 && return diagm(0 => [-p[0] / p[1]])
     R = eltype(one(T) / one(T))
@@ -186,7 +196,7 @@ function companion(p::MutableDensePolynomial{ChebyshevTBasis,T}) where T
     diag = vcat(√0.5, fill(R(0.5), d - 2))
     comp = diagm(1 => diag,
                  -1 => diag)
-    monics = coeffs(ps) ./ coeffs(p)[end]
+    monics = coeffs(p) ./ coeffs(p)[end]
     comp[:, end] .-= monics[1:d] .* scl ./ scl[end] ./ 2
     return R.(comp)
 end
@@ -194,8 +204,8 @@ end
 function Base.divrem(num::MutableDensePolynomial{ChebyshevTBasis}{T,X},
                      den::MutableDensePolynomial{ChebyshevTBasis}{S,Y}) where {T,X,S,Y}
     assert_same_variable(num, den)
-    n = length(num) - 1
-    m = length(den) - 1
+    n = degree(num)
+    m = degree(den)
 
     R = typeof(one(T) / one(S))
     P = MutableDensePolynomial{ChebyshevTBasis}{R,X}

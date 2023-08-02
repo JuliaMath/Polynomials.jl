@@ -8,7 +8,7 @@ The typical offset is to have `0` as the order, but, say, to accomodate Laurent 
 This type trims trailing zeros and the leading zeros on construction.
 
 """
-struct MutableDensePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T, X}
+struct MutableDensePolynomial{B,T,X} <: AbstractLaurentUnivariatePolynomial{B,T, X}
     coeffs::Vector{T}
     order::Base.RefValue{Int} # lowest degree, typically 0
     function MutableDensePolynomial{B,T,X}(cs::AbstractVector{S}, order::Int=0) where {B,T,X,S}
@@ -57,6 +57,13 @@ function Base.convert(::Type{MutableDensePolynomial{B,T,X}}, q::MutableDensePoly
     MutableDensePolynomial{B,T,X}(Val(false), convert(Vector{T},q.coeffs), q.order[])
 end
 
+function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDensePolynomial{B,T,X}}
+    xs = map(fn, p.coeffs, args...)
+    xs = trim_trailing_zeros(xs)
+    R = eltype(xs)
+    return ⟒(P){R,X}(Val(false), xs, p.order[])
+end
+
 Base.copy(p::MutableDensePolynomial{B,T,X}) where {B,T,X} =
     MutableDensePolynomial{B,T,Var(X)}(copy(p.coeffs), firstindex(p))
 
@@ -77,7 +84,7 @@ function Base.setindex!(p::P, value, i::Int) where {B,T,X,P<:MutableDensePolynom
         append!(p.coeffs, _zeros(p, z, i - b))
         p.coeffs[end] = value
     elseif i < a
-        prepend!(p.coeffs, zeros(p, z, a-i))
+        prepend!(p.coeffs, _zeros(p, z, a-i))
         p.coeffs[1] = value
         o = i
     else
@@ -108,7 +115,7 @@ function degree(p::MutableDensePolynomial)
 end
 
 
-laurenttype(::Type{<:MutableDensePolynomial}) = Val(true)
+#XXXlaurenttype(::Type{<:MutableDensePolynomial}) = Val(true)
 
 basis(::Type{MutableDensePolynomial{B,T,X}},i::Int) where {B,T,X} = MutableDensePolynomial{B,T,X}([1],i)
 
@@ -129,6 +136,15 @@ function trim_trailing_zeros(cs::Vector{T}) where {T}
 end
 
 
+
+function chop_left_index(x; rtol=nothing, atol=nothing)
+    isempty(x) && return nothing
+    δ = something(rtol,0)
+    ϵ = something(atol,0)
+    τ = max(ϵ, norm(x,2) * δ)
+    i = findfirst(Base.Fix2(gtτ,τ), x)
+    i
+end
 
 Base.chop(p::MutableDensePolynomial{B,T,X}; kwargs...) where {B,T,X} = chop!(copy(p);kwargs...)
 
@@ -156,15 +172,15 @@ function chop!(p::MutableDensePolynomial{B,T,X};
     p
 end
 
-function normΔ(q1::MutableDensePolynomial{B}, q2::MutableDensePolynomial{B}, p::Real = 2) where {B}
-    iszero(q1) && return norm(q2, p)
-    iszero(q2) && return norm(q1, p)
-    r = zero(q1[end] + q2[end])
+function normΔ(q1::MutableDensePolynomial{B}, q2::MutableDensePolynomial{B}) where {B}
+    iszero(q1) && return norm(q2,2)
+    iszero(q2) && return norm(q1,2)
+    r = abs(zero(q1[end] + q2[end]))
     tot = zero(r)
     for i ∈ minimum(firstindex,(q1,q2)):maximum(lastindex, (q1,q2))
-       @inbounds tot += (q1[i] - q2[i])^p
+       @inbounds tot += abs2(q1[i] - q2[i])
     end
-    return tot^(1/p)
+    return sqrt(tot)
 end
 
 minimumexponent(::Type{<:MutableDensePolynomial}) =  typemin(Int)
@@ -172,9 +188,9 @@ minimumexponent(::Type{<:MutableDensePolynomial}) =  typemin(Int)
 
 
 # vector ops +, -, c*x
-## unary
-Base.:-(p::MutableDensePolynomial{B,T,X}) where {B,T,X} =
-    MutableDensePolynomial{B,T,X}(Val(false), -p.coeffs, p.order[])
+## unary (faster than map(-,p)
+#Base.:-(p::MutableDensePolynomial{B,T,X}) where {B,T,X} =
+#    MutableDensePolynomial{B,T,X}(Val(false), -p.coeffs, p.order[])
 
 ## binary
 Base.:+(p::MutableDensePolynomial{B,T,X}, q::MutableDensePolynomial{B,S,X}) where{B,X,T,S} =
@@ -229,15 +245,15 @@ function Base.denominator(p::MutableDensePolynomial{B,T,X}) where {B,T,X}
 end
 
 
-# scalar mult
-function scalar_mult(p::MutableDensePolynomial{B,T,X}, c::S) where {B,T,X,S}
-    cs = p.coeffs .* (c,) # works with T[]
-    return _polynomial(p, cs)
-end
-function scalar_mult(c::S, p::MutableDensePolynomial{B,T,X}) where {B,T,X,S}
-    cs = (c,) .* p.coeffs
-    return _polynomial(p, cs)
-end
+# scalar mult.
+# function scalar_mult(p::MutableDensePolynomial{B,T,X}, c::S) where {B,T,X,S}
+#     cs = p.coeffs .* (c,) # works with T[]
+#     return _polynomial(p, cs)
+# end
+#function scalar_mult(c::S, p::MutableDensePolynomial{B,T,X}) where {B,T,X,S}
+#     cs = (c,) .* p.coeffs
+#     return _polynomial(p, cs)
+#end
 
 ## ---
 function LinearAlgebra.lmul!(c::Scalar, p::MutableDensePolynomial{B,T,X}) where {B,T,X}

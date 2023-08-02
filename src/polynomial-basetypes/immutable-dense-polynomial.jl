@@ -10,7 +10,7 @@ coefficient tuple as `p`. The `chop` function will trim off trailing zeros, when
 
 Immutable is a bit of a misnomer, as using the `@set!` macro from `Setfield.jl` one can modify elements, as in `@set! p[i] = value`.
 """
-struct ImmutableDensePolynomial{B,T,X,N} <: AbstractUnivariatePolynomial{B,T,X}
+struct ImmutableDensePolynomial{B,T,X,N} <: AbstractDenseUnivariatePolynomial{B,T,X}
     coeffs::NTuple{N,T}
     function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N,S}) where {B,N,T,X,S}
         new{B,T,Symbol(X),N}(cs)
@@ -77,6 +77,12 @@ function Base.convert(::Type{<:ImmutableDensePolynomial{B,T,X,N}},
     ImmutableDensePolynomial{B,T,X,N}(ntuple(i -> T(p[i-1]), Val(N)))
 end
 
+function Base.map(fn, p::P, args...)  where {B,T,X, P<:ImmutableDensePolynomial{B,T,X}}
+    xs = map(fn, p.coeffs, args...)
+    R = eltype(xs)
+    return ImmutableDensePolynomial{B,R,X}(xs)
+end
+
 
 Base.copy(p::ImmutableDensePolynomial) = p
 Base.similar(p::ImmutableDensePolynomial, args...) = p.coeffs
@@ -129,15 +135,15 @@ end
 
 
 # isapprox helper
-function normΔ(q1::ImmutableDensePolynomial{B}, q2::ImmutableDensePolynomial{B}, p::Real = 2) where {B}
+function normΔ(q1::ImmutableDensePolynomial{B}, q2::ImmutableDensePolynomial{B}) where {B}
     iszero(q1) && return norm(q2, p)
     iszero(q2) && return norm(q1, p)
-    r = zero(q1[end] + q2[end])
+    r = abs(zero(q1[end] + q2[end]))
     tot = zero(r)
     for i ∈ 1:maximum(lastindex, (q1,q2))
-       @inbounds tot += (q1[i] - q2[i])^p
+       @inbounds tot += abs2(q1[i] - q2[i])
     end
-    return tot^(1/p)
+    return sqrt(tot)
 end
 
 
@@ -147,7 +153,7 @@ _zeros(::Type{<:ImmutableDensePolynomial}, z::S, N) where {S} =
     ntuple(_ -> zero(S), Val(N))
 
 minimumexponent(::Type{<:ImmutableDensePolynomial}) =  0
-laurenttype(::Type{<:ImmutableDensePolynomial}) = Val(false)
+#XXXlaurenttype(::Type{<:ImmutableDensePolynomial}) = Val(false)
 
 Base.firstindex(p::ImmutableDensePolynomial) = 0
 Base.lastindex(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N} = N - 1
@@ -223,10 +229,7 @@ end
 
 
 ## Vector space operations
-# vector ops +, -, c*x
-## unary
-Base.:-(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N} =
-    ImmutableDensePolynomial{B,T,X,N}(map(-, p.coeffs))
+## vector ops +, -, c*x
 
 ## binary
 function Base.:+(p::ImmutableDensePolynomial{B,T,X,N}, q::ImmutableDensePolynomial{B,S,X,M}) where{B,X,T,S,N,M}
@@ -249,20 +252,9 @@ function _tuple_combine(op, p::ImmutableDensePolynomial{B,T,X,N}, q::ImmutableDe
 end
 
 
-# scalar
-scalar_mult(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B,T,X,S} = zero(ImmutableDensePolynomial{B,T,X,0})
-function scalar_mult(p::ImmutableDensePolynomial{B,T,X,N}, c::S) where {B,T,X,S,N}
-    cs = p.coeffs .* (c,)
-    R = eltype(cs)
-    return ImmutableDensePolynomial{B,R,X,N}(cs)
-end
-
-scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,0}) where {B,T,X,S} = zero(ImmutableDensePolynomial{B,T,X,0})
-function scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,S,N}
-    cs = (c,) .* p.coeffs
-    R = eltype(cs)
-    return ImmutableDensePolynomial{B,R,X,N}(cs)
-end
+# scalar mult faster with 0 default
+scalar_mult(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B,T,X,S} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,0}) where {B,T,X,S} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
 
 
 ## ---

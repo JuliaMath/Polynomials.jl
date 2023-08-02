@@ -4,7 +4,7 @@ This polynomial type uses an `Dict{Int,T}` to store the coefficients of a polyno
 Explicit `0` coefficients are not stored. This type can be used for Laurent polynomials.
 
 """
-struct MutableSparsePolynomial{B,T,X} <:  AbstractUnivariatePolynomial{B, T,X}
+struct MutableSparsePolynomial{B,T,X} <:  AbstractLaurentUnivariatePolynomial{B, T,X}
     coeffs::Dict{Int, T}
     function MutableSparsePolynomial{B,T,X}(cs::AbstractDict{Int,S},order::Int=0) where {B,T,S,X}
         coeffs = convert(Dict{Int,T}, cs)
@@ -71,10 +71,17 @@ end
 
 constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B} = MutableSparsePolynomial{B}
 
+function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B,T,X}}
+    xs = Dict(k => fn(v, args...) for (k,v) ∈ pairs(p.coeffs))
+    xs = chop_exact_zeros!(xs)
+    R = eltype(values(xs)) # narrow_eltype...
+    return ⟒(P){R,X}(Val(false), xs)
+end
+
 ## ---
 
 minimumexponent(::Type{<:MutableSparsePolynomial}) =  typemin(Int)
-laurenttype(::Type{<:MutableSparsePolynomial}) = Val(true)
+#XXXlaurenttype(::Type{<:MutableSparsePolynomial}) = Val(true)
 
 Base.copy(p::MutableSparsePolynomial{B,T,X}) where {B,T,X} = MutableSparsePolynomial{B,T,X}(copy(p.coeffs))
 
@@ -103,6 +110,9 @@ function Base.setindex!(p::MutableSparsePolynomial{B,T,X}, value, i::Int) where 
     iszero(value) && delete!(p.coeffs, i)
     p.coeffs[i] = value
 end
+
+# would like this, but fails a test... (iterate does not guarantee any order)
+#Base.iterate(p::MutableSparsePolynomial, args...) = throw(ArgumentError("Use `pairs` to iterate a sparse polynomial"))
 
 # return coeffs as  a vector
 # use p.coeffs to get Dictionary
@@ -158,33 +168,33 @@ function isconstant(p::MutableSparsePolynomial)
 end
 
 
-function scalar_mult(c::S, p::MutableSparsePolynomial{B,T,X}) where {B,T,X,S}
+# function scalar_mult(c::S, p::MutableSparsePolynomial{B,T,X}) where {B,T,X,S<:Scalar}
 
-    R = promote_type(T,S)
-    P = MutableSparsePolynomial{B,R,X}
-    (iszero(p) || iszero(c)) && return(zero(P))
+#     R = promote_type(T,S)
+#     P = MutableSparsePolynomial{B,R,X}
+#     (iszero(p) || iszero(c)) && return(zero(P))
 
-    d = convert(Dict{Int, R}, copy(p.coeffs))
-    for (k, pₖ) ∈ pairs(d)
-        @inbounds d[k] = c .* d[k]
-    end
+#     d = convert(Dict{Int, R}, copy(p.coeffs))
+#     for (k, pₖ) ∈ pairs(d)
+#         @inbounds d[k] = c .* d[k]
+#     end
 
-    return P(Val(false), d)
+#     return P(Val(false), d)
 
-end
+# end
 
-function scalar_mult(p::MutableSparsePolynomial{B,T,X}, c::S) where {B,T,X,S}
-        R = promote_type(T,S)
-    P = MutableSparsePolynomial{B,R,X}
-    (iszero(p) || iszero(c)) && return(zero(P))
+# function scalar_mult(p::MutableSparsePolynomial{B,T,X}, c::S) where {B,T,X,S<:Scalar}
+#     R = promote_type(T,S)
+#     P = MutableSparsePolynomial{B,R,X}
+#     (iszero(p) || iszero(c)) && return(zero(P))
 
-    d = convert(Dict{Int, R}, copy(p.coeffs))
-    for (k, pₖ) ∈ pairs(d)
-        @inbounds d[k] = d[k] .* c
-    end
+#     d = convert(Dict{Int, R}, copy(p.coeffs))
+#     for (k, pₖ) ∈ pairs(d)
+#         @inbounds d[k] = d[k] .* c
+#     end
 
-    return P(Val(false), d)
-end
+#     return P(Val(false), d)
+# end
 
 Base.:+(p::MutableSparsePolynomial{B,T,X}, q::MutableSparsePolynomial{B,S,X}) where{B,X,T,S} =
     _dict_combine(+, p, q)

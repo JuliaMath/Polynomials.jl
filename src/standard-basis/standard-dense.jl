@@ -116,14 +116,14 @@ function scalar_add(c::S, p:: MutableDensePolynomial{B,T,X}) where {B<:StandardB
     iszero(c) && return convert(P, p)
 
     a,b = firstindex(p), lastindex(p)
-    a′ = min(0,a)
-    b′ = max(0,b)
-    cs = _zeros(p, zero(first(p.coeffs)+c), length(a′:b′))
+    a′ = min(0, a)
+    b′ = max(0, b)
+    cs = _zeros(p, zero(first(p.coeffs) + c), length(a′:b′))
     o = offset(p) + a - a′
     for (i, cᵢ) ∈ pairs(p)
-        cs[i+o] = cᵢ
+        cs[i + o] = cᵢ
     end
-    cs[0+o] += c
+    cs[0 + o] += c
     iszero(last(cs)) && (cs = trim_trailing_zeros(cs))
     P(Val(false), cs, a′)
 end

@@ -584,9 +584,14 @@ Base.any(pred, p::AbstractPolynomial{T,X}) where {T, X} = any(pred, values(p))
 
 Transform coefficients of `p` by applying a function (or other callables) `fn` to each of them.
 
-You can implement `real`, etc., to a `Polynomial` by using `map`.
+You can implement `real`, etc., to a `Polynomial` by using `map`. The type of `p` may narrow using this function.
 """
-Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial} = _convert(p, map(fn, coeffs(p), args...))
+function Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial}
+    xs = map(fn, p.coeffs, args...)
+    R = eltype(xs)
+    X = indeterminate(p)
+    return ⟒(P){R,X}(xs)
+end
 
 
 """
@@ -944,7 +949,7 @@ end
 arithmetic =#
 Scalar = Union{Number, Matrix}
 
-Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p))
+Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p)) # map(-, p)
 
 Base.:*(p::AbstractPolynomial, c::Scalar) = scalar_mult(p, c)
 Base.:*(c::Scalar, p::AbstractPolynomial) = scalar_mult(c, p)

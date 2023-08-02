@@ -1,9 +1,15 @@
 # XXX todo, merge in with common.jl, abstract.jl
-# used by LaurentPolynomial, ImmutablePolynomial, SparsePolynomial
+# used by LaurentPolynomial, ImmutablePolynomial, SparsePolynomial, PnPolynomial, ChebyshevT
 """
     Abstract type for polynomials with an explicit basis.
 """
 abstract type AbstractUnivariatePolynomial{B, T, X} <: AbstractPolynomial{T,X} end
+
+# for 0-based polys
+abstract type AbstractDenseUnivariatePolynomial{B, T, X} <: AbstractUnivariatePolynomial{B,T,X} end
+# for negative integer
+abstract type AbstractLaurentUnivariatePolynomial{B, T, X} <: AbstractUnivariatePolynomial{B,T,X} end
+
 abstract type AbstractBasis end
 export AbstractUnivariatePolynomial
 
@@ -24,14 +30,18 @@ function showterm(io::IO, ::Type{P}, pj::T, var, j, first::Bool, mimetype) where
     return true
 end
 
-# overload basis_symbol for most types
 # overload printbasis to see a subscript, as Tᵢ... or if there are parameters in basis
 function printbasis(io::IO, ::Type{P}, j::Int, m::MIME) where {P <: AbstractUnivariatePolynomial}
     print(io, basis_symbol(P))
     print(io, subscript_text(j, m))
 end
 
-_convert(p::P, as) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(as, firstindex(p))
+basis_symbol(::Type{AbstractUnivariatePolynomial{B,T,X}}) where {B,T,X} = "Χ($(X))"
+
+# should use map, but this is used in common.jl
+_convert(p::P, as) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){promote_type(T, eltype(as)), X}(as)
+
+
 
 ## idea is vector space stuff (scalar_add, scalar_mult, vector +/-, ^) goes here
 ## connection (convert, transform) is specific to a basis (storage)
@@ -39,12 +49,14 @@ _convert(p::P, as) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(
 
 
 basistype(p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = B
+basistype(::Type{<:AbstractUnivariatePolynomial{B}}) where {B} = B # some default
 Base.eltype(p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = T
 indeterminate(p::P) where {P <: AbstractUnivariatePolynomial} = indeterminate(P)
 _indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = nothing
 _indeterminate(::Type{P}) where {B,T, X, P <: AbstractUnivariatePolynomial{B,T,X}} = X
 indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = something(_indeterminate(P), :x)
 
+XXX() = throw(ArgumentError("Method not defined"))
 constructorof(::Type{<:AbstractUnivariatePolynomial}) = XXX()
 ⟒(P::Type{<:AbstractUnivariatePolynomial})  = constructorof(P) # returns the Storage{Basis} partially constructed type
 ⟒(p::P) where {P <: AbstractUnivariatePolynomial} = ⟒(P)
@@ -58,7 +70,8 @@ Base.keys(p::AbstractUnivariatePolynomial) = Base.Generator(first, pairs(p))
 Base.values(p::AbstractUnivariatePolynomial) = Base.Generator(last, pairs(p))
 Base.firstindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
 Base.lastindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
-Base.iterate(p::AbstractUnivariatePolynomial, args...) = Base.iterate(p.coeffs, args...)
+#Base.iterate(p::AbstractUnivariatePolynomial, args...) = Base.iterate(values(p), args...)
+Base.iterate(p::AbstractUnivariatePolynomial, state = firstindex(p)) = _iterate(p, state) # _iterate in common.jl
 Base.pairs(p::AbstractUnivariatePolynomial) = XXX()
 
 #Base.eltype(::Type{<:AbstractUnivariatePolynomial}) = Float64
@@ -69,27 +82,15 @@ Base.size(p::AbstractUnivariatePolynomial, i::Integer) =  i <= 1 ? size(p)[i] : 
 
 Base.copy(p::AbstractUnivariatePolynomial) = XXX()
 
-# dense collection
-Base.iterate(p::AbstractUnivariatePolynomial, state = firstindex(p)) = _iterate(p, state) # _iterate in common.jl
+
 
 
 #hasnan(p::AbstractUnivariatePolynomial) = any(hasnan, p)
 
-# norm(q1 - q2)
-function normΔ(q1::AbstractUnivariatePolynomial, q2::AbstractUnivariatePolynomial, p::Real = 2)
-    iszero(q1) && return norm(q2, p)
-    iszero(q2) && return norm(q1, p)
-    r = abs(zero(q1[end] + q2[end]))
-    tot = zero(r)
-    for i ∈ union(keys(q1), keys(q2))
-       @inbounds tot += abs(q1[i] - q2[i])^p
-    end
-    return tot^(1/p)
-end
 
 # map Polynomial terms -> vector terms
+# Default degree **assumes** basis element Tᵢ has degree i.
 degree(p::AbstractUnivariatePolynomial) = iszero(p) ? -1 : lastindex(p)
-# order(p::AbstractUnivariatePolynomial) = firstindex(p) XXX conflicts with DataFrames.order
 
 # this helps, along with _set, make some storage-generic methods
 _zeros(p::P, z, N) where {P <: AbstractUnivariatePolynomial} = _zeros(P, z, N)
@@ -102,19 +103,19 @@ end
 
 #check_same_variable(p::AbstractUnivariatePolynomial, q::AbstractUnivariatePolynomial) = indeterminate(p) == indeterminate(q)
 
-# The zero polynomial. Typically has no coefficients
+# The zero polynomial. Typically has no coefficients. in common.jl
 #Base.zero(p::P,args...) where {P <: AbstractUnivariatePolynomial} = zero(P,args...)
 #Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),indeterminate(P)})
 #Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),Symbol(var)})
 
 
 # the polynomial 1
-# one(P) is basis dependent
+# one(P) is basis dependent and must be implemented in one(::Type{<:P})
 Base.one(p::P,args...) where {P <: AbstractUnivariatePolynomial} = one(P,args...)
 Base.one(::Type{P}) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){eltype(P),indeterminate(P)})
 Base.one(::Type{P}, var::SymbolLike) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){eltype(P),Symbol(var)})
 
-# the variable x
+# the variable x is basid dependent and must be implmented in variable(::Type{<:P})
 variable(p::P) where {P <: AbstractUnivariatePolynomial} = variable(P)
 variable(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = variable(⟒(P){eltype(P),indeterminate(P)})
 variable(::Type{P}, var::SymbolLike) where {B,P<:AbstractUnivariatePolynomial{B}} = variable(⟒(P){eltype(P),Var(var)})
@@ -126,22 +127,23 @@ basis(::Type{P}, i::Int) where {B,P <: AbstractUnivariatePolynomial{B}} = basis(
 copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {B,T, X, S, Y, P <:AbstractUnivariatePolynomial{B,S,Y}} =
     ⟒(P){T, Symbol(X)}(p.coeffs)
 
-# XXX something feels off here...
-# coefficients
-# if laurent type trim, return coeffs
-# if not laurent, return all
-# if laurent type and lowest degree < 0 (after chopping) return p.coeffs (user needs to get offset)
-# return Val(::Bool) to indicate if laurent type. This should compile away, unlike the check
-laurenttype(P::Type{<:AbstractPolynomial}) = Val(minimumexponent(P) < 0)
 
-coeffs(p::P) where {P <: AbstractUnivariatePolynomial} = coeffs(laurenttype(P), p)
-function coeffs(laurent::Val{true}, p)
-    p.coeffs
-end
-function coeffs(laurent::Val{false}, p)
+coeffs(p::P) where {P <: AbstractLaurentUnivariatePolynomial} = p.coeffs
+function coeffs(p::P) where {P <: AbstractDenseUnivariatePolynomial}
     firstindex(p) == 0 && return p.coeffs
     firstindex(p) > 0 && return [p[i] for i ∈ 0:lastindex(p)]
     throw(ArgumentError("Polynomial type does not support negative degree terms"))
+end
+
+gtτ(x, τ) = abs(x) > τ
+# return index or nothing of last non "zdero"
+function chop_right_index(x; rtol=nothing, atol=nothing)
+    isempty(x) && return nothing
+    δ = something(rtol,0)
+    ϵ = something(atol,0)
+    τ = max(ϵ, norm(x,2) * δ)
+    i = findlast(Base.Fix2(gtτ, τ), x)
+    i
 end
 
 # chop chops right side of p
@@ -154,6 +156,18 @@ chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
 ## ---
 
 #= Comparisons =#
+
+# norm(q1 - q2) only non-allocating
+function normΔ(q1::AbstractUnivariatePolynomial, q2::AbstractUnivariatePolynomial)
+    iszero(q1) && return norm(q2, 2)
+    iszero(q2) && return norm(q1, 2)
+    tot = abs(zero(q1[end] + q2[end]))
+    for i ∈ unique(Base.Iterators.flatten((keys(q1), keys(q2))))
+       @inbounds tot += abs2(q1[i] - q2[i])
+    end
+    return sqrt(tot)
+end
+
 # need to promote Number -> Poly
 function Base.isapprox(p1::AbstractUnivariatePolynomial, p2::AbstractUnivariatePolynomial; kwargs...)
     isapprox(promote(p1, p2)...; kwargs...)
@@ -226,7 +240,7 @@ end
 ## * polynomial addition: with storage type
 ## * polynomial multiplication: resolstorage type + basis
 ##
-Base.:-(p::AbstractUnivariatePolynomial) = scalar_mult(-1, p)
+Base.:-(p::AbstractUnivariatePolynomial) = map(-, p) #scalar_mult(-1, p)
 
 Base.:+(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_add(p, c)
 Base.:+(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_add(p, c)
@@ -260,11 +274,15 @@ Base.:*(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y}  =
             _mixed_symbol_op(*, p, q)
 
-Base.:/(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_mult(p, one(eltype(p))/c)
+Base.:/(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_div(p, c)
 
 Base.:^(p::AbstractUnivariatePolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
-# treat constant polynomials as when symbols mixed
+scalar_mult(p::AbstractUnivariatePolynomial{B,T,X}, c) where {B,T,X} = map(Base.Fix2(*,c), p)
+scalar_mult(c, p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = map(Base.Fix1(*,c), p)
+scalar_div(p::AbstractUnivariatePolynomial{B,T,X}, c) where {B,T,X}  = map(Base.Fix2(*,one(T)/c), p) # much better than Fix2(/,c)
+
+# treat constant polynomials as constants when symbols mixed
 scalar_op(::typeof(*)) = scalar_mult
 scalar_op(::typeof(+)) = scalar_add
 scalar_op(::typeof(/)) = scalar_div
@@ -280,7 +298,7 @@ function _mixed_symbol_op(op,
 end
 
 
-# only need to define differentiate(p::PolyType)
+# only need to define derivative(p::PolyType)
 function derivative(p::AbstractUnivariatePolynomial, n::Int=1)
     n < 0 && throw(ArgumentError("n must be non-negative"))
     iszero(n) && return p
@@ -290,6 +308,7 @@ function derivative(p::AbstractUnivariatePolynomial, n::Int=1)
     end
     p′
 end
+## better parallel with integrate, but derivative has been used here.
 const differentiate = derivative
 
 function fit(::Type{P},
@@ -318,7 +337,7 @@ end
 # * integrate
 # * divrem
 # * vander
-# *
+# * companion
 
 # promote, promote_rule, vector specification, untyped specification, handle constants,  conversion of Q(p)
 # poly composition, calling a polynomial

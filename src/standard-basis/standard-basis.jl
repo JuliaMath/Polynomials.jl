@@ -1,5 +1,8 @@
 struct StandardBasis <: AbstractBasis end
-const StandardBasisType = Union{Polynomials.StandardBasisPolynomial{T,X}, Polynomials.AbstractUnivariatePolynomial{<:Polynomials.StandardBasis,T,X}} where {T,X}
+
+# Allows mix of Polynomial/AbstractUnivariatePolynomial{StandardBasis}
+const StandardBasisType = Union{Polynomials.StandardBasisPolynomial{T,X},
+                                Polynomials.AbstractUnivariatePolynomial{<:Polynomials.StandardBasis,T,X}} where {T,X}
 
 basis_symbol(::Type{P}) where {P<:AbstractUnivariatePolynomial{StandardBasis}} = string(indeterminate(P))
 function printbasis(io::IO, ::Type{P}, j::Int, m::MIME) where {B<:StandardBasis, P <: AbstractUnivariatePolynomial{B}}
@@ -37,11 +40,13 @@ function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B
     if firstindex(q) >= 0
         cs = [q[i] for i ∈ 0:lastindex(q)]
         o = 0
+        return ⟒(P){T′,X′}(cs, o)
     else
         cs = [q[i] for i ∈ eachindex(q)]
         o = firstindex(q)
+        throw(ArgumentError("Do we need this??? If not, can remove two defs at end"))
     end
-    ⟒(P){T′,X′}(cs, o)
+    #⟒(P){T′,X′}(cs, o)
 end
 
 function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: AbstractUnivariatePolynomial{B}, Q<:StandardBasisPolynomial}
@@ -51,8 +56,8 @@ function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: Abstract
     ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
 end
 
-Base.one(p::P) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}([one(p[0])])
-Base.one(::Type{P}) where {B<:StandardBasis,T,P <: AbstractUnivariatePolynomial{B,T}} = ⟒(P){T}(ones(T,1), indeterminate(P))
+#Base.one(p::P) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}([one(p[0])])
+#Base.one(::Type{P}) where {B<:StandardBasis,T,P <: AbstractUnivariatePolynomial{B,T}} = ⟒(P){T}(ones(T,1), indeterminate(P))
 Base.one(::Type{P}) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(ones(T,1))
 
 variable(P::Type{<:AbstractUnivariatePolynomial{B,T,X}}) where {B<:StandardBasis,T,X} =  basis(P, 1)
@@ -70,7 +75,7 @@ mapdomain(::Type{P}, x::AbstractArray) where  {B <: StandardBasis, P <: Abstract
 function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
            q::AbstractUnivariatePolynomial{B,S,X}) where {B <: StandardBasis, T,S,X}
     # simple convolution with order shifted
-    throw(ArgumentError("Method not defined"))
+    throw(ArgumentError("Default method not defined"))
 end
 
 # implemented derivative case by case
@@ -94,6 +99,7 @@ function integrate(p::AbstractUnivariatePolynomial{B,T,X}) where {B <: StandardB
     P(cs, firstindex(p))
 end
 
+# XXX merge in with polynomials/standard-basis.jl
 function Base.divrem(num::P, den::Q) where {B<:StandardBasis,
                                             T, P <: AbstractUnivariatePolynomial{B,T},
                                             S, Q <: AbstractUnivariatePolynomial{B,S}}
@@ -147,14 +153,6 @@ function LinearAlgebra.cond(p::P, x) where {B<:StandardBasis, P<:AbstractUnivari
     p̃(abs(x))/ abs(p(x))
 end
 
-# function ngcd(p::P, q::Q,
-#               args...;
-#               kwargs...) where {B <: StandardBasis,
-#                                 T,X,P<:AbstractUnivariatePolynomial{B,T,X},
-#                                 S,Y,Q<:AbstractUnivariatePolynomial{B,S,Y}}
-#     ngcd(PnPolynomial(coeffs(p)), PnPolynomial(coeffs(q)), args...; kwargs...)
-# end
-
 function fit(::Type{P},
              x::AbstractVector{T},
              y::AbstractVector{T},
@@ -172,10 +170,7 @@ function fit(::Type{P},
     convert(P, fit(Polynomial, x, y, deg; kwargs...))
 end
 
-# new constructors taking order in second position
+# new constructors taking order in second position for the `convert` method above (to work with LaurentPolynomial)
 # these are
 Polynomial{T, X}(coeffs::AbstractVector{S},order::Int) where {T, X, S} = Polynomial{T,X}(coeffs)
 FactoredPolynomial{T,X}(coeffs::AbstractVector{S}, order::Int) where {T,S,X} = FactoredPolynomial{T,X}(coeffs)
-#PnPolynomial{T, X}(coeffs::AbstractVector, order::Int) where {T, X} = PnPolynomial(coeffs) # for generic programming
-#PnPolynomial{T}(coeffs::AbstractVector, order::Int,var) where {T} = PnPolynomial(coeffs,var) # for generic programming
-#PnPolynomial(coeffs::AbstractVector, order::Int,var)  = PnPolynomial(coeffs,var) # for generic programming

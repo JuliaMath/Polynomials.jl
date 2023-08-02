@@ -180,11 +180,11 @@ julia> import Polynomials: AbstractUnivariatePolynomial, AbstractBasis, MutableD
 
 julia> struct LaguerreBasis{alpha} <: AbstractBasis end
 
-julia> Polynomials.basis_symbol(::Type{<:AbstractUnivariatePolynomial{LaguerreBasis{α}}}) where {α} =
+julia> Polynomials.basis_symbol(::Type{<:AbstractUnivariatePolynomial{LaguerreBasis{α},T,X}}) where {α,T,X} =
            "L^$(α)"
 ```
 
-The basis symbol has no default. We added a method to `basis_symbol` to show this basis. More generally, `Polynomials.printbasis` can have methods added to adjust for different display types.
+The basis symbol has a poor default. The method requires the full type, as the indeterminate, `X`, may part of the desired output. We added a method to `basis_symbol` to show this basis. More generally, `Polynomials.printbasis` can have methods added to adjust for different display types.
 
 Polynomials can be initiated through specifying a storage type and a basis, say:
 

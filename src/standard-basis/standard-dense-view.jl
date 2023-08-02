@@ -8,7 +8,7 @@ standard basis of degree `n` *or less*, using a vector of length
 * Unlike other polynomial types, this type allows trailing zeros in the coefficient vector. Call `chop!` to trim trailing zeros if desired.
 * Unlike other polynomial types, this does not copy the coefficients on construction
 * Unlike other polynomial types, this type broadcasts like a vector for in-place vector operations (scalar multiplication, polynomial addition/subtraction of the same size)
-* The method inplace `mul!(pq, p, q)` is defined to use precallocated storage for the product of `p` and `q`
+* The inplace method `mul!(pq, p, q)` is defined to use precallocated storage for the product of `p` and `q`
 
 This type is useful for reducing copies and allocations in some algorithms.
 
@@ -24,9 +24,9 @@ end
 # scalar add
 function scalar_add(c::S, p:: PnPolynomial{T,X}) where {S, T, X}
     R = promote_type(T,S)
-    P =  MutableDenseViewPolynomial{B,R,X}
+    P = PnPolynomial{R,X}
 
-    iszero(p) && return P([c], 0)
+    iszero(p) && return P([c])
     cs = convert(Vector{R}, copy(p.coeffs))
     cs[1] += c
     P(cs)
@@ -50,8 +50,8 @@ end
 function derivative(p::PnPolynomial{T,X}) where {T,X}
     R = promote_type(T, Int)
     N = length(p.coeffs)
-    iszero(N) && return zero(MutableDenseViewPolynomial{B,R,X})
-    cs = Vector{R}(undef,N-1)
+    iszero(N) && return zero(PnPolynomial{R,X})
+    cs = Vector{R}(undef, N-1)
     for (i, pᵢ) ∈ Base.Iterators.drop(pairs(p),1)
         cs[i] = i * pᵢ
     end
@@ -72,7 +72,7 @@ end
 
 
 # This is for standard basis XXX
-function LinearAlgebra.mul!(pq, p::PnPolynomial{T,X}, q) where {T,X}
+function LinearAlgebra.mul!(pq::PnPolynomial, p::PnPolynomial, q::PnPolynomial)
     m,n = length(p)-1, length(q)-1
     cs = pq.coeffs
     cs .= 0
