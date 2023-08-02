@@ -15,13 +15,14 @@ This type is useful for reducing copies and allocations in some algorithms.
 """
 struct MutableDenseViewPolynomial{B,T,X} <: AbstractDenseUnivariatePolynomial{B, T, X}
     coeffs::Vector{T}
-    function MutableDenseViewPolynomial{B, T, X}(coeffs::AbstractVector{S}) where {B, T,S, X}
+    function MutableDenseViewPolynomial{B, T, X}(::Val{false}, coeffs::AbstractVector{S}) where {B, T,S, X}
         new{B,T,Symbol(X)}(convert(Vector{T}, coeffs))
     end
 end
+MutableDenseViewPolynomial{B,T,X}(check::Val{true}, cs::AbstractVector{S}) where {B,T,S,X} =
+    throw(ArgumentError("No checking in this polynomialtype"))
 
-MutableDensePolynomial{B,T,X}(check::Val{false}, cs::AbstractVector{S}) where {B,T,S,X} = new{B,T,X}(coeffs)
-MutableDensePolynomial{B,T,X}(check::Val{true}, cs::AbstractVector{S}) where {B,T,S,X} = new{B,T,X}(coeffs)
+MutableDenseViewPolynomial{B,T,X}(cs::AbstractVector{S}) where {B,T,S,X} = MutableDenseViewPolynomial{B,T,X}(Val(false), cs)
 
 function MutableDenseViewPolynomial{B, T, X}(coeffs::AbstractVector{S}, order::Int) where {B, T,S, X}
     iszero(order) && return MutableDenseViewPolynomial{B,T,X}(coeffs)
@@ -30,10 +31,10 @@ function MutableDenseViewPolynomial{B, T, X}(coeffs::AbstractVector{S}, order::I
     MutableDenseViewPolynomial{B,T,X}(coeffs)
 end
 
-
 @poly_register MutableDenseViewPolynomial
-constructorof(::Type{<:MutableDenseViewPolynomial{B}}) where {B} = MutableDenseViewPolynomial{B}
 
+constructorof(::Type{<:MutableDenseViewPolynomial{B}}) where {B} = MutableDenseViewPolynomial{B}
+offset(p::MutableDenseViewPolynomial) = 1
 function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDenseViewPolynomial{B,T,X}}
     xs = map(fn, p.coeffs, args...)
     R = eltype(xs)

@@ -14,23 +14,7 @@ This type is useful for reducing copies and allocations in some algorithms.
 
 """
 const PnPolynomial = MutableDenseViewPolynomial{StandardBasis}
-
-
-function evalpoly(c, p::PnPolynomial{T,X}) where {T,X}
-    iszero(p) && return zero(T) * zero(c)
-    EvalPoly.evalpoly(c, p.coeffs)
-end
-
-# scalar add
-function scalar_add(c::S, p:: PnPolynomial{T,X}) where {S, T, X}
-    R = promote_type(T,S)
-    P = PnPolynomial{R,X}
-
-    iszero(p) && return P([c])
-    cs = convert(Vector{R}, copy(p.coeffs))
-    cs[1] += c
-    P(cs)
-end
+_typealias(::Type{P}) where {P<:PnPolynomial} = "PnPolynomial"
 
 function ⊗(p:: PnPolynomial{T,X},
            q:: PnPolynomial{S,X}) where {T,S,X}
@@ -46,30 +30,6 @@ function ⊗(p:: PnPolynomial{T,X},
     mul!(pq, p, q)
     return pq
 end
-
-function derivative(p::PnPolynomial{T,X}) where {T,X}
-    R = promote_type(T, Int)
-    N = length(p.coeffs)
-    iszero(N) && return zero(PnPolynomial{R,X})
-    cs = Vector{R}(undef, N-1)
-    for (i, pᵢ) ∈ Base.Iterators.drop(pairs(p),1)
-        cs[i] = i * pᵢ
-    end
-    PnPolynomial{R,X}(cs)
-end
-
-function integrate(p::PnPolynomial{T,X}) where {T,X}
-    R = Base.promote_op(/, T, Int)
-    N = length(p.coeffs)
-    cs = Vector{R}(undef,N+1)
-    cs[1] = zero(R)
-    for (i, pᵢ) ∈ pairs(p)
-        cs[i+1+1] =  pᵢ/(i+1)
-    end
-    PnPolynomial{R,X}(cs)
-end
-
-
 
 # This is for standard basis
 function LinearAlgebra.mul!(pq::PnPolynomial, p::PnPolynomial, q::PnPolynomial)

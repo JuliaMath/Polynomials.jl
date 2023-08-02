@@ -41,11 +41,15 @@ function ImmutableDensePolynomial{B,T,X,N}(c::S) where {B,T,X,N,S<:Scalar}
     cs = ntuple(i -> i == 1 ? T(c) : zero(T), Val(N))
     return ImmutableDensePolynomial{B,T,X,N}(cs)
 end
+ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::NTuple{N,S}) where {B,T,S,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
 ImmutableDensePolynomial{B,T,X}(xs::NTuple{N,S}) where {B,T,S,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
 ImmutableDensePolynomial{B,T}(xs::NTuple{N,S}, var::SymbolLike=Var(:x)) where {B,T,S,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
 ImmutableDensePolynomial{B}(xs::NTuple{N,T}, var::SymbolLike=Var(:x)) where {B,T,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
 
 # abstract vector. Must eat order
+ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::AbstractVector{S}, order::Int=0) where {B,T,X,S} =
+    ImmutableDensePolynomial{B,T,X}(xs, order)
+
 function ImmutableDensePolynomial{B,T,X}(xs::AbstractVector{S}, order::Int=0) where {B,T,X,S}
     if Base.has_offset_axes(xs)
         @warn "ignoring the axis offset of the coefficient vector"

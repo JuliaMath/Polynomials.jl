@@ -70,7 +70,31 @@ domain(::Type{P}) where {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B
 
 mapdomain(::Type{P}, x::AbstractArray) where  {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B}} = x
 
-## Multiplication
+
+## Evaluation, Scalar addition, Multiplication, integration, differentiation
+function evalpoly(c::S, p::P) where {B<:StandardBasis, S, T, X, P<:AbstractDenseUnivariatePolynomial{B,T,X}}
+    iszero(p) && return zero(T) * zero(c)
+    EvalPoly.evalpoly(c, p.coeffs)
+end
+
+function scalar_add(c::S, p::P) where {B<:StandardBasis, S, T, X, P<:AbstractDenseUnivariatePolynomial{B,T,X}}
+    R = promote_type(T,S)
+    P′ = ⟒(P){R,X}
+
+    iszero(p) && return P′([c], 0)
+    iszero(c) && return convert(P′, p)
+
+    a,b = 0, lastindex(p)
+    cs = _zeros(p, zero(first(p.coeffs) + c), b-a+1)
+    o = offset(p)
+    for (i, cᵢ) ∈ pairs(p)
+        cs =  _set(cs, i+o, cᵢ)
+    end
+    cs = _set(cs, 0+o, cs[0+o] + c)
+    iszero(last(cs)) && (cs = trim_trailing_zeros(cs))
+    P′(Val(false), cs)
+end
+
 # special cases are faster
 function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
            q::AbstractUnivariatePolynomial{B,S,X}) where {B <: StandardBasis, T,S,X}
@@ -79,13 +103,47 @@ function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
 end
 
 # implemented derivative case by case
+function derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractDenseUnivariatePolynomial{B,T,X}}
+    R = promote_type(T, Int)
+    N = length(p.coeffs)
+    P′ = ⟒(P){R,X}
+    iszero(N) && return zero(P)
+    z = 0*p[0]
+    cs = _zeros(p,z,N-1)
+    o = offset(p)
+#    cs = Vector{R}(undef, N-1)
+    for (i, pᵢ) ∈ Base.Iterators.drop(pairs(p),1)
+        _set(cs, i - 1 + o, i * pᵢ)
+#        cs[i] = i * pᵢ
+    end
+    P′(Val(false), cs)
+end
+derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractLaurentUnivariatePolynomial{B,T,X}} = XXX()
 
-function integrate(p::AbstractUnivariatePolynomial{B,T,X}) where {B <: StandardBasis,T,X}
+function integrate(p::P) where {B <: StandardBasis,T,X,P<:AbstractDenseUnivariatePolynomial{B,T,X}}
+
+    R = Base.promote_op(/, T, Int)
+    Q = ⟒(P){R,X}
+    iszero(p) && return zero(Q)
+    hasnan(p) && return  Q(zero(T)/zero(T)) # NaN{T}
+
+    N = length(p.coeffs)
+    cs = Vector{R}(undef,N+1)
+    cs[1] = zero(R)
+    o = offset(p)
+    for (i, pᵢ) ∈ pairs(p)
+        cs[i+1+o] =  pᵢ/(i+1)
+    end
+    Q(Val(false), cs)
+end
+
+
+function integrate(p::AbstractLaurentUnivariatePolynomial{B,T,X}) where {B <: StandardBasis,T,X}
 
     iszero(p) && return p/1
     N = lastindex(p) - firstindex(p) + 1
-    R = typeof(one(T)/1)
-    z = zero(R)
+    z = 0*(p[0]/1)
+    R = eltype(z)
     P = ⟒(p){R,X}
     hasnan(p) && return  P(zero(T)/zero(T)) # NaN{T}
 

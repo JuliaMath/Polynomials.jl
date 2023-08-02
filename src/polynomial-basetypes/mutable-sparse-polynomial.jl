@@ -5,13 +5,13 @@ Explicit `0` coefficients are not stored. This type can be used for Laurent poly
 
 """
 struct MutableSparsePolynomial{B,T,X} <:  AbstractLaurentUnivariatePolynomial{B, T,X}
-    coeffs::Dict{Int, T}
+     coeffs::Dict{Int, T}
     function MutableSparsePolynomial{B,T,X}(cs::AbstractDict{Int,S},order::Int=0) where {B,T,S,X}
         coeffs = convert(Dict{Int,T}, cs)
         chop_exact_zeros!(coeffs)
         new{B,T,Symbol(X)}(coeffs)
     end
-    function MutableSparsePolynomial{B,T,X}(checked::Val{:false}, coeffs::AbstractDict{Int,T},order::Int=0) where {B,T,X}
+    function MutableSparsePolynomial{B,T,X}(check::Val{:false}, coeffs::AbstractDict{Int,S}) where {B,T,S,X}
         new{B,T,Symbol(X)}(coeffs)
     end
 end
@@ -20,7 +20,6 @@ function MutableSparsePolynomial{B,T,X}(checked::Val{:true}, coeffs::AbstractDic
     MutableSparsePolynomial{B,T,X}(coeffs)
 end
 
-# Dict
 function MutableSparsePolynomial{B,T}(coeffs::AbstractDict{Int,S}, var::SymbolLike=Var(:x)) where {B,T,S}
     MutableSparsePolynomial{B,T,Symbol(var)}(coeffs)
 end

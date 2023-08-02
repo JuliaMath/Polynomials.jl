@@ -29,15 +29,17 @@ include("polynomials/factored_polynomial.jl")
 # polynomials with explicit basis
 include("abstract-polynomial.jl")
 include("polynomial-basetypes/mutable-dense-polynomial.jl")
+include("polynomial-basetypes/mutable-dense-view-polynomial.jl")
+include("polynomial-basetypes/mutable-dense-laurent-polynomial.jl")
 include("polynomial-basetypes/immutable-dense-polynomial.jl")
 include("polynomial-basetypes/mutable-sparse-polynomial.jl")
-include("polynomial-basetypes/mutable-dense-view-polynomial.jl")
 
 include("standard-basis/standard-basis.jl")
 include("standard-basis/standard-dense.jl")
+include("standard-basis/standard-dense-view.jl")
+include("standard-basis/standard-dense-laurent.jl")
 include("standard-basis/standard-immutable.jl")
 include("standard-basis/standard-sparse.jl")
-include("standard-basis/standard-dense-view.jl")
 
 include("promotions.jl")
 
