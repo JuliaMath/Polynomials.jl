@@ -790,6 +790,7 @@ julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
            end
        end
 
+
 julia> d
 ((x - 4.0) * (x - 1.0000000000000002)) // ((x - 5.0) * (x - 2.0))
 ```

@@ -101,7 +101,6 @@ is misidentified.
 function multroot(p::StandardBasisType{T}; verbose=false,
                   kwargs...) where {T}
 
-    p = chop(p)
     # degenerate case, constant
     degree(p) == 0 && return (values=T[], multiplicities=Int[], κ=NaN, ϵ=NaN)
 
@@ -148,6 +147,7 @@ function pejorative_manifold(
 
     S = float(T)
     u = PnPolynomial{S,X}(S.(coeffs(p)))
+    chop!(u)
     nu₂ = norm(u, 2)
     θ2, ρ2 =  θ * nu₂, ρ * nu₂
     u, v, w, ρⱼ, κ = Polynomials.ngcd(

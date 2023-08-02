@@ -4,8 +4,22 @@ struct ChebyshevTBasis <: AbstractBasis end
 # This is the same as ChebyshevT
 const ChebyshevT = MutableDensePolynomial{ChebyshevTBasis}
 export ChebyshevT
+_typealias(::Type{P}) where {P<:ChebyshevT} = "ChebyshevT"
 
-basis_symbol(::Type{<:AbstractUnivariatePolynomial{ChebyshevTBasis,T,X}}) where {T,X} = "T" # "T($X)" is better.
+basis_symbol(::Type{<:AbstractUnivariatePolynomial{ChebyshevTBasis,T,X}}) where {T,X} = "T"
+
+# match old style
+function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, mimetype) where {T,X}
+    iszero(pj) && return false
+    !first &&  print(io, " ")
+    if hasneg(T)
+        print(io, isneg(pj) ? "- " :  (!first ? "+ " : ""))
+        print(io, "$(abs(pj))⋅T_$j($var)")
+    else
+        print(io, "+ ", "$(pj)⋅T_$j($var)")
+    end
+    return true
+end
 
 function Base.convert(P::Type{<:Polynomial}, ch::MutableDensePolynomial{ChebyshevTBasis})
 
@@ -29,14 +43,14 @@ function Base.convert(P::Type{<:Polynomial}, ch::MutableDensePolynomial{Chebyshe
     return c0 + c1 * x
 end
 
-function Base.convert(C::Type{<:MutableDensePolynomial{ChebyshevTBasis}}, p::Polynomial)
+function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
     x = variable(C)
     isconstant(p) || assert_same_variable(indeterminate(x),indeterminate(p))
     p(x)
 end
 
 # lowest degree is always 0
-function coeffs(p::MutableDensePolynomial{ChebyshevTBasis})
+function coeffs(p::ChebyshevT)
     a = firstindex(p)
     iszero(a) && return p.coeffs
     a > 0 && return [p[i] for i ∈ 0:degree(p)]
@@ -45,21 +59,21 @@ end
 
 
 
-minimumexponent(::Type{<:MutableDensePolynomial{ChebyshevTBasis}}) = 0
-domain(::Type{<:MutableDensePolynomial{ChebyshevTBasis}}) = Interval(-1, 1)
+minimumexponent(::Type{<:ChebyshevT}) = 0
+domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
 
-constantterm(p::MutableDensePolynomial{ChebyshevTBasis}) = p(0)
-function Base.one(::Type{P}) where {P<:MutableDensePolynomial{ChebyshevTBasis}}
+constantterm(p::ChebyshevT) = p(0)
+function Base.one(::Type{P}) where {P<:ChebyshevT}
     T,X = eltype(P), indeterminate(P)
     ⟒(P){T,X}(ones(T,1))
 end
-function variable(::Type{P}) where {P<:MutableDensePolynomial{ChebyshevTBasis}}
+function variable(::Type{P}) where {P<:ChebyshevT}
     T,X = eltype(P), indeterminate(P)
     ⟒(P){T,X}([zero(T), one(T)])
 end
 
 """
-    (::MutableDensePolynomial{ChebyshevTBasis})(x)
+    (::ChebyshevT)(x)
 
 Evaluate the Chebyshev polynomial at `x`. If `x` is outside of the domain of [-1, 1], an error will be thrown. The evaluation uses Clenshaw Recursion.
 
@@ -82,12 +96,12 @@ julia> c.(-1:0.5:1)
  5.0
 ```
 """
-function evalpoly(x::S, ch::MutableDensePolynomial{ChebyshevTBasis}) where {S}
+function evalpoly(x::S, ch::ChebyshevT) where {S}
     x ∉ domain(ch) && throw(ArgumentError("$x outside of domain"))
     evalpoly(x, ch, false)
 end
 
-function evalpoly(x::AbstractPolynomial, ch::MutableDensePolynomial{ChebyshevTBasis})
+function evalpoly(x::AbstractPolynomial, ch::ChebyshevT)
     evalpoly(x, ch, false)
 end
 
@@ -122,7 +136,7 @@ function ⊗(p1::MutableDensePolynomial{B,T,X}, p2::MutableDensePolynomial{B,T,X
     z2 = _c_to_z(coeffs(p2))
     prod = fastconv(z1, z2)
     cs = _z_to_c(prod)
-    ret = MutableDensePolynomial{ChebyshevTBasis}(cs,X)
+    ret = ChebyshevT(cs,X)
     return ret
 end
 
@@ -172,7 +186,7 @@ function integrate(p::P) where {B<:ChebyshevTBasis,T,X,P<:MutableDensePolynomial
     return Q(a2)
 end
 
-function vander(P::Type{<:MutableDensePolynomial{ChebyshevTBasis}}, x::AbstractVector{T}, n::Integer) where {T <: Number}
+function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     A = Matrix{T}(undef, length(x), n + 1)
     A[:, 1] .= one(T)
     if n > 0
@@ -201,14 +215,14 @@ function companion(p::MutableDensePolynomial{ChebyshevTBasis,T}) where T
     return R.(comp)
 end
 
-function Base.divrem(num::MutableDensePolynomial{ChebyshevTBasis}{T,X},
-                     den::MutableDensePolynomial{ChebyshevTBasis}{S,Y}) where {T,X,S,Y}
+function Base.divrem(num::ChebyshevT{T,X},
+                     den::ChebyshevT{S,Y}) where {T,X,S,Y}
     assert_same_variable(num, den)
     n = degree(num)
     m = degree(den)
 
     R = typeof(one(T) / one(S))
-    P = MutableDensePolynomial{ChebyshevTBasis}{R,X}
+    P = ChebyshevT{R,X}
 
     if n < m
         return zero(P), convert(P, num)

@@ -18,14 +18,6 @@ include("polynomials/standard-basis.jl")
 include("polynomials/Polynomial.jl")
 include("polynomials/factored_polynomial.jl")
 
-#include("polynomials/ImmutablePolynomial.jl")
-#include("polynomials/SparsePolynomial.jl")
-#include("polynomials/LaurentPolynomial.jl")
-#include("polynomials/pi_n_polynomial.jl")
-#include("polynomials/ngcd.jl")
-#include("polynomials/multroot.jl")
-#include("polynomials/ChebyshevT.jl")
-
 # polynomials with explicit basis
 include("abstract-polynomial.jl")
 include("polynomial-basetypes/mutable-dense-polynomial.jl")

@@ -140,7 +140,8 @@ function chop_exact_zeros!(d::Dict)
 end
 trim_trailing_zeros!!(d::Dict) = chop_exact_zeros!(d) # Not properly named, but what is expected in other constructors
 
-function chop!(p::MutableSparsePolynomial; atol=nothing, rtol=nothing)
+chop!(p::MutableSparsePolynomial; kwargs...) = chop!(p.coeffs; kwargs...)
+function chop!(p::Dict; atol=nothing, rtol=nothing)
     isempty(p.coeffs) && return p
     δ = something(rtol,0)
     ϵ = something(atol,0)
