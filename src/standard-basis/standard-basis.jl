@@ -138,7 +138,7 @@ function derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractDenseUnivariat
     R = Base.promote_type(T, Int)
     N = length(p.coeffs)
     P′ = ⟒(P){R,X}
-    iszero(N) && return zero(P)
+    iszero(N) && return zero(P′)
     hasnan(p) && return P′(NaN)
     z = 0*p[0]
     cs = _zeros(p,z,N-1)
@@ -146,7 +146,7 @@ function derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractDenseUnivariat
     for (i, pᵢ) ∈ Base.Iterators.drop(pairs(p),1)
         _set(cs, i - 1 + o, i * pᵢ)
     end
-    P′(Val(false), cs)
+    ⟒(P){typeof(z),X}(Val(false), cs)
 end
 derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractLaurentUnivariatePolynomial{B,T,X}} =
     throw(ArgumentError("Default method not defined"))
