@@ -332,9 +332,9 @@ function truncate!(ps::Vector{T};
     nothing
 end
 
-function truncate!(ps::Dict{Int,T};
+function truncate!(ps::Dict{S,T};
                    rtol::Real = Base.rtoldefault(real(T)),
-                   atol::Real = 0,) where {T}
+                   atol::Real = 0,) where {S,T}
 
     isempty(ps) && return nothing
     max_coeff = norm(values(ps), Inf)
