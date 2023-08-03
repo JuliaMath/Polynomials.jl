@@ -34,7 +34,7 @@ julia> fromroots(r)
 Polynomial(6 - 5*x + x^2)
 ```
 """
-function fromroots(P::Type{<:AbstractPolynomial}, rs::AbstractVector; var::SymbolLike = :x)
+function fromroots(P::Type{<:AbstractPolynomial}, rs; var::SymbolLike = :x)
     x = variable(P, var)
     p = prod(x-r for r ∈ rs; init=one(x))
     p = truncate!!(p)
@@ -332,9 +332,9 @@ function truncate!(ps::Vector{T};
     nothing
 end
 
-function truncate!(ps::Dict{Int,T};
+function truncate!(ps::Dict{S,T};
                    rtol::Real = Base.rtoldefault(real(T)),
-                   atol::Real = 0,) where {T}
+                   atol::Real = 0,) where {S,T}
 
     isempty(ps) && return nothing
     max_coeff = norm(values(ps), Inf)

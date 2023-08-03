@@ -28,8 +28,7 @@ _isimmutable(::Type{P}) where {P <: Union{ImmutablePolynomial, FactoredPolynomia
 _isimmutable(P) = false
 
 
-Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial,
-      Polynomials.𝑃olynomial)
+Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
 
 @testset "Construction" begin
     @testset for coeff in Any[

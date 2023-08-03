@@ -37,7 +37,7 @@ julia> map(x->round(x, digits=12), q) # map works over factors and leading coeff
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 """
-struct FactoredPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
+struct FactoredPolynomial{T <: Number, X} <: AbstractPolynomial{T, X}
     coeffs::Dict{T,Int}
     c::T
     function FactoredPolynomial{T, X}(checked::Val{false}, cs::Dict{T,Int}, c::T) where {T, X}
