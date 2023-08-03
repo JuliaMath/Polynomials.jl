@@ -26,7 +26,7 @@ end
 
 ## helper to make a rational function of given type
 function rational_function(::Type{R}, p::P, q::Q) where {R<:AbstractRationalFunction,
-                                                         T,X,   P<:AbstractPolynomial{T,X},
+                                                         T,X, P<:AbstractPolynomial{T,X},
                                                          S,   Q<:AbstractPolynomial{S,X}}
     constructorof(R)(promote(p,q)...)
 end
@@ -37,7 +37,7 @@ function Base.convert(::Type{PQ}, pq′::PQ′) where {T,X,P,PQ <: AbstractRatio
                                                    T′,X′,P′,PQ′<:AbstractRationalFunction{T′,X′,P′} }
     !isconstant(pq′) && assert_same_variable(X,X′)
     p′,q′=pqs(pq′)
-    𝑷 = isconstant(pq′) ? P :  promote_type(P, P′)
+    𝑷 = isconstant(pq′) ? P : promote_type(P, P′)
     p,q = convert(𝑷, p′), convert(𝑷, q′)
     rational_function(PQ, p, q)
 end
@@ -96,7 +96,7 @@ function Base.promote_rule(::Type{PQ}, ::Type{PQ′}) where {T,X,P,PQ <: Abstrac
     assert_same_variable(X,X′)
     PQ_, PQ′_ = constructorof(PQ), constructorof(PQ′)
     𝑷𝑸 = PQ_ == PQ′ ? PQ_ : RationalFunction
-    𝑷 = constructorof(typeof(variable(P)+variable(P′)))
+    𝑷 = constructorof(typeof(variable(P)+variable(P′)));  𝑷 = Polynomial
     𝑻 = promote_type(T,T′)
     𝑷𝑸{𝑻,X,𝑷{𝑻,X}}
 end
@@ -298,7 +298,7 @@ Base.:+(p::Number, q::AbstractRationalFunction) = q + p
 Base.:+(p::AbstractRationalFunction,  q::Number) = p + q*one(p)
 Base.:+(p::AbstractPolynomial, q::AbstractRationalFunction) = q + p
 Base.:+(p::AbstractRationalFunction,  q::AbstractPolynomial) = p + (q//one(q))
-Base.:+(p::P,  q::T) where {T<: AbstractRationalFunction, P<:StandardBasisPolynomial{T}} = throw(DomainError()) # avoid ambiguity (issue #435.
+#XXXBase.:+(p::P,  q::T) where {T<: AbstractRationalFunction, P<:StandardBasisPolynomial{T}} = throw(DomainError()) # avoid ambiguity (issue #435.
 Base.:+(p::AbstractRationalFunction, q::AbstractRationalFunction) = sum(promote(p,q))
 # type should implement this
 function Base.:+(p::R, q::R) where {T,X,P,R <: AbstractRationalFunction{T,X,P}}
@@ -434,7 +434,7 @@ By default, `AbstractRationalFunction` types do not cancel common factors. This 
 
 """
 function lowest_terms(pq::PQ; method=:numerical, kwargs...) where {T,X,
-                                                                   P<:Union{StandardBasisPolynomial{T,X},AbstractUnivariatePolynomial{<:StandardBasis}},
+                                                                   P<:StandardBasisPolynomial{T,X},
                                                                    PQ<:AbstractRationalFunction{T,X,P}}
     p,q = pqs(pq)
     u,v,w = uvw(p,q; method=method, kwargs...)

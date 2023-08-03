@@ -10,8 +10,8 @@ In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call on
 """
 function ngcd(p::P, q::Q,
               args...;
-              kwargs...) where {T,X,P<:StandardBasisType{T,X},
-                                S,Y,Q<:StandardBasisType{S,Y}}
+              kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
+                                S,Y,Q<:StandardBasisPolynomial{S,Y}}
     if (degree(q) > degree(p))
         u,w,v,Θ,κ =  ngcd(q,p,args...;kwargs...)
         return (u=u,v=v,w=w, Θ=Θ, κ=κ)

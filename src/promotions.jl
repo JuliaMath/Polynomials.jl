@@ -2,13 +2,13 @@ Base.promote_rule(::Type{P}, ::Type{Q}) where {B,T,S,X,
                                                P<:AbstractUnivariatePolynomial{B,T,X},
                                                Q<:AbstractUnivariatePolynomial{B,S,X}} = MutableDenseLaurentPolynomial{B,promote_type(T,S),X}
 
-Base.promote_rule(::Type{P}, ::Type{Q}) where {B,T,S,X,
-                                               P<:AbstractPolynomial{T,X},
-                                               Q<:AbstractUnivariatePolynomial{B,S,X}} = MutableDenseLaurentPolynomial{B,promote_type(T,S),X}
+# Base.promote_rule(::Type{P}, ::Type{Q}) where {B,T,S,X,
+#                                                P<:AbstractPolynomial{T,X},
+#                                                Q<:AbstractUnivariatePolynomial{B,S,X}} = MutableDenseLaurentPolynomial{B,promote_type(T,S),X}
 
-Base.promote_rule(::Type{P}, ::Type{Q}) where {B,T,S,X,
-                                               P<:AbstractUnivariatePolynomial{B,T,X},
-                                               Q<:AbstractPolynomial{S,X}} = MutableDenseLaurentPolynomial{B,promote_type(T,S),X}
+# Base.promote_rule(::Type{P}, ::Type{Q}) where {B,T,S,X,
+#                                                P<:AbstractUnivariatePolynomial{B,T,X},
+#                                                Q<:AbstractPolynomial{S,X}} = MutableDenseLaurentPolynomial{B,promote_type(T,S),X}
 
 ## XXX these are needed for rational-functions
 # Base.promote_rule(::Type{P}, ::Type{Q}) where {B,T,S,X,

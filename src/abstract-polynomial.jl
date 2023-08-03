@@ -286,7 +286,7 @@ const differentiate = derivative
 function fit(::Type{P},
              x::AbstractVector{T},
              y::AbstractVector{T},
-             deg::AbstractVector,
+             deg,
              cs::Dict;
              kwargs...) where {T, P<:AbstractUnivariatePolynomial}
     convert(P, fit(Polynomial, x, y, deg, cs; kwargs...))

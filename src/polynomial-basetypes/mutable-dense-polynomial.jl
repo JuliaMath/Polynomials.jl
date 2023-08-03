@@ -43,6 +43,7 @@ constructorof(::Type{<:MutableDensePolynomial{B}}) where {B} = MutableDensePolyn
 
 ## Generics for polynomials
 function Base.convert(::Type{MutableDensePolynomial{B,T,X}}, q::MutableDensePolynomial{B,T′,X′}) where {B,T,T′,X,X′}
+    !isconstant(q) && assert_same_variable(X,X′)
     MutableDensePolynomial{B,T,X}(Val(false), convert(Vector{T},q.coeffs))
 end
 

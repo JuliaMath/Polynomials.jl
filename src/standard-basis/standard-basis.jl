@@ -1,8 +1,5 @@
 struct StandardBasis <: AbstractBasis end
-
-# Allows mix of Polynomial/AbstractUnivariatePolynomial{StandardBasis}
-const StandardBasisType = Union{Polynomials.StandardBasisPolynomial{T,X},
-                                Polynomials.AbstractUnivariatePolynomial{<:Polynomials.StandardBasis,T,X}} where {T,X}
+const StandardBasisPolynomial  = AbstractUnivariatePolynomial{<:Polynomials.StandardBasis,T,X} where {T,X}
 
 basis_symbol(::Type{P}) where {P<:AbstractUnivariatePolynomial{StandardBasis}} = string(indeterminate(P))
 function printbasis(io::IO, ::Type{P}, j::Int, m::MIME) where {B<:StandardBasis, P <: AbstractUnivariatePolynomial{B}}
@@ -30,34 +27,7 @@ function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: Abstract
     end
 end
 
-function Base.convert(P::Type{PP}, q::Q) where {PP <: StandardBasisPolynomial, B<:StandardBasis,T,X, Q<:AbstractUnivariatePolynomial{B,T,X}}
-    minimumexponent(P) > firstindex(q) &&
-        throw(ArgumentError("Lowest degree term of polynomial is less than the minimum degree of the polynomial type."))
 
-    isa(q, PP) && return p
-    T′ = _eltype(P,q)
-    X′ = indeterminate(P,q)
-    if firstindex(q) >= 0
-        cs = [q[i] for i ∈ 0:lastindex(q)]
-        o = 0
-        return ⟒(P){T′,X′}(cs, o)
-    else
-        cs = [q[i] for i ∈ eachindex(q)]
-        o = firstindex(q)
-        @warn "This can be removed, right?"
-    end
-    ⟒(P){T′,X′}(cs, o)
-end
-
-function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: AbstractUnivariatePolynomial{B}, Q<:StandardBasisPolynomial}
-    isa(q, PP) && return p
-    T = _eltype(P,q)
-    X = indeterminate(P,q)
-    ⟒(P){T,X}([q[i] for i in eachindex(q)], firstindex(q))
-end
-
-#Base.one(p::P) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}([one(p[0])])
-#Base.one(::Type{P}) where {B<:StandardBasis,T,P <: AbstractUnivariatePolynomial{B,T}} = ⟒(P){T}(ones(T,1), indeterminate(P))
 Base.one(::Type{P}) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(ones(T,1))
 
 variable(P::Type{<:AbstractUnivariatePolynomial{B,T,X}}) where {B<:StandardBasis,T,X} =  basis(P, 1)
@@ -119,10 +89,9 @@ function ⊗(p::P, q::P) where {B <: StandardBasis,T,X, P<:AbstractDenseUnivaria
     P′(Val(false), cs)
 end
 
-#
+# up to caller to ensure cs is zeroed out
 function LinearAlgebra.mul!(cs, p::AbstractDenseUnivariatePolynomial, q::AbstractDenseUnivariatePolynomial)
     m,n = length(p)-1, length(q)-1
-    cs .= 0
     @inbounds for (i, pᵢ) ∈ enumerate(p.coeffs)
         for (j, qⱼ) ∈ enumerate(q.coeffs)
             ind = i + j - 1
@@ -189,10 +158,9 @@ function integrate(p::AbstractLaurentUnivariatePolynomial{B,T,X}) where {B <: St
 end
 
 ## --------------------------------------------------
-# XXX merge in with polynomials/standard-basis.jl
 function Base.divrem(num::P, den::Q) where {B<:StandardBasis,
-                                            T, P <: AbstractDenseUnivariatePolynomial{B,T},
-                                            S, Q <: AbstractDenseUnivariatePolynomial{B,S}}
+                                            T, P <: AbstractUnivariatePolynomial{B,T},
+                                            S, Q <: AbstractUnivariatePolynomial{B,S}}
 
     assert_same_variable(num, den)
     @assert ⟒(P) == ⟒(Q)
@@ -234,7 +202,7 @@ end
 
 
 """
-    gcd(p1::StandardBasisPolynomial, p2::StandardBasisPolynomial; method=:euclidean, kwargs...)
+    gcd(p1::AbstractUnivariatePolynomial{StandardBasis}, p2::AbstractUnivariatePolynomial{StandardBasis}; method=:euclidean, kwargs...)
 
 Find the greatest common divisor.
 
@@ -247,13 +215,13 @@ Passing `method=:numerical` will call the internal method `NGCD.ngcd` for the nu
 function Base.gcd(p1::P, p2::Q, args...;
                   method=:euclidean,
                   kwargs...
-                  ) where {P <:AbstractDenseUnivariatePolynomial{StandardBasis},
-                           Q <: AbstractDenseUnivariatePolynomial{StandardBasis}}
+                  ) where {P <:AbstractUnivariatePolynomial{StandardBasis},
+                           Q <:AbstractUnivariatePolynomial{StandardBasis}}
     gcd(Val(method), p1, p2, args...; kwargs...)
 end
 
 function Base.gcd(::Val{:euclidean},
-                  r₀::AbstractDenseUnivariatePolynomial{StandardBasis,T}, r₁;
+                  r₀::AbstractUnivariatePolynomial{StandardBasis,T}, r₁;
                   atol=zero(real(T)),
                   rtol=Base.rtoldefault(real(T)),
                   kwargs...) where {T}
@@ -288,7 +256,7 @@ Author: Andreas Varga
 
 Note: requires Julia `v1.2` or greater.
 """
-function  gcd_noda_sasaki(p::AbstractDenseUnivariatePolynomial{StandardBasis,T}, q::AbstractDenseUnivariatePolynomial{StandardBasis,S};
+function  gcd_noda_sasaki(p::AbstractUnivariatePolynomial{StandardBasis,T}, q::AbstractUnivariatePolynomial{StandardBasis,S};
                           atol::Real=zero(real(promote_type(T,S))),
                           rtol::Real=Base.rtoldefault(real(promote_type(T,S)))
                           ) where {T,S}
@@ -352,26 +320,26 @@ Base.gcd(::Val{:numerical}, p, q, args...; kwargs...) = ngcd(p,q, args...; kwarg
 uvw(p::P,q::P;
     method=:euclidean,
     kwargs...
-    )  where {P<:AbstractDenseUnivariatePolynomial{StandardBasis}} = uvw(Val(method), p, q; kwargs...)
+    )  where {P<:AbstractUnivariatePolynomial{StandardBasis}} = uvw(Val(method), p, q; kwargs...)
 
-function uvw(::Val{:numerical}, p::P, q::P; kwargs...) where {P <:AbstractDenseUnivariatePolynomial{StandardBasis} }
+function uvw(::Val{:numerical}, p::P, q::P; kwargs...) where {P <:AbstractUnivariatePolynomial{StandardBasis} }
     u,v,w,Θ,κ = ngcd(p,q; kwargs...)
     u,v,w
 end
 
-function uvw(V::Val{:euclidean}, p::P, q::P; kwargs...) where {P <: AbstractDenseUnivariatePolynomial{StandardBasis}}
+function uvw(V::Val{:euclidean}, p::P, q::P; kwargs...) where {P <: AbstractUnivariatePolynomial{StandardBasis}}
     u = gcd(V,p,q; kwargs...)
     u, p÷u, q÷u
 end
 
-function uvw(::Any, p::P, q::P; kwargs...) where {P <: AbstractDenseUnivariatePolynomial{StandardBasis}}
+function uvw(::Any, p::P, q::P; kwargs...) where {P <: AbstractUnivariatePolynomial{StandardBasis}}
      throw(ArgumentError("not defined"))
 end
 
 # Some things lifted from
 # from https://github.com/jmichel7/LaurentPolynomials.jl/blob/main/src/LaurentPolynomials.jl.
 # This follows mostly that of intfuncs.jl which is specialized for integers.
-function Base.gcdx(a::P, b::P) where {T,X,P<:AbstractDenseUnivariatePolynomial{StandardBasis,T,X}}
+function Base.gcdx(a::P, b::P) where {T,X,P<:AbstractUnivariatePolynomial{StandardBasis,T,X}}
     # a0, b0=a, b
     s0, s1=one(a), zero(a)
     t0, t1 = s1, s0
@@ -386,11 +354,11 @@ function Base.gcdx(a::P, b::P) where {T,X,P<:AbstractDenseUnivariatePolynomial{S
     (x, s0, t0)./x[end]
 end
 
-Base.gcdx(a::AbstractDenseUnivariatePolynomial{StandardBasis,T,X}, b::AbstractDenseUnivariatePolynomial{StandardBasis,S,X}) where {S,T,X} =
+Base.gcdx(a::AbstractUnivariatePolynomial{StandardBasis,T,X}, b::AbstractUnivariatePolynomial{StandardBasis,S,X}) where {S,T,X} =
     gcdx(promote(a, b)...)
 
 # p^m mod q
-function Base.powermod(p::AbstractDenseUnivariatePolynomial{StandardBasis}, x::Integer, q::AbstractDenseUnivariatePolynomial{StandardBasis})
+function Base.powermod(p::AbstractUnivariatePolynomial{StandardBasis}, x::Integer, q::AbstractUnivariatePolynomial{StandardBasis})
     x==0 && return one(q)
     b=p%q
     t=prevpow(2, x)
@@ -410,8 +378,21 @@ end
 
 ## --------------------------------------------------
 ## polynomial-roots
+function fromroots(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
+    n = length(r)
+    c = zeros(T, n + 1)
+    c[1] = one(T)
+    for j in 1:n, i in j:-1:1
+        c[(i + 1)] = c[(i + 1)] - r[j] * c[i]
+    end
+    #return P(c, var)
+    if sort(r[imag(r).>0], lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y)) == sort(conj(r[imag(r).<0]), lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y))
+        c = real(c)             # if complex poles come in conjugate pairs, the coeffs are real
+    end
+    return P(reverse(c), var)
+end
 
-function companion(p::P) where {T, P <: AbstractDenseUnivariatePolynomial{StandardBasis,T}}
+function companion(p::P) where {T, P <: AbstractUnivariatePolynomial{StandardBasis,T}}
     d = length(p) - 1
     d < 1 && throw(ArgumentError("Series must have degree greater than 1"))
     d == 1 && return diagm(0 => [-p[0] / p[1]])
@@ -428,7 +409,7 @@ function companion(p::P) where {T, P <: AbstractDenseUnivariatePolynomial{Standa
 end
 
 # block companion matrix
-function companion(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractDenseUnivariatePolynomial{StandardBasis,M}}
+function companion(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractUnivariatePolynomial{StandardBasis,M}}
     C₀, C₁ = companion_pencil(p)
     C₀ * inv(C₁) # could be more efficient
 end
@@ -436,7 +417,7 @@ end
 # the companion pencil is `C₀`, `C₁` where `λC₁ - C₀` is singular for
 # eigen values of the companion matrix: `vᵀ(λC₁ - C₀) = 0` => `vᵀλ = vᵀ(C₀C₁⁻¹)`, where `C₀C₁⁻¹`
 # is the companion matrix.
-function companion_pencil(p::P) where {T, P<:AbstractDenseUnivariatePolynomial{StandardBasis,T}}
+function companion_pencil(p::P) where {T, P<:AbstractUnivariatePolynomial{StandardBasis,T}}
     n = degree(p)
     C₁ = diagm(0 => ones(T, n))
     C₁[end,end] = p[end]
@@ -449,7 +430,7 @@ function companion_pencil(p::P) where {T, P<:AbstractDenseUnivariatePolynomial{S
 end
 
 # block version
-function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractDenseUnivariatePolynomial{StandardBasis,M}}
+function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractUnivariatePolynomial{StandardBasis,M}}
 
     m,m′ = size(p[0])
     @assert m == m′  # square matrix
@@ -473,7 +454,7 @@ function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractDen
     C₀, C₁
 end
 
-function  roots(p::P; kwargs...)  where  {T, P <: AbstractDenseUnivariatePolynomial{StandardBasis, T}}
+function  roots(p::P; kwargs...)  where  {T, P <: AbstractUnivariatePolynomial{StandardBasis, T}}
 
     R = eltype(one(T)/one(T))
     d = degree(p)
@@ -503,12 +484,13 @@ end
 ## Code for fitting polynomials
 
 ## --------------------------------------------------
-function vander(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, x::AbstractVector{T}, n::Integer) where {T <: Number}
+
+function vander(P::Type{<:AbstractUnivariatePolynomial{StandardBasis}}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     vander(P, x, 0:n)
 end
 
 # skip some degrees
-function vander(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, x::AbstractVector{T}, degs) where {T <: Number}
+function vander(P::Type{<:AbstractUnivariatePolynomial{StandardBasis}}, x::AbstractVector{T}, degs) where {T <: Number}
     A = Matrix{T}(undef, length(x),  length(degs))
     Aᵢ = ones(T, length(x))
 
@@ -547,7 +529,7 @@ function solve_vander!(ys, αs)
 end
 
 # intercept one (typical) case for a faster variant
-function fit(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}},
+function fit(P::Type{<:AbstractUnivariatePolynomial{StandardBasis}},
              x::AbstractVector{T},
              y::AbstractVector{T},
              deg::Integer = length(x) - 1;
@@ -584,7 +566,7 @@ p2 = fit(P, x, y, 3:2:5, Dict(1 => 1))
 ```
 
 """
-function fit(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}},
+function fit(P::Type{<:AbstractUnivariatePolynomial{StandardBasis}},
              x::AbstractVector{T},
              y::AbstractVector{T},
              J,
@@ -595,13 +577,13 @@ function fit(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}},
 end
 
 
-function fit(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}},
+function fit(P::Type{<:AbstractUnivariatePolynomial{StandardBasis}},
              x::AbstractVector{T},
              y::AbstractVector{T},
              J,
-             cs::Dict{Int, S};
+             cs::Dict;
              weights = nothing,
-             var = :x,) where {T,S}
+             var = :x,) where {T}
 
     for i ∈ J
         haskey(cs, i) && throw(ArgumentError("cs can't overlap with deg"))
@@ -620,7 +602,7 @@ function fit(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}},
 end
 
 
-function _polynomial_fit(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, x::AbstractVector{T}, y; var=:x) where {T}
+function _polynomial_fit(P::Type{<:AbstractUnivariatePolynomial{StandardBasis}}, x::AbstractVector{T}, y; var=:x) where {T}
     R = float(T)
     coeffs = Vector{R}(undef, length(x))
     copyto!(coeffs, y)
@@ -776,7 +758,7 @@ As noted, this reflects the accuracy of a backward stable computation performed 
 
 Pointed out in https://discourse.julialang.org/t/more-accurate-evalpoly/45932/5.
 """
-function compensated_horner(p::P, x) where {P <: AbstractDenseUnivariatePolynomial{StandardBasis}}
+function compensated_horner(p::P, x) where {P <: AbstractUnivariatePolynomial{StandardBasis}}
     compensated_horner(coeffs(p), x)
 end
 
