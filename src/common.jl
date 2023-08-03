@@ -459,6 +459,9 @@ function Base.chop(p::AbstractPolynomial{T};
 end
 
 
+# for generic usage, as immutable types are not mutable
+chop!!(p::AbstractPolynomial; kwargs...) = (p = chop!(p); p)
+truncate!!(p::AbstractPolynomial; kwargs...) = truncate!(p)
 
 
 """
