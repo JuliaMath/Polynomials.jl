@@ -37,7 +37,8 @@ Polynomial(6 - 5*x + x^2)
 function fromroots(P::Type{<:AbstractPolynomial}, rs::AbstractVector; var::SymbolLike = :x)
     x = variable(P, var)
     p = prod(x-r for r ∈ rs; init=one(x))
-    return truncate!(p)
+    p = truncate!!(p)
+    p
 end
 fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
     fromroots(Polynomial, r, var = var)
@@ -314,7 +315,7 @@ function truncate!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0,) where {T}
     truncate!(p.coeffs, rtol=rtol, atol=atol)
-    return chop!(p, rtol = rtol, atol = atol)
+    chop!(p, rtol = rtol, atol = atol)
 end
 
 ## truncate! underlying storage type

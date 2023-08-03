@@ -152,7 +152,8 @@ end
 Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = chop!(copy(p))
 chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
 
-chop!!(p::AbstractUnivariatePolynomial; kwargs...) = chop!(p)
+# for generic usage, as immutable types are not mutable
+chop!!(p::AbstractUnivariatePolynomial; kwargs...) = (p = chop!(p); p)
 truncate!!(p::AbstractUnivariatePolynomial; kwargs...) = truncate!(p)
 
 

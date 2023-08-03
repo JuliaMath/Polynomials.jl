@@ -154,7 +154,7 @@ The unexported `Polynomials.PnPolynomial` type implements much of this.
 
 An `AbstractUnivariatePolynomial` polynomial consists of a basis and a storage type. The storage type can be mutable dense, mutable sparse, or immutable dense.
 
-A basis inherits from `Polynomials.AbstractBasis`, in the example our basis type has a parameter.
+A basis inherits from `Polynomials.AbstractBasis`, in the example our basis type has a parameter. The `ChebyshevT` type, gives a related example of how this task can be implemented.
 
 ### The generalized Laguerre polynomials
 
@@ -256,6 +256,8 @@ clenshaw_eval (generic function with 1 method)
 julia> Polynomials.evalpoly(x, p::P) where {P<:AbstractUnivariatePolynomial{<:LaguerreBasis}} =
                clenshaw_eval(p, x)
 ```
+
+We test it out by passing in the variable `x` in the standard basis:
 
 ```jldoctest abstract_univariate_polynomial
 julia> p = P([0,0,1])

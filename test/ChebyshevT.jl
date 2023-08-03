@@ -15,7 +15,7 @@
         @test length(p) == length(coeff)
         @test size(p) == size(coeff)
         @test size(p, 1) == size(coeff, 1)
-        @test_broken typeof(p).parameters[1] == eltype(coeff) # 2
+        @test_broken typeof(p).parameters[1] == eltype(coeff) # XXX is 2 now
         @test typeof(p).parameters[2] == eltype(coeff)
         @test eltype(p) == eltype(coeff)
     end
@@ -36,7 +36,7 @@ end
 
     p = zero(ChebyshevT{Int})
     @test_broken p.coeffs == [0]
-    @test p.coeffs == Int[] # XXX
+    @test p.coeffs == Int[]
 
     p = one(ChebyshevT{Int})
     @test p.coeffs == [1]
