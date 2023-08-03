@@ -861,7 +861,8 @@ Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, 
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}) where {P<:AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default method
+Base.one(::Type{P}) where {T,X,P<:AbstractPolynomial{T,X}} = throw(ArgumentError("No default method defined")) # no default method
+Base.one(::Type{P}) where {P <: AbstractPolynomial} =  one(⟒(P){eltype(P), indeterminate(P)})
 Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(isnothing(var) ? :x : var)})
 Base.one(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = one(P, var)
 
@@ -893,7 +894,8 @@ julia> roots((x - 3) * (x + 2))
 
 ```
 """
-variable(::Type{P}) where {P <: AbstractPolynomial} = throw(ArgumentError("No default method defined")) # no default
+variable(::Type{P}) where {T,X,P <: AbstractPolynomial{T,X}} = throw(ArgumentError("No default method defined")) # no default
+variable(::Type{P}) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P), indeterminate(P)})
 variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P),Symbol(var)})
 variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)

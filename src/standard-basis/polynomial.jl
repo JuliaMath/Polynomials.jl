@@ -30,8 +30,7 @@ julia> one(Polynomial)
 Polynomial(1.0)
 ```
 """
-const 𝑃olynomial = MutableDensePolynomial{StandardBasis}
-const Polynomial = 𝑃olynomial
+const Polynomial = MutableDensePolynomial{StandardBasis}
 export Polynomial
 
-_typealias(::Type{P}) where {P<:𝑃olynomial} = "𝑃olynomial"
+_typealias(::Type{P}) where {P<:Polynomial} = "Polynomial"

@@ -160,7 +160,7 @@ function integrate(p::P) where {B <: StandardBasis,T,X,P<:AbstractDenseUnivariat
 
     N = length(p.coeffs)
     cs = Vector{R}(undef,N+1)
-    cs[1] = zero(R)
+    cs[1] = 0 * (p[0]/1)
     o = offset(p)
     for (i, pᵢ) ∈ pairs(p)
         cs[i+1+o] =  pᵢ/(i+1)
