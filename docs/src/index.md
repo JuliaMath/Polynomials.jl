@@ -639,7 +639,7 @@ Using `one(q)` for a constant polynomial with indeterminate `:y` we have:
 
 ```jldoctest natural_inclusion
 julia> P = typeof(p)
-Polynomial{Int64, :x}
+Polynomial{Int64, :x} (alias for Polynomials.MutableDensePolynomial{Polynomials.StandardBasis, Int64, :x})
 
 julia> P[one(p) one(q)]
 1×2 Matrix{Polynomial{Int64, :x}}:
