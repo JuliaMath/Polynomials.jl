@@ -127,7 +127,7 @@ fit(P::Type{<:AbstractPolynomial},
     var = :x,) = fit′(P, promote(collect(x), collect(y))..., deg; weights = weights, var = var)
 
 #  avoid issue  214
-fit′(P::Type{<:AbstractPolynomial}, x, y, args...;kwargs...) = throw(ArgumentError("x and y do not produce abstract   vectors"))
+fit′(P::Type{<:AbstractPolynomial}, x, y, args...;kwargs...) = throw(ArgumentError("x and y do not produce abstract vectors"))
 fit′(P::Type{<:AbstractPolynomial},
      x::AbstractVector{T},
      y::AbstractVector{T},
@@ -644,15 +644,16 @@ Is the polynomial  `p` a constant.
 """
 isconstant(p::AbstractPolynomial) = degree(p) <= 0 && firstindex(p) == 0
 
+# XXX docstring isn't quite right!
+# coeffs returns
+# * p.coeffs for Laurent types (caller needs to be aware that offset is possible)
+# * a container with (a₀, a₁, …, aₙ) which for some types may have trailing zeros (ImmutableDense)
 """
     coeffs(::AbstractPolynomial)
 
 Return the coefficient vector. For a standard basis polynomial these are `[a_0, a_1, ..., a_n]`.
 """
 coeffs(p::AbstractPolynomial) = p.coeffs
-
-# hook in for offset coefficients of Laurent Polynomials
-_coeffs(p::AbstractPolynomial) = coeffs(p)
 
 
 # specialize this to p[0] when basis vector is 1
@@ -718,7 +719,7 @@ indexing =#
 # should return typemin(Int)
 minimumexponent(p::AbstractPolynomial) = minimumexponent(typeof(p))
 minimumexponent(::Type{<:AbstractPolynomial}) = 0
-Base.firstindex(p::AbstractPolynomial) = 0
+Base.firstindex(p::AbstractPolynomial) = 0  # XXX() is a better default
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1 + firstindex(p)
 Base.eachindex(p::AbstractPolynomial) = firstindex(p):lastindex(p)
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
@@ -819,7 +820,7 @@ Base.length(v::Monomials) = length(keys(v.p))
 
 #=
 identity =#
-Base.copy(p::P) where {P <: AbstractPolynomial} = _convert(p, copy(p.coeffs))
+Base.copy(p::P) where {P <: AbstractPolynomial} = map(identity, p)
 Base.hash(p::AbstractPolynomial{T,X}, h::UInt) where {T,X} = hash(indeterminate(p), hash(p.coeffs, hash(X,h)))
 
 # get symbol of polynomial. (e.g. `:x` from 1x^2 + 2x^3...
@@ -925,7 +926,13 @@ end
 # basis
 # var is a positional argument, not a keyword; can't deprecate so we do `_var; var=_var`
 # return the kth basis polynomial for the given polynomial type, e.g. x^k for Polynomial{T}
-function basis(::Type{P}, k::Int) where {P<:AbstractPolynomial}
+"""
+    basis(p::P, i::Int)
+    basis(::Type{<:AbstractPolynomial}, i::Int, var=:x)
+
+Return ith basis element for a given polynomial type, optionally with a specified variable.
+"""
+function basis(::Type{P}, k::Int) where {P<:AbstractPolynomial} # XXX() might be better default.
     T,X = eltype(P), indeterminate(P)
     zs = zeros(T, k+1)
     zs[end] = one(T)
@@ -955,7 +962,7 @@ end
 arithmetic =#
 Scalar = Union{Number, Matrix}
 
-Base.:-(p::P) where {P <: AbstractPolynomial} = _convert(p, -coeffs(p)) # map(-, p)
+Base.:-(p::P) where {P <: AbstractPolynomial} = map(-, p) #_convert(p, -coeffs(p)) # map(-, p)
 
 Base.:*(p::AbstractPolynomial, c::Scalar) = scalar_mult(p, c)
 Base.:*(c::Scalar, p::AbstractPolynomial) = scalar_mult(c, p)
@@ -984,8 +991,11 @@ Base.:+(p::AbstractPolynomial) = p
 
 # polynomial + scalar; implicit identification of c with c*one(p)
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = scalar_add(p, c)
+
+# default scalar add can be problematic as addition of contant polynomial might circle back
 scalar_add(p::AbstractPolynomial, c) = p + c * one(p)
 
+## ----
 
 function Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S}
     R = promote_type(T,S)
@@ -1007,79 +1017,83 @@ end
 # For Immutable, must remove N,M bit;
 # for others, can widen to Type{T,X}, Type{S,X} to avoid a promotion
 function Base.:+(p::P, q::P) where {T,X,P<:AbstractPolynomial{T,X}}
+    throw(ArgumentError("implmented in type"))
     cs = degree(p) >= degree(q)  ? ⊕(P, p.coeffs, q.coeffs) : ⊕(P, q.coeffs, p.coeffs)
     return P(cs)
 end
 
-# addition of polynomials is just vector space addition, so can be done regardless
-# of basis, as long as the same. These ⊕ methods try to find a performant means to add
-# to sets of coefficients based on the storage type. These assume n1 >= n2
-function ⊕(P::Type{<:AbstractPolynomial}, p1::Vector{T}, p2::Vector{S}) where {T,S}
+# # addition of polynomials is just vector space addition, so can be done regardless
+# # of basis, as long as the same. These ⊕ methods try to find a performant means to add
+# # to sets of coefficients based on the storage type. These assume n1 >= n2
+# function ⊕(P::Type{<:AbstractPolynomial}, p1::Vector{T}, p2::Vector{S}) where {T,S}
+#     throw(ArgumentError("implmented in type"))
+#     n1, n2 = length(p1), length(p2)
+#     R = promote_type(T,S)
 
-    n1, n2 = length(p1), length(p2)
-    R = promote_type(T,S)
+#     cs = collect(R,p1)
+#     for i in 1:n2
+#         cs[i] += p2[i]
+#     end
 
-    cs = collect(R,p1)
-    for i in 1:n2
-        cs[i] += p2[i]
-    end
+#     return cs
+# end
 
-    return cs
-end
+# # Padded vector sum of two tuples assuming N ≥ M
+# @generated function ⊕(P::Type{<:AbstractPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+#     throw(ArgumentError("implmented in type"))
+#     exprs = Any[nothing for i = 1:N]
+#     for i in  1:M
+#         exprs[i] = :(p1[$i] + p2[$i])
+#     end
+#     for i in M+1:N
+#         exprs[i] =:(p1[$i])
+#     end
 
-# Padded vector sum of two tuples assuming N ≥ M
-@generated function ⊕(P::Type{<:AbstractPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+#     return quote
+#         Base.@_inline_meta
+#         #Base.@inline
+#         tuple($(exprs...))
+#     end
 
-    exprs = Any[nothing for i = 1:N]
-    for i in  1:M
-        exprs[i] = :(p1[$i] + p2[$i])
-    end
-    for i in M+1:N
-        exprs[i] =:(p1[$i])
-    end
+# end
 
-    return quote
-        Base.@_inline_meta
-        #Base.@inline
-        tuple($(exprs...))
-    end
-
-end
-
-# addition when a dictionary is used for storage
-function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) where {T,S}
-
-    R = promote_type(T,S)
-    p = Dict{Int, R}()
+# # addition when a dictionary is used for storage
+# function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) where {T,S}
+#     throw(ArgumentError("implmented in type"))
+#     R = promote_type(T,S)
+#     p = Dict{Int, R}()
 
 
-    # this allocates in the union
-#    for i in union(eachindex(p1), eachindex(p2))
-#        p[i] = p1[i] + p2[i]
-#    end
+#     # this allocates in the union
+# #    for i in union(eachindex(p1), eachindex(p2))
+# #        p[i] = p1[i] + p2[i]
+# #    end
 
-    for (i,pi) ∈ pairs(p1)
-        @inbounds p[i] = pi + get(p2, i, zero(R))
-    end
-    for (i,pi) ∈ pairs(p2)
-        if iszero(get(p,i,zero(R)))
-            @inbounds p[i] = get(p1, i, zero(R)) + pi
-        end
-    end
+#     for (i,pi) ∈ pairs(p1)
+#         @inbounds p[i] = pi + get(p2, i, zero(R))
+#     end
+#     for (i,pi) ∈ pairs(p2)
+#         if iszero(get(p,i,zero(R)))
+#             @inbounds p[i] = get(p1, i, zero(R)) + pi
+#         end
+#     end
 
-    return  p
+#     return  p
 
-end
+# end
 
 ## -- multiplication
 
 # Scalar multiplication; no assumption of commutivity
+# should use the same def in abstract-polynomial: map(Base.FixN(*,c), p)
 function scalar_mult(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T,X}}
+    #return map(Base.Fix2(.*,Ref(c)), p)
     result = coeffs(p) .* (c,)
     ⟒(P){eltype(result), X}(result)
 end
 
 function scalar_mult(c::S, p::P) where {S, T, X, P<:AbstractPolynomial{T, X}}
+    #return map(Base.Fix1(.*,Ref(c)), p)
     result = (c,) .* coeffs(p)
     ⟒(P){eltype(result), X}(result)
 end
@@ -1089,8 +1103,9 @@ scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) = error("scalar_mult
 # scalar div
 Base.:/(p::AbstractPolynomial, c) = scalar_div(p, c)
 function scalar_div(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T, X}}
-    iszero(p) && return zero(⟒(P){Base.promote_op(/,T,S), X})
-    _convert(p, coeffs(p) ./ Ref(c))
+    return map(Base.Fix2(*, one(T)/c), p)
+#    iszero(p) && return zero(⟒(P){Base.promote_op(/,T,S), X})
+#    _convert(p, coeffs(p) ./ Ref(c))
 end
 
 ## Polynomial p*q
@@ -1105,6 +1120,7 @@ end
 
 Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
+## -----
 
 function Base.divrem(num::P, den::O) where {P <: AbstractPolynomial,O <: AbstractPolynomial}
     n, d = promote(num, den)
@@ -1224,7 +1240,7 @@ function Base.isapprox(p1::AbstractPolynomial{T},
                        n::S;
                        rtol::Real = (Base.rtoldefault(T, S, 0)),
                        atol::Real = 0,) where {T,S}
-    return isapprox(p1, _convert(p1, [n]))
+    return isapprox(p1, n*one(p1)) #_convert(p1, [n]))
 end
 
 Base.isapprox(::AbstractPolynomial{T}, ::Missing, args...; kwargs...) where T =

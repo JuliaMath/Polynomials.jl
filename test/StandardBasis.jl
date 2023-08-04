@@ -1193,8 +1193,8 @@ end
     @testset for P in (Polynomial, ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
         p,q = P([1,2], :x), P([1,2], :y)
         #XXP′′ = P == LaurentPolynomial ? P : P′ # different promotion rule
-        P′′ = P == Polynomial ? P : LaurentPolynomial # XXX different promotion rules
-
+        # P′′ = P == Polynomial ? P : LaurentPolynomial # XXX different promotion rules
+        P′′ = P <: Polynomials.AbstractDenseUnivariatePolynomial ? Polynomial : LaurentPolynomial
         # * should promote to Polynomial type if mixed (save Laurent Polynomial)
         @testset "promote mixed polys" begin
             @testset for m ∈ meths

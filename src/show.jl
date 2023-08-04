@@ -170,7 +170,7 @@ Shows the j'th term of the given polynomial. Returns `true` after successfully p
 
 For example. for a `Polynomial` this would show the term `pj * var^j`.
 """
-function showterm(io::IO, ::Type{AbstractPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} end
+function showterm(io::IO, ::Type{<:AbstractPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} end
 
 
 ## print the sign

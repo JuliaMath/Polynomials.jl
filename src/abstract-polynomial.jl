@@ -1,17 +1,23 @@
-# XXX todo, merge in with common.jl, abstract.jl
-# used by LaurentPolynomial, ImmutablePolynomial, SparsePolynomial, PnPolynomial, ChebyshevT
+# XXX Maybe merge into with common.jl, abstract.jl
 """
-    Abstract type for polynomials with an explicit basis.
+    AbstractUnivariatePolynomial{B,T,X} <: AbstractPolynomial{T,X}
+
+Abstract type for polynomials with an explicit basis, `B`.
 """
 abstract type AbstractUnivariatePolynomial{B, T, X} <: AbstractPolynomial{T,X} end
 
 # for 0-based polys
 abstract type AbstractDenseUnivariatePolynomial{B, T, X} <: AbstractUnivariatePolynomial{B,T,X} end
-# for negative integer
+
+# for negative integer powers
 abstract type AbstractLaurentUnivariatePolynomial{B, T, X} <: AbstractUnivariatePolynomial{B,T,X} end
 
 abstract type AbstractBasis end
 export AbstractUnivariatePolynomial
+
+XXX() = throw(ArgumentError("Method not defined"))
+
+## --------------------------------------------------
 
 function showterm(io::IO, ::Type{P}, pj::T, var, j, first::Bool, mimetype) where {B, T, P<:AbstractUnivariatePolynomial{B,T}}
     if _iszero(pj) return false end
@@ -26,7 +32,8 @@ function showterm(io::IO, ::Type{P}, pj::T, var, j, first::Bool, mimetype) where
     end
 
     printproductsign(io, pj, j, mimetype)
-    printbasis(io, P, j, mimetype)
+    #printbasis(io, P, j, mimetype)
+    printbasis(io, ⟒(P){T,Symbol(var)}, j, mimetype)
     return true
 end
 
@@ -37,10 +44,6 @@ function printbasis(io::IO, ::Type{P}, j::Int, m::MIME) where {P <: AbstractUniv
 end
 
 basis_symbol(::Type{AbstractUnivariatePolynomial{B,T,X}}) where {B,T,X} = "Χ($(X))"
-
-# should use map, but this is used in common.jl
-_convert(p::P, as) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){promote_type(T, eltype(as)), X}(as)
-
 
 
 ## idea is vector space stuff (scalar_add, scalar_mult, vector +/-, ^) goes here
@@ -56,9 +59,9 @@ _indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = nothing
 _indeterminate(::Type{P}) where {B,T, X, P <: AbstractUnivariatePolynomial{B,T,X}} = X
 indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = something(_indeterminate(P), :x)
 
-XXX() = throw(ArgumentError("Method not defined"))
+
 constructorof(::Type{<:AbstractUnivariatePolynomial}) = XXX()
-⟒(P::Type{<:AbstractUnivariatePolynomial})  = constructorof(P) # returns the Storage{Basis} partially constructed type
+⟒(P::Type{<:AbstractUnivariatePolynomial})  = constructorof(P)
 ⟒(p::P) where {P <: AbstractUnivariatePolynomial} = ⟒(P)
 
 ## Julia generics treating coefficients as an abstract vector
@@ -82,15 +85,11 @@ Base.size(p::AbstractUnivariatePolynomial, i::Integer) =  i <= 1 ? size(p)[i] : 
 
 Base.copy(p::AbstractUnivariatePolynomial) = XXX()
 
-
-
-
 #hasnan(p::AbstractUnivariatePolynomial) = any(hasnan, p)
-
 
 # map Polynomial terms -> vector terms
 # Default degree **assumes** basis element Tᵢ has degree i.
-degree(p::AbstractUnivariatePolynomial) = iszero(p) ? -1 : lastindex(p)
+degree(p::AbstractUnivariatePolynomial) = iszero(p) ? -1 : lastindex(p) # XXX() is likely a safer choice
 
 # this helps, along with _set, make some storage-generic methods
 _zeros(p::P, z, N) where {P <: AbstractUnivariatePolynomial} = _zeros(P, z, N)

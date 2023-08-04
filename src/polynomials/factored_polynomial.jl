@@ -354,9 +354,16 @@ function integrate(p::P) where {P <: FactoredPolynomial}
     convert(P, ∫𝒑)
 end
 
-function derivative(p::P,n::Int) where {P <: FactoredPolynomial}
+function derivative(p::P,n::Int=1) where {P <: FactoredPolynomial}
     𝑷 = Polynomial
     𝒑 = convert(𝑷, p)
     𝒑⁽ⁿ⁾ = derivative(𝒑, n)
     convert(P, 𝒑⁽ⁿ⁾)
+end
+
+function Multroot.multroot(p::FactoredPolynomial)
+    d = p.coeffs
+    (values = collect(keys(d)),
+     multiplicities = collect(values(d)),
+     κ = 0.0, ϵ = 0.0)
 end
