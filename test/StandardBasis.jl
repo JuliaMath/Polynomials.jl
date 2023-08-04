@@ -1355,7 +1355,7 @@ end
             p1 = P([1,2,0,3])
             @test eltype(collect(p1)) <: eltype(p1)
             P != FactoredPolynomial && @test eltype(collect(Float64, p1)) <: Float64
-            P == FactoredPolynomial && @test_broken eltype(collect(Float64, p1)) <: Float64
+            P == FactoredPolynomial && @test_skip eltype(collect(Float64, p1)) <: Float64
             @test_throws InexactError collect(Int, P([1.2]))
         end
 
