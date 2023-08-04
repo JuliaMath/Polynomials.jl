@@ -286,7 +286,7 @@ end
             @test_throws MethodError q * p == P(conv([a,b], [a,b, c])) # Ok, no * for T
 
             # poly powers
-            @test_throws r"Error" p^2  # (Ok, no * for T) # XXX ArgumentError, not MethodError being thrown on nightly
+            VERSION >= v"1.8.0" && (@test_throws r"Error" p^2)  # (Ok, no * for T) # XXX ArgumentError, not MethodError being thrown on nightly
             @test_throws MethodError p * p
 
             # evaluation
