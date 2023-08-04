@@ -15,11 +15,11 @@ include("common.jl")
 
 # polynomials with explicit basis
 include("abstract-polynomial.jl")
-include("polynomial-basetypes/mutable-dense-polynomial.jl")
-include("polynomial-basetypes/mutable-dense-view-polynomial.jl")
-include("polynomial-basetypes/mutable-dense-laurent-polynomial.jl")
-include("polynomial-basetypes/immutable-dense-polynomial.jl")
-include("polynomial-basetypes/mutable-sparse-polynomial.jl")
+include("polynomial-container-types/mutable-dense-polynomial.jl")
+include("polynomial-container-types/mutable-dense-view-polynomial.jl")
+include("polynomial-container-types/mutable-dense-laurent-polynomial.jl")
+include("polynomial-container-types/immutable-dense-polynomial.jl")
+include("polynomial-container-types/mutable-sparse-polynomial.jl")
 
 
 include("polynomials/standard-basis/standard-basis.jl")

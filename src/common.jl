@@ -1013,75 +1013,74 @@ function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: A
 
 end
 
+# <<< could be moved to SpecialPolynomials
 # Works when p,q of same type.
 # For Immutable, must remove N,M bit;
 # for others, can widen to Type{T,X}, Type{S,X} to avoid a promotion
 function Base.:+(p::P, q::P) where {T,X,P<:AbstractPolynomial{T,X}}
-    throw(ArgumentError("implmented in type"))
     cs = degree(p) >= degree(q)  ? ⊕(P, p.coeffs, q.coeffs) : ⊕(P, q.coeffs, p.coeffs)
     return P(cs)
 end
 
-# # addition of polynomials is just vector space addition, so can be done regardless
-# # of basis, as long as the same. These ⊕ methods try to find a performant means to add
-# # to sets of coefficients based on the storage type. These assume n1 >= n2
-# function ⊕(P::Type{<:AbstractPolynomial}, p1::Vector{T}, p2::Vector{S}) where {T,S}
-#     throw(ArgumentError("implmented in type"))
-#     n1, n2 = length(p1), length(p2)
-#     R = promote_type(T,S)
+# Th ⊕ methd below is used in Special Polynomials, but not here, as it was removed for
+# similar methods in the polynomial-basetypes
+# addition of polynomials is just vector space addition, so can be done regardless
+# of basis, as long as the same. These ⊕ methods try to find a performant means to add
+# to sets of coefficients based on the storage type. These assume n1 >= n2
+function ⊕(P::Type{<:AbstractPolynomial}, p1::Vector{T}, p2::Vector{S}) where {T,S}
+    n1, n2 = length(p1), length(p2)
+    R = promote_type(T,S)
 
-#     cs = collect(R,p1)
-#     for i in 1:n2
-#         cs[i] += p2[i]
-#     end
+    cs = collect(R,p1)
+    for i in 1:n2
+        cs[i] += p2[i]
+    end
 
-#     return cs
-# end
+    return cs
+end
 
-# # Padded vector sum of two tuples assuming N ≥ M
-# @generated function ⊕(P::Type{<:AbstractPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
-#     throw(ArgumentError("implmented in type"))
-#     exprs = Any[nothing for i = 1:N]
-#     for i in  1:M
-#         exprs[i] = :(p1[$i] + p2[$i])
-#     end
-#     for i in M+1:N
-#         exprs[i] =:(p1[$i])
-#     end
+# Padded vector sum of two tuples assuming N ≥ M
+@generated function ⊕(P::Type{<:AbstractPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+    exprs = Any[nothing for i = 1:N]
+    for i in  1:M
+        exprs[i] = :(p1[$i] + p2[$i])
+    end
+    for i in M+1:N
+        exprs[i] =:(p1[$i])
+    end
 
-#     return quote
-#         Base.@_inline_meta
-#         #Base.@inline
-#         tuple($(exprs...))
-#     end
+    return quote
+        Base.@_inline_meta
+        #Base.@inline
+        tuple($(exprs...))
+    end
 
-# end
+end
 
-# # addition when a dictionary is used for storage
-# function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) where {T,S}
-#     throw(ArgumentError("implmented in type"))
-#     R = promote_type(T,S)
-#     p = Dict{Int, R}()
+# addition when a dictionary is used for storage
+function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) where {T,S}
+    R = promote_type(T,S)
+    p = Dict{Int, R}()
 
 
-#     # this allocates in the union
-# #    for i in union(eachindex(p1), eachindex(p2))
-# #        p[i] = p1[i] + p2[i]
-# #    end
+    # this allocates in the union
+#    for i in union(eachindex(p1), eachindex(p2))
+#        p[i] = p1[i] + p2[i]
+#    end
 
-#     for (i,pi) ∈ pairs(p1)
-#         @inbounds p[i] = pi + get(p2, i, zero(R))
-#     end
-#     for (i,pi) ∈ pairs(p2)
-#         if iszero(get(p,i,zero(R)))
-#             @inbounds p[i] = get(p1, i, zero(R)) + pi
-#         end
-#     end
+    for (i,pi) ∈ pairs(p1)
+        @inbounds p[i] = pi + get(p2, i, zero(R))
+    end
+    for (i,pi) ∈ pairs(p2)
+        if iszero(get(p,i,zero(R)))
+            @inbounds p[i] = get(p1, i, zero(R)) + pi
+        end
+    end
 
-#     return  p
+    return  p
 
-# end
-
+end
+## >>> moved to SpecialPolynomials (or rewrite that to use new container types)
 ## -- multiplication
 
 # Scalar multiplication; no assumption of commutivity

@@ -19,10 +19,12 @@ jobs:
         package:
           - {user: JuliaControl, repo: ControlSystems.jl, group: All}
           - {user: andreasvarga, repo: DescriptorSystems.jl, group: All}
+          - {user: andreasvarga, repo: MatrixPencils.jl, group: All}
           - {user: JuliaDSP,     repo: DSP.jl, group: All}
           - {user: tkluck,       repo: GaloisFields.jl, group: All}
           - {user: jverzani,     repo: SpecialPolynomials.jl, group: All}
           - {user: JuliaGNI,     repo: QuadratureRules.jl, group: All}
+          - {user: JuliaGNI,     repo: RungeKutta.jl, group: All}
     steps:
       - uses: actions/checkout@v3
       - uses: julia-actions/setup-julia@v1
