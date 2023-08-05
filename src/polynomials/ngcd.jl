@@ -8,17 +8,10 @@ The main entry point for this function is `gcd(p, q, method=:numerical)`, but `n
 In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call one step of the Euclidean gcd approach, and then call `ngcd` with relaxed tolerances.
 
 """
-function ngcd(p::P, q::Q, args...; kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
-                                                     S,Y,Q<:StandardBasisPolynomial{S,Y}}
-    isconstant(p) && return (u=one(1), v=p,w=q, θ=NaN, κ=NaN)
-    isconstant(q) && return (u=one(p), v=p,w=q, θ=NaN, κ=NaN)
-    assert_same_variable(X,Y)
-    ngcd(promote(p,q)..., args...; kwargs...)
-end
-
-function ngcd(p::P, q::P,
+function ngcd(p::P, q::Q,
               args...;
-              kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X}}
+              kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
+                                S,Y,Q<:StandardBasisPolynomial{S,Y}}
     if (degree(q) > degree(p))
         u,w,v,Θ,κ =  ngcd(q,p,args...; kwargs...)
         return (u=u,v=v,w=w, Θ=Θ, κ=κ)

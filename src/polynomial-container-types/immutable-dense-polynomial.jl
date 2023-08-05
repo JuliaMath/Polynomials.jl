@@ -12,7 +12,7 @@ Immutable is a bit of a misnomer, as using the `@set!` macro from `Setfield.jl` 
 """
 struct ImmutableDensePolynomial{B,T,X,N} <: AbstractDenseUnivariatePolynomial{B,T,X}
     coeffs::NTuple{N,T}
-    function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N,S}) where {B,N,T,X,S}
+    function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N}) where {B,N,T,X}
         new{B,T,Symbol(X),N}(cs)
     end
 end
@@ -42,15 +42,15 @@ function ImmutableDensePolynomial{B,T,X,N}(c::S) where {B,T,X,N,S<:Scalar}
     return ImmutableDensePolynomial{B,T,X,N}(cs)
 end
 ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::NTuple{N,S}) where {B,T,S,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
-ImmutableDensePolynomial{B,T,X}(xs::NTuple{N,S}) where {B,T,S,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
-ImmutableDensePolynomial{B,T}(xs::NTuple{N,S}, var::SymbolLike=Var(:x)) where {B,T,S,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
+ImmutableDensePolynomial{B,T,X}(xs::NTuple{N}) where {B,T,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
+ImmutableDensePolynomial{B,T}(xs::NTuple{N}, var::SymbolLike=Var(:x)) where {B,T,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
 ImmutableDensePolynomial{B}(xs::NTuple{N,T}, var::SymbolLike=Var(:x)) where {B,T,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
 
 # abstract vector. Must eat order
-ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::AbstractVector{S}, order::Int=0) where {B,T,X,S} =
+ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::AbstractVector, order::Int=0) where {B,T,X} =
     ImmutableDensePolynomial{B,T,X}(xs, order)
 
-function ImmutableDensePolynomial{B,T,X}(xs::AbstractVector{S}, order::Int=0) where {B,T,X,S}
+function ImmutableDensePolynomial{B,T,X}(xs::AbstractVector, order::Int=0) where {B,T,X}
     if Base.has_offset_axes(xs)
         @warn "ignoring the axis offset of the coefficient vector"
         xs = parent(xs)
@@ -255,13 +255,13 @@ end
 
 
 # scalar mult faster with 0 default
-scalar_mult(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B,T,X,S} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
-scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,0}) where {B,T,X,S} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+scalar_mult(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B,T,X,S<:Scalar} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,0}) where {B,T,X,S<:Scalar} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
 
 
 ## ---
 # Padded vector combination of two homogeneous tuples assuming N ≥ M
-@generated function _tuple_combine(op, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+@generated function _tuple_combine(op, p1::NTuple{N}, p2::NTuple{M}) where {N,M}
 
     exprs = Any[nothing for i = 1:N]
     for i in  1:M
@@ -282,7 +282,7 @@ end
 ## Static size of product makes generated functions  a good choice
 ## from https://github.com/tkoolen/StaticUnivariatePolynomials.jl/blob/master/src/monomial_basis.jl
 ## convolution of two tuples
-@generated function fastconv(p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+@generated function fastconv(p1::NTuple{N}, p2::NTuple{M}) where {N,M}
     P = M + N - 1
     exprs = Any[nothing for i = 1 : P]
     for i in 1 : N

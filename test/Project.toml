@@ -1,4 +1,5 @@
 [deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"

@@ -364,8 +364,10 @@ truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined.
 
 _truncate(ps::NTuple{0}; kwargs...) = ps
 function _truncate(ps::NTuple{N,T};
-              rtol::Real = Base.rtoldefault(real(T)),
-              atol::Real = 0,) where {N,T}
+                   rtol::Real = Base.rtoldefault(real(T)),
+                   atol::Real = 0,) where {N,T}
+
+
     thresh = norm(ps, Inf) * rtol + atol
     return NTuple{N,T}(abs(pᵢ) <= thresh ? zero(T) : pᵢ for pᵢ ∈ values(ps))
 end
@@ -432,9 +434,14 @@ end
 chop!(ps::NTuple; kwargs...) = throw(ArgumentError("chop! not defined"))
 
 _chop(ps::NTuple{0}; kwargs...) = ps
-function _chop(ps::NTuple{N,T};
-              rtol::Real = Base.rtoldefault(real(T)),
-              atol::Real = 0,) where {N,T}
+function _chop(ps::NTuple{N};
+               rtol = nothing,
+               atol = nothing) where {N}
+
+    T = real(eltype(ps))
+    rtol = something(rtol, Base.rtoldefault(T))
+    atol = somtething(atol, zero(T))
+
     thresh = norm(ps, Inf) * rtol + atol
     for i in N:-1:1
         if abs(ps[i]) > thresh
@@ -990,10 +997,10 @@ Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
 Base.:+(p::AbstractPolynomial) = p
 
 # polynomial + scalar; implicit identification of c with c*one(p)
-Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = scalar_add(p, c)
+Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = scalar_add(c, p)
 
 # default scalar add can be problematic as addition of contant polynomial might circle back
-scalar_add(p::AbstractPolynomial, c) = p + c * one(p)
+scalar_add(c::S, p::AbstractPolynomial) where {S} = p + c * one(p)
 
 ## ----
 
@@ -1040,7 +1047,7 @@ function ⊕(P::Type{<:AbstractPolynomial}, p1::Vector{T}, p2::Vector{S}) where 
 end
 
 # Padded vector sum of two tuples assuming N ≥ M
-@generated function ⊕(P::Type{<:AbstractPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
+@generated function ⊕(P::Type{<:AbstractPolynomial}, p1::NTuple{N}, p2::NTuple{M}) where {N,M}
     exprs = Any[nothing for i = 1:N]
     for i in  1:M
         exprs[i] = :(p1[$i] + p2[$i])

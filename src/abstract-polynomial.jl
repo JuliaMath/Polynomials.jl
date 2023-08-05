@@ -215,7 +215,6 @@ Base.:-(p::AbstractUnivariatePolynomial) = map(-, p) #scalar_mult(-1, p)
 
 Base.:+(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_add(c, p)
 Base.:+(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_add(c, p)
-scalar_add(p::AbstractUnivariatePolynomial, c) = scalar_add(c, p) # scalar addition is commutative
 
 Base.:+(p::AbstractUnivariatePolynomial) = p
 Base.:+(p::AbstractUnivariatePolynomial{B, T, X},
@@ -249,14 +248,26 @@ Base.:/(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_div(p, c)
 
 Base.:^(p::AbstractUnivariatePolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
-scalar_mult(p::AbstractUnivariatePolynomial{B,T,X}, c) where {B,T,X} = map(Base.Fix2(*,c), p)
-scalar_mult(c, p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = map(Base.Fix1(*,c), p)
-scalar_div(p::AbstractUnivariatePolynomial{B,T,X}, c) where {B,T,X}  = map(Base.Fix2(*,one(T)/c), p) # much better than Fix2(/,c)
+scalar_mult(p::AbstractUnivariatePolynomial{B,T,X}, c::Scalar) where {B,T,X} = map(Base.Fix2(*,c), p)
+scalar_mult(c::Scalar, p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = map(Base.Fix1(*,c), p)
+scalar_div(p::AbstractUnivariatePolynomial{B,T,X}, c::Scalar) where {B,T,X}  = map(Base.Fix2(*,one(T)/c), p) # much better than Fix2(/,c)
 
 # treat constant polynomials as constants when symbols mixed
 scalar_op(::typeof(*)) = scalar_mult
 scalar_op(::typeof(+)) = scalar_add
 scalar_op(::typeof(/)) = scalar_div
+
+function _mixed_symbol_op(::typeof(+),
+                          p::P,
+                          q::Q) where {B,T,S,X,Y,
+                                       P<:AbstractUnivariatePolynomial{B, T, X},
+                                       Q<:AbstractUnivariatePolynomial{B, S, Y}}
+    X == Y && throw(ArgumentError("dispatch should catch this case"))
+    isconstant(p) && return scalar_add(constantterm(p), q)
+    isconstant(q) && return scalar_add(constantterm(q), p) # only the one (c,p) signature
+    assert_same_variable(X,Y)
+end
+
 function _mixed_symbol_op(op,
                           p::P,
                           q::Q) where {B,T,S,X,Y,
