@@ -150,9 +150,9 @@ function pejorative_manifold(
     nu₂ = norm(u, 2)
     θ2, ρ2 =  θ * nu₂, ρ * nu₂
     u, v, w, ρⱼ, κ = Polynomials.ngcd(
-        u, derivative(u),
-        satol = θ2, srtol = zero(real(T)),
-        atol = ρ2,  rtol  = zero(real(T)))
+        u, derivative(u);
+        satol = θ2, srtol = zero(θ2),
+        atol  = ρ2, rtol  = zero(ρ2))
     ρⱼ /= nu₂
 
     # root approximations

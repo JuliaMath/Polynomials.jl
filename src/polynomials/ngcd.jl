@@ -8,12 +8,19 @@ The main entry point for this function is `gcd(p, q, method=:numerical)`, but `n
 In the case `degree(p) ≫ degree(q)`,  a heuristic is employed to first call one step of the Euclidean gcd approach, and then call `ngcd` with relaxed tolerances.
 
 """
-function ngcd(p::P, q::Q,
+function ngcd(p::P, q::Q, args...; kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
+                                                     S,Y,Q<:StandardBasisPolynomial{S,Y}}
+    isconstant(p) && return (u=one(1), v=p,w=q, θ=NaN, κ=NaN)
+    isconstant(q) && return (u=one(p), v=p,w=q, θ=NaN, κ=NaN)
+    assert_same_variable(X,Y)
+    ngcd(promote(p,q)..., args...; kwargs...)
+end
+
+function ngcd(p::P, q::P,
               args...;
-              kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
-                                S,Y,Q<:StandardBasisPolynomial{S,Y}}
+              kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X}}
     if (degree(q) > degree(p))
-        u,w,v,Θ,κ =  ngcd(q,p,args...;kwargs...)
+        u,w,v,Θ,κ =  ngcd(q,p,args...; kwargs...)
         return (u=u,v=v,w=w, Θ=Θ, κ=κ)
     end
     if degree(p) > 5*(1+degree(q))
@@ -29,8 +36,8 @@ function ngcd(p::P, q::Q,
     p ≈ q          && return (u=p,v=one(p),  w=one(p),  θ=NaN, κ=NaN)
     Polynomials.assert_same_variable(p,q)
 
-    R = promote_type(float(T), float(S))
-    𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X}
+    R = promote_type(float(T))
+    𝑷 = Polynomials.constructorof(P){R,X}
 
     ps = R[pᵢ for pᵢ ∈ coeffs(p)]
     qs = R[qᵢ for qᵢ ∈ coeffs(q)]
@@ -51,7 +58,7 @@ function ngcd(p::P, q::Q,
     out = NGCD.ngcd(p′, q′, args...; kwargs...)
 
     ## convert to original polynomial type
-    𝑷 = Polynomials.constructorof(promote_type(P,Q)){R,X}
+    𝑷 = Polynomials.constructorof(P){R,X}
     u,v,w = convert.(𝑷, (out.u,out.v,out.w))
     if nz > 1
         u *= variable(u)^(nz-1)
