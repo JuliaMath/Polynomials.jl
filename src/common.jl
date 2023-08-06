@@ -969,6 +969,33 @@ end
 arithmetic =#
 Scalar = Union{Number, Matrix}
 
+# scalar operations
+# no generic p+c, as polynomial addition falls back to scalar ops
+# default scalar add can be problematic as addition of contant polynomial might circle back
+scalar_add(c::S, p::AbstractPolynomial) where {S} = p + c * one(p)
+
+# Scalar multiplication; no assumption of commutivity
+# should use the same def in abstract-polynomial: map(Base.FixN(*,c), p)
+function scalar_mult(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T,X}}
+    #return map(Base.Fix2(.*,Ref(c)), p)
+    result = coeffs(p) .* (c,)
+    ⟒(P){eltype(result), X}(result)
+end
+
+function scalar_mult(c::S, p::P) where {S, T, X, P<:AbstractPolynomial{T, X}}
+    #return map(Base.Fix1(.*,Ref(c)), p)
+    result = (c,) .* coeffs(p)
+    ⟒(P){eltype(result), X}(result)
+end
+
+scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) = error("scalar_mult(::$(typeof(p1)), ::$(typeof(p2))) is not defined.") # avoid ambiguity, issue #435
+function scalar_div(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T, X}}
+    return map(Base.Fix2(*, one(T)/c), p)
+#    iszero(p) && return zero(⟒(P){Base.promote_op(/,T,S), X})
+#    _convert(p, coeffs(p) ./ Ref(c))
+end
+
+
 Base.:-(p::P) where {P <: AbstractPolynomial} = map(-, p) #_convert(p, -coeffs(p)) # map(-, p)
 
 Base.:*(p::AbstractPolynomial, c::Scalar) = scalar_mult(p, c)
@@ -977,12 +1004,9 @@ Base.:*(c::T, p::P) where {T, X, P <: AbstractPolynomial{T,X}} = scalar_mult(c, 
 Base.:*(p::P, c::T) where {T, X, P <: AbstractPolynomial{T,X}} = scalar_mult(p, c)
 
 # implicitly identify c::Scalar with a constant polynomials
-Base.:+(c::Scalar, p::AbstractPolynomial) = +(p, c)
-Base.:-(p::AbstractPolynomial, c::Scalar) = +(p, -c)
-Base.:-(c::Scalar, p::AbstractPolynomial) = +(-p, c)
-
-# scalar operations
-# no generic p+c, as polynomial addition falls back to scalar ops
+Base.:+(c::Scalar, p::AbstractPolynomial) = scalar_add(c, p)  #+(p, c)
+Base.:-(p::AbstractPolynomial, c::Scalar) = scalar_add(-c, p) #+(p, -c)
+Base.:-(c::Scalar, p::AbstractPolynomial) = scalar_add(c, -p) #+(-p, c)
 
 
 Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
@@ -999,8 +1023,6 @@ Base.:+(p::AbstractPolynomial) = p
 # polynomial + scalar; implicit identification of c with c*one(p)
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = scalar_add(c, p)
 
-# default scalar add can be problematic as addition of contant polynomial might circle back
-scalar_add(c::S, p::AbstractPolynomial) where {S} = p + c * one(p)
 
 ## ----
 
@@ -1090,29 +1112,10 @@ end
 ## >>> moved to SpecialPolynomials (or rewrite that to use new container types)
 ## -- multiplication
 
-# Scalar multiplication; no assumption of commutivity
-# should use the same def in abstract-polynomial: map(Base.FixN(*,c), p)
-function scalar_mult(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T,X}}
-    #return map(Base.Fix2(.*,Ref(c)), p)
-    result = coeffs(p) .* (c,)
-    ⟒(P){eltype(result), X}(result)
-end
 
-function scalar_mult(c::S, p::P) where {S, T, X, P<:AbstractPolynomial{T, X}}
-    #return map(Base.Fix1(.*,Ref(c)), p)
-    result = (c,) .* coeffs(p)
-    ⟒(P){eltype(result), X}(result)
-end
-
-scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) = error("scalar_mult(::$(typeof(p1)), ::$(typeof(p2))) is not defined.") # avoid ambiguity, issue #435
 
 # scalar div
 Base.:/(p::AbstractPolynomial, c) = scalar_div(p, c)
-function scalar_div(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T, X}}
-    return map(Base.Fix2(*, one(T)/c), p)
-#    iszero(p) && return zero(⟒(P){Base.promote_op(/,T,S), X})
-#    _convert(p, coeffs(p) ./ Ref(c))
-end
 
 ## Polynomial p*q
 ## Polynomial multiplication formula depend on the particular basis used. The subtype must implement

@@ -37,7 +37,6 @@ function _polynomial(p::P, as::Vector{S})  where {B,T, X, P <: MutableDensePolyn
 end
 
 @poly_register MutableDensePolynomial
-constructorof(::Type{<:MutableDensePolynomial{B}}) where {B} = MutableDensePolynomial{B}
 
 ## ---
 

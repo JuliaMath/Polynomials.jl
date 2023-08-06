@@ -90,6 +90,7 @@ end
 
 # up to caller to ensure cs is zeroed out
 function LinearAlgebra.mul!(cs, p::AbstractDenseUnivariatePolynomial, q::AbstractDenseUnivariatePolynomial)
+    # TODO: check that p.coeffs, q.coeffs and cs aren't aliased.
     m,n = length(p)-1, length(q)-1
     @inbounds for (i, pᵢ) ∈ enumerate(p.coeffs)
         for (j, qⱼ) ∈ enumerate(q.coeffs)

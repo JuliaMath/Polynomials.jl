@@ -44,7 +44,6 @@ function _polynomial(p::P, as::Vector{S})  where {B,T, X, P <: MutableDenseLaure
 end
 
 @poly_register MutableDenseLaurentPolynomial
-constructorof(::Type{<:MutableDenseLaurentPolynomial{B}}) where {B} = MutableDenseLaurentPolynomial{B}
 
 ## ---
 

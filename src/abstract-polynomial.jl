@@ -1,8 +1,13 @@
 # XXX Maybe merge into with common.jl, abstract.jl
 """
     AbstractUnivariatePolynomial{B,T,X} <: AbstractPolynomial{T,X}
+    AbstractDenseUnivariatePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T,X}
+    AbstractLaurentUnivariatePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T,X}
 
-Abstract type for polynomials with an explicit basis, `B`.
+Abstract container types for polynomials with an explicit basis, `B`.
+`AbstractDenseUnivariatePolynomial` is for `0`-based polynomials;
+`AbstractLaurentUnivariatePolynomial` is for polynomials with possibly negative powers of the indeterminate.
+
 """
 abstract type AbstractUnivariatePolynomial{B, T, X} <: AbstractPolynomial{T,X} end
 
@@ -12,10 +17,15 @@ abstract type AbstractDenseUnivariatePolynomial{B, T, X} <: AbstractUnivariatePo
 # for negative integer powers
 abstract type AbstractLaurentUnivariatePolynomial{B, T, X} <: AbstractUnivariatePolynomial{B,T,X} end
 
+"""
+    AbstractBasis
+
+Abstract type for specifying a polynomial basis.
+"""
 abstract type AbstractBasis end
 export AbstractUnivariatePolynomial
 
-XXX() = throw(ArgumentError("Method not defined"))
+XXX() = throw(ArgumentError("No default method not defined"))
 
 ## --------------------------------------------------
 
@@ -50,17 +60,21 @@ basis_symbol(::Type{AbstractUnivariatePolynomial{B,T,X}}) where {B,T,X} = "Χ($(
 ## connection (convert, transform) is specific to a basis (storage)
 ## ⊗(p::P{T,X}, q::P{S,Y}) is specic to basis/storage
 
-
+# type of basis
 basistype(p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = B
 basistype(::Type{<:AbstractUnivariatePolynomial{B}}) where {B} = B # some default
+
+# eltype of polynomial
 Base.eltype(p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = T
+
+# indeterminate of polynomial
 indeterminate(p::P) where {P <: AbstractUnivariatePolynomial} = indeterminate(P)
 _indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = nothing
 _indeterminate(::Type{P}) where {B,T, X, P <: AbstractUnivariatePolynomial{B,T,X}} = X
 indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = something(_indeterminate(P), :x)
 
 
-constructorof(::Type{<:AbstractUnivariatePolynomial}) = XXX()
+constructorof(::Type{<:AbstractUnivariatePolynomial}) = XXX() # defined in container-types
 ⟒(P::Type{<:AbstractUnivariatePolynomial})  = constructorof(P)
 ⟒(p::P) where {P <: AbstractUnivariatePolynomial} = ⟒(P)
 
@@ -69,15 +83,17 @@ constructorof(::Type{<:AbstractUnivariatePolynomial}) = XXX()
 # * may not be in increasing or decreasing i
 # * for standardbasis i -> xⁱ
 # * possibly skipping when iszero(cᵢ)
-Base.keys(p::AbstractUnivariatePolynomial) = Base.Generator(first, pairs(p))
-Base.values(p::AbstractUnivariatePolynomial) = Base.Generator(last, pairs(p))
 Base.firstindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
 Base.lastindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
 #Base.iterate(p::AbstractUnivariatePolynomial, args...) = Base.iterate(values(p), args...)
 Base.iterate(p::AbstractUnivariatePolynomial, state = firstindex(p)) = _iterate(p, state) # _iterate in common.jl
-Base.pairs(p::AbstractUnivariatePolynomial) = XXX()
 
-#Base.eltype(::Type{<:AbstractUnivariatePolynomial}) = Float64
+Base.keys(p::AbstractUnivariatePolynomial)   = eachindex(p)
+Base.values(p::AbstractUnivariatePolynomial) = values(p.coeffs) # Dict based containers must specialize
+Base.pairs(p::AbstractUnivariatePolynomial)  = Base.Generator(=>, keys(p), values(p))
+
+
+#Base.eltype(::Type{<:AbstractUnivariatePolynomial}) = Float64 # common.jl
 Base.eltype(::Type{<:AbstractUnivariatePolynomial{B,T}}) where {B,T} = T
 
 Base.size(p::AbstractUnivariatePolynomial) = (length(p),)
@@ -85,7 +101,7 @@ Base.size(p::AbstractUnivariatePolynomial, i::Integer) =  i <= 1 ? size(p)[i] : 
 
 Base.copy(p::AbstractUnivariatePolynomial) = XXX()
 
-#hasnan(p::AbstractUnivariatePolynomial) = any(hasnan, p)
+#hasnan(p::AbstractUnivariatePolynomial) = any(hasnan, p) # common.jl
 
 # map Polynomial terms -> vector terms
 # Default degree **assumes** basis element Tᵢ has degree i.
@@ -102,7 +118,7 @@ end
 
 #check_same_variable(p::AbstractUnivariatePolynomial, q::AbstractUnivariatePolynomial) = indeterminate(p) == indeterminate(q)
 
-# The zero polynomial. Typically has no coefficients. in common.jl
+# The zero polynomial. Typically has no coefficients. # common.jl
 #Base.zero(p::P,args...) where {P <: AbstractUnivariatePolynomial} = zero(P,args...)
 #Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),indeterminate(P)})
 #Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),Symbol(var)})
@@ -213,8 +229,8 @@ end
 ##
 Base.:-(p::AbstractUnivariatePolynomial) = map(-, p) #scalar_mult(-1, p)
 
-Base.:+(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_add(c, p)
-Base.:+(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_add(c, p)
+#Base.:+(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_add(c, p) # in common.jl
+#Base.:+(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_add(c, p) # in common.jl
 
 Base.:+(p::AbstractUnivariatePolynomial) = p
 Base.:+(p::AbstractUnivariatePolynomial{B, T, X},
@@ -224,8 +240,8 @@ Base.:+(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y} =
             _mixed_symbol_op(+, p, q)
 
-Base.:-(c::Scalar, p::AbstractUnivariatePolynomial) = c + (-p)
-Base.:-(p::AbstractUnivariatePolynomial, c::Scalar) = p + (-c)
+#Base.:-(c::Scalar, p::AbstractUnivariatePolynomial) = c + (-p) # common.jl
+#Base.:-(p::AbstractUnivariatePolynomial, c::Scalar) = p + (-c) # common.jl
 
 Base.:-(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, X}) where {B,T,S,X} = p + (-q)
@@ -233,13 +249,13 @@ Base.:-(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y} =
             _mixed_symbol_op(-, p, q)
 
-Base.:*(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_mult(c, p)
-Base.:*(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_mult(p, c)
+#Base.:*(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_mult(c, p)
+#Base.:*(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_mult(p, c)
 
 Base.:*(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, X}) where {B,T,S,X} = *(promote(p,q)...)
 Base.:*(p::P, q::P) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} =
-            ⊗(p, q)
+    ⊗(p, q)
 Base.:*(p::AbstractUnivariatePolynomial{B, T, X},
         q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y}  =
             _mixed_symbol_op(*, p, q)
@@ -326,6 +342,7 @@ end
 macro poly_register(name)
     poly = esc(name)
     quote
+        Polynomials.constructorof(::Type{<:$poly{B}}) where {B} = $poly{B}
         #Base.convert(::Type{P}, p::P) where {P<:$poly} = p
         Base.promote(p::P, q::Q) where {B, X, T, P <:$poly{B,T,X}, Q <: $poly{B,T,X}} = p,q
         Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{<:$poly{B,S,X}}) where {B,T,S,X} =  $poly{B,promote_type(T, S),X}

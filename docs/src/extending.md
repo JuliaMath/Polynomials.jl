@@ -2,35 +2,28 @@
 
 The [`AbstractUnivaeriatePolynomial`](@ref) type was made to be extended.
 
-```@docs
-Polynomials.AbstractUnivariatePolynomial
-```
+A polynomial's  coefficients  are  relative to some *basis*. The `Polynomial` type relates coefficients  `[a0, a1,  ..., an]`, say,  to the  polynomial  `a0 +  a1*x + a2*x^2  + ... +  an*x^n`,  through the standard  basis  `1,  x,  x^2, ..., x^n`.  New polynomial  types typically represent the polynomial through a different  basis. For example,  `CheyshevT` uses a basis  `T_0=1, T_1=x,  T_2=2x^2-1,  ...,  T_n  =  2xT_{n-1} - T_{n-2}`.  For this type  the  coefficients  `[a0,a1,...,an]` are associated with  the polynomial  `a0*T0  + a1*T_1 +  ...  +  an*T_n`.
 
-A polynomial's  coefficients  are  relative to some *basis*. The `Polynomial` type relates coefficients  `[a0, a1,  ..., an]`, say,  to the  polynomial  `a0 +  a1*x + a2*x^  + ... +  an*x^n`,  through the standard  basis  `1,  x,  x^2, ..., x^n`.  New polynomial  types typically represent the polynomial through a different  basis. For example,  `CheyshevT` uses a basis  `T_0=1, T_1=x,  T_2=2x^2-1,  ...,  T_n  =  2xT_{n-1} - T_{n-2}`.  For this type  the  coefficients  `[a0,a1,...,an]` are associated with  the polynomial  `a0*T0  + a1*T_1 +  ...  +  an*T_n`.
-An `AbstractUnivariatePolynomial` polynomial consists of a basis and a storage type. There a a few different storage types.
-
-A basis inherits from `Polynomials.AbstractBasis`, in the example our basis type has a parameter. The `ChebyshevT` type, gives a related example of how this task can be implemented.
+A polynomial type consists of a container type (with parent type `AbstractUnivariatePolynomial`) and a basis type (with parent type `AbstractBasis`). There a several different storage types.
 
 To implement a new polynomial type, `P`, the following methods should be implemented:
 
 
 | Function | Required | Notes |
 |----------|:--------:|:------------|
-| Constructor | x | |
-| Type function (`(::P)(x)`) | x | |
-| `one`| | Convenience to find constant in new basis |
-| `variable`| | Convenience to find monomial `x` in new  basis|
-| `Base.evalpoly(x, p::P)` | x |to evaluate the polynomial at `x` |
-| `scalar_add(c::S, ::P)` | x | Scalar addition |
-| `*(::P, ::P)` | | Multiplication of polynomials |
-| `divrem` | | Required for [`gcd`](@ref)|
-| `Polynomials.domain` | x | Should return a `Polynomials.Interval` instance|
-| `vander` | | Required for [`fit`](@ref) |
-| `companion` | | Required for [`roots`](@ref) |
-| `convert(::Polynomial, ...)` | | Defaults to polynomial evaluation |
-| `convert(::P, p::Polynomial)`| | Default of polynomial evaluation requires `*` to be defined.|
-
-Check out [`ChebyshevT`](@ref) for examples of this interface being extended.
+| A container type           | x | Usually selected from an available one. |
+| A basis type               | x | |
+| `one`                      |   | Convenience to find the constant $1$ in the new basis.  |
+| `variable`                 |   | Convenience to find the monomial `x` in the new basis.|
+| `Base.evalpoly(x, p::P)`   | x | To evaluate the polynomial at `x` |
+| `*(::P, ::P)`              |   | Multiplication of polynomials |
+| `scalar_add(c::S, ::P)`    |   | Scalar addition. Default requires `one` to be defined. |
+| `divrem`                   |   | Required for [`gcd`](@ref)|
+| `Polynomials.domain`       |   | Should return a `Polynomials.Interval` instance|
+| `vander`                   |   | Required for [`fit`](@ref) |
+| `companion`                |   | Required for [`roots`](@ref) |
+| `convert(::Polynomial, ...)` | | Defaults to polynomial evaluation, which uses `evalpoly`|
+| `convert(::P, p::Polynomial)`| | Default of polynomial evaluation. Can be used to define `*`.|
 
 As always, if the default implementation does not work or there are more efficient ways of implementing, feel free to overwrite functions from `common.jl` for your type.
 
@@ -54,27 +47,39 @@ L^\alpha_{n+1}(x) &= \frac{2n+1+\alpha -x}{n+1} L^\alpha_n(x) - \frac{n+\alpha}{
 
 There are other [characterizations available](https://en.wikipedia.org/wiki/Laguerre_polynomials). The three-point recursion, described by `A`,`B`, and `C` is used below for evaluation.
 
-We define the basis with
+We show how to define a new basis type, `LaguerreBasis`, leveraging one of the existing container types.
+In this example our basis type has a parameter. The `ChebyshevT` type, gives a related example of how this task can be implemented.
+
+
+First we load the package and import a few non-exported functions:
 
 ```jldoctest abstract_univariate_polynomial
 julia> using Polynomials;
 
 julia> import Polynomials: AbstractUnivariatePolynomial, AbstractBasis, MutableDensePolynomial;
+```
 
+We define the basis with:
+
+```jldoctest abstract_univariate_polynomial
 julia> struct LaguerreBasis{alpha} <: AbstractBasis end
 
 julia> Polynomials.basis_symbol(::Type{<:AbstractUnivariatePolynomial{LaguerreBasis{α},T,X}}) where {α,T,X} =
            "L^$(α)"
 ```
 
-The basis symbol has a poor default. The method requires the full type, as the indeterminate, `X`, may part of the desired output. We added a method to `basis_symbol` to show this basis. More generally, `Polynomials.printbasis` can have methods added to adjust for different display types.
+We added a method to `basis_symbol` to show this basis. The display of the basis symbol has a poor default. The method above requires the full type, as the indeterminate, `X`, may be part of the desired output.  More generally, `Polynomials.printbasis` can have methods added to adjust for different display types.
 
-Polynomials can be initiated through specifying a storage type and a basis, say:
+Polynomial types can be initiated through specifying a storage type and a basis type, say:
 
 ```jldoctest abstract_univariate_polynomial
 julia> P = MutableDensePolynomial{LaguerreBasis{0}}
 MutableDensePolynomial{LaguerreBasis{0}}
+```
 
+Instances can now be created:
+
+```jldoctest abstract_univariate_polynomial
 julia> p = P([1,2,3])
 MutableDensePolynomial(1L^0_0 + 2*L^0_1 + 3*L^0_2)
 ```
@@ -94,16 +99,14 @@ MutableDensePolynomial(1L^0_0 + 2*L^0_1)
 
 julia> p + q
 MutableDensePolynomial(2L^0_0 + 4*L^0_1 + 3*L^0_2)
-```
 
-```jldoctest abstract_univariate_polynomial
 julia> 2p
 MutableDensePolynomial(2L^0_0 + 4*L^0_1 + 6*L^0_2)
 ```
 
 For a new basis, there are no default methods for polynomial evaluation, scalar addition, and polynomial multiplication; and no defaults for `one`, and `variable`.
 
-For the Laguerre Polynomials, Clenshaw recursion can be used for evaluation. Internally, `evalpoly` is called so we forward that method.
+For the Laguerre Polynomials, Clenshaw recursion can be used for evaluation.
 
 ```jldoctest abstract_univariate_polynomial
 julia> function ABC(::Type{LaguerreBasis{α}}, n) where {α}
@@ -134,13 +137,14 @@ julia> function clenshaw_eval(p::P, x::S) where {α, Bᵅ<: LaguerreBasis{α}, T
        end
 clenshaw_eval (generic function with 1 method)
 ```
+Internally, `evalpoly` is called so we forward that method.
 
 ```jldoctest abstract_univariate_polynomial
 julia> Polynomials.evalpoly(x, p::P) where {P<:AbstractUnivariatePolynomial{<:LaguerreBasis}} =
                clenshaw_eval(p, x)
 ```
 
-We test it out by passing in the variable `x` in the standard basis:
+We test this out by passing in the variable `x` in the standard basis:
 
 ```jldoctest abstract_univariate_polynomial
 julia> p = P([0,0,1])
@@ -153,7 +157,7 @@ julia> p(x)
 Polynomial(1.0 - 2.0*x + 0.5*x^2)
 ```
 
-We see that conversion to the `Polynomial` type is available through polynomial evaluation. This is used by default, so we have `convert` methods available:
+This shows evaluation works and also that conversion to the `Polynomial` type is available through polynomial evaluation. This is used by default by `convert`, so we immediately have other `convert` methods available:
 
 ```jldoctest abstract_univariate_polynomial
 julia> convert(ChebyshevT, p)
@@ -173,24 +177,7 @@ julia> q(x)
 Polynomial(1//1 - 5//1*x + 5//1*x^2 - 5//3*x^3 + 5//24*x^4 - 1//120*x^5)
 ```
 
-
-To implement scalar addition, we utilize the fact that ``L_0 = 1`` to manipulate the coefficients. Below we specialize to a container type:
-
-```jldoctest abstract_univariate_polynomial
-julia> function Polynomials.scalar_add(c::S, p::P) where {B<:LaguerreBasis,T,X,
-                                                          P<:MutableDensePolynomial{B,T,X},S}
-           R = promote_type(T,S)
-           iszero(p) && return MutableDensePolynomial{B,R,X}(c)
-           cs = convert(Vector{R}, copy(p.coeffs))
-           cs[1] += c
-           MutableDensePolynomial{B,R,X}(cs)
-       end
-
-julia> p + 3
-MutableDensePolynomial(3L^0_0 + L^0_2)
-```
-
-The values of `one` and `variable` are straightforward, as ``L_0=1`` and ``L_1=1 - x`` or ``x = 1 - L_1``
+The values of `one` and `variable` are straightforward to define, as ``L_0=1`` and ``L_1=1 - x`` or ``x = L_0 - L_1``
 
 ```jldoctest abstract_univariate_polynomial
 julia> Polynomials.one(::Type{P}) where {B<:LaguerreBasis,T,X,P<:AbstractUnivariatePolynomial{B,T,X}} =
@@ -207,7 +194,31 @@ julia> variable(P)(x) == x
 true
 ```
 
-Finally, we implement polynomial multiplication through conversion to the polynomial type. The [direct formula](https://londmathsoc.onlinelibrary.wiley.com/doi/pdf/10.1112/jlms/s1-36.1.399) could be implemented.
+Scalar addition defaults to a call to `one(p)`, so this is now defined:
+
+```jldoctest abstract_univariate_polynomial
+julia> 2 + p
+MutableDensePolynomial(2L^0_0 + L^0_2)
+```
+
+Often it is more performant to implement a specific method for `scalar_add`. Here we utilize the fact that ``L_0 = 1`` to manipulate the coefficients. Below we specialize to a container type:
+
+```jldoctest abstract_univariate_polynomial
+julia> function Polynomials.scalar_add(c::S, p::P) where {B<:LaguerreBasis,T,X,
+                                                          P<:MutableDensePolynomial{B,T,X},S}
+           R = promote_type(T,S)
+           iszero(p) && return MutableDensePolynomial{B,R,X}(c)
+           cs = convert(Vector{R}, copy(p.coeffs))
+           cs[1] += c
+           MutableDensePolynomial{B,R,X}(cs)
+       end
+
+julia> p + 3
+MutableDensePolynomial(3L^0_0 + L^0_2)
+```
+
+Multiplication defaults to a code path where the two polynomials are promoted to a common type and then multiplied.
+Here we implement polynomial multiplication through conversion to the polynomial type. The [direct formula](https://londmathsoc.onlinelibrary.wiley.com/doi/pdf/10.1112/jlms/s1-36.1.399) could be implemented, but that isn't so illustrative for this example.
 
 ```jldoctest abstract_univariate_polynomial
 julia> function Base.:*(p::MutableDensePolynomial{B,T,X},
@@ -217,4 +228,139 @@ julia> function Base.:*(p::MutableDensePolynomial{B,T,X},
        end
 ```
 
-Were it defined, a `convert` method from `Polynomial` to the `LaguerreBasis` could be used to implement multiplication.
+Were it defined, a `convert` method from `Polynomial` to the `LaguerreBasis` could be used to implement multiplication, as we have defined a `variable` method.
+
+## A new container type
+
+This example shows how to make a new container type, though this should be unnecessary. In this case, a minimal example where the polynomial type aliases the vector defining the coefficients is created.  For other bases, more methods may be necessary to define (again, refer to ChebyshevT for an example).
+
+We have two constructor methods. For performance reasons, generically it is helpful to pass in a flag to indicate no checking of the input is needed (`Val{:false}`) and generically, a container type *may* accept an offset, though this type won't:
+
+```jldoctest new_container_type
+julia> using Polynomials
+
+julia> struct AliasPolynomialType{B,T,X} <: Polynomials.AbstractDenseUnivariatePolynomial{B, T, X}
+           coeffs::Vector{T}
+           function AliasPolynomialType{B, T, X}(coeffs::AbstractVector{S}, o::Int=0) where {B, T,S, X}
+               new{B,T,Symbol(X)}(convert(Vector{T}, coeffs))
+           end
+               function AliasPolynomialType{B, T, X}(::Val{:false}, coeffs::AbstractVector{S}, o::Int=0) where {B, T,S, X}
+               new{B,T,Symbol(X)}(convert(Vector{T}, coeffs))
+           end
+       end
+
+julia> Polynomials.@poly_register AliasPolynomialType
+```
+
+The call to `@poly_register` adds many different means to construct polynomials of this type along with some other default methods.
+
+A few methods need defining to get indexing to work:
+
+```jldoctest new_container_type
+julia> Base.firstindex(p::AliasPolynomialType) = 0
+
+julia> Base.lastindex(p::AliasPolynomialType) = length(p.coeffs) - 1
+
+```
+
+Next some idiosyncratic methods need defining, as they are used in generic implementations for our choice of the `StandardBasis` below: the `offset` method is used by some generic methods in the `Polynomials` package to match a power of an indeterminate with the index for storing the coefficient;  `_zeros` is used to give a generic container of a certain type; `chop!` is used to trim off trailing zeros by some generic methods:
+
+
+```jldoctest new_container_type
+julia> Polynomials.offset(p::AliasPolynomialType) = 1
+
+julia> Polynomials._zeros(::Type{<:AliasPolynomialType},z::T,n) where {T} = zeros(T, n)
+
+julia> Polynomials.chop!(p::AliasPolynomialType) = p
+
+```
+
+A type and a basis defines a polynomial type.
+This example uses the  `StandardBasis` and consequently inherits the methods mentioned above that otherwise would have been required.
+
+```jldoctest new_container_type
+julia> AliasPolynomial = AliasPolynomialType{Polynomials.StandardBasis};
+
+```
+
+To see this new polynomial type in action, we have:
+
+```jldoctest new_container_type
+julia> xs = [1,2,3,4];
+
+julia> p = AliasPolynomial(xs)
+AliasPolynomialType(1 + 2*x + 3*x^2 + 4*x^3)
+
+julia> q = AliasPolynomial(1.0, :y)
+AliasPolynomialType(1.0)
+
+julia> p + q
+AliasPolynomialType(2.0 + 2.0*x + 3.0*x^2 + 4.0*x^3)
+
+julia> p * p
+AliasPolynomialType(1 + 4*x + 10*x^2 + 20*x^3 + 25*x^4 + 24*x^5 + 16*x^6)
+
+julia> (derivative ∘ integrate)(p) == p
+true
+
+julia> p(3)
+142
+```
+
+For the Polynomial type, the default on operations is to copy the array. For this type, it might seem reasonable -- to avoid allocations -- to update the coefficients in place for scalar addition and scalar multiplication.
+
+Scalar addition, `p+c`, defaults to `p + c*one(p)`, or polynomial addition, which is not inplace without additional work. As such, we create a new method and an infix operator
+
+```jldoctest new_container_type
+julia> function scalar_add!(p::AliasPolynomial{T}, c::T) where {T}
+           p.coeffs[1] += c
+           p
+       end;
+
+julia> p::AliasPolynomial ⊕ c::Number = scalar_add!(p,c);
+```
+
+The viewpoint that a polynomial represents a vector of coefficients leads to an expectation that vector operations should match when possible. Scalar multiplication is a vector operation, so it seems reasonable to override the broadcast machinery to implement an in place operation (e.g. `p .*= 2`). By default, the polynomial types are not broadcastable over their coefficients. We would need to make a change there and modify the `copyto!` function:
+
+
+```jldoctest new_container_type
+julia> Base.broadcastable(p::AliasPolynomial) = p.coeffs;
+
+julia> Base.ndims(::Type{<:AliasPolynomial}) = 1
+
+julia> Base.copyto!(p::AliasPolynomial, x) = (copyto!(p.coeffs, x); chop!(p));
+
+julia> p
+AliasPolynomialType(1 + 2*x + 3*x^2 + 4*x^3)
+
+julia> p .*= 2
+AliasPolynomialType(2 + 4*x + 6*x^2 + 8*x^3)
+
+julia> p
+AliasPolynomialType(2 + 4*x + 6*x^2 + 8*x^3)
+
+julia> p ./= 2
+AliasPolynomialType(1 + 2*x + 3*x^2 + 4*x^3)
+```
+
+Trying to divide again would throw an error, as the result would not fit with the integer type of `p`.
+
+Now `p` is treated as the vector `p.coeffs`, as regards broadcasting, so some things may be surprising, for example this expression returns a vector, not a polynomial:
+
+```jldoctest new_container_type
+julia> p .+ 2
+4-element Vector{Int64}:
+ 3
+ 4
+ 5
+ 6
+```
+
+The unexported `Polynomials.PnPolynomial` polynomial type implements much of the above.
+
+----
+
+```@docs
+Polynomials.AbstractUnivariatePolynomial
+Polynomials.AbstractBasis
+```

@@ -68,8 +68,6 @@ end
 
 @poly_register MutableSparsePolynomial
 
-constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B} = MutableSparsePolynomial{B}
-
 function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B,T,X}}
     xs = Dict(k => fn(v, args...) for (k,v) ∈ pairs(p.coeffs))
     xs = chop_exact_zeros!(xs)
@@ -108,6 +106,9 @@ function Base.setindex!(p::MutableSparsePolynomial{B,T,X}, value, i::Int) where 
     iszero(value) && delete!(p.coeffs, i)
     p.coeffs[i] = value
 end
+
+Base.keys(p::MutableSparsePolynomial) = keys(p.coeffs)
+Base.values(p::MutableSparsePolynomial) = values(p.coeffs)
 
 # would like this, but fails a test... (iterate does not guarantee any order)
 #Base.iterate(p::MutableSparsePolynomial, args...) = throw(ArgumentError("Use `pairs` to iterate a sparse polynomial"))
