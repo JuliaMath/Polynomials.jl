@@ -2,7 +2,7 @@ name = "Polynomials"
 uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 license = "MIT"
 author = "JuliaMath"
-version = "3.2.14"
+version = "3.2.15"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
