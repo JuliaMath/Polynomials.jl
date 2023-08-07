@@ -647,6 +647,7 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0 && firstindex(p) == 0
     coeffs(::AbstractPolynomial)
 
 Return the coefficient vector. For a standard basis polynomial these are `[a_0, a_1, ..., a_n]`.
+For Laurent type polynomials, this will not return the offste.
 """
 coeffs(p::AbstractPolynomial) = p.coeffs
 
@@ -857,10 +858,11 @@ Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, 
 
 Returns a representation of 1 as the given polynomial.
 """
-Base.one(::Type{P}) where {T,X,P<:AbstractPolynomial{T,X}} = throw(ArgumentError("No default method defined")) # no default method
 Base.one(::Type{P}) where {P <: AbstractPolynomial} =  one(⟒(P){eltype(P), indeterminate(P)})
 Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var)})
 Base.one(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = one(P, var)
+# each polynomial type implements:
+# Base.one(::Type{P}) where {T,X,P<:AbstractPolynomial{T,X}} = throw(ArgumentError("No default method defined")) # no default method
 
 Base.oneunit(::Type{P}, args...) where {P <: AbstractPolynomial} = one(P, args...)
 Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
@@ -890,11 +892,12 @@ julia> roots((x - 3) * (x + 2))
 
 ```
 """
-variable(::Type{P}) where {T,X,P <: AbstractPolynomial{T,X}} = throw(ArgumentError("No default method defined")) # no default
 variable(::Type{P}) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P), indeterminate(P)})
 variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P),Symbol(var)})
 variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(typeof(p), var)
 variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
+# Each polynomial type implements:
+# variable(::Type{P}) where {T,X,P <: AbstractPolynomial{T,X}} = throw(ArgumentError("No default method defined")) # no default
 
 # Exported in #470. Exporting was a mistake!
 #@variable x
@@ -1222,26 +1225,15 @@ function Base.isapprox(p1::AbstractPolynomial{T,X},
     if isfinite(Δ)
         return Δ <= max(atol, rtol*max(norm(p1), norm(p2)))
     else
-        for i in 0:max(degree(p1), degree(p2))
+        for i in minimum(firstindex, (p1,p2)):maximum(degree, (p1,p2))
             isapprox(p1[i], p2[i]; rtol=rtol, atol=atol) || return false
         end
         return true
     end
 end
 
-function Base.isapprox(p1::AbstractPolynomial{T},
-                       n::S;
-                       rtol::Real = (Base.rtoldefault(T, S, 0)),
-                       atol::Real = 0,) where {T,S}
-    return isapprox(p1, n*one(p1)) #_convert(p1, [n]))
-end
+Base.isapprox(p1::AbstractPolynomial{T}, n::S;kwargs...) where {S,T} = isapprox(p1, n*one(p1))
+Base.isapprox(n::S,p1::AbstractPolynomial{T}; kwargs...) where {S,T} = isapprox(p1, n; kwargs...)
 
-Base.isapprox(::AbstractPolynomial{T}, ::Missing, args...; kwargs...) where T =
-    missing
-Base.isapprox(::Missing, ::AbstractPolynomial{T}, args...; kwargs...) where T =
-    missing
-
-Base.isapprox(n::S,
-    p1::AbstractPolynomial{T};
-    rtol::Real = (Base.rtoldefault(T, S, 0)),
-    atol::Real = 0,) where {T,S} = isapprox(p1, n, rtol = rtol, atol = atol)
+Base.isapprox(::AbstractPolynomial{T}, ::Missing, args...; kwargs...) where T = missing
+Base.isapprox(::Missing, ::AbstractPolynomial{T}, args...; kwargs...) where T = missing

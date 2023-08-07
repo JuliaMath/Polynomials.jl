@@ -24,7 +24,7 @@ Abstract type for specifying a polynomial basis.
 abstract type AbstractBasis end
 export AbstractUnivariatePolynomial
 
-XXX() = throw(ArgumentError("No default method not defined"))
+XXX() = throw(ArgumentError("No default method defined"))
 
 ## --------------------------------------------------
 
@@ -82,8 +82,8 @@ constructorof(::Type{<:AbstractUnivariatePolynomial}) = XXX() # defined in conta
 # * may not be in increasing or decreasing i
 # * for standardbasis i -> xⁱ
 # * possibly skipping when iszero(cᵢ)
-Base.firstindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
-Base.lastindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
+#Base.firstindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
+#Base.lastindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
 #Base.iterate(p::AbstractUnivariatePolynomial, args...) = Base.iterate(values(p), args...)
 Base.iterate(p::AbstractUnivariatePolynomial, state = firstindex(p)) = _iterate(p, state) # _iterate in common.jl
 
@@ -99,7 +99,7 @@ Base.eltype(::Type{<:AbstractUnivariatePolynomial{B,T}}) where {B,T} = T
 Base.size(p::AbstractUnivariatePolynomial) = (length(p),)
 Base.size(p::AbstractUnivariatePolynomial, i::Integer) =  i <= 1 ? size(p)[i] : 1
 
-Base.copy(p::AbstractUnivariatePolynomial) = XXX()
+#Base.copy(p::AbstractUnivariatePolynomial) = XXX()
 
 # map Polynomial terms -> vector terms
 # Default degree **assumes** basis element Tᵢ has degree i.
@@ -148,7 +148,7 @@ end
 # use trunc for left and right
 # can pass tolerances
 Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = chop!(copy(p))
-chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
+#chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
 chop!(p::AbstractDenseUnivariatePolynomial; kwargs...) = (chop!(p.coeffs); p) # default for mutable vector backed; tuple backed need other
 
 

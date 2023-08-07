@@ -60,10 +60,6 @@ abstract type AbstractPolynomial{T,X} end
 # works for most cases
 ⟒(P::Type{<:AbstractPolynomial}) = constructorof(P)
 
-# convert `as` into polynomial of type P based on instance, inheriting variable
-# (and for LaurentPolynomial the offset)
-_convert(p::P, as) where {T,X,P <: AbstractPolynomial{T,X}} = ⟒(P)(as, Var(X))
-
 
 """
     Polynomials.@register(name)
