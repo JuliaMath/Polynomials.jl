@@ -10,12 +10,10 @@
         @test p.coeffs == coeff
         @test coeffs(p) == coeff
         @test degree(p) == length(coeff) - 1
-        @test (@test_deprecated Polynomials.order(p)) == length(coeff) - 1 # issue 457
         @test Polynomials.indeterminate(p) == :x
         @test length(p) == length(coeff)
         @test size(p) == size(coeff)
         @test size(p, 1) == size(coeff, 1)
-        @test_broken typeof(p).parameters[1] == eltype(coeff) # XXX is 2 now
         @test typeof(p).parameters[2] == eltype(coeff)
         @test eltype(p) == eltype(coeff)
     end

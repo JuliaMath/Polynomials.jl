@@ -46,7 +46,6 @@ Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, Fact
             P == Polynomial && @test length(p) == length(coeff)
             P == Polynomial && @test size(p) == size(coeff)
             P == Polynomial && @test size(p, 1) == size(coeff, 1)
-            P == Polynomial && @test_broken typeof(p).parameters[1] == eltype(coeff)
             P == Polynomial && @test typeof(p).parameters[2] == eltype(coeff)
             if !(eltype(coeff) <: Real && P == FactoredPolynomial) # roots may be complex
                 @test eltype(p) == eltype(coeff)
@@ -66,12 +65,11 @@ Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, Fact
             ## issue #452
             ps = (1, 1.0)
             P != FactoredPolynomial && @test eltype(P(ps)) == eltype(promote(ps...))
+
             ## issue 464
-            @variable z
+            Polynomials.@variable z # not exported
             @test z^2 + 2 == Polynomial([2,0,1], :z)
 
-            ## issue 457
-            @test (@test_deprecated Polynomials.order(p)) == length(coeff) - 1
         end
     end
 end
