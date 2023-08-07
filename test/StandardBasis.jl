@@ -1415,6 +1415,13 @@ end
         pcpy2 = copy(pcpy1)
         @test pcpy1 == pcpy2
     end
+
+    # no alias
+    for P ∈ (Polynomial, LaurentPolynomial, SparsePolynomial,Polynomials.PnPolynomial)
+        p = P([1,2,3])
+        q = copy(p)
+        @test !(p.coeffs === q.coeffs)
+    end
 end
 
 @testset "GCD" begin
