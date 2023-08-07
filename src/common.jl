@@ -14,7 +14,6 @@ export fromroots,
        integrate,
        derivative,
        variable,
-       @variable, # deprecated!!
        isintegral,
        ismonic
 
@@ -668,7 +667,6 @@ has a nonzero coefficient. The degree of the zero polynomial is defined to be -1
 """
 degree(p::AbstractPolynomial) = iszero(coeffs(p)) ? -1 : length(coeffs(p)) - 1 + min(0, minimumexponent(p))
 
-@deprecate order degree false
 
 
 """
@@ -900,11 +898,11 @@ variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
 # variable(::Type{P}) where {T,X,P <: AbstractPolynomial{T,X}} = throw(ArgumentError("No default method defined")) # no default
 
 # Exported in #470. Exporting was a mistake!
+# Now must be used through qualification: `Polynomials.@variable ...`
 #@variable x
 #@variable x::Polynomial
 #@variable x::Polynomial{t]
 macro variable(x)
-    Base.depwarn("Export of macro `@variable` is deprecated due to naming conflicts", :variable)
     q = Expr(:block)
     if isa(x, Expr) && x.head == :(::)
         x, P = x.args

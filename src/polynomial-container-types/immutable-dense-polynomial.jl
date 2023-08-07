@@ -68,7 +68,7 @@ end
 # need to promote to larger
 Base.promote_rule(::Type{<:ImmutableDensePolynomial{B,T,X,N}}, ::Type{<:ImmutableDensePolynomial{B,S,X,M}}) where {B,T,S,X,N,M} =
     ImmutableDensePolynomial{B,promote_type(T,S), X, max(N,M)}
-Base.promote_rule(::Type{<:ImmutableDensePolynomial{B,T,X,N}}, ::Type{<:S}) where {B,T,S<:Number,X,N} =
+Base.promote_rule(::Type{P}, ::Type{<:S}) where {S<:Number,B,T,X,N,P<:ImmutableDensePolynomial{B,T,X,N}} =
     ImmutableDensePolynomial{B,promote_type(T,S), X, N}
 
 
