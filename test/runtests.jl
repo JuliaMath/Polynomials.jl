@@ -14,5 +14,5 @@ using OffsetArrays
 @testset "Poly, Pade (compatibility)" begin include("Poly.jl") end
 if VERSION >= v"1.9.0-"
     @testset "MutableArithmetics" begin include("mutable-arithmetics.jl") end
+    @testset "Aqua" begin include("aqua.jl") end
 end
-@testset "Aqua" begin include("aqua.jl") end

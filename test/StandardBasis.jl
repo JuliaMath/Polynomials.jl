@@ -1754,11 +1754,13 @@ end
 
 
 # Chain rules
-using ChainRulesTestUtils
+if VERSION >= v"1.9.0"
+    using ChainRulesTestUtils
 
-@testset "Test frule and rrule" begin
-    p = Polynomial([1,2,3,4])
-    dp = derivative(p)
+    @testset "Test frule and rrule" begin
+        p = Polynomial([1,2,3,4])
+        dp = derivative(p)
 
-    test_scalar(p, 1.0; check_inferred=true)
+        test_scalar(p, 1.0; check_inferred=true)
+    end
 end
