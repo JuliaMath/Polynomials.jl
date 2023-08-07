@@ -1204,6 +1204,7 @@ end
 Base.:(==)(p::AbstractPolynomial, n::Scalar) = isconstant(p) && constantterm(p) == n
 Base.:(==)(n::Scalar, p::AbstractPolynomial) = p == n
 
+
 function Base.isapprox(p1::AbstractPolynomial, p2::AbstractPolynomial; kwargs...)
     if isconstant(p1)
         isconstant(p2) && return constantterm(p1) == constantterm(p2)
