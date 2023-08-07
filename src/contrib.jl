@@ -35,9 +35,10 @@ end
 ## e.g. 1 => I
 module EvalPoly
 using LinearAlgebra
-function evalpoly(x::S, p::Tuple) where {S}
+function evalpoly(x, p::Tuple)
     if @generated
-        ex = :(p[N]*_one(x))
+        N = length(p.parameters::Core.SimpleVector)
+        ex = :(p[end]*_one(x))
         for i in N-1:-1:1
             ex = :(_muladd($ex, x, p[$i]))
         end
@@ -203,8 +204,6 @@ function Base.in(x, I::Interval{T,L,R}) where {T, L, R}
 end
 
 Base.isopen(I::Interval{T,L,R}) where {T,L,R} = (L != Closed && R != Closed)
-
-
 
 #=
 zseries -- for ChebyshevT example

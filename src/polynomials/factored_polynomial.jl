@@ -104,7 +104,7 @@ Base.promote_rule(::Type{<:FactoredPolynomial{T,X}}, ::Type{<:FactoredPolynomial
 Base.promote_rule(::Type{<:FactoredPolynomial{T,X}}, ::Type{S}) where {T,S<:Number,X} =
     FactoredPolynomial{promote_type(T,S), X}
 FactoredPolynomial{T,X}(n::S) where {T,X,S<:Number} = T(n) * one(FactoredPolynomial{T,X})
-FactoredPolynomial{T}(n::S, var::SymbolLike=:x) where {T,S<:Number} = T(n) * one(FactoredPolynomial{T,X})
+FactoredPolynomial{T}(n::S, var::SymbolLike=:x) where {T,S<:Number} = T(n) * one(FactoredPolynomial{T,Symbol(var)})
 FactoredPolynomial(n::S, var::SymbolLike=:x) where {S<:Number} = n * one(FactoredPolynomial{S,Symbol(var)})
 FactoredPolynomial(var::SymbolLike=:x) = variable(FactoredPolynomial, Symbol(var))
 (p::FactoredPolynomial)(x) = evalpoly(x, p)

@@ -28,13 +28,13 @@ To implement a new polynomial type, `P`, the following methods should be impleme
 As always, if the default implementation does not work or there are more efficient ways of implementing, feel free to overwrite functions from `common.jl` for your type.
 
 !!! note
-    Promotion rules will coerce towards the [`Polynomial`](@ref) type, so not all methods have to be implemented if you provide a conversion function.
+    Most promotion rules will coerce towards the [`Polynomial`](@ref) type, so not all methods have to be implemented if you provide a conversion function.
 
 
 
-### The generalized Laguerre polynomials
+## A new basis type
 
-These are orthogonal polynomials parameterized  by $\alpha$ and defined recursively by
+The generalized Laguerre polynomials are orthogonal polynomials parameterized  by $\alpha$ and defined recursively by
 
 ```math
 \begin{align*}
@@ -232,7 +232,8 @@ Were it defined, a `convert` method from `Polynomial` to the `LaguerreBasis` cou
 
 ## A new container type
 
-This example shows how to make a new container type, though this should be unnecessary. In this case, a minimal example where the polynomial type aliases the vector defining the coefficients is created.  For other bases, more methods may be necessary to define (again, refer to ChebyshevT for an example).
+This example shows how to make a new container type, though this should be unnecessary, given the current variety, there may be gains to be had (e.g. an immutable, sparse type?)
+In this case, we offer a minimal example where the polynomial type aliases the vector defining the coefficients is created.  For other bases, more methods may be necessary to define (again, refer to ChebyshevT for an example).
 
 We have two constructor methods. For performance reasons, generically it is helpful to pass in a flag to indicate no checking of the input is needed (`Val{:false}`) and generically, a container type *may* accept an offset, though this type won't:
 
@@ -263,18 +264,6 @@ julia> Base.lastindex(p::AliasPolynomialType) = length(p.coeffs) - 1
 
 ```
 
-Next some idiosyncratic methods need defining, as they are used in generic implementations for our choice of the `StandardBasis` below: the `offset` method is used by some generic methods in the `Polynomials` package to match a power of an indeterminate with the index for storing the coefficient;  `_zeros` is used to give a generic container of a certain type; `chop!` is used to trim off trailing zeros by some generic methods:
-
-
-```jldoctest new_container_type
-julia> Polynomials.offset(p::AliasPolynomialType) = 1
-
-julia> Polynomials._zeros(::Type{<:AliasPolynomialType},z::T,n) where {T} = zeros(T, n)
-
-julia> Polynomials.chop!(p::AliasPolynomialType) = p
-
-```
-
 A type and a basis defines a polynomial type.
 This example uses the  `StandardBasis` and consequently inherits the methods mentioned above that otherwise would have been required.
 
@@ -297,15 +286,22 @@ AliasPolynomialType(1.0)
 julia> p + q
 AliasPolynomialType(2.0 + 2.0*x + 3.0*x^2 + 4.0*x^3)
 
-julia> p * p
-AliasPolynomialType(1 + 4*x + 10*x^2 + 20*x^3 + 25*x^4 + 24*x^5 + 16*x^6)
-
 julia> (derivative ∘ integrate)(p) == p
 true
 
 julia> p(3)
 142
 ```
+
+The default for polynomial multiplication is to call `*` for two instances of the type with the same variable, and possibly different element types. For standard basis types, we can add this method:
+
+```jldoctest new_container_type
+julia> Base.:*(p::AliasPolynomialType{T,X}, q::AliasPolynomialType{S,X}) where {T,S,X} = Polynomials._standard_basis_multiplication(p,q)
+
+julia> p * p
+AliasPolynomialType(1 + 4*x + 10*x^2 + 20*x^3 + 25*x^4 + 24*x^5 + 16*x^6)
+```
+
 
 For the Polynomial type, the default on operations is to copy the array. For this type, it might seem reasonable -- to avoid allocations -- to update the coefficients in place for scalar addition and scalar multiplication.
 
@@ -334,9 +330,6 @@ julia> p
 AliasPolynomialType(1 + 2*x + 3*x^2 + 4*x^3)
 
 julia> p .*= 2
-AliasPolynomialType(2 + 4*x + 6*x^2 + 8*x^3)
-
-julia> p
 AliasPolynomialType(2 + 4*x + 6*x^2 + 8*x^3)
 
 julia> p ./= 2

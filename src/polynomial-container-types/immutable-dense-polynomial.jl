@@ -138,11 +138,11 @@ end
 
 # isapprox helper
 function normΔ(q1::ImmutableDensePolynomial{B}, q2::ImmutableDensePolynomial{B}) where {B}
-    iszero(q1) && return norm(q2, p)
-    iszero(q2) && return norm(q1, p)
+    iszero(q1) && return norm(q2, 2)
+    iszero(q2) && return norm(q1, 2)
     r = abs(zero(q1[end] + q2[end]))
     tot = zero(r)
-    for i ∈ 1:maximum(lastindex, (q1,q2))
+    for i ∈ 0:maximum(lastindex, (q1,q2))
        @inbounds tot += abs2(q1[i] - q2[i])
     end
     return sqrt(tot)
@@ -162,7 +162,6 @@ Base.eachindex(p::ImmutableDensePolynomial) = firstindex(p):lastindex(p)
 Base.pairs(p::ImmutableDensePolynomial) =
     Base.Generator(=>, eachindex(p), p.coeffs)
 Base.length(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N} = N
-offset(p::ImmutableDensePolynomial) = 1
 
 function Base.getindex(p::ImmutableDensePolynomial{B,T,X,N}, i::Int) where {B,T,X,N}
     N == 0 && return zero(T)

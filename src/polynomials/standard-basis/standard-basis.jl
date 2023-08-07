@@ -39,6 +39,29 @@ domain(::Type{P}) where {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B
 
 mapdomain(::Type{P}, x::AbstractArray) where  {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B}} = x
 
+# function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X},
+#                        p2::AbstractUnivariatePolynomial{B,S,X};
+#                        rtol = nothing,
+#                        atol = nothing) where {B,T,S, X}
+
+#     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
+#     R = float(real(promote_type(T,S)))
+#     rtol = something(rtol, Base.rtoldefault(R,R,0))
+#     atol = something(atol, 0)
+
+
+#     # copy over from abstractarray.jl
+#     Δ  = normΔ(p1,p2)
+#     if isfinite(Δ)
+#         return Δ <= max(atol, rtol * max(norm(p1), norm(p2)))
+#     else
+#         for i in keys_union(p1, p2)
+#             isapprox(p1[i], p2[i]; rtol=rtol, atol=atol) || return false
+#         end
+#         return true
+#     end
+# end
+
 
 ## Evaluation, Scalar addition, Multiplication, integration, differentiation
 ## may be no good fallback
@@ -68,16 +91,28 @@ end
 scalar_add(c::S, p::AbstractLaurentUnivariatePolynomial{StandardBasis}) where {S} = throw(ArgumentError("Default method not defined"))
 
 # special cases are faster
-function ⊗(p::AbstractUnivariatePolynomial{B,T,X},
-           q::AbstractUnivariatePolynomial{B,S,X}) where {B <: StandardBasis, T,S,X}
-    # simple convolution with order shifted
-    throw(ArgumentError("Default method not defined"))
-end
+# function Base.:*(p::AbstractUnivariatePolynomial{B,T,X},
+#            q::AbstractUnivariatePolynomial{B,S,X}) where {B <: StandardBasis, T,S,X}
+#     # simple convolution with order shifted
+#     throw(ArgumentError("Default method not defined"))
+# end
 
 # for dense 0-based polys with p.coeffs
-function ⊗(p::P, q::P) where {B <: StandardBasis,T,X, P<:AbstractDenseUnivariatePolynomial{B,T,X}}
+for P ∈ (:MutableDensePolynomial, :MutableDenseViewPolynomial)
+    @eval begin
+        function Base.:*(p::P, q::Q) where {B <: StandardBasis,X,
+                                            T, P<:$P{B,T,X},
+                                            S, Q<:$P{B,S,X}}
+            _standard_basis_multiplication(p,q)
+        end
+    end
+end
 
-    P′ = ⟒(P){T,X}
+function _standard_basis_multiplication(p::P,q::Q) where {T,X,P<:AbstractDenseUnivariatePolynomial{StandardBasis,T,X},
+                                                           S,Q<:AbstractDenseUnivariatePolynomial{StandardBasis,S,X}}
+    @assert constructorof(P) == constructorof(Q)
+
+    P′ = ⟒(P){promote_type(T,S),X}
 
     iszero(p) && return zero(P′)
     iszero(q) && return zero(P′)

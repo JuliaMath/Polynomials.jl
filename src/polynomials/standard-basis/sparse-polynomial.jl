@@ -66,25 +66,26 @@ function scalar_add(c::S, p::MutableSparsePolynomial{B,T,X}) where {B<:StandardB
     return P(Val(false), D)
 end
 
-function ⊗(p::MutableSparsePolynomial{StandardBasis,T,X},
-           q::MutableSparsePolynomial{StandardBasis,S,X}) where {T,S,X}
-
-    # simple convolution same as ⊗(Polynomial, p.coeffs, q.coeffs) (DRY)
-    R = promote_type(T,S)
-    P = MutableSparsePolynomial{StandardBasis,R,X}
-
-    z = zero(R)
+function Base.:*(p::MutableSparsePolynomial{StandardBasis,T,X},
+                 q::MutableSparsePolynomial{StandardBasis,S,X}) where {T,S,X}
+    z = zero(p[0] + q[0])
+    R = typeof(z)
     cs = Dict{Int, R}()
+    dict_conv!(cs, p.coeffs, q.coeffs, z)
+    MutableSparsePolynomial{StandardBasis,R,X}(Val(false), cs)
+end
 
+
+# simple convolution
+function dict_conv!(d::Dict{Int,T}, p, q, z=zero(T)) where {T}
     for (i, pᵢ) ∈ pairs(p)
         for (j, qⱼ) ∈ pairs(q)
-            cᵢⱼ = get(cs, i+j, z)
+            cᵢⱼ = get(d, i + j, z)
             val = muladd(pᵢ, qⱼ, cᵢⱼ)
             iszero(val) && continue
-            @inbounds cs[i+j] = val
+            d[i + j] = val
         end
     end
-    P(Val(false), cs)
 end
 
 # sparse

@@ -36,13 +36,6 @@ function MutableDenseLaurentPolynomial{B,T,X}(cs::AbstractVector{T}, order::Int=
     MutableDenseLaurentPolynomial{B,T,X}(Val(true), cs, order)
 end
 
-function _polynomial(p::P, as::Vector{S})  where {B,T, X, P <: MutableDenseLaurentPolynomial{B,T,X}, S}
-    R = eltype(as)
-    Q = MutableDenseLaurentPolynomial{B, R, X}
-    as = trim_trailing_zeros!!(as)
-    Q(Val(false), as, p.order[])
-end
-
 @poly_register MutableDenseLaurentPolynomial
 
 ## ---

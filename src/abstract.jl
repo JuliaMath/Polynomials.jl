@@ -88,7 +88,7 @@ macro register(name)
         Base.convert(::Type{P}, p::P) where {P<:$poly} = p
         function Base.convert(P::Type{<:$poly}, p::$poly{T,X}) where {T,X}
             isconstant(p) && return constructorof(P){eltype(P),indeterminate(P)}(constantterm(p))
-            constructorof(P){eltype(P), indeterminate(P,p)}(_coeffs(p))
+            constructorof(P){eltype(P), indeterminate(P,p)}(coeffs(p))
         end
         Base.promote(p::P, q::Q) where {X, T, P <:$poly{T,X}, Q <: $poly{T,X}} = p,q
         Base.promote_rule(::Type{<:$poly{T,X}}, ::Type{<:$poly{S,X}}) where {T,S,X} =  $poly{promote_type(T, S),X}
@@ -100,7 +100,7 @@ macro register(name)
         $poly{T}(x::AbstractVector{S}, var::SymbolLike=Var(:x)) where {T,S} =
             $poly{T,Symbol(var)}(T.(x))
 
-        function $poly{T}(coeffs::G, var::SymbolLike=Var(x)) where {T,G}
+        function $poly{T}(coeffs::G, var::SymbolLike=Var(:x)) where {T,G}
             !Base.isiterable(G) && throw(ArgumentError("coeffs is not iterable"))
             cs = collect(T, coeffs)
             $poly{T, Symbol(var)}(cs)

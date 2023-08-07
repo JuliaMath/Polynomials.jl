@@ -126,10 +126,16 @@ function coeffs(p::MutableSparsePolynomial{B,T})  where {B,T}
 end
 
 
-hasnan(p::MutableSparsePolynomial) = any(hasnan, values(p.coeffs))
+hasnan(p::MutableSparsePolynomial) = any(hasnan, values(p.coeffs))::Bool
 Base.pairs(p::MutableSparsePolynomial) = pairs(p.coeffs)
 
 offset(p::MutableSparsePolynomial) = 0
+function keys_union(p::MutableSparsePolynomial, q::MutableSparsePolynomial)
+    # IterTools.distinct(Base.Iterators.flatten((keys(p), keys(q)))) may allocate less
+    unique(Base.Iterators.flatten((keys(p), keys(q))))
+end
+
+
 
 ## ---
 

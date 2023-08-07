@@ -34,7 +34,6 @@ end
 
 @poly_register MutableDenseViewPolynomial
 
-offset(p::MutableDenseViewPolynomial) = 1
 function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDenseViewPolynomial{B,T,X}}
     xs = map(fn, p.coeffs, args...)
     R = eltype(xs)

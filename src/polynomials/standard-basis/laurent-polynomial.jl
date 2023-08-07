@@ -120,7 +120,7 @@ function scalar_add(c::S, p::LaurentPolynomial{T,X}) where {S, T, X}
     P(Val(false), cs, a′)
 end
 
-function ⊗(p::LaurentPolynomial{T,X},
+function Base.:*(p::LaurentPolynomial{T,X},
            q::LaurentPolynomial{S,X}) where {T,S,X}
     # simple convolution
     # This is ⊗(P,p,q) from polynomial standard-basis

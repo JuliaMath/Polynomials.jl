@@ -29,13 +29,6 @@ function MutableDensePolynomial{B,T,X}(cs::AbstractVector{T}, order::Int=0) wher
     MutableDensePolynomial{B,T,X}(Val(true), cs, order)
 end
 
-function _polynomial(p::P, as::Vector{S})  where {B,T, X, P <: MutableDensePolynomial{B,T,X}, S}
-    R = eltype(as)
-    Q = MutableDensePolynomial{B, R, X}
-    as = trim_trailing_zeros!!(as)
-    Q(Val(false), as, p.order[])
-end
-
 @poly_register MutableDensePolynomial
 
 ## ---
@@ -80,7 +73,6 @@ function Base.setindex!(p::P, value, i::Int) where {B,T,X,P<:MutableDensePolynom
     p
 end
 
-offset(p::MutableDensePolynomial) = 1
 Base.eachindex(p::MutableDensePolynomial) = 0:1:lastindex(p)
 Base.iterate(p::MutableDensePolynomial, args...) = Base.iterate(p.coeffs, args...)
 Base.pairs(p::MutableDensePolynomial) =

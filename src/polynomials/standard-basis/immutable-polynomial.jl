@@ -81,19 +81,19 @@ end
 
 # return N*M
 # intercept promotion call
+# function Base.:*(p::ImmutableDensePolynomial{B,T,X,N},
+#                  q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
+#     ⊗(p,q)
+# end
+
+Base.:*(p::ImmutableDensePolynomial{B,T,X,0},
+  q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,M} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+Base.:*(p::ImmutableDensePolynomial{B,T,X,N},
+  q::ImmutableDensePolynomial{B,S,X,0}) where {B<:StandardBasis,T,S,X,N} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+Base.:*(p::ImmutableDensePolynomial{B,T,X,0},
+  q::ImmutableDensePolynomial{B,S,X,0}) where {B<:StandardBasis,T,S,X} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
 function Base.:*(p::ImmutableDensePolynomial{B,T,X,N},
                  q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
-    ⊗(p,q)
-end
-
-⊗(p::ImmutableDensePolynomial{B,T,X,0},
-  q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,M} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
-⊗(p::ImmutableDensePolynomial{B,T,X,N},
-  q::ImmutableDensePolynomial{B,S,X,0}) where {B<:StandardBasis,T,S,X,N} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
-⊗(p::ImmutableDensePolynomial{B,T,X,0},
-  q::ImmutableDensePolynomial{B,S,X,0}) where {B<:StandardBasis,T,S,X} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
-function ⊗(p::ImmutableDensePolynomial{B,T,X,N},
-           q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
     cs = fastconv(p.coeffs, q.coeffs)
     R = eltype(cs)
     ImmutableDensePolynomial{B,R,X,N+M-1}(cs)

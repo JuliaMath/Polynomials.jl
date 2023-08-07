@@ -169,7 +169,7 @@ function scalar_add(c::S, p::MutableDensePolynomial{B,T,X}) where {B<:ChebyshevT
 end
 
 # product
-function ⊗(p1::MutableDensePolynomial{B,T,X}, p2::MutableDensePolynomial{B,T,X}) where {B<:ChebyshevTBasis,T,X}
+function Base.:*(p1::MutableDensePolynomial{B,T,X}, p2::MutableDensePolynomial{B,T,X}) where {B<:ChebyshevTBasis,T,X}
     z1 = _c_to_z(coeffs(p1))
     z2 = _c_to_z(coeffs(p2))
     prod = fastconv(z1, z2)

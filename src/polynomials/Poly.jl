@@ -73,7 +73,7 @@ function Base.iterate(p::Poly, state = firstindex(p))
 end
 Base.collect(p::Poly) = [pᵢ for pᵢ ∈ p]
 
-Polynomials.domain(::Type{<:Poly}) = Interval{Open,Open}(-Inf, Inf)
+Polynomials.domain(::Type{<:Poly}) = Polynomials.Interval{Polynomials.Open,Polynomials.Open}(-Inf, Inf)
 Polynomials.mapdomain(::Type{<:Poly}, x::AbstractArray) = x
 
 # need two here as `eltype(P)` is `_eltype(P)`.

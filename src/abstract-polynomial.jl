@@ -1,4 +1,3 @@
-# XXX Maybe merge into with common.jl, abstract.jl
 """
     AbstractUnivariatePolynomial{B,T,X} <: AbstractPolynomial{T,X}
     AbstractDenseUnivariatePolynomial{B,T,X} <: AbstractUnivariatePolynomial{B,T,X}
@@ -93,6 +92,7 @@ Base.values(p::AbstractUnivariatePolynomial) = values(p.coeffs) # Dict based con
 Base.pairs(p::AbstractUnivariatePolynomial)  = Base.Generator(=>, keys(p), values(p))
 
 
+
 #Base.eltype(::Type{<:AbstractUnivariatePolynomial}) = Float64 # common.jl
 Base.eltype(::Type{<:AbstractUnivariatePolynomial{B,T}}) where {B,T} = T
 
@@ -101,14 +101,13 @@ Base.size(p::AbstractUnivariatePolynomial, i::Integer) =  i <= 1 ? size(p)[i] : 
 
 Base.copy(p::AbstractUnivariatePolynomial) = XXX()
 
-#hasnan(p::AbstractUnivariatePolynomial) = any(hasnan, p) # common.jl
-
 # map Polynomial terms -> vector terms
 # Default degree **assumes** basis element Tᵢ has degree i.
 degree(p::AbstractUnivariatePolynomial) = iszero(p) ? -1 : lastindex(p) # XXX() is likely a safer choice
 
 # this helps, along with _set, make some storage-generic methods
 _zeros(p::P, z, N) where {P <: AbstractUnivariatePolynomial} = _zeros(P, z, N)
+_zeros(::Type{<:AbstractDenseUnivariatePolynomial}, z::T, N) where {T} = fill(z,(N,)) # default
 _set(c::Vector, i, val)  = (c[i] = val; c)
 _set(c::AbstractDict, i, val)  = (c[i] = val; c)
 function _set(c::Tuple, i, val)
@@ -116,27 +115,11 @@ function _set(c::Tuple, i, val)
     c
 end
 
-#check_same_variable(p::AbstractUnivariatePolynomial, q::AbstractUnivariatePolynomial) = indeterminate(p) == indeterminate(q)
+# for indexing for Tᵢ i + offset should be array index
+# this default is for 1-based backends (vector, tuple)
+offset(p::AbstractDenseUnivariatePolynomial) = 1
 
-# The zero polynomial. Typically has no coefficients. # common.jl
-#Base.zero(p::P,args...) where {P <: AbstractUnivariatePolynomial} = zero(P,args...)
-#Base.zero(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),indeterminate(P)})
-#Base.zero(::Type{P},var::SymbolLike) where {B,P <: AbstractUnivariatePolynomial{B}} = zero(⟒(P){eltype(P),Symbol(var)})
-
-
-# the polynomial 1
-# one(P) is basis dependent and must be implemented in one(::Type{<:P})
-Base.one(p::P,args...) where {P <: AbstractUnivariatePolynomial} = one(P,args...)
-Base.one(::Type{P}) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){eltype(P),indeterminate(P)})
-Base.one(::Type{P}, var::SymbolLike) where {B, P <: AbstractUnivariatePolynomial{B}} = one(⟒(P){eltype(P),Symbol(var)})
-
-# the variable x is basid dependent and must be implmented in variable(::Type{<:P})
-variable(p::P) where {P <: AbstractUnivariatePolynomial} = variable(P)
-variable(::Type{P}) where {B,P <: AbstractUnivariatePolynomial{B}} = variable(⟒(P){eltype(P),indeterminate(P)})
-variable(::Type{P}, var::SymbolLike) where {B,P<:AbstractUnivariatePolynomial{B}} = variable(⟒(P){eltype(P),Var(var)})
-
-# i -> basis polynomial
-basis(p::P, i::Int) where {P <: AbstractUnivariatePolynomial} = basis(P, i)
+# i -> basis polynomial. Uses `order` argument, which may save some space
 basis(::Type{P}, i::Int) where {B,P <: AbstractUnivariatePolynomial{B}} = basis(⟒(P){eltype(P),indeterminate(P)}, i)
 
 copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {B,T, X, S, Y, P <:AbstractUnivariatePolynomial{B,S,Y}} =
@@ -166,19 +149,25 @@ end
 # can pass tolerances
 Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = chop!(copy(p))
 chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
+chop!(p::AbstractDenseUnivariatePolynomial; kwargs...) = (chop!(p.coeffs); p) # default for mutable vector backed; tuple backed need other
 
 
 
 ## ---
 
 #= Comparisons =#
+# iterable over keys of both
+function keys_union(p::AbstractUnivariatePolynomial, q::AbstractUnivariatePolynomial)
+    minimum(firstindex, (p,q)):maximum(lastindex, (p,q))
+end
 
-# norm(q1 - q2) only non-allocating
+
+# norm(q1 - q2) only non-allocating (save for unique)
 function normΔ(q1::AbstractUnivariatePolynomial, q2::AbstractUnivariatePolynomial)
     iszero(q1) && return norm(q2, 2)
     iszero(q2) && return norm(q1, 2)
     tot = abs(zero(q1[end] + q2[end]))
-    for i ∈ unique(Base.Iterators.flatten((keys(q1), keys(q2))))
+    for i ∈ keys_union(q1, q2)
        @inbounds tot += abs2(q1[i] - q2[i])
     end
     return sqrt(tot)
@@ -189,6 +178,7 @@ function Base.isapprox(p1::AbstractUnivariatePolynomial, p2::AbstractUnivariateP
     isapprox(promote(p1, p2)...; kwargs...)
 end
 
+# compare X != Y
 function Base.isapprox(p1::AbstractUnivariatePolynomial{B}, p2::AbstractUnivariatePolynomial{B}; kwargs...) where {B}
     if isconstant(p1)
         isconstant(p2) && return constantterm(p1) == constantterm(p2)
@@ -201,16 +191,22 @@ function Base.isapprox(p1::AbstractUnivariatePolynomial{B}, p2::AbstractUnivaria
 end
 
 function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X},
-                       p2::AbstractUnivariatePolynomial{B,T,X};
-                       rtol::Real = (Base.rtoldefault(T,T,0)),
-                       atol::Real = 0,) where {B,T,X}
+                       p2::AbstractUnivariatePolynomial{B,S,X};
+                       rtol = nothing,
+                       atol = nothing) where {B,T,S, X}
+
     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
+    R = float(real(promote_type(T,S)))
+    rtol = something(rtol, Base.rtoldefault(R,R,0))
+    atol = something(atol, 0)
+
+
     # copy over from abstractarray.jl
     Δ  = normΔ(p1,p2)
     if isfinite(Δ)
         return Δ <= max(atol, rtol * max(norm(p1), norm(p2)))
     else
-        for i in 0:max(degree(p1), degree(p2))
+        for i in keys_union(p1, p2)
             isapprox(p1[i], p2[i]; rtol=rtol, atol=atol) || return false
         end
         return true
@@ -219,82 +215,7 @@ end
 
 
 ## --- arithmetic operations ---
-## implement
-## * unary - : here using scalar_mutl
-## * scalar_add : with basis
-## * scalar_mult : with storage type
-## * scalar division: here using scalar_mult
-## * polynomial addition: with storage type
-## * polynomial multiplication: resolstorage type + basis
-##
-Base.:-(p::AbstractUnivariatePolynomial) = map(-, p) #scalar_mult(-1, p)
-
-#Base.:+(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_add(c, p) # in common.jl
-#Base.:+(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_add(c, p) # in common.jl
-
-Base.:+(p::AbstractUnivariatePolynomial) = p
-Base.:+(p::AbstractUnivariatePolynomial{B, T, X},
-        q::AbstractUnivariatePolynomial{B, S, X}) where {B,T,S,X} =
-            +(promote(p,q)...)
-Base.:+(p::AbstractUnivariatePolynomial{B, T, X},
-        q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y} =
-            _mixed_symbol_op(+, p, q)
-
-#Base.:-(c::Scalar, p::AbstractUnivariatePolynomial) = c + (-p) # common.jl
-#Base.:-(p::AbstractUnivariatePolynomial, c::Scalar) = p + (-c) # common.jl
-
-Base.:-(p::AbstractUnivariatePolynomial{B, T, X},
-        q::AbstractUnivariatePolynomial{B, S, X}) where {B,T,S,X} = p + (-q)
-Base.:-(p::AbstractUnivariatePolynomial{B, T, X},
-        q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y} =
-            _mixed_symbol_op(-, p, q)
-
-#Base.:*(c::Scalar, p::AbstractUnivariatePolynomial) = scalar_mult(c, p)
-#Base.:*(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_mult(p, c)
-
-Base.:*(p::AbstractUnivariatePolynomial{B, T, X},
-        q::AbstractUnivariatePolynomial{B, S, X}) where {B,T,S,X} = *(promote(p,q)...)
-Base.:*(p::P, q::P) where {B,T,X,P <: AbstractUnivariatePolynomial{B,T,X}} =
-    ⊗(p, q)
-Base.:*(p::AbstractUnivariatePolynomial{B, T, X},
-        q::AbstractUnivariatePolynomial{B, S, Y}) where {B,T,S,X,Y}  =
-            _mixed_symbol_op(*, p, q)
-
-Base.:/(p::AbstractUnivariatePolynomial, c::Scalar) = scalar_div(p, c)
-
-Base.:^(p::AbstractUnivariatePolynomial, n::Integer) = Base.power_by_squaring(p, n)
-
-scalar_mult(p::AbstractUnivariatePolynomial{B,T,X}, c::Scalar) where {B,T,X} = map(Base.Fix2(*,c), p)
-scalar_mult(c::Scalar, p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = map(Base.Fix1(*,c), p)
-scalar_div(p::AbstractUnivariatePolynomial{B,T,X}, c::Scalar) where {B,T,X}  = map(Base.Fix2(*,one(T)/c), p) # much better than Fix2(/,c)
-
-# treat constant polynomials as constants when symbols mixed
-scalar_op(::typeof(*)) = scalar_mult
-scalar_op(::typeof(+)) = scalar_add
-scalar_op(::typeof(/)) = scalar_div
-
-function _mixed_symbol_op(::typeof(+),
-                          p::P,
-                          q::Q) where {B,T,S,X,Y,
-                                       P<:AbstractUnivariatePolynomial{B, T, X},
-                                       Q<:AbstractUnivariatePolynomial{B, S, Y}}
-    X == Y && throw(ArgumentError("dispatch should catch this case"))
-    isconstant(p) && return scalar_add(constantterm(p), q)
-    isconstant(q) && return scalar_add(constantterm(q), p) # only the one (c,p) signature
-    assert_same_variable(X,Y)
-end
-
-function _mixed_symbol_op(op,
-                          p::P,
-                          q::Q) where {B,T,S,X,Y,
-                                       P<:AbstractUnivariatePolynomial{B, T, X},
-                                       Q<:AbstractUnivariatePolynomial{B, S, Y}}
-    X == Y && throw(ArgumentError("dispatch should catch this case"))
-    isconstant(p) && return scalar_op(op)(constantterm(p), q)
-    isconstant(q) && return scalar_op(op)(p, constantterm(q))
-    assert_same_variable(X,Y)
-end
-
+## all in common.jl
 
 # only need to define derivative(p::PolyType)
 function derivative(p::AbstractUnivariatePolynomial, n::Int=1)
@@ -306,7 +227,7 @@ function derivative(p::AbstractUnivariatePolynomial, n::Int=1)
     end
     p′
 end
-## better parallel with integrate, but derivative has been used here.
+## better parallel with integrate, but derivative has been used in this package for too long to change
 const differentiate = derivative
 
 function fit(::Type{P},
@@ -322,7 +243,7 @@ end
 ## Interface
 ## These must be implemented for a storage type / basis
 # minimumexponent(::Type{P}) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
-# Base.one(::Type{P}) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
+# Base.one(::Type{P}) where {B,T,X,P<:AbstractUnivariatePolynomial{B,T,X}} = XXX()
 # variable(::Type{P}) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
 # evalpoly(x, p::P) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
 # scalar_add(c, p::P) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()

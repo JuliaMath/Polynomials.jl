@@ -478,7 +478,7 @@ function _ngcd(u, k)
     Sy = Polynomials.NGCD.SylvesterMatrix(u, derivative(u), n-k)
     b = Sy[1:end-1,2*k+1] - n * Sy[1:end-1,k] # X^k*p' - n*X^{k-1}*p
     A = Sy[1:end-1,1:end .∉ [[k,2*k+1]]]
-    x = zeros(S, 2*k-1)
+    x = zeros(eltype(u), 2*k-1)
     Polynomials.NGCD.qrsolve!(x, A, b)
     # w = n*X^{k-1} + ...
     w = PnPolynomial([x[1:k-1]; n])
