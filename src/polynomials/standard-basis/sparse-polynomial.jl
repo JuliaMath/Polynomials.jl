@@ -72,7 +72,7 @@ function Base.:*(p::MutableSparsePolynomial{StandardBasis,T,X},
     R = typeof(z)
     cs = Dict{Int, R}()
     dict_conv!(cs, p.coeffs, q.coeffs, z)
-    MutableSparsePolynomial{StandardBasis,R,X}(Val(false), cs)
+    MutableSparsePolynomial{StandardBasis,R,X}(cs)
 end
 
 
@@ -82,7 +82,6 @@ function dict_conv!(d::Dict{Int,T}, p, q, z=zero(T)) where {T}
         for (j, qⱼ) ∈ pairs(q)
             cᵢⱼ = get(d, i + j, z)
             val = muladd(pᵢ, qⱼ, cᵢⱼ)
-            iszero(val) && continue
             d[i + j] = val
         end
     end
