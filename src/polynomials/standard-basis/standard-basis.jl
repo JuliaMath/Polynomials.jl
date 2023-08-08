@@ -39,29 +39,6 @@ domain(::Type{P}) where {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B
 
 mapdomain(::Type{P}, x::AbstractArray) where  {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B}} = x
 
-# function Base.isapprox(p1::AbstractUnivariatePolynomial{B,T,X},
-#                        p2::AbstractUnivariatePolynomial{B,S,X};
-#                        rtol = nothing,
-#                        atol = nothing) where {B,T,S, X}
-
-#     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
-#     R = float(real(promote_type(T,S)))
-#     rtol = something(rtol, Base.rtoldefault(R,R,0))
-#     atol = something(atol, 0)
-
-
-#     # copy over from abstractarray.jl
-#     Δ  = normΔ(p1,p2)
-#     if isfinite(Δ)
-#         return Δ <= max(atol, rtol * max(norm(p1), norm(p2)))
-#     else
-#         for i in keys_union(p1, p2)
-#             isapprox(p1[i], p2[i]; rtol=rtol, atol=atol) || return false
-#         end
-#         return true
-#     end
-# end
-
 
 ## Evaluation, Scalar addition, Multiplication, integration, differentiation
 ## may be no good fallback
