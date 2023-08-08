@@ -2,17 +2,12 @@
 
 [Polynomials.jl](https://github.com/JuliaMath/Polynomials.jl)
 is a Julia package that provides basic arithmetic, integration,
-differentiation, evaluation, and root finding for univariate polynomials.
+differentiation, evaluation, root finding, and data fitting for univariate polynomials.
 
-To install the package, run
-
-```julia
-(v1.6) pkg> add Polynomials
-```
-
+The `Polynomials` package is hosted on GitHub and installed as other `Julia` packages.
 As of version `v3.0.0` Julia version `1.6` or higher is required.
 
-The package can then be loaded into the current session through
+The package can be loaded into the current session through
 
 ```julia
 using Polynomials
@@ -24,9 +19,7 @@ DocTestSetup = quote
 end
 ```
 
-## Quick Start
-
-### Construction and Evaluation
+## Construction and Evaluation
 
 Construct a polynomial from its coefficients, lowest order first.
 
@@ -49,7 +42,7 @@ julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
 Polynomial(-6 + 11*x - 6*x^2 + x^3)
 ```
 
-Evaluate the polynomial `p` at `x`.
+Evaluate the polynomial `p` at `1` using call notation:
 
 ```jldoctest
 julia> p = Polynomial([1, 0, -1])
@@ -62,7 +55,7 @@ julia> p(1)
 
 The `Polynomial` constructor stores all coefficients using the standard basis with a vector. Other types (e.g. `ImmutablePolynomial`, `SparsePolynomial`, or `FactoredPolynomial`) use different back-end containers which may have advantage for some uses.
 
-### Arithmetic
+## Arithmetic
 
 The usual arithmetic operators are overloaded to work on polynomials, and combinations of polynomials and scalars.
 
@@ -115,23 +108,23 @@ Polynomial(1 + 2*x + 3*x^2)
 julia> q = Polynomial(1, :y)
 Polynomial(1)
 
-julia> p+q
+julia> p + q
 Polynomial(2 + 2*x + 3*x^2)
 ```
 
 
-#### Mixing polynomial types
+### Mixing polynomial types
 
 Arithmetic of different polynomial types is supported through promotion to a common type, which is typically the `Polynomial` type, but may be the `LaurentPolynomial` type when negative powers of the indeterminate are possible:
 
 ```jldoctext
-julia> p,q = ImmutablePolynomial([1,2,3]), Polynomial([3,2,1])
+julia> p, q = ImmutablePolynomial([1,2,3]), Polynomial([3,2,1])
 (ImmutablePolynomial(1 + 2*x + 3*x^2), Polynomial(3 + 2*x + x^2))
 
 julia> p + q
 Polynomial(4 + 4*x + 4*x^2)
 
-julia> p,q = ImmutablePolynomial([1,2,3]), SparsePolynomial(Dict(0=>1, 2=>3, 10=>1))
+julia> p, q = ImmutablePolynomial([1,2,3]), SparsePolynomial(Dict(0=>1, 2=>3, 10=>1))
 (ImmutablePolynomial(1 + 2*x + 3*x^2), SparsePolynomial(1 + 3*x^2 + x^10))
 
 julia> p + q
@@ -139,7 +132,7 @@ LaurentPolynomial(2 + 2*x + 6*x² + x¹⁰)
 ```
 
 
-### Integrals and Derivatives
+## Integrals and Derivatives
 
 Integrate the polynomial `p` term by term, optionally adding constant
 term `C`. For non-zero polynomials, the degree of the resulting polynomial is one higher than the
@@ -161,7 +154,7 @@ julia> derivative(Polynomial([1, 3, -1]))
 Polynomial(3 - 2*x)
 ```
 
-### Root-finding
+## Root-finding
 
 Return the `d` roots (or zeros) of the degree `d` polynomial `p`.
 
@@ -182,7 +175,7 @@ julia> roots(Polynomial([0, 0, 1]))
  0.0
 ```
 
-By design, this is not type-stable; the returned roots may be real or complex.
+By design, this is not type-stable; the return type may be real or complex.
 
 The default `roots` function uses the eigenvalues of the
 [companion](https://en.wikipedia.org/wiki/Companion_matrix) matrix for
@@ -208,7 +201,7 @@ julia> roots(p)
   2.999999999999999999999999999999999999999999999999999999999999999999999999999793 + 0.0im
 ```
 
-#### Comments on root finding
+### Comments on root finding
 
 * The
   [PolynomialRoots.jl](https://github.com/giordano/PolynomialRoots.jl)
@@ -446,27 +439,43 @@ There were 3 isolating intervals found:
 [-0.50…, 1.5…]₂₅₆
 ```
 
-### Fitting a polynomial to arbitrary data
+## Fitting a polynomial to arbitrary data
 
 The `fit` function will fit a polynomial (of degree `deg`) to data `x` and `y` using polynomial interpolation
 or a (weighted) least-squares approximation.
 
+Fit a polynomial (of degree `deg` or less) to `x` and `y` using a least-squares approximation.
+
+```jldoctest
+julia> xs = 0:4; ys = @. exp(-xs) + sin(xs);
+
+julia> p =  fit(xs, ys); map(x -> round(x, digits=4), p)
+Polynomial(1.0 + 0.0593*x + 0.3959*x^2 - 0.2846*x^3 + 0.0387*x^4)
+
+julia> p = fit(ChebyshevT, xs, ys, 2); map(x -> round(x, digits=4), p)
+ChebyshevT(0.5413⋅T_0(x) - 0.8991⋅T_1(x) - 0.4238⋅T_2(x))
+```
+
+This provides a visual example:
+
 ```@example
 using Plots, Polynomials
+
 xs = range(0, 10, length=10)
 ys = @. exp(-xs)
-f = fit(xs, ys) # degree = length(xs) - 1
+
+f = fit(xs, ys)     # degree = length(xs) - 1
 f2 = fit(xs, ys, 2) # degree = 2
 
 scatter(xs, ys, markerstrokewidth=0, label="Data")
-plot!(f, extrema(xs)..., label="Fit")
+plot!(f, extrema(xs)..., label="Interpolation")
 plot!(f2, extrema(xs)..., label="Quadratic Fit")
 savefig("polyfit.svg"); nothing # hide
 ```
 
 ![](polyfit.svg)
 
-### Other bases
+## Other bases
 
 A polynomial, e.g. `a_0 + a_1 x + a_2 x^2 + ... + a_n x^n`, can be seen as a collection of coefficients, `[a_0, a_1, ..., a_n]`, relative to some polynomial basis. The most  familiar basis being  the standard one: `1`, `x`, `x^2`, ...  Alternative bases are possible.  The `ChebyshevT` polynomials are  implemented, as an example. The constructor is `ChebyshevT`, an exposed alias for `MutableDensePolynomial{ChebyshevTBasis}`.
 
@@ -496,7 +505,7 @@ julia> convert(ChebyshevT, Polynomial([1.0, 2,  3]))
 ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))
 ```
 
-### Iteration
+## Iteration
 
 If its basis is implicit, then a polynomial may be  seen as just a vector of  coefficients. Vectors are 1-based, but, for convenience, most polynomial types are naturally 0-based, for purposes of indexing (e.g. `getindex`, `setindex!`, `eachindex`). Iteration over a polynomial steps through the underlying coefficients.
 
@@ -577,8 +586,9 @@ julia> map(x -> round(x, digits=10), q)
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 
+## The element type
 
-## Relationship between the `T` and `P{T,X}`
+### Relationship between the `T` and `P{T,X}`
 
 The addition of a polynomial and a scalar, such as
 
@@ -693,7 +703,7 @@ Though were a non-constant polynomial with indeterminate `y` replacing
 `2one(q)` above, that addition would throw an error.
 
 
-## Non-number types for `T`
+### Non-number types for `T`
 
 The coefficients of the polynomial may be non-number types, such as matrices or other polynomials, albeit not every operation is fully supported.
 
@@ -743,7 +753,7 @@ julia> p(b)
  18  3
 ```
 
-But if the type `T` lacks support of some generic functions, such as `zero(T)` and `one(T)`, then there may be issues. For example,  when `T <: AbstractMatrix` the output of `p-p` is an error, as the implementation assumes `zero(T)` is defined. For static arrays, this isn't an issue, as there is support for `zero(T)`. Other polynomial types, such as `SparsePolynomial` have less support, as some specialized methods assume more of the generic interface be implemented.
+But if the type `T` lacks support of some generic functions, such as `zero(T)` and `one(T)`, then there may be issues. For example,  when `T <: AbstractMatrix` the output of `p[degree(p)+1]` is an error, as the implementation assumes `zero(T)` is defined. For static arrays, this isn't an issue, as there is support for `zero(T)`. Other polynomial types, such as `SparsePolynomial` have less support, as some specialized methods assume more of the generic interface be implemented.
 
 Similarly, using polynomials for `T` is a possibility:
 
@@ -774,7 +784,7 @@ julia> p(b)
 Polynomial(1 + y^2 + y^4)
 ```
 
-But much doesn't. For example, implicit promotion can fail. For example, the scalar multiplication `p * b` will fail,  as the methods assume this is the fallback polynomial multiplication and not the intended scalar multiplication.
+But much doesn't. For example, implicit promotion can fail. For example, the scalar multiplication `p * b` will fail, as the methods assume this is the fallback polynomial multiplication and not the intended scalar multiplication.
 
 
 ## Rational functions

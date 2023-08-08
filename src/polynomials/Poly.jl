@@ -75,6 +75,7 @@ Base.collect(p::Poly) = [pᵢ for pᵢ ∈ p]
 
 Polynomials.domain(::Type{<:Poly}) = Polynomials.Interval{Polynomials.Open,Polynomials.Open}(-Inf, Inf)
 Polynomials.mapdomain(::Type{<:Poly}, x::AbstractArray) = x
+Polynomials.coeffs(p::Poly) = p.coeffs
 
 # need two here as `eltype(P)` is `_eltype(P)`.
 Base.zero(::Type{P}) where {P <: Poly} = Poly{_eltype(P), Polynomials.indeterminate(P)}([0])

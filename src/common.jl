@@ -218,6 +218,44 @@ Calculate the pseudo-Vandermonde matrix of the given polynomial type with the gi
 vander(::Type{<:AbstractPolynomial}, x::AbstractVector, deg::Integer)
 
 
+
+
+"""
+    integrate(p::AbstractPolynomial)
+
+Return an antiderivative for `p`
+"""
+integrate(P::AbstractPolynomial) = throw(ArgumentError("`integrate` not implemented for polynomials of type $P"))
+
+"""
+    integrate(::AbstractPolynomial, C)
+
+Returns the indefinite integral of the polynomial with constant `C` when expressed in the standard basis.
+"""
+function integrate(p::P, C) where {P <: AbstractPolynomial}
+    ∫p = integrate(p)
+    isnan(C) && return ⟒(P){eltype(∫p+C), indeterminate(∫p)}([C])
+    ∫p + (C - constantterm(∫p))
+end
+
+"""
+    integrate(::AbstractPolynomial, a, b)
+
+Compute the definite integral of the given polynomial from `a` to `b`. Will throw an error if either `a` or `b` are out of the polynomial's domain.
+"""
+function integrate(p::AbstractPolynomial, a, b)
+    P = integrate(p)
+    return P(b) - P(a)
+end
+
+"""
+    derivative(::AbstractPolynomial, order::Int = 1)
+
+Returns a polynomial that is the `order`th derivative of the given polynomial. `order` must be non-negative.
+"""
+derivative(::AbstractPolynomial, ::Int)
+
+
 """
     critical_points(p::AbstractPolynomial{<:Real}, I=domain(p); endpoints::Bool=true)
 
@@ -265,44 +303,7 @@ function critical_points(p::AbstractPolynomial{T}, I = domain(p);
 end
 
 
-
-
-
-
-"""
-    integrate(p::AbstractPolynomial)
-
-Return an antiderivative for `p`
-"""
-integrate(P::AbstractPolynomial) = throw(ArgumentError("`integrate` not implemented for polynomials of type $P"))
-
-"""
-    integrate(::AbstractPolynomial, C)
-
-Returns the indefinite integral of the polynomial with constant `C` when expressed in the standard basis.
-"""
-function integrate(p::P, C) where {P <: AbstractPolynomial}
-    ∫p = integrate(p)
-    isnan(C) && return ⟒(P){eltype(∫p+C), indeterminate(∫p)}([C])
-    ∫p + (C - constantterm(∫p))
-end
-
-"""
-    integrate(::AbstractPolynomial, a, b)
-
-Compute the definite integral of the given polynomial from `a` to `b`. Will throw an error if either `a` or `b` are out of the polynomial's domain.
-"""
-function integrate(p::AbstractPolynomial, a, b)
-    P = integrate(p)
-    return P(b) - P(a)
-end
-
-"""
-    derivative(::AbstractPolynomial, order::Int = 1)
-
-Returns a polynomial that is the `order`th derivative of the given polynomial. `order` must be non-negative.
-"""
-derivative(::AbstractPolynomial, ::Int)
+## --------------------------------------------------
 
 """
     truncate!(::AbstractPolynomial{T};
@@ -457,6 +458,7 @@ end
 chop!!(p::AbstractPolynomial; kwargs...) = (p = chop!(p); p)
 truncate!!(p::AbstractPolynomial; kwargs...) = truncate!(p)
 
+## --------------------------------------------------
 
 """
     check_same_variable(p::AbstractPolynomial, q::AbstractPolynomial)
@@ -555,6 +557,14 @@ copy_with_eltype(::Type{T}, p::P) where {T, S, Y, P <:AbstractPolynomial{S,Y}} =
 #copy_with_eltype(::Type{T}, p::P) where {T, S, X, P<:AbstractPolynomial{S,X}} =
 #    copy_with_eltype(Val(T), Val(X), p)
 
+"""
+    iszero(p::AbstractPolynomial)
+
+Is this a ``0`` polynomial.
+
+For most types, the ``0`` polynomial is one with no coefficients (coefficient vector `T[]`),
+though some types have the possibility of trailing zeros. The degree of a zero polynomial is conventionally ``-1``, though this is not the convention for Laurent polynomials.
+"""
 Base.iszero(p::AbstractPolynomial) = all(iszero, values(p))::Bool
 
 
@@ -644,11 +654,21 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0 && firstindex(p) == 0
 # * a container with (a₀, a₁, …, aₙ) which for some types may have trailing zeros (ImmutableDense)
 """
     coeffs(::AbstractPolynomial)
+    coeffs(::AbstractDenseUnivariatePolynomial)
+    coeffs(::AbstractLaurentUnivariatePolynomial)
 
-Return the coefficient vector. For a standard basis polynomial these are `[a_0, a_1, ..., a_n]`.
-For Laurent type polynomials, this will not return the offste.
+For a dense, univariate polynomial return the coefficients ``(a_0, a_1, \\dots, a_n)``
+as an interable. This may be a vector or tuple, and may alias the
+polynomials coefficients.
+
+For a Laurent type polynomial (e.g. `LaurentPolynomial`, `SparsePolynomial`) return the coefficients ``(a_i, a_{i+1}, \\dots, a_j)`` where
+``i`` is found from `firstindex(p)` and ``j`` from `lastindex(p)`.
+
+For `LaurentPolynomial` and `SparsePolynomial`, the `pairs` iterator is more generically useful, as it iterates over ``(i, p_i)`` possibly skipping the terms where ``p_i = 0``.
+
 """
-coeffs(p::AbstractPolynomial) = p.coeffs
+coeffs(p::AbstractPolynomial)
+
 
 
 # specialize this to p[0] when basis vector is 1
@@ -663,7 +683,13 @@ constantterm(p::AbstractPolynomial{T}) where {T} = p(zero(T))
     degree(::AbstractPolynomial)
 
 Return the degree of the polynomial, i.e. the highest exponent in the polynomial that
-has a nonzero coefficient. The degree of the zero polynomial is defined to be -1. The default method assumes the basis polynomial, `βₖ` has degree `k`.
+has a nonzero coefficient.
+
+For standard basis polynomials the degree of the zero polynomial is defined to be ``-1``.
+For Laurent type polynomials, this is `0`, or `lastindex(p)`. The `firstindex` method gives the smallest power
+of the indeterminate for the polynomial.
+The default method assumes the basis polynomials, `βₖ`, have degree `k`.
+
 """
 degree(p::AbstractPolynomial) = iszero(coeffs(p)) ? -1 : length(coeffs(p)) - 1 + min(0, minimumexponent(p))
 
@@ -713,8 +739,26 @@ indexing =#
 # should return typemin(Int)
 minimumexponent(p::AbstractPolynomial) = minimumexponent(typeof(p))
 minimumexponent(::Type{<:AbstractPolynomial}) = 0
+# firstindex, lastindex correspond to the range of which basis vectors are being represented by the coefficients
+"""
+    firstindex(p::AbstractPolynomial)
+
+The index of the smallest basis element, ``\beta_i``,  represented by the coefficients. This is ``0`` for
+a zero polynomial.
+"""
 Base.firstindex(p::AbstractPolynomial) = 0  # XXX() is a better default
+"""
+    lastindex(p::AbstractPolynomial)
+
+The index of the largest basis element, ``\beta_i``,  represented by the coefficients.
+May be ``-1`` or ``0`` for the zero polynomial, depending on the storage type.
+"""
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1 + firstindex(p) # not degree, which accounts for any trailing zeros
+"""
+    eachindex(p::AbstractPolynomial)
+
+Iterator over all indices of the represented basis elements
+"""
 Base.eachindex(p::AbstractPolynomial) = firstindex(p):lastindex(p)
 Base.broadcastable(p::AbstractPolynomial) = Ref(p)
 degreerange(p::AbstractPolynomial) = firstindex(p):lastindex(p)
@@ -779,8 +823,24 @@ struct PolynomialValues{P, T}
     PolynomialValues{P}(p::P) where {P} = new{P, eltype(p)}(p)
     PolynomialValues(p::P) where {P} = new{P, eltype(p)}(p)
 end
+"""
+    keys(p::AbstractPolynomial)
+
+Iterator over ``i``s for each basis element, ``\\beta_i``, represented by the coefficients.
+"""
 Base.keys(p::AbstractPolynomial) =  PolynomialKeys(p)
+"""
+    values(p::AbstractPolynomial)
+
+Iterator over ``p_i``s for each basis element, ``\\beta_i``, represented by the coefficients.
+"""
 Base.values(p::AbstractPolynomial) =  PolynomialValues(p)
+"""
+    pairs(p::AbstractPolynomial)
+
+Iterator over ``(i, p_i)`` for each basis element, ``\\beta_i``, represented by the coefficients.
+"""
+Base.pairs(p::AbstractPolynomial)
 Base.length(p::PolynomialValues) = length(p.p.coeffs)
 Base.eltype(p::PolynomialValues{<:Any,T}) where {T} = T
 Base.length(p::PolynomialKeys) = length(p.p.coeffs)

@@ -2,9 +2,9 @@
 
 The [`AbstractUnivaeriatePolynomial`](@ref) type was made to be extended.
 
-A polynomial's  coefficients  are  relative to some *basis*. The `Polynomial` type relates coefficients  `[a0, a1,  ..., an]`, say,  to the  polynomial  `a0 +  a1*x + a2*x^2  + ... +  an*x^n`,  through the standard  basis  `1,  x,  x^2, ..., x^n`.  New polynomial  types typically represent the polynomial through a different  basis. For example,  `CheyshevT` uses a basis  `T_0=1, T_1=x,  T_2=2x^2-1,  ...,  T_n  =  2xT_{n-1} - T_{n-2}`.  For this type  the  coefficients  `[a0,a1,...,an]` are associated with  the polynomial  `a0*T0  + a1*T_1 +  ...  +  an*T_n`.
+A polynomial's  coefficients  are  relative to some *basis*. The `Polynomial` type relates coefficients  `[a0, a1,  ..., an]`, say,  to the  polynomial  ``a_0 +  a_1\cdot x + a_2\cdot x^2  + \cdots +  a_n\cdot x^n``,  through the standard  basis  ``1,  x,  x^2, ..., x^n``.  New polynomial  types typically represent the polynomial through a different  basis. For example,  `CheyshevT` uses a basis  ``T_0=1, T_1=x,  T_2=2x^2-1,  \cdots,  T_n  =  2xT_{n-1} - T_{n-2}``.  For this type  the  coefficients  `[a0,a1,...,an]` are associated with  the polynomial  ``a0\cdot T_0  + a_1 \cdot T_1 +  \cdots  +  a_n\cdot T_n`.
 
-A polynomial type consists of a container type (with parent type `AbstractUnivariatePolynomial`) and a basis type (with parent type `AbstractBasis`). There a several different storage types.
+A polynomial type consists of a container type (with parent type `AbstractUnivariatePolynomial`) and a basis type (with parent type `AbstractBasis`). There a several different storage types implemented.
 
 To implement a new polynomial type, `P`, the following methods should be implemented:
 
@@ -34,7 +34,7 @@ As always, if the default implementation does not work or there are more efficie
 
 ## A new basis type
 
-The generalized Laguerre polynomials are orthogonal polynomials parameterized  by $\alpha$ and defined recursively by
+The generalized Laguerre polynomials are orthogonal polynomials parameterized  by ``\alpha`` and defined recursively by
 
 ```math
 \begin{align*}
@@ -91,7 +91,7 @@ julia> Polynomials.ImmutableDensePolynomial{LaguerreBasis{1}}((1,2,3))
 Polynomials.ImmutableDensePolynomial(1L^1_0 + 2*L^1_1 + 3*L^1_2)
 ```
 
-All polynomials have vector addition and scalar multiplication defined:
+All polynomial types have vector addition and scalar multiplication defined, as these are basis independent:
 
 ```jldoctest abstract_univariate_polynomial
 julia> q = P([1,2])
@@ -104,7 +104,7 @@ julia> 2p
 MutableDensePolynomial(2L^0_0 + 4*L^0_1 + 6*L^0_2)
 ```
 
-For a new basis, there are no default methods for polynomial evaluation, scalar addition, and polynomial multiplication; and no defaults for `one`, and `variable`.
+For a new basis, there are no default methods for polynomial evaluation and polynomial multiplication; and no defaults for `one` (used by default for scalar addition), and `variable` (used by default in conversion).
 
 For the Laguerre Polynomials, Clenshaw recursion can be used for evaluation.
 
@@ -235,7 +235,7 @@ Were it defined, a `convert` method from `Polynomial` to the `LaguerreBasis` cou
 This example shows how to make a new container type, though this should be unnecessary, given the current variety, there may be gains to be had (e.g. an immutable, sparse type?)
 In this case, we offer a minimal example where the polynomial type aliases the vector defining the coefficients is created.  For other bases, more methods may be necessary to define (again, refer to ChebyshevT for an example).
 
-We have two constructor methods. For performance reasons, generically it is helpful to pass in a flag to indicate no checking of the input is needed (`Val{:false}`) and generically, a container type *may* accept an offset, though this type won't:
+We have two constructor methods. For performance reasons, generically it is helpful to pass in a flag to indicate no copying or checking of the input is needed (`Val{false}`) and generically, a container type *may* accept an offset, though this type won't:
 
 ```jldoctest new_container_type
 julia> using Polynomials
@@ -245,7 +245,7 @@ julia> struct AliasPolynomialType{B,T,X} <: Polynomials.AbstractDenseUnivariateP
            function AliasPolynomialType{B, T, X}(coeffs::AbstractVector{S}, o::Int=0) where {B, T,S, X}
                new{B,T,Symbol(X)}(convert(Vector{T}, coeffs))
            end
-               function AliasPolynomialType{B, T, X}(::Val{:false}, coeffs::AbstractVector{S}, o::Int=0) where {B, T,S, X}
+           function AliasPolynomialType{B, T, X}(::Val{false}, coeffs::AbstractVector{S}, o::Int=0) where {B, T,S, X}
                new{B,T,Symbol(X)}(convert(Vector{T}, coeffs))
            end
        end
@@ -265,7 +265,7 @@ julia> Base.lastindex(p::AliasPolynomialType) = length(p.coeffs) - 1
 ```
 
 A type and a basis defines a polynomial type.
-This example uses the  `StandardBasis` and consequently inherits the methods mentioned above that otherwise would have been required.
+This example uses the  `StandardBasis` and consequently inherits the methods mentioned above that otherwise would need implementing.
 
 ```jldoctest new_container_type
 julia> AliasPolynomial = AliasPolynomialType{Polynomials.StandardBasis};

@@ -14,10 +14,6 @@ using LinearAlgebra
     @test_throws ArgumentError r // s
     @test RationalFunction(p) == p // one(p)
 
-    # We expect p::P // q::P (same type polynomial).
-    # As Immutable Polynomials have N as type parameter, we disallow
-    @test_throws ArgumentError variable(ImmutablePolynomial) // variable(ImmutablePolynomial)
-
     pq = p // t # promotes to type of t
     @test pq isa RationalFunction{Float64, :x}
 

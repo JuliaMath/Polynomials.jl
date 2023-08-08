@@ -78,6 +78,13 @@ Base.iterate(p::MutableDensePolynomial, args...) = Base.iterate(p.coeffs, args..
 Base.pairs(p::MutableDensePolynomial) =
     Base.Generator(=>, 0:lastindex(p), p.coeffs)
 
+function coeffs(p::MutableDensePolynomial)
+    firstindex(p) < 0 && throw(ArgumentError("Polynomial has negative index terms. Use `pairs` instead`"))
+    iszero(firstindex(p)) && return p.coeffs
+    return [p[i] for i ∈ 0:lastindex(p)]
+end
+
+
 # return a container of zeros based on basis type
 _zeros(::Type{<:MutableDensePolynomial}, z, N)  = fill(z, N)
 
