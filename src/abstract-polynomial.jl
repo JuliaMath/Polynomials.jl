@@ -24,7 +24,7 @@ Abstract type for specifying a polynomial basis.
 abstract type AbstractBasis end
 export AbstractUnivariatePolynomial
 
-XXX() = throw(ArgumentError("No default method defined"))
+#XXX() = throw(ArgumentError("No default method defined"))
 
 ## --------------------------------------------------
 
@@ -72,9 +72,8 @@ _indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = nothing
 _indeterminate(::Type{P}) where {B,T, X, P <: AbstractUnivariatePolynomial{B,T,X}} = X
 indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = something(_indeterminate(P), :x)
 
-
-constructorof(::Type{<:AbstractUnivariatePolynomial}) = XXX() # defined in container-types
-⟒(P::Type{<:AbstractUnivariatePolynomial})  = constructorof(P)
+# constructorof (returns polynomial type from instance or type)
+⟒(P::Type{<:AbstractUnivariatePolynomial})  = constructorof(P) # constructorof defined with different container-types
 ⟒(p::P) where {P <: AbstractUnivariatePolynomial} = ⟒(P)
 
 ## Julia generics treating coefficients as an abstract vector
@@ -91,19 +90,27 @@ Base.keys(p::AbstractUnivariatePolynomial)   = eachindex(p)
 Base.values(p::AbstractUnivariatePolynomial) = values(p.coeffs) # Dict based containers must specialize
 Base.pairs(p::AbstractUnivariatePolynomial)  = Base.Generator(=>, keys(p), values(p))
 
+function coeffs(p::AbstractDenseUnivariatePolynomial)
+    firstindex(p) < 0 && throw(ArgumentError("Polynomial has negative index terms. Use `pairs` instead`"))
+    firstindex(p) == 0 && return p.coeffs # need sparse override
+    firstindex(p) > 0 && return [p[i] for i ∈ 0:lastindex(p)]
+end
+
+function coeffs(p::AbstractLaurentUnivariatePolynomial)
+    [p[i] for i ∈ firstindex(p):lastindex(p)]
+end
 
 
-#Base.eltype(::Type{<:AbstractUnivariatePolynomial}) = Float64 # common.jl
+
 Base.eltype(::Type{<:AbstractUnivariatePolynomial{B,T}}) where {B,T} = T
 
 Base.size(p::AbstractUnivariatePolynomial) = (length(p),)
 Base.size(p::AbstractUnivariatePolynomial, i::Integer) =  i <= 1 ? size(p)[i] : 1
 
-#Base.copy(p::AbstractUnivariatePolynomial) = XXX()
-
 # map Polynomial terms -> vector terms
 # Default degree **assumes** basis element Tᵢ has degree i.
-degree(p::AbstractUnivariatePolynomial) = iszero(p) ? -1 : lastindex(p) # XXX() is likely a safer choice
+degree(p::AbstractDenseUnivariatePolynomial) = iszero(p) ? -1 : lastindex(p) # (no trailing zero assumed)
+degree(p::AbstractLaurentUnivariatePolynomial) = lastindex(p)
 
 # this helps, along with _set, make some storage-generic methods
 _zeros(p::P, z, N) where {P <: AbstractUnivariatePolynomial} = _zeros(P, z, N)
@@ -126,13 +133,6 @@ copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {B,T, X, S, Y, P <:AbstractUni
     ⟒(P){T, Symbol(X)}(p.coeffs)
 
 
-coeffs(p::P) where {P <: AbstractLaurentUnivariatePolynomial} = p.coeffs
-function coeffs(p::P) where {P <: AbstractDenseUnivariatePolynomial}
-    firstindex(p) == 0 && return p.coeffs
-    firstindex(p) > 0 && return [p[i] for i ∈ 0:lastindex(p)]
-    throw(ArgumentError("Polynomial type does not support negative degree terms"))
-end
-
 gtτ(x, τ) = abs(x) > τ
 # return index or nothing of last non "zdero"
 function chop_right_index(x; rtol=nothing, atol=nothing)
@@ -148,7 +148,6 @@ end
 # use trunc for left and right
 # can pass tolerances
 Base.chop(p::AbstractUnivariatePolynomial; kwargs...) = chop!(copy(p))
-#chop!(p::AbstractUnivariatePolynomial; kwargs...) = XXX()
 chop!(p::AbstractDenseUnivariatePolynomial; kwargs...) = (chop!(p.coeffs); p) # default for mutable vector backed; tuple backed need other
 
 

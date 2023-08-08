@@ -1,12 +1,12 @@
 # Extensions
 
-As of `v1.9` of `Julia`, packages can provide extension code which is loaded with other packages are loaded.
+As of `v1.9` of `Julia`, packages can provide extension code which is loaded when external packages are loaded.
 
 ## Makie
 
 When `Makie` is loaded, a plot recipe is provided.
 
-## ChainRules
+## ChainRulesCore
 
 When `ChainRulesCore` is loaded, a `frule` and `rrule` is defined for to integrate with different autodifferentiation packages.
 
@@ -40,16 +40,9 @@ API in order to reduce allocation.
 Calling `A * b` requires approximately 40 MiB due to 2 M allocations
 as it does not exploit any mutability.
 
-Using
-
 ```julia
-using PolynomialsMutableArithmetics
-```
+using MutableArithmetics  # or `using PolynomialsMutableArithmetics` to register `Polynomials` with `MutableArithmetics`
 
-to register `Polynomials` with `MutableArithmetics`, then multiplying with:
-
-```julia
-using MutableArithmetics
 const MA = MutableArithmetics
 MA.operate(*, A, b)
 ```
@@ -100,8 +93,9 @@ c = MA.operate(*, A1, b1)
 MA.mutable_operate!(MA.add_mul, c, A2, b2)
 ```
 
-*Note that currently, only the `Polynomial` type implements the API and it only
-implements part of it.*
+!!! note
+    Note that currently, only the `Polynomial` and `Polynomials.PnPolynomial` types implement the API and  only
+part of it is implemented
 
 ## PolyCompat
 

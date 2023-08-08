@@ -79,6 +79,10 @@ end
 
 minimumexponent(::Type{<:MutableSparsePolynomial}) =  typemin(Int)
 
+# This is *annoying*. It should just be `lastindex(p)`, as this is a LaurentType, but for
+# past compatibility, this is kept as is.
+degree(p::MutableSparsePolynomial) = iszero(p) ? -1 : lastindex(p)
+
 Base.copy(p::MutableSparsePolynomial{B,T,X}) where {B,T,X} = MutableSparsePolynomial{B,T,X}(copy(p.coeffs))
 
 function Base.convert(::Type{MutableSparsePolynomial{B,T,X}}, p::MutableSparsePolynomial{B,S,X}) where {B,T,S,X}
