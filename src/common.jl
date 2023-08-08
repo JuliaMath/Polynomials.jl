@@ -666,8 +666,9 @@ For a Laurent type polynomial (e.g. `LaurentPolynomial`, `SparsePolynomial`) ret
 
 For `LaurentPolynomial` and `SparsePolynomial`, the `pairs` iterator is more generically useful, as it iterates over ``(i, p_i)`` possibly skipping the terms where ``p_i = 0``.
 
+Defaults to `p.coeffs`.
 """
-coeffs(p::AbstractPolynomial)
+coeffs(p::AbstractPolynomial) = p.coeffs
 
 
 
