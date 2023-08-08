@@ -119,10 +119,30 @@ julia> p+q
 Polynomial(2 + 2*x + 3*x^2)
 ```
 
+
+#### Mixing polynomial types
+
+Arithmetic of different polynomial types is supported through promotion to a common type, which is typically the `Polynomial` type, but may be the `LaurentPolynomial` type when negative powers of the indeterminate are possible:
+
+```jldoctext
+julia> p,q = ImmutablePolynomial([1,2,3]), Polynomial([3,2,1])
+(ImmutablePolynomial(1 + 2*x + 3*x^2), Polynomial(3 + 2*x + x^2))
+
+julia> p + q
+Polynomial(4 + 4*x + 4*x^2)
+
+julia> p,q = ImmutablePolynomial([1,2,3]), SparsePolynomial(Dict(0=>1, 2=>3, 10=>1))
+(ImmutablePolynomial(1 + 2*x + 3*x^2), SparsePolynomial(1 + 3*x^2 + x^10))
+
+julia> p + q
+LaurentPolynomial(2 + 2*x + 6*x² + x¹⁰)
+```
+
+
 ### Integrals and Derivatives
 
 Integrate the polynomial `p` term by term, optionally adding constant
-term `C`. The degree of the resulting polynomial is one higher than the
+term `C`. For non-zero polynomials, the degree of the resulting polynomial is one higher than the
 degree of `p`.
 
 ```jldoctest
@@ -133,9 +153,8 @@ julia> integrate(Polynomial([1, 0, -1]), 2)
 Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)
 ```
 
-Differentiate the polynomial `p` term by term. The degree of the
-resulting polynomial is one lower than the degree of `p`, unless `p`
-is a zero polynomial.
+Differentiate the polynomial `p` term by term. For non-zero polynomials, the degree of the
+resulting polynomial is one lower than the degree of `p`.
 
 ```jldoctest
 julia> derivative(Polynomial([1, 3, -1]))
@@ -223,7 +242,7 @@ The roots are always returned as complex numbers.
   number types.
 
 ```
-julia> import AMRVW # import as `roots` conflicts
+julia> using AMRVW
 
 julia> AMRVW.roots(float.(coeffs(p)))
 3-element Vector{ComplexF64}:
@@ -238,7 +257,7 @@ Both `PolynomialRoots` and `AMRVW` are generic and work with
 `BigFloat` coefficients, for example.
 
 The `AMRVW` package works with much larger polynomials than either
-`roots` or `Polynomial.roots`. For example, the roots of this 1000
+`roots` or `PolynomialRoots.roots`. For example, the roots of this 1000
 degree random polynomial are quickly and accurately solved for:
 
 ```
@@ -427,9 +446,10 @@ There were 3 isolating intervals found:
 [-0.50…, 1.5…]₂₅₆
 ```
 
-### Fitting arbitrary data
+### Fitting a polynomial to arbitrary data
 
-Fit a polynomial (of degree `deg`) to `x` and `y` using polynomial interpolation or a (weighted) least-squares approximation.
+The `fit` function will fit a polynomial (of degree `deg`) to data `x` and `y` using polynomial interpolation
+or a (weighted) least-squares approximation.
 
 ```@example
 using Plots, Polynomials
@@ -448,7 +468,7 @@ savefig("polyfit.svg"); nothing # hide
 
 ### Other bases
 
-A polynomial, e.g. `a_0 + a_1 x + a_2 x^2 + ... + a_n x^n`, can be seen as a collection of coefficients, `[a_0, a_1, ..., a_n]`, relative to some polynomial basis. The most  familiar basis being  the standard one: `1`, `x`, `x^2`, ...  Alternative bases are possible.  The `ChebyshevT` polynomials are  implemented, as an example. Instead of `Polynomial`  or  `Polynomial{T}`, `ChebyshevT` or  `ChebyshevT{T}` constructors are used:
+A polynomial, e.g. `a_0 + a_1 x + a_2 x^2 + ... + a_n x^n`, can be seen as a collection of coefficients, `[a_0, a_1, ..., a_n]`, relative to some polynomial basis. The most  familiar basis being  the standard one: `1`, `x`, `x^2`, ...  Alternative bases are possible.  The `ChebyshevT` polynomials are  implemented, as an example. The constructor is `ChebyshevT`, an exposed alias for `MutableDensePolynomial{ChebyshevTBasis}`.
 
 ```jldoctest
 julia> p1 = ChebyshevT([1.0, 2.0, 3.0])
@@ -475,9 +495,6 @@ Polynomial(-2.0 + 2.0*x + 6.0*x^2)
 julia> convert(ChebyshevT, Polynomial([1.0, 2,  3]))
 ChebyshevT(2.5⋅T_0(x) + 2.0⋅T_1(x) + 1.5⋅T_2(x))
 ```
-
-!!! warning
-    The older  `Poly` type that this package used prior to `v0.7`  is implemented as an alternate basis  to provide support for older code bases. As of `v1.0`,  this type will be only available by executing `using Polynomials.PolyCompat`.
 
 ### Iteration
 

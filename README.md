@@ -1,249 +1,28 @@
 # Polynomials.jl
 
-Basic arithmetic, integration, differentiation, evaluation, and root finding over dense univariate [polynomials](https://en.wikipedia.org/wiki/Polynomial).
+Basic arithmetic, integration, differentiation, evaluation, root finding, and fitting for
+univariate [polynomials](https://en.wikipedia.org/wiki/Polynomial).
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMath.github.io/Polynomials.jl/stable)
 [![CI](https://github.com/JuliaMath/Polynomials.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/JuliaMath/Polynomials.jl/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/JuliaMath/Polynomials.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMath/Polynomials.jl)
 
 
-## Installation
-
-```julia
-(v1.6) pkg> add Polynomials
-```
-
-This package supports Julia v1.6 and later.
 
 ## Available Types of Polynomials
+
+There are a number of different standard basis polynomials primarily distinguished by their storage type:
 
 * `Polynomial` –⁠ standard basis polynomials, $a(x) = a_0 + a_1 x + a_2 x^2 + … + a_n  x^n$ for $n ≥ 0$.
 * `ImmutablePolynomial` –⁠ standard basis polynomials backed by a [Tuple type](https://docs.julialang.org/en/v1/manual/functions/#Tuples-1) for faster evaluation of values
 * `SparsePolynomial` –⁠ standard basis polynomial backed by a [dictionary](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1) to hold  sparse high-degree  polynomials
 * `LaurentPolynomial` –⁠ [Laurent polynomials](https://docs.julialang.org/en/v1/base/collections/#Dictionaries-1), $a(x) = a_m x^m + … + a_n x^n$ for $m ≤ n$ and $m,n ∈ ℤ$. This is backed by an [offset array](https://github.com/JuliaArrays/OffsetArrays.jl); for example, if $m<0$ and $n>0$, we obtain $a(x) = a_m x^m + … + a_{-1} x^{-1} + a_0 + a_1 x + … +  a_n x^n$
 * `FactoredPolynomial` –⁠ standard basis polynomials, storing the roots, with multiplicity, and leading coefficient of a polynomial
-* `ChebyshevT` –⁠ [Chebyshev polynomials](https://en.wikipedia.org/wiki/Chebyshev_polynomials) of the first kind
-* `RationalFunction` - a type for ratios of polynomials.
 
-## Usage
+The  `ChebyshevT` –⁠ [Chebyshev polynomials](https://en.wikipedia.org/wiki/Chebyshev_polynomials) of the first kind illustrate how other bases may be employed with the package.
 
-```julia
-julia> using Polynomials
-```
+In addition `RationalFunction` is a type for ratios of polynomials.
 
-### Construction and Evaluation
-
-Construct a polynomial from an array (a vector) of its coefficients, lowest order first.
-
-```julia
-julia> Polynomial([1,0,3,4])
-Polynomial(1 + 3*x^2 + 4*x^3)
-```
-
-Optionally, the variable of the polynomial can be specified.
-
-```julia
-julia> Polynomial([1,2,3], :s)
-Polynomial(1 + 2*s + 3*s^2)
-```
-
-Construct a polynomial from its roots.
-
-```julia
-julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
-Polynomial(-6 + 11*x - 6*x^2 + x^3)
-```
-
-Evaluate the polynomial `p` at `x`.
-
-```julia
-julia> p = Polynomial([1, 0, -1]);
-julia> p(0.1)
-0.99
-```
-
-### Arithmetic
-
-Methods are added to the usual arithmetic operators so that they work on polynomials, and combinations of polynomials and scalars.
-
-```julia
-julia> p = Polynomial([1,2])
-Polynomial(1 + 2*x)
-
-julia> q = Polynomial([1, 0, -1])
-Polynomial(1 - x^2)
-
-julia> p - q
-Polynomial(2*x + x^2)
-
-julia> p = Polynomial([1,2])
-Polynomial(1 + 2*x)
-
-julia> q = Polynomial([1, 0, -1])
-Polynomial(1 - x^2)
-
-julia> 2p
-Polynomial(2 + 4*x)
-
-julia> 2+p
-Polynomial(3 + 2*x)
-
-julia> p - q
-Polynomial(2*x + x^2)
-
-julia> p * q
-Polynomial(1 + 2*x - x^2 - 2*x^3)
-
-julia> q / 2
-Polynomial(0.5 - 0.5*x^2)
-
-julia> q ÷ p # `div`, also `rem` and `divrem`
-Polynomial(0.25 - 0.5*x)
-```
-
-Most operations involving polynomials with different variables will error.
-
-```julia
-julia> p = Polynomial([1, 2, 3], :x);
-julia> q = Polynomial([1, 2, 3], :s);
-julia> p + q
-ERROR: ArgumentError: Polynomials have different indeterminates
-```
-
-#### Construction and Evaluation
-
-While polynomials of type `Polynomial` are mutable objects, operations such as
-`+`, `-`, `*`, always create new polynomials without modifying its arguments.
-The time needed for these allocations and copies of the polynomial coefficients
-may be noticeable in some use cases. This is amplified when the coefficients
-are for instance `BigInt` or `BigFloat` which are mutable themselves.
-This can be avoided by modifying existing polynomials to contain the result
-of the operation using the [MutableArithmetics (MA) API](https://github.com/jump-dev/MutableArithmetics.jl).
-
-Consider for instance the following arrays of polynomials
-```julia
-using Polynomials
-d, m, n = 30, 20, 20
-p(d) = Polynomial(big.(1:d))
-A = [p(d) for i in 1:m, j in 1:n]
-b = [p(d) for i in 1:n]
-```
-
-In this case, the arrays are mutable objects for which the elements are mutable
-polynomials which have mutable coefficients (`BigInt`s).
-These three nested levels of mutable objects communicate with the MA
-API in order to reduce allocation.
-Calling `A * b` requires approximately 40 MiB due to 2 M allocations
-as it does not exploit any mutability.
-
-Using
-
-```julia
-using PolynomialsMutableArithmetics
-```
-
-to register `Polynomials` with `MutableArithmetics`, then multiplying with:
-
-```julia
-using MutableArithmetics
-const MA = MutableArithmetics
-MA.operate(*, A, b)
-```
-
-exploits the mutability and hence only allocates approximately 70 KiB due to 4 k
-allocations.
-
-If the resulting vector is already allocated, e.g.,
-
-```julia
-z(d) = Polynomial([zero(BigInt) for i in 1:d])
-c = [z(2d - 1) for i in 1:m]
-```
-
-then we can exploit its mutability with
-
-```julia
-MA.operate!(MA.add_mul, c, A, b)
-```
-
-to reduce the allocation down to 48 bytes due to 3 allocations.
-
-These remaining allocations are due to the `BigInt` buffer used to
-store the result of intermediate multiplications. This buffer can be
-preallocated with:
-
-```julia
-buffer = MA.buffer_for(MA.add_mul, typeof(c), typeof(A), typeof(b))
-MA.buffered_operate!(buffer, MA.add_mul, c, A, b)
-```
-
-then the second line is allocation-free.
-
-The `MA.@rewrite` macro rewrite an expression into an equivalent code that
-exploit the mutability of the intermediate results.
-For instance
-```julia
-MA.@rewrite(A1 * b1 + A2 * b2)
-```
-is rewritten into
-```julia
-c = MA.operate!(MA.add_mul, MA.Zero(), A1, b1)
-MA.operate!(MA.add_mul, c, A2, b2)
-```
-which is equivalent to
-```julia
-c = MA.operate(*, A1, b1)
-MA.mutable_operate!(MA.add_mul, c, A2, b2)
-```
-
-*Note that currently, only the `Polynomial` type implements the API and it only
-implements part of it.*
-
-### Integrals and Derivatives
-
-Integrate the polynomial `p` term by term, optionally adding a constant
-term `k`. The degree of the resulting polynomial is one higher than the
-degree of `p` (for a nonzero polynomial).
-
-```julia
-julia> integrate(Polynomial([1, 0, -1]))
-Polynomial(1.0*x - 0.3333333333333333*x^3)
-
-julia> integrate(Polynomial([1, 0, -1]), 2)
-Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)
-```
-
-Differentiate the polynomial `p` term by term. For non-zero
-polynomials the degree of the resulting polynomial is one lower than
-the degree of `p`.
-
-```julia
-julia> derivative(Polynomial([1, 3, -1]))
-Polynomial(3 - 2*x)
-```
-
-### Root-finding
-
-
-Return the roots (zeros) of `p`, with multiplicity. The number of
-roots returned is equal to the degree of `p`. By design, this is not type-stable, the returned roots may be real or complex.
-
-```julia
-julia> roots(Polynomial([1, 0, -1]))
-2-element Vector{Float64}:
- -1.0
-  1.0
-
-julia> roots(Polynomial([1, 0, 1]))
-2-element Vector{ComplexF64}:
- 0.0 - 1.0im
- 0.0 + 1.0im
-
-julia> roots(Polynomial([0, 0, 1]))
-2-element Vector{Float64}:
- 0.0
- 0.0
-```
 
 ### Fitting arbitrary data
 
