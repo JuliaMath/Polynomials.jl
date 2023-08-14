@@ -91,7 +91,7 @@ Base.values(p::AbstractUnivariatePolynomial) = values(p.coeffs) # Dict based con
 Base.pairs(p::AbstractUnivariatePolynomial)  = Base.Generator(=>, keys(p), values(p))
 
 function coeffs(p::AbstractDenseUnivariatePolynomial)
-    firstindex(p) < 0 && throw(ArgumentError("Polynomial has negative index terms. Use `pairs` instead`"))
+    firstindex(p) < 0 && throw(ArgumentError("Polynomial has negative index terms. Use `pairs` instead."))
     firstindex(p) == 0 && return p.coeffs # need sparse override
     firstindex(p) > 0 && return [p[i] for i ∈ 0:lastindex(p)]
 end
@@ -100,6 +100,17 @@ function coeffs(p::AbstractLaurentUnivariatePolynomial)
     [p[i] for i ∈ firstindex(p):lastindex(p)]
 end
 
+# a₀, …, aₙ or error even for Laurent
+function coeffs0(p::AbstractUnivariatePolynomial)
+    a,b = firstindex(p), lastindex(p)
+    a < 0 && throw(ArgumentError("Polynomial has negative index terms. Use `pairs` instead."))
+    [p[i] for i ∈ 0:b]
+end
+function coeffs0(p::AbstractDenseUnivariatePolynomial)
+    a,b = firstindex(p), lastindex(p)
+    iszero(a) && return p.coeffs
+    [p[i] for i ∈ 0:b]
+end
 
 
 Base.eltype(::Type{<:AbstractUnivariatePolynomial{B,T}}) where {B,T} = T
@@ -262,7 +273,6 @@ end
 macro poly_register(name)
     poly = esc(name)
     quote
-        Polynomials.constructorof(::Type{<:$poly{B}}) where {B} = $poly{B}
         #Base.convert(::Type{P}, p::P) where {P<:$poly} = p
         Base.promote(p::P, q::Q) where {B, X, T, P <:$poly{B,T,X}, Q <: $poly{B,T,X}} = p,q
         Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{<:$poly{B,S,X}}) where {B,T,S,X} =  $poly{B,promote_type(T, S),X}

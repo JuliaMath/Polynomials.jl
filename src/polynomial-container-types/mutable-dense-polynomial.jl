@@ -29,6 +29,7 @@ function MutableDensePolynomial{B,T,X}(cs::AbstractVector{T}, order::Int=0) wher
     MutableDensePolynomial{B,T,X}(Val(true), cs, order)
 end
 
+constructorof(::Type{<:MutableDensePolynomial{B}}) where {B <: AbstractBasis} = MutableDensePolynomial{B}
 @poly_register MutableDensePolynomial
 
 ## ---
@@ -40,10 +41,16 @@ function Base.convert(::Type{MutableDensePolynomial{B,T,X}}, q::MutableDensePoly
 end
 
 function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDensePolynomial{B,T,X}}
-    xs = map(fn, p.coeffs, args...)
+    xs = map(fn, p.coeffs, args...) # faster than q=copy(p); map!(fn,q,p, args...); q
     xs = trim_trailing_zeros!!(xs)
     R = eltype(xs)
     return ⟒(P){R,X}(Val(false), xs)
+end
+
+function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableDensePolynomial{B,T,X},S,Q<:MutableDensePolynomial{B,S,X}}
+    xs = map!(fn, q.coeffs, p.coeffs, args...)
+    xs = trim_trailing_zeros!!(q.coeffs)
+    nothing
 end
 
 Base.copy(p::MutableDensePolynomial{B,T,X}) where {B,T,X} =

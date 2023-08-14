@@ -20,7 +20,9 @@ include("polynomial-container-types/mutable-dense-view-polynomial.jl")
 include("polynomial-container-types/mutable-dense-laurent-polynomial.jl")
 include("polynomial-container-types/immutable-dense-polynomial.jl")
 include("polynomial-container-types/mutable-sparse-polynomial.jl")
-
+const PolynomialContainerTypes = (:MutableDensePolynomial, :MutableDenseViewPolynomial, :ImmutableDensePolynomial,
+                                  :MutableDenseLaurentPolynomial, :MutableSparsePolynomial) # useful for some purposes
+const ZeroBasedDensePolynomialContainerTypes = (:MutableDensePolynomial, :MutableDenseViewPolynomial, :ImmutableDensePolynomial)
 
 include("polynomials/standard-basis/standard-basis.jl")
 include("polynomials/standard-basis/polynomial.jl")
@@ -47,7 +49,8 @@ include("rational-functions/fit.jl")
 include("rational-functions/plot-recipes.jl")
 
 # compat; opt-in with `using Polynomials.PolyCompat`
-include("polynomials/Poly.jl")
+include("legacy/misc.jl")
+include("legacy/Poly.jl")
 
 if !isdefined(Base, :get_extension)
     include("../ext/PolynomialsChainRulesCoreExt.jl")

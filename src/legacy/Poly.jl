@@ -240,7 +240,7 @@ end
 export Poly, poly, polyval, polyint, polyder, polyfit
 
 ## Pade
-include("../pade.jl")
+include("pade.jl")
 using .PadeApproximation
 export Pade
 export padeval

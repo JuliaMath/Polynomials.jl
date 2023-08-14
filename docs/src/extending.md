@@ -13,19 +13,28 @@ To implement a new polynomial type, `P`, the following methods should be impleme
 |----------|:--------:|:------------|
 | A container type           | x | Usually selected from an available one. |
 | A basis type               | x | |
-| `one`                      |   | Convenience to find the constant $1$ in the new basis.  |
 | `variable`                 |   | Convenience to find the monomial `x` in the new basis.|
 | `Base.evalpoly(x, p::P)`   | x | To evaluate the polynomial at `x` |
 | `*(::P, ::P)`              |   | Multiplication of polynomials |
+| `convert(::P, p::Polynomial)`  | Defaults to polynomial evaluation. Can be used to define `*` by round trip through `Polynomial` type|
+| `convert(::Polynomial, p)` |   | Defaults to polynomial evaluation, which uses `evalpoly`, `variable`, `*`|
 | `scalar_add(c::S, ::P)`    |   | Scalar addition. Default requires `one` to be defined. |
+| `one`                      | x | Convenience to find the constant $1$ in the new basis.  |
+| `map(f, p)`                | x | Used to define scalar multiplication |
 | `divrem`                   |   | Required for [`gcd`](@ref)|
-| `Polynomials.domain`       |   | Should return a `Polynomials.Interval` instance|
 | `vander`                   |   | Required for [`fit`](@ref) |
 | `companion`                |   | Required for [`roots`](@ref) |
-| `convert(::Polynomial, ...)` | | Defaults to polynomial evaluation, which uses `evalpoly`|
-| `convert(::P, p::Polynomial)`| | Default of polynomial evaluation. Can be used to define `*`.|
+| `Polynomials.domain`       |   | Should return a `Polynomials.Interval` instance|
 
 As always, if the default implementation does not work or there are more efficient ways of implementing, feel free to overwrite functions from `common.jl` for your type.
+
+The general idea is the container type should provide the vector operations of polynomial addition, subtraction, and scalar multiplication.
+The latter is generically implemented through a `map(f,p)` method. The second example illustrates, though it isn't expected that container types will need being defined by users of this package.
+
+The basis type directs dispatch for other operations and allows definitions for `one` and `variable`. An `evalpoly` method may be defined for a given basis type, though specializations based on the container may be desirable.
+
+Methods like `*` will typically need to consider both the underlying container type and the basis, though if `convert` methods are defined, the defaults can be utilized as converting to the `Polynomial` type, performing the operation, then converting back is possible, though likely not as efficient.
+
 
 !!! note
     Most promotion rules will coerce towards the [`Polynomial`](@ref) type, so not all methods have to be implemented if you provide a conversion function.
@@ -218,7 +227,7 @@ MutableDensePolynomial(3L^0_0 + L^0_2)
 ```
 
 Multiplication defaults to a code path where the two polynomials are promoted to a common type and then multiplied.
-Here we implement polynomial multiplication through conversion to the polynomial type. The [direct formula](https://londmathsoc.onlinelibrary.wiley.com/doi/pdf/10.1112/jlms/s1-36.1.399) could be implemented, but that isn't so illustrative for this example.
+Here we implement polynomial multiplication through conversion to the polynomial type. The [direct formula](https://londmathsoc.onlinelibrary.wiley.com/doi/pdf/10.1112/jlms/s1-36.1.399) could be implemented, but that isn't so illustrative for this example. See the `SpecialPolynomials` package for an implementation.
 
 ```jldoctest abstract_univariate_polynomial
 julia> function Base.:*(p::MutableDensePolynomial{B,T,X},
@@ -235,17 +244,18 @@ Were it defined, a `convert` method from `Polynomial` to the `LaguerreBasis` cou
 This example shows how to make a new container type, though this should be unnecessary, given the current variety, there may be gains to be had (e.g. an immutable, sparse type?)
 In this case, we offer a minimal example where the polynomial type aliases the vector defining the coefficients is created.  For other bases, more methods may be necessary to define (again, refer to ChebyshevT for an example).
 
-We have two constructor methods. For performance reasons, generically it is helpful to pass in a flag to indicate no copying or checking of the input is needed (`Val{false}`) and generically, a container type *may* accept an offset, though this type won't:
+
+We have two constructor methods. The first is the typical code path. It makes a copy of the coefficients and then wraps those within the polynomial container type. For performance reasons, generically it is helpful to pass in a flag to indicate no copying or checking of the input is needed (`Val{false}`). This is used by some inherited methods when we specialize to the `StandardBasis` type. Generically, a container type *may* accept an offset, though this type won't; a `0`-based vector is implicit.
 
 ```jldoctest new_container_type
 julia> using Polynomials
 
 julia> struct AliasPolynomialType{B,T,X} <: Polynomials.AbstractDenseUnivariatePolynomial{B, T, X}
            coeffs::Vector{T}
-           function AliasPolynomialType{B, T, X}(coeffs::AbstractVector{S}, o::Int=0) where {B, T,S, X}
-               new{B,T,Symbol(X)}(convert(Vector{T}, coeffs))
+           function AliasPolynomialType{B, T, X}(coeffs::AbstractVector{S}, o::Int=0) where {B, T, S, X}
+               new{B,T,Symbol(X)}(convert(Vector{T}, copy(coeffs)))
            end
-           function AliasPolynomialType{B, T, X}(::Val{false}, coeffs::AbstractVector{S}, o::Int=0) where {B, T,S, X}
+           function AliasPolynomialType{B, T, X}(::Val{false}, coeffs::AbstractVector{S}, o::Int=0) where {B, T, S, X}
                new{B,T,Symbol(X)}(convert(Vector{T}, coeffs))
            end
        end
@@ -264,8 +274,39 @@ julia> Base.lastindex(p::AliasPolynomialType) = length(p.coeffs) - 1
 
 ```
 
+```jldoctest new_container_type
+julia> Polynomials.constructorof(::Type{<:AliasPolynomialType{B}}) where {B} = AliasPolynomialType{B}
+
+```
+
+We need to add in the vector-space operations:
+
+```jldoctest new_container_type
+julia> function Base.:+(p::AliasPolynomialType{B,T,X}, q::AliasPolynomialType{B,S,X}) where {B,S,T,X}
+                       R = promote_type(T,S)
+                        n = maximum(degree, (p,q))
+                   cs = [p[i] + q[i] for i in 0:n]
+                   AliasPolynomialType{B,R,X}(Val(false), cs)  # save a copy
+                       end
+
+julia> function Base.:-(p::AliasPolynomialType{B,T,X}, q::AliasPolynomialType{B,S,X}) where {B,S,T,X}
+                       R = promote_type(T,S)
+                               n = maximum(degree, (p,q))
+                               cs = [p[i] - q[i] for i in 0:n]
+                               AliasPolynomialType{B,R,X}(Val(false), cs)
+                       end
+
+julia> function Base.map(fn, p::P) where {B,T,X,P<:AliasPolynomialType{B,T,X}}
+                  cs = map(fn, p.coeffs)
+                  R = eltype(cs)
+                  AliasPolynomialType{B,R,X}(Val(false), cs)
+              end
+
+```
+
+
 A type and a basis defines a polynomial type.
-This example uses the  `StandardBasis` and consequently inherits the methods mentioned above that otherwise would need implementing.
+This example uses the  `StandardBasis` basis type and consequently inherits the methods mentioned above that otherwise would need implementing.
 
 ```jldoctest new_container_type
 julia> AliasPolynomial = AliasPolynomialType{Polynomials.StandardBasis};
@@ -283,8 +324,8 @@ AliasPolynomialType(1 + 2*x + 3*x^2 + 4*x^3)
 julia> q = AliasPolynomial(1.0, :y)
 AliasPolynomialType(1.0)
 
-julia> p + q
-AliasPolynomialType(2.0 + 2.0*x + 3.0*x^2 + 4.0*x^3)
+julia> 2p - q
+AliasPolynomialType(3.0 + 4.0*x + 6.0*x^2 + 8.0*x^3)
 
 julia> (derivative ∘ integrate)(p) == p
 true
@@ -308,12 +349,14 @@ For the Polynomial type, the default on operations is to copy the array. For thi
 Scalar addition, `p+c`, defaults to `p + c*one(p)`, or polynomial addition, which is not inplace without additional work. As such, we create a new method and an infix operator
 
 ```jldoctest new_container_type
-julia> function scalar_add!(p::AliasPolynomial{T}, c::T) where {T}
+julia> function scalar_add!(c::T, p::AliasPolynomial{T}) where {T}
            p.coeffs[1] += c
            p
        end;
 
-julia> p::AliasPolynomial ⊕ c::Number = scalar_add!(p,c);
+julia> p::AliasPolynomial +ₛ c::Number = scalar_add!(c, p);
+
+julia> c::Number +ₛ p::AliasPolynomial = scalar_add!(c, p);
 ```
 
 The viewpoint that a polynomial represents a vector of coefficients leads to an expectation that vector operations should match when possible. Scalar multiplication is a vector operation, so it seems reasonable to override the broadcast machinery to implement an in place operation (e.g. `p .*= 2`). By default, the polynomial types are not broadcastable over their coefficients. We would need to make a change there and modify the `copyto!` function:

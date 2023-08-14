@@ -61,6 +61,7 @@ function ImmutableDensePolynomial{B,T,X}(xs::AbstractVector, order::Int=0) where
     ImmutableDensePolynomial{B,T,X,N}(cs)
 end
 
+constructorof(::Type{<:ImmutableDensePolynomial{B}}) where {B <: AbstractBasis} = ImmutableDensePolynomial{B}
 @poly_register ImmutableDensePolynomial
 
 ## ----

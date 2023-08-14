@@ -36,6 +36,7 @@ function MutableDenseLaurentPolynomial{B,T,X}(cs::AbstractVector{T}, order::Int=
     MutableDenseLaurentPolynomial{B,T,X}(Val(true), cs, order)
 end
 
+constructorof(::Type{<:MutableDenseLaurentPolynomial{B}}) where {B <: AbstractBasis} = MutableDenseLaurentPolynomial{B}
 @poly_register MutableDenseLaurentPolynomial
 
 ## ---
@@ -50,6 +51,12 @@ function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDenseLaurentPolyno
     xs = trim_trailing_zeros!!(xs)
     R = eltype(xs)
     return ⟒(P){R,X}(Val(false), xs, p.order[])
+end
+
+
+function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableDenseLaurentPolynomial{B,T,X},S,Q<:MutableDenseLaurentPolynomial{B,S,X}}
+    map!(fn, q.coeffs, p.coeffs, args...)
+    nothing
 end
 
 Base.copy(p::MutableDenseLaurentPolynomial{B,T,X}) where {B,T,X} =

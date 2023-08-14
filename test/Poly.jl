@@ -155,8 +155,8 @@ pS3 = Poly([1, 2, 3, 4, 5], :s)
 @test pS1 == pS2
 @test pS1 == pS3
 @test_throws ErrorException pS1 + pX
-@test_throws ErrorException pS1 - pX
 @test_throws ErrorException pS1 * pX
+@test_throws ArgumentError pS1 - pX
 @test_throws ArgumentError pS1 ÷ pX
 @test_throws ArgumentError pS1 % pX
 

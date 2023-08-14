@@ -66,6 +66,7 @@ function MutableSparsePolynomial{B}(cs::Tuple, var::SymbolLike=:x) where {B}
     end
 end
 
+constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B <: AbstractBasis} = MutableSparsePolynomial{B}
 @poly_register MutableSparsePolynomial
 
 function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B,T,X}}
@@ -73,6 +74,14 @@ function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B
     xs = chop_exact_zeros!(xs)
     R = eltype(values(xs)) # narrow_eltype...
     return ⟒(P){R,X}(Val(false), xs)
+end
+
+function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B,T,X},S,Q<:MutableSparsePolynomial{B,S,X}}
+    for (k,v) ∈ pairs(p.coeffs)
+        val = fn(val, args...)
+        iszero(val) ? deleteat!(q,k) : (q[k] = val)
+    end
+    nothing
 end
 
 ## ---

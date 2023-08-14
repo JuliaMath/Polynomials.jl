@@ -32,12 +32,18 @@ function MutableDenseViewPolynomial{B, T, X}(coeffs::AbstractVector{S}, order::I
     MutableDenseViewPolynomial{B,T,X}(Val(false), cs)
 end
 
+constructorof(::Type{<:MutableDenseViewPolynomial{B}}) where {B <: AbstractBasis} = MutableDenseViewPolynomial{B}
 @poly_register MutableDenseViewPolynomial
 
 function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDenseViewPolynomial{B,T,X}}
     xs = map(fn, p.coeffs, args...)
     R = eltype(xs)
     return ⟒(P){R,X}(xs)
+end
+
+function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableDenseViewPolynomial{B,T,X},S,Q<:MutableDenseViewPolynomial{B,S,X}}
+    map!(fn, q.coeffs, p.coeffs, args...)
+    nothing
 end
 
 

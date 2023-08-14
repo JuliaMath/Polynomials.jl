@@ -86,6 +86,8 @@ function FactoredPolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where
     FactoredPolynomial{T,X}(coeffs)
 end
 
+
+
 ## ----
 # abstract.jl The use of @register FactoredPolynomial didn't quite work, so
 # that is replicated here and modified.
@@ -262,6 +264,19 @@ function Base.:+(p::P, q::P) where {T,X,P<:FactoredPolynomial{T,X}}
     𝑷 = Polynomial{T,X}
     𝒑,𝒒 = convert(𝑷, p), convert(𝑷, q)
     convert(P, 𝒑 + 𝒒 )
+end
+
+# subtraction
+function Base.:-(p::P, c::S) where {S<:Number, T,X, P<:FactoredPolynomial{T,X}}
+    R = promote_type(S,T)
+    𝑷 = Polynomial{R,X}
+    𝒑,𝒒 = convert(𝑷, p), convert(𝑷, c)
+    convert(P, 𝒑 - 𝒒)
+end
+function Base.:-(p::P, q::P) where {T,X,P<:FactoredPolynomial{T,X}}
+    𝑷 = Polynomial{T,X}
+    𝒑,𝒒 = convert(𝑷, p), convert(𝑷, q)
+    convert(P, 𝒑 - 𝒒 )
 end
 
 # multiplication

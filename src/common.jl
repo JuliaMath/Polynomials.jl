@@ -953,8 +953,8 @@ julia> roots((x - 3) * (x + 2))
 """
 variable(::Type{P}) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P), indeterminate(P)})
 variable(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P),Symbol(var)})
-variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(typeof(p), var)
-variable(var::SymbolLike = :x) = variable(Polynomial{Int}, var)
+variable(p::AbstractPolynomial, var = indeterminate(p)) = variable(⟒(p){eltype(p), Symbol(var)})
+variable(var::SymbolLike = :x) = variable(Polynomial{Int,Symbol(var)})
 # Each polynomial type implements:
 # variable(::Type{P}) where {T,X,P <: AbstractPolynomial{T,X}} = throw(ArgumentError("No default method defined")) # no default
 
@@ -989,7 +989,7 @@ end
 
 Return ith basis element for a given polynomial type, optionally with a specified variable.
 """
-function basis(::Type{P}, k::Int) where {P<:AbstractPolynomial} # XXX() might be better default.
+function basis(::Type{P}, k::Int) where {P<:AbstractPolynomial}
     T,X = eltype(P), indeterminate(P)
     zs = zeros(T, k+1)
     zs[end] = one(T)
@@ -1044,10 +1044,7 @@ Base.:*(p::P, c::T) where {T, X, P <: AbstractPolynomial{T,X}} = scalar_mult(p, 
 # implicitly identify c::Scalar with a constant polynomials
 Base.:+(c::Scalar, p::AbstractPolynomial) = scalar_add(c, p)
 Base.:-(p::AbstractPolynomial, c::Scalar) = scalar_add(-c, p)
-Base.:-(c::Scalar, p::AbstractPolynomial) = scalar_add(c, -p)
-
-Base.:-(p1::AbstractPolynomial, p2::AbstractPolynomial) = +(p1, -p2)
-
+Base.:-(c::Scalar, p::AbstractPolynomial) = scalar_add(c, -p) # extra copy! eww
 
 ## addition
 ## Fall back addition is possible as vector addition with padding by 0s
@@ -1075,6 +1072,20 @@ end
 function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Q <: AbstractPolynomial{S,X}}
     sum(promote(p,q))
 end
+
+
+function Base.:-(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: AbstractPolynomial{S,Y}}
+    isconstant(p) && return constantterm(p) + q
+    isconstant(q) && return p + constantterm(q)
+    assert_same_variable(X,Y) # should error
+end
+
+function Base.:-(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Q <: AbstractPolynomial{S,X}}
+    -(promote(p,q)...)
+end
+
+# the case p::P{B,T,X} - q::P{B,S,X} should be done in container types
+Base.:-(p::P, q::P) where {T,X,P <: AbstractPolynomial{T,X}} = p + (-1*q)
 
 
 ## -- multiplication
