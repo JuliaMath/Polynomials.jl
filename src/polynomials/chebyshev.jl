@@ -1,4 +1,5 @@
-export ChebyshevT
+# Example of using mutable dense container with a different basis
+struct ChebyshevTBasis <: AbstractBasis end
 
 """
     ChebyshevT{T, X}(coeffs::AbstractVector)
@@ -39,43 +40,46 @@ The latter shows how to evaluate a `ChebyshevT` polynomial outside of its domain
     The Chebyshev polynomials are also implemented in `ApproxFun`, `ClassicalOrthogonalPolynomials.jl`, `FastTransforms.jl`, and `SpecialPolynomials.jl`.
 
 """
-struct ChebyshevT{T, X} <: AbstractPolynomial{T, X}
-    coeffs::Vector{T}
-    function ChebyshevT{T, X}(coeffs::AbstractVector{S}) where {T, X, S}
+const ChebyshevT = MutableDensePolynomial{ChebyshevTBasis}
+export ChebyshevT
+_typealias(::Type{P}) where {P<:ChebyshevT} = "ChebyshevT"
 
-        if Base.has_offset_axes(coeffs)
-            @warn "ignoring the axis offset of the coefficient vector"
-        end
+basis_symbol(::Type{<:AbstractUnivariatePolynomial{ChebyshevTBasis,T,X}}) where {T,X} = "T"
 
-        N = findlast(!iszero, coeffs)
-        isnothing(N) && return new{T,X}(zeros(T,1))
-        cs = T[coeffs[i] for i ∈ firstindex(coeffs):N]
-        new{T,X}(cs)
+# match old style
+function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, mimetype) where {T,X}
+    iszero(pj) && return false
+    !first &&  print(io, " ")
+    if hasneg(T)
+        print(io, isneg(pj) ? "- " :  (!first ? "+ " : ""))
+        print(io, "$(abs(pj))⋅T_$j($var)")
+    else
+        print(io, "+ ", "$(pj)⋅T_$j($var)")
     end
+    return true
 end
 
-@register ChebyshevT
+# function Base.convert(P::Type{<:Polynomial}, ch::MutableDensePolynomial{ChebyshevTBasis})
 
-function Base.convert(P::Type{<:Polynomial}, ch::ChebyshevT)
+#     T = _eltype(P,ch)
+#     X = indeterminate(P,ch)
+#     Q = ⟒(P){T,X}
 
-    T = _eltype(P,ch)
-    X = indeterminate(P,ch)
-    Q = ⟒(P){T,X}
+#     d = lastindex(ch)
+#     if d ≤ 1 # T₀, T₁ = 1, x
+#         return Q(coeffs(ch))
+#     end
 
-    if length(ch) < 3
-        return Q(ch.coeffs)
-    end
-
-    c0 = Q(ch[end - 1])
-    c1 = Q(ch[end])
-    x = variable(Q)
-    @inbounds for i in degree(ch):-1:2
-        tmp = c0
-        c0 = Q(ch[i - 2]) - c1
-        c1 = tmp + c1 * x * 2
-    end
-    return c0 + c1 * x
-end
+#     c0 = Q(ch[end - 1])
+#     c1 = Q(ch[end])
+#     x = variable(Q)
+#     @inbounds for i in d:-1:2
+#         tmp = c0
+#         c0 = Q(ch[i - 2]) - c1
+#         c1 = tmp + c1 * x * 2
+#     end
+#     return c0 + c1 * x
+# end
 
 function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
     x = variable(C)
@@ -83,21 +87,29 @@ function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
     p(x)
 end
 
-Base.promote_rule(::Type{P},::Type{Q}) where {
-    T, X, P <: LaurentPolynomial{T,X},
-    S, Q <: ChebyshevT{S, X}} =
-        LaurentPolynomial{promote_type(T, S), X}
+# lowest degree is always 0
+function coeffs(p::ChebyshevT)
+    a = firstindex(p)
+    iszero(a) && return p.coeffs
+    a > 0 && return [p[i] for i ∈ 0:degree(p)]
+    a < 0 && throw(ArgumentError("Type does not support Laurent polynomials"))
+end
 
+
+
+minimumexponent(::Type{<:ChebyshevT}) = 0
 domain(::Type{<:ChebyshevT}) = Interval(-1, 1)
+
+constantterm(p::ChebyshevT) = p(0)
 function Base.one(::Type{P}) where {P<:ChebyshevT}
     T,X = eltype(P), indeterminate(P)
-    ChebyshevT{T,X}(ones(T,1))
+    ⟒(P){T,X}(ones(T,1))
 end
 function variable(::Type{P}) where {P<:ChebyshevT}
     T,X = eltype(P), indeterminate(P)
-    ChebyshevT{T,X}([zero(T), one(T)])
+    ⟒(P){T,X}([zero(T), one(T)])
 end
-constantterm(p::ChebyshevT) = p(0)
+
 """
     (::ChebyshevT)(x)
 
@@ -122,16 +134,20 @@ julia> c.(-1:0.5:1)
  5.0
 ```
 """
-function evalpoly(x::S, ch::ChebyshevT{T}) where {T,S}
+function evalpoly(x::S, ch::ChebyshevT) where {S}
     x ∉ domain(ch) && throw(ArgumentError("$x outside of domain"))
     evalpoly(x, ch, false)
 end
 
+function evalpoly(x::AbstractPolynomial, ch::ChebyshevT)
+    evalpoly(x, ch, false)
+end
+
 # no checking, so can be called directly through any third argument
-function evalpoly(x::S, ch::ChebyshevT{T}, checked) where {T,S}
+function evalpoly(x::S, ch::MutableDensePolynomial{ChebyshevTBasis,T}, checked) where {T,S}
     R = promote_type(T, S)
-    length(ch) == 0 && return zero(R)
-    length(ch) == 1 && return R(ch[0])
+    degree(ch) == -1 && return zero(R)
+    degree(ch) == 0 && return R(ch[0])
     c0 = ch[end - 1]
     c1 = ch[end]
     @inbounds for i in lastindex(ch) - 2:-1:0
@@ -140,26 +156,59 @@ function evalpoly(x::S, ch::ChebyshevT{T}, checked) where {T,S}
     return R(c0 + c1 * x)
 end
 
-
-function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {T <: Number}
-    A = Matrix{T}(undef, length(x), n + 1)
-    A[:, 1] .= one(T)
-    if n > 0
-        A[:, 2] .= x
-        @inbounds for i in 3:n + 1
-            A[:, i] .= A[:, i - 1] .* 2x .- A[:, i - 2]
-        end
-    end
-    return A
+# scalar +
+function scalar_add(c::S, p::MutableDensePolynomial{B,T,X}) where {B<:ChebyshevTBasis,T,X, S<:Scalar}
+    R = promote_type(T,S)
+    P = MutableDensePolynomial{ChebyshevTBasis,R,X}
+    cs = convert(Vector{R}, copy(coeffs(p)))
+    n = length(cs)
+    iszero(n) && return P([c])
+    isone(n) && return P([cs[1] + c])
+    cs[1] += c
+    return P(cs)
 end
 
-function integrate(p::ChebyshevT{T,X}) where {T,X}
+# product
+function Base.:*(p1::MutableDensePolynomial{B,T,X}, p2::MutableDensePolynomial{B,T,X}) where {B<:ChebyshevTBasis,T,X}
+    z1 = _c_to_z(coeffs(p1))
+    z2 = _c_to_z(coeffs(p2))
+    prod = fastconv(z1, z2)
+    cs = _z_to_c(prod)
+    ret = ChebyshevT(cs,X)
+    return ret
+end
+
+function derivative(p::P) where {B<:ChebyshevTBasis,T,X,P<:MutableDensePolynomial{B,T,X}}
+    R  = eltype(one(T)/1)
+    Q = MutableDensePolynomial{ChebyshevTBasis,R,X}
+    isconstant(p) && return zero(Q)
+    hasnan(p) && return Q(R[NaN])
+
+
+    q = convert(Q, copy(p))
+    n = degree(p) + 1
+    der = Vector{R}(undef, n)
+
+    for j in n:-1:3
+        der[j] = 2j * q[j]
+        q[j - 2] += j * q[j] / (j - 2)
+    end
+    if n > 1
+        der[2] = 4q[2]
+    end
+    der[1] = q[1]
+
+    return  Q(der)
+
+end
+
+function integrate(p::P) where {B<:ChebyshevTBasis,T,X,P<:MutableDensePolynomial{B,T,X}}
     R = eltype(one(T) / 1)
-    Q = ChebyshevT{R,X}
+    Q = MutableDensePolynomial{B,R,X}
     if hasnan(p)
         return Q([NaN])
     end
-    n = length(p)
+    n = degree(p) + 1
     if n == 1
         return Q([zero(R), p[0]])
     end
@@ -175,35 +224,21 @@ function integrate(p::ChebyshevT{T,X}) where {T,X}
     return Q(a2)
 end
 
-
-function derivative(p::ChebyshevT{T}, order::Integer = 1) where {T}
-    order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
-    R  = eltype(one(T)/1)
-    order == 0 && return convert(ChebyshevT{R}, p)
-    hasnan(p) && return ChebyshevT(R[NaN], indeterminate(p))
-    order > length(p) && return zero(ChebyshevT{R})
-
-
-    q =  convert(ChebyshevT{R}, copy(p))
-    n = length(p)
-    der = Vector{R}(undef, n)
-
-    for j in n:-1:3
-        der[j] = 2j * q[j]
-        q[j - 2] += j * q[j] / (j - 2)
+function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {T <: Number}
+    A = Matrix{T}(undef, length(x), n + 1)
+    A[:, 1] .= one(T)
+    if n > 0
+        A[:, 2] .= x
+        @inbounds for i in 3:n + 1
+            A[:, i] .= A[:, i - 1] .* 2x .- A[:, i - 2]
+        end
     end
-    if n > 1
-        der[2] = 4q[2]
-    end
-    der[1] = q[1]
-
-    pp = ChebyshevT(der, indeterminate(p))
-    return order > 1 ?  derivative(pp, order - 1) : pp
-
+    return A
 end
 
-function companion(p::ChebyshevT{T}) where T
-    d = length(p) - 1
+function companion(p::MutableDensePolynomial{ChebyshevTBasis,T}) where T
+    d = degree(p)
+    #d = length(p) - 1
     d < 1 && throw(ArgumentError("Series must have degree greater than 1"))
     d == 1 && return diagm(0 => [-p[0] / p[1]])
     R = eltype(one(T) / one(T))
@@ -213,45 +248,16 @@ function companion(p::ChebyshevT{T}) where T
     diag = vcat(√0.5, fill(R(0.5), d - 2))
     comp = diagm(1 => diag,
                  -1 => diag)
-    monics = p.coeffs ./ p.coeffs[end]
+    monics = coeffs(p) ./ coeffs(p)[end]
     comp[:, end] .-= monics[1:d] .* scl ./ scl[end] ./ 2
     return R.(comp)
 end
 
-# scalar +
-function Base.:+(p::ChebyshevT{T,X}, c::S) where {T,X, S<:Number}
-    R = promote_type(T,S)
-    cs = collect(R, values(p))
-    cs[1] += c
-    ChebyshevT{R,X}(cs)
-end
-
-function Base.:+(p::P, c::T) where {T <: Number,X,P<:ChebyshevT{T,X}}
-    cs = collect(T, values(p))
-    cs[1] += c
-    P(cs)
-end
-
-function Base.:+(p1::ChebyshevT{T,X}, p2::ChebyshevT{T,X}) where {T,X}
-    n = max(length(p1), length(p2))
-    c = T[p1[i] + p2[i] for i = 0:n]
-    return ChebyshevT{T,X}(c)
-end
-
-
-function Base.:*(p1::ChebyshevT{T,X}, p2::ChebyshevT{T,X}) where {T,X}
-    z1 = _c_to_z(p1.coeffs)
-    z2 = _c_to_z(p2.coeffs)
-    prod = fastconv(z1, z2)
-    cs = _z_to_c(prod)
-    ret = ChebyshevT(cs,X)
-    return truncate!(ret)
-end
-
-function Base.divrem(num::ChebyshevT{T,X}, den::ChebyshevT{S,Y}) where {T,X,S,Y}
+function Base.divrem(num::ChebyshevT{T,X},
+                     den::ChebyshevT{S,Y}) where {T,X,S,Y}
     assert_same_variable(num, den)
-    n = length(num) - 1
-    m = length(den) - 1
+    n = degree(num)
+    m = degree(den)
 
     R = typeof(one(T) / one(S))
     P = ChebyshevT{R,X}
@@ -263,29 +269,17 @@ function Base.divrem(num::ChebyshevT{T,X}, den::ChebyshevT{S,Y}) where {T,X,S,Y}
         return num ./ den[end], zero(P)
     end
 
-    znum = _c_to_z(num.coeffs)
-    zden = _c_to_z(den.coeffs)
+    znum = _c_to_z(coeffs(num))
+    zden = _c_to_z(coeffs(den))
     quo, rem = _z_division(znum, zden)
     q_coeff = _z_to_c(quo)
     r_coeff = _z_to_c(rem)
     return P(q_coeff), P(r_coeff)
 end
 
-function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, mimetype) where {T,X}
-    iszero(pj) && return false
-    !first &&  print(io, " ")
-    if hasneg(T)
-        print(io, isneg(pj) ? "- " :  (!first ? "+ " : ""))
-        print(io, "$(abs(pj))⋅T_$j($var)")
-    else
-        print(io, "+ ", "$(pj)⋅T_$j($var)")
-    end
-    return true
-end
-
-
 #=
-zseries =#
+zseries -- for ChebyshevT example
+=#
 
 function _c_to_z(cs::AbstractVector{T}) where {T}
     n = length(cs)

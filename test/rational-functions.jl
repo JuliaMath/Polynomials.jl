@@ -7,20 +7,16 @@ using LinearAlgebra
     p,q = fromroots(Polynomial, [1,2,3]), fromroots(Polynomial, [2,3,4])
     r,s = SparsePolynomial([1,2,3], :x), SparsePolynomial([1,2,3], :y)
     t,u = Polynomial([1,2,pi]), SparsePolynomial([1.1, 2.2, 3.4], :y)
-    
+
     # constructor
     @test p // q isa RationalFunction
     @test p // r isa RationalFunction
     @test_throws ArgumentError r // s
     @test RationalFunction(p) == p // one(p)
 
-    # We expect p::P // q::P (same type polynomial).
-    # As Immutable Polynomials have N as type parameter, we disallow
-    @test_throws ArgumentError variable(ImmutablePolynomial) // variable(ImmutablePolynomial)
-    
     pq = p // t # promotes to type of t
     @test pq isa RationalFunction{Float64, :x}
-   
+
     # iterations, broadcast
     pp,qq = p // q
     @test (pp,qq) == (p,q)
@@ -28,7 +24,7 @@ using LinearAlgebra
     u = gcd(p//q...)
     @test u/u[end] ≈ fromroots(Polynomial, [2,3])
     @test degree.(p//q) == degree(p//q) # no broadcast over rational functions
-    
+
     # evaluation
     pq = p//q
     @test pq(2.5) ≈ p(2.5) / q(2.5)
@@ -36,7 +32,7 @@ using LinearAlgebra
     @test zero(pq)(10) == 0
     @test one(pq)(10) == 1
 
-    
+
     # arithmetic
     rs = r // (r-1)
     x = 1.2
@@ -45,8 +41,8 @@ using LinearAlgebra
     @test (-pq)(x) ≈ -p(x)/q(x)
     @test pq .* (pq, pq) == (pq*pq, pq*pq)
     @test pq .* [pq pq] == [pq*pq pq*pq]
-    
-    
+
+
     # derivative
     pq = p // one(p)
     x = 1.23
@@ -54,13 +50,13 @@ using LinearAlgebra
     pq = p // q
     dp,dq = derivative.((p,q))
     @test derivative(pq)(x) ≈ (dp(x)*q(x) - p(x)*dq(x))/q(x)^2
-    
+
     # integral
     pq = p // (2*one(p))
     @test iszero(derivative(integrate(pq)) - pq)
     pq = p // q
     @test_throws ArgumentError integrate(pq) # need logs terms in general
-    
+
     # lowest terms
     pq = p // q
     pp, qq = Polynomials.pqs(lowest_terms(pq))
@@ -79,7 +75,7 @@ using LinearAlgebra
     @test p //q == 1/ (q//p)
     @test numerator(p) == p * variable(p)^2
     @test denominator(p) == convert(Polynomial, variable(p)^2)
-    
+
 end
 
 @testset "zeros, poles, residues" begin
@@ -92,11 +88,11 @@ end
     zs = roots(pq)
     @test length(zs.zs) == 1
     @test zs.multiplicities == [7]
-    
+
     ## poles
     ps = poles(pq)
     @test length(ps.zs) == 3
-    
+
     ## residues
     d,r = residues(pq)
     @test d ≈ 9 - 4x + x^2
@@ -112,11 +108,11 @@ end
 end
 
 @testset "As matrix elements" begin
-    
+
     p, q = Polynomial([1,2], :x), Polynomial([1,2],:y)
     pp = p // (p-1)
     PP = typeof(pp)
-    
+
     r, s = SparsePolynomial([1,2], :x), SparsePolynomial([1,2],:y)
     rr = r // (r-1)
 
@@ -143,7 +139,7 @@ end
 
 
 @testset "Rational function fit" begin
-    
+
     p,q = Polynomial([1,1,1]), Polynomial([1,2])
     xs = range(-0.25,stop=1, length=15)
     ys = (p//q).(xs)
@@ -157,7 +153,7 @@ end
     ys = pq.(xs);
     v = fit(RationalFunction, xs, ys, 2, 2)
     @test maximum(abs, v(x)-pq(x) for x ∈ 2.1:0.1:3.0) <= sqrt(eps())
-    
+
 end
 
 @testset "Pade fit" begin
@@ -168,19 +164,19 @@ end
     a = Polynomial( 1 .// factorial.(big(0):17) )
     pq = fit(RationalFunction,a,8,8)
     @test pq(1.0) ≈ exp(1.0)
-    @test pq(-1.0) ≈ exp(-1.0)    
+    @test pq(-1.0) ≈ exp(-1.0)
 
     # sine
     b = Polynomial(Int.(sinpi.((0:16)/2)) .// factorial.(big(0):16))
     pq = fit(RationalFunction, b, 7, 8)
     @test pq(1.0) ≈ sin(1.0)
-    @test pq(-1.0) ≈ sin(-1.0)    
+    @test pq(-1.0) ≈ sin(-1.0)
 
     # cosine
     c = Polynomial(Int.(sinpi.((1:17)/2)) .// factorial.(big(0):16))
     pq = fit(RationalFunction, c, 8, 8)
     @test pq(1.0) ≈ cos(1.0)
-    @test pq(-1.0) ≈ cos(-1.0)    
+    @test pq(-1.0) ≈ cos(-1.0)
 
     # summation of a factorially divergent series
     d = Polynomial( (-big(1)).^(0:60) .* factorial.(big(0):60) )

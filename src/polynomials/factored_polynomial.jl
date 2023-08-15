@@ -37,7 +37,7 @@ julia> map(x->round(x, digits=12), q) # map works over factors and leading coeff
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 """
-struct FactoredPolynomial{T <: Number, X} <: StandardBasisPolynomial{T, X}
+struct FactoredPolynomial{T <: Number, X} <: AbstractPolynomial{T, X}
     coeffs::Dict{T,Int}
     c::T
     function FactoredPolynomial{T, X}(checked::Val{false}, cs::Dict{T,Int}, c::T) where {T, X}
@@ -86,6 +86,8 @@ function FactoredPolynomial(coeffs::AbstractVector{T}, var::SymbolLike=:x) where
     FactoredPolynomial{T,X}(coeffs)
 end
 
+
+
 ## ----
 # abstract.jl The use of @register FactoredPolynomial didn't quite work, so
 # that is replicated here and modified.
@@ -104,7 +106,7 @@ Base.promote_rule(::Type{<:FactoredPolynomial{T,X}}, ::Type{<:FactoredPolynomial
 Base.promote_rule(::Type{<:FactoredPolynomial{T,X}}, ::Type{S}) where {T,S<:Number,X} =
     FactoredPolynomial{promote_type(T,S), X}
 FactoredPolynomial{T,X}(n::S) where {T,X,S<:Number} = T(n) * one(FactoredPolynomial{T,X})
-FactoredPolynomial{T}(n::S, var::SymbolLike=:x) where {T,S<:Number} = T(n) * one(FactoredPolynomial{T,X})
+FactoredPolynomial{T}(n::S, var::SymbolLike=:x) where {T,S<:Number} = T(n) * one(FactoredPolynomial{T,Symbol(var)})
 FactoredPolynomial(n::S, var::SymbolLike=:x) where {S<:Number} = n * one(FactoredPolynomial{S,Symbol(var)})
 FactoredPolynomial(var::SymbolLike=:x) = variable(FactoredPolynomial, Symbol(var))
 (p::FactoredPolynomial)(x) = evalpoly(x, p)
@@ -205,6 +207,8 @@ end
 
 
 ## ----
+domain(::Type{<:FactoredPolynomial}) = Interval{Open,Open}(-Inf, Inf)
+mapdomain(::Type{<:FactoredPolynomial}, x::AbstractArray) = x
 Base.iszero(p::FactoredPolynomial) = iszero(p.c)
 
 Base.zero(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(),     zero(T))
@@ -260,6 +264,19 @@ function Base.:+(p::P, q::P) where {T,X,P<:FactoredPolynomial{T,X}}
     𝑷 = Polynomial{T,X}
     𝒑,𝒒 = convert(𝑷, p), convert(𝑷, q)
     convert(P, 𝒑 + 𝒒 )
+end
+
+# subtraction
+function Base.:-(p::P, c::S) where {S<:Number, T,X, P<:FactoredPolynomial{T,X}}
+    R = promote_type(S,T)
+    𝑷 = Polynomial{R,X}
+    𝒑,𝒒 = convert(𝑷, p), convert(𝑷, c)
+    convert(P, 𝒑 - 𝒒)
+end
+function Base.:-(p::P, q::P) where {T,X,P<:FactoredPolynomial{T,X}}
+    𝑷 = Polynomial{T,X}
+    𝒑,𝒒 = convert(𝑷, p), convert(𝑷, q)
+    convert(P, 𝒑 - 𝒒 )
 end
 
 # multiplication
@@ -352,9 +369,16 @@ function integrate(p::P) where {P <: FactoredPolynomial}
     convert(P, ∫𝒑)
 end
 
-function derivative(p::P,n::Int) where {P <: FactoredPolynomial}
+function derivative(p::P,n::Int=1) where {P <: FactoredPolynomial}
     𝑷 = Polynomial
     𝒑 = convert(𝑷, p)
     𝒑⁽ⁿ⁾ = derivative(𝒑, n)
     convert(P, 𝒑⁽ⁿ⁾)
+end
+
+function Multroot.multroot(p::FactoredPolynomial)
+    d = p.coeffs
+    (values = collect(keys(d)),
+     multiplicities = collect(values(d)),
+     κ = 0.0, ϵ = 0.0)
 end

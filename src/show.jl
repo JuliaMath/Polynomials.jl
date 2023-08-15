@@ -59,10 +59,13 @@ showone(::Type{<:AbstractPolynomial{S}}) where {S} = false
 Common Printing
 =#
 
+_typealias(::Type{P}) where {P<:AbstractPolynomial} = P.name.wrapper # allows for override
+
 Base.show(io::IO, p::AbstractPolynomial) = show(io, MIME("text/plain"), p)
 
 function Base.show(io::IO, mimetype::MIME"text/plain", p::P) where {P<:AbstractPolynomial}
-    print(io,"$(P.name.wrapper)(")
+    print(io, _typealias(P))
+    print(io, "(")
     printpoly(io, p, mimetype)
     print(io,")")
 end
@@ -167,7 +170,7 @@ Shows the j'th term of the given polynomial. Returns `true` after successfully p
 
 For example. for a `Polynomial` this would show the term `pj * var^j`.
 """
-function showterm(io::IO, ::Type{AbstractPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} end
+function showterm(io::IO, ::Type{<:AbstractPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T} end
 
 
 ## print the sign
@@ -306,16 +309,26 @@ end
 exponent_text(i, ::MIME) = "^$(i)"
 exponent_text(i, ::MIME"text/html") = "<sup>$(i)</sup>"
 exponent_text(i, ::MIME"text/latex") = "^{$(i)}"
+subscript_text(i, ::MIME) = "_$(i)"
+subscript_text(i, ::MIME"text/html") = "<sub>$(i)</sub>"
+subscript_text(i, ::MIME"text/latex") = "_{$(i)}"
+
 
 function printexponent(io, var, i, mimetype::MIME)
     if i == 0
         return
     elseif i == 1
-        print(io,var)
+        print(io, var)
     else
         print(io, var, exponent_text(i, mimetype))
     end
 end
+function printsubscript(io, var, i, mimetype::MIME)
+    print(io, var, subscript_text(i, mimetype))
+end
+
+ascii_exponent(io, j) = print(io, "^", j)
+ascii_subscript(io, j) = print(io, "_", j)
 
 function unicode_exponent(io, j)
     a = ("⁻","","","⁰","¹","²","³","⁴","⁵","⁶","⁷","⁸","⁹")

@@ -1,212 +1,187 @@
-abstract type StandardBasisPolynomial{T,X} <: AbstractPolynomial{T,X} end
-abstract type LaurentBasisPolynomial{T,X} <: StandardBasisPolynomial{T,X} end
+struct StandardBasis <: AbstractBasis end
+const StandardBasisPolynomial  = AbstractUnivariatePolynomial{<:Polynomials.StandardBasis,T,X} where {T,X}
 
-function showterm(io::IO, ::Type{<:StandardBasisPolynomial}, pj::T, var, j, first::Bool, mimetype) where {T}
+basis_symbol(::Type{P}) where {P<:StandardBasisPolynomial} = string(indeterminate(P))
+function printbasis(io::IO, ::Type{P}, j::Int, m::MIME) where {B<:StandardBasis, P <: AbstractUnivariatePolynomial{B}}
+    iszero(j) && return # no x^0
+    print(io, basis_symbol(P))
+    hasone(typeof(j)) && isone(j) && return # no 2x^1, just 2x
+    print(io, exponent_text(j, m))
+end
 
-    if _iszero(pj) return false end
 
-    pj = printsign(io, pj, first, mimetype)
+function Base.convert(P::Type{PP}, q::Q) where {B<:StandardBasis, PP <: AbstractUnivariatePolynomial{B}, Q<:AbstractUnivariatePolynomial{B}}
+    isa(q, PP) && return q
+    minimumexponent(P) <= firstindex(q) ||
+        throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
 
-    if hasone(T)
-        if !(_isone(pj) && !(showone(T) || j == 0))
-            printcoefficient(io, pj, j, mimetype)
-        end
+    T = _eltype(P,q)
+    X = indeterminate(P,q)
+
+    i₀ = firstindex(q)
+    if i₀ < 0
+        return ⟒(P){T,X}([q[i] for i in eachindex(q)], i₀)
     else
-        printcoefficient(io, pj, j, mimetype)
-    end
-
-    printproductsign(io, pj, j, mimetype)
-    printexponent(io, var, j, mimetype)
-    return true
-end
-
-"""
-    evalpoly(x, p::StandardBasisPolynomial)
-    p(x)
-
-Evaluate the polynomial using [Horner's Method](https://en.wikipedia.org/wiki/Horner%27s_method), also known as synthetic division, as implemented in `evalpoly` of base `Julia`.
-
-# Examples
-```jldoctest
-julia> using Polynomials
-
-julia> p = Polynomial([1, 0, 3])
-Polynomial(1 + 3*x^2)
-
-julia> p(0)
-1
-
-julia> p.(0:3)
-4-element Vector{Int64}:
-  1
-  4
- 13
- 28
-```
-"""
-function evalpoly(x, p::StandardBasisPolynomial{T}) where {T}
-    # the zero polynomial is a *special case*
-    iszero(p) && return zero(x) * zero(T)
-    EvalPoly.evalpoly(x, p.coeffs) # allows  broadcast  issue #209
-end
-
-constantterm(p::StandardBasisPolynomial) = p[0]
-
-domain(::Type{<:StandardBasisPolynomial}) = Interval{Open,Open}(-Inf, Inf)
-mapdomain(::Type{<:StandardBasisPolynomial}, x::AbstractArray) = x
-
-function Base.convert(P::Type{<:StandardBasisPolynomial}, q::StandardBasisPolynomial)
-    if isa(q, P)
-        return q
-    else
-        minimumexponent(P) <= minimumexponent(q) ||
-            throw(ArgumentError("a $P can not have a minimum exponent of $(minimumexponent(q))"))
-        T = _eltype(P,q)
-        X = indeterminate(P,q)
-        return ⟒(P){T,X}([q[i] for i in eachindex(q)])
+        return ⟒(P){T,X}([q[i] for i in 0:max(0,degree(q))]) # should trim trailing 0s
     end
 end
 
-# treat p as a *vector* of coefficients
-Base.similar(p::StandardBasisPolynomial, args...) = similar(coeffs(p), args...)
 
-function Base.one(::Type{P}) where {P<:StandardBasisPolynomial}
-    T,X = eltype(P), indeterminate(P)
-    ⟒(P){T,X}(ones(T,1))
+Base.one(::Type{P}) where {B<:StandardBasis,T,X, P <: AbstractUnivariatePolynomial{B,T,X}} = ⟒(P){T,X}(ones(T,1))
+
+variable(P::Type{<:AbstractUnivariatePolynomial{B,T,X}}) where {B<:StandardBasis,T,X} =  basis(P, 1)
+
+basis(P::Type{<:AbstractUnivariatePolynomial{B, T, X}}, i::Int) where {B<:StandardBasis,T,X} = P(ones(T,1), i)
+
+constantterm(p::AbstractUnivariatePolynomial{B}) where {B <: StandardBasis} = p[0]
+
+domain(::Type{P}) where {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B}} = Interval{Open,Open}(-Inf, Inf)
+
+mapdomain(::Type{P}, x::AbstractArray) where  {B <: StandardBasis, P <: AbstractUnivariatePolynomial{B}} = x
+
+
+## Evaluation, Scalar addition, Multiplication, integration, differentiation
+## may be no good fallback
+function evalpoly(c::S, p::P) where {B<:StandardBasis, S, T, X, P<:AbstractDenseUnivariatePolynomial{B,T,X}}
+    iszero(p) && return zero(T) * zero(c)
+    EvalPoly.evalpoly(c, p.coeffs)
 end
-function variable(::Type{P}) where {P<:StandardBasisPolynomial}
-    T,X = eltype(P), indeterminate(P)
-    ⟒(P){T,X}([zero(T), one(T)])
-end
+evalpoly(c::S, p::AbstractLaurentUnivariatePolynomial{StandardBasis}) where {S} = throw(ArgumentError("Default method not defined"))
 
-## ---- arithmetic
-
-# can bypass c*one(P)
-Base.:+(p::P, c::T) where {T, X, P<:StandardBasisPolynomial{T, X}} = p + ⟒(P)([c], X)
-
-## multiplication algorithms for computing p * q.
-## default multiplication between same type.
-## subtypes might relax to match T,S to avoid one conversion
-function Base.:*(p::P, q::P) where {T,X, P<:StandardBasisPolynomial{T,X}}
-    cs = ⊗(P, p.coeffs, q.coeffs)
-    P(cs)
-end
-
-function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T<:Number,S<:Number}
+function scalar_add(c::S, p::P) where {B<:StandardBasis, S, T, X, P<:AbstractDenseUnivariatePolynomial{B,T,X}}
     R = promote_type(T,S)
-    fastconv(convert(Vector{R}, p), convert(Vector{R},q))
-end
+    P′ = ⟒(P){R,X}
 
-## put here, not with type definition, in case reuse is possible
-## `conv` can be used with matrix entries, unlike `fastconv`
-function conv(p::Vector{T}, q::Vector{S}) where {T,S}
-    (isempty(p) || isempty(q)) && return promote_type(T, S)[]
-    as = [p[1]*q[1]]
-    z = zero(as[1])
-    n,m = length(p)-1, length(q)-1
-    for i ∈ 1:n+m
-        Σ = z
-        for j ∈ max(0, i-m):min(i,n)
-            Σ = muladd(p[1+j], q[1 + i-j], Σ)
-        end
-        push!(as, Σ)
+    iszero(p) && return P′([c], 0)
+    iszero(c) && return convert(P′, p)
+
+    a,b = 0, lastindex(p)
+    cs = _zeros(p, zero(first(p.coeffs) + c), b-a+1)
+    o = offset(p)
+    for (i, cᵢ) ∈ pairs(p)
+        cs =  _set(cs, i+o, cᵢ)
     end
-    as
+    cs = _set(cs, 0+o, cs[0+o] + c)
+    iszero(last(cs)) && (cs = trim_trailing_zeros!!(cs))
+    P′(Val(false), cs)
 end
+scalar_add(c::S, p::AbstractLaurentUnivariatePolynomial{StandardBasis}) where {S} = throw(ArgumentError("Default method not defined"))
 
-function ⊗(P::Type{<:StandardBasisPolynomial}, p::Vector{T}, q::Vector{S}) where {T,S}
-    conv(p, q)
-end
+# special cases are faster
+# function Base.:*(p::AbstractUnivariatePolynomial{B,T,X},
+#            q::AbstractUnivariatePolynomial{B,S,X}) where {B <: StandardBasis, T,S,X}
+#     # simple convolution with order shifted
+#     throw(ArgumentError("Default method not defined"))
+# end
 
-## Static size of product makes generated functions  a good choice
-## from https://github.com/tkoolen/StaticUnivariatePolynomials.jl/blob/master/src/monomial_basis.jl
-## convolution of two tuples
-@generated function ⊗(::Type{<:StandardBasisPolynomial}, p1::NTuple{N,T}, p2::NTuple{M,S}) where {T,N,S,M}
-    P = M + N - 1
-    exprs = Any[nothing for i = 1 : P]
-    for i in 1 : N
-        for j in 1 : M
-            k = i + j - 1
-            if isnothing(exprs[k])
-                exprs[k] = :(p1[$i] * p2[$j])
-            else
-                exprs[k] = :(muladd(p1[$i], p2[$j], $(exprs[k])))
-            end
+# for dense 0-based polys with p.coeffs
+for P ∈ (:MutableDensePolynomial, :MutableDenseViewPolynomial)
+    @eval begin
+        function Base.:*(p::P, q::Q) where {B <: StandardBasis,X,
+                                            T, P<:$P{B,T,X},
+                                            S, Q<:$P{B,S,X}}
+            _standard_basis_multiplication(p,q)
         end
     end
-
-    return quote
-        Base.@_inline_meta # 1.8 deprecation
-        tuple($(exprs...))
-    end
-
 end
 
-function ⊗(P::Type{<:StandardBasisPolynomial}, p::Dict{Int,T}, q::Dict{Int,S}) where {T,S}
-    R = promote_type(T,S)
-    c = Dict{Int,R}()
-    for (i,pᵢ) ∈ pairs(p)
-        for (j,qⱼ) ∈ pairs(q)
-            cᵢⱼ = get(c, i+j, zero(R))
-            @inbounds c[i+j] = muladd(pᵢ, qⱼ, cᵢⱼ)
+function _standard_basis_multiplication(p::P,q::Q) where {T,X,P<:AbstractDenseUnivariatePolynomial{StandardBasis,T,X},
+                                                           S,Q<:AbstractDenseUnivariatePolynomial{StandardBasis,S,X}}
+    @assert constructorof(P) == constructorof(Q)
+
+    P′ = ⟒(P){promote_type(T,S),X}
+
+    iszero(p) && return zero(P′)
+    iszero(q) && return zero(P′)
+
+    n,m = length(p), length(q)
+    cs = _zeros(p, zero(p[0] + q[0]), n + m - 1)
+    mul!(cs, p, q)
+    P′(Val(false), cs)
+end
+
+# up to caller to ensure cs is zeroed out
+function LinearAlgebra.mul!(cs, p::AbstractDenseUnivariatePolynomial, q::AbstractDenseUnivariatePolynomial)
+    # TODO: check that p.coeffs, q.coeffs and cs aren't aliased.
+    m,n = length(p)-1, length(q)-1
+    @inbounds for (i, pᵢ) ∈ enumerate(p.coeffs)
+        for (j, qⱼ) ∈ enumerate(q.coeffs)
+            ind = i + j - 1
+            cs[ind] = muladd(pᵢ, qⱼ, cs[ind])
         end
     end
-    c
+    nothing
 end
 
-## Define a dot product on vectors of polynomials, where polynomials are treated as
-## as the scalar types -- the dot is the sum of pairwise products. Might change in
-## the future if this causes confusion with the "vector" interpretation of polys.
-LinearAlgebra.dot(xv::AbstractArray{T}, yv::AbstractArray{T}) where {T <: StandardBasisPolynomial} =
-    sum(conj(x)*y for (x,y) = zip(xv, yv))
 
-## ---
-
-function fromroots(P::Type{<:StandardBasisPolynomial}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
-    n = length(r)
-    c = zeros(T, n + 1)
-    c[1] = one(T)
-    for j in 1:n, i in j:-1:1
-        c[(i + 1)] = c[(i + 1)] - r[j] * c[i]
+# derivative
+function derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractDenseUnivariatePolynomial{B,T,X}}
+    R = Base.promote_type(T, Int)
+    N = length(p.coeffs)
+    P′ = ⟒(P){R,X}
+    iszero(N) && return zero(P′)
+    hasnan(p) && return P′(NaN)
+    z = 0*p[0]
+    cs = _zeros(p,z,N-1)
+    o = offset(p)
+    for (i, pᵢ) ∈ Base.Iterators.drop(pairs(p),1)
+        _set(cs, i - 1 + o, i * pᵢ)
     end
-    #return P(c, var)
-    if sort(r[imag(r).>0], lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y)) == sort(conj(r[imag(r).<0]), lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y))
-        c = real(c)             # if complex poles come in conjugate pairs, the coeffs are real
+    ⟒(P){typeof(z),X}(Val(false), cs)
+end
+derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractLaurentUnivariatePolynomial{B,T,X}} =
+    throw(ArgumentError("Default method not defined"))
+
+# integrate
+function integrate(p::P) where {B <: StandardBasis,T,X,P<:AbstractDenseUnivariatePolynomial{B,T,X}}
+
+    R = Base.promote_op(/, T, Int)
+    Q = ⟒(P){R,X}
+    iszero(p) && return zero(Q)
+    hasnan(p) && return  Q(zero(T)/zero(T)) # NaN{T}
+
+    N = length(p.coeffs)
+    cs = Vector{R}(undef,N+1)
+    cs[1] = 0 * (p[0]/1)
+    o = offset(p)
+    for (i, pᵢ) ∈ pairs(p)
+        cs[i+1+o] =  pᵢ/(i+1)
     end
-    return P(reverse(c), var)
-end
-
-## ----
-
-function derivative(p::P, order::Integer = 1) where {T, X, P <: StandardBasisPolynomial{T, X}}
-
-    order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
-    order == 0 && return p
-    d = degree(p)
-    order > d  && return 0*p
-    hasnan(p) && return  ⟒(P)(zero(T)/zero(T), Var(X)) # NaN{T}
-
-    n = d + 1
-    dp = [reduce(*, (i - order + 1):i, init = p[i]) for i ∈ order:d]
-    return ⟒(P)(dp, Var(X))
-
-end
-
-function integrate(p::P) where {T, X, P <: StandardBasisPolynomial{T, X}}
-
-    hasnan(p) && return ⟒(P)(NaN, Var(X))
-    iszero(p) && return zero(p)/1
-
-    as = [pᵢ/(i+1) for (i, pᵢ) ∈ pairs(p)]
-    pushfirst!(as, zero(constantterm(p)))
-    return ⟒(P)(as, Var(X))
+    Q(Val(false), cs)
 end
 
 
-function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, S, Q <: StandardBasisPolynomial{S}}
+function integrate(p::AbstractLaurentUnivariatePolynomial{B,T,X}) where {B <: StandardBasis,T,X}
+
+    iszero(p) && return p/1
+    N = lastindex(p) - firstindex(p) + 1
+    z = 0*(p[0]/1)
+    R = eltype(z)
+    P = ⟒(p){R,X}
+    hasnan(p) && return  P(zero(T)/zero(T)) # NaN{T}
+
+    cs = _zeros(p, z, N+1)
+    os =  offset(p)
+    @inbounds for (i, cᵢ) ∈ pairs(p)
+        i == -1 && (iszero(cᵢ) ? continue : throw(ArgumentError("Can't integrate Laurent polynomial with  `x⁻¹` term")))
+        #cs[i + os] = cᵢ / (i+1)
+        cs = _set(cs, i + 1 + os,  cᵢ / (i+1))
+    end
+    P(cs, firstindex(p))
+end
+
+## --------------------------------------------------
+
+function Base.divrem(num::P, den::Q) where {B<:StandardBasis,
+                                            T, P <: AbstractUnivariatePolynomial{B,T},
+                                            S, Q <: AbstractUnivariatePolynomial{B,S}}
 
     assert_same_variable(num, den)
+    @assert ⟒(P) == ⟒(Q)
+
     X = indeterminate(num)
+    R = Base.promote_op(/, T, S)
+    PP = ⟒(P){R,X}
 
 
     n = degree(num)
@@ -235,10 +210,10 @@ function Base.divrem(num::P, den::Q) where {T, P <: StandardBasisPolynomial{T}, 
         end
     end
     resize!(r_coeff, min(length(r_coeff), m))
-
-    return _convert(num, q_coeff), _convert(num, r_coeff)
+    return PP(q_coeff), PP(r_coeff)
 
 end
+
 
 """
     gcd(p1::StandardBasisPolynomial, p2::StandardBasisPolynomial; method=:euclidean, kwargs...)
@@ -254,13 +229,13 @@ Passing `method=:numerical` will call the internal method `NGCD.ngcd` for the nu
 function Base.gcd(p1::P, p2::Q, args...;
                   method=:euclidean,
                   kwargs...
-                  ) where {T, P <: StandardBasisPolynomial{T}, Q <: StandardBasisPolynomial{T}}
-
+                  ) where {P <:StandardBasisPolynomial,
+                           Q <:StandardBasisPolynomial}
     gcd(Val(method), p1, p2, args...; kwargs...)
 end
 
 function Base.gcd(::Val{:euclidean},
-                  r₀::StandardBasisPolynomial{T}, r₁;
+                  r₀::AbstractUnivariatePolynomial{StandardBasis,T}, r₁;
                   atol=zero(real(T)),
                   rtol=Base.rtoldefault(real(T)),
                   kwargs...) where {T}
@@ -295,16 +270,17 @@ Author: Andreas Varga
 
 Note: requires Julia `v1.2` or greater.
 """
-function  gcd_noda_sasaki(p::StandardBasisPolynomial{T}, q::StandardBasisPolynomial{S};
+function  gcd_noda_sasaki(p::StandardBasisPolynomial{T,X}, q::StandardBasisPolynomial{S,Y};
                           atol::Real=zero(real(promote_type(T,S))),
                           rtol::Real=Base.rtoldefault(real(promote_type(T,S)))
-                          ) where {T,S}
-    ⟒(typeof(p)) == ⟒(typeof(q)) ||  return gcd_noda_sasaki(promote(p,q);  atol=atol, rtol=rtol)
+                          ) where {T,S,X,Y}
+    ⟒(typeof(p)) == ⟒(typeof(q)) ||  return gcd_noda_sasaki(promote(p,q)...;  atol=atol, rtol=rtol)
+    (isconstant(p) || isconstant(q)) || assert_same_variable(X,Y)
     ## check symbol
     a, b = coeffs(p), coeffs(q)
     as =  _gcd_noda_sasaki(a,b, atol=atol,  rtol=rtol)
 
-    _convert(p, as)
+    ⟒(p)(as, X)
 end
 
 function _gcd_noda_sasaki(a::Vector{T}, b::Vector{S};
@@ -356,13 +332,12 @@ end
 
 Base.gcd(::Val{:numerical}, p, q, args...; kwargs...) = ngcd(p,q, args...; kwargs...).u
 
-uvw(p::P, q::Q, args...;
+uvw(p::P,q::P;
     method=:euclidean,
     kwargs...
-    ) where {T, P <: StandardBasisPolynomial{T}, Q <: StandardBasisPolynomial{T}} =
-        uvw(Val(method), p, q; kwargs...)
+    )  where {P<:StandardBasisPolynomial} = uvw(Val(method), p, q; kwargs...)
 
-function uvw(::Val{:numerical}, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
+function uvw(::Val{:numerical}, p::P, q::P; kwargs...) where {P <:StandardBasisPolynomial }
     u,v,w,Θ,κ = ngcd(p,q; kwargs...)
     u,v,w
 end
@@ -373,13 +348,13 @@ function uvw(V::Val{:euclidean}, p::P, q::P; kwargs...) where {P <: StandardBasi
 end
 
 function uvw(::Any, p::P, q::P; kwargs...) where {P <: StandardBasisPolynomial}
-    throw(ArgumentError("not defined"))
+     throw(ArgumentError("not defined"))
 end
 
 # Some things lifted from
 # from https://github.com/jmichel7/LaurentPolynomials.jl/blob/main/src/LaurentPolynomials.jl.
 # This follows mostly that of intfuncs.jl which is specialized for integers.
-function Base.gcdx(a::P, b::P) where {T,X,P<:StandardBasisPolynomial{T,X}}
+function Base.gcdx(a::P, b::P) where {T,X,P<:AbstractUnivariatePolynomial{StandardBasis,T,X}}
     # a0, b0=a, b
     s0, s1=one(a), zero(a)
     t0, t1 = s1, s0
@@ -394,7 +369,7 @@ function Base.gcdx(a::P, b::P) where {T,X,P<:StandardBasisPolynomial{T,X}}
     (x, s0, t0)./x[end]
 end
 
-Base.gcdx(a::StandardBasisPolynomial{T,X}, b::StandardBasisPolynomial{S,X}) where {S,T,X} =
+Base.gcdx(a::AbstractUnivariatePolynomial{StandardBasis,T,X}, b::AbstractUnivariatePolynomial{StandardBasis,S,X}) where {S,T,X} =
     gcdx(promote(a, b)...)
 
 # p^m mod q
@@ -417,8 +392,22 @@ end
 
 
 ## --------------------------------------------------
+## polynomial-roots
+function fromroots(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
+    n = length(r)
+    c = zeros(T, n + 1)
+    c[1] = one(T)
+    for j in 1:n, i in j:-1:1
+        c[(i + 1)] = c[(i + 1)] - r[j] * c[i]
+    end
+    #return P(c, var)
+    if sort(r[imag(r).>0], lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y)) == sort(conj(r[imag(r).<0]), lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y))
+        c = real(c)             # if complex poles come in conjugate pairs, the coeffs are real
+    end
+    return P(reverse(c), var)
+end
 
-function companion(p::P) where {T, P <: StandardBasisPolynomial{T}}
+function companion(p::P) where {T, P <: AbstractUnivariatePolynomial{StandardBasis,T}}
     d = length(p) - 1
     d < 1 && throw(ArgumentError("Series must have degree greater than 1"))
     d == 1 && return diagm(0 => [-p[0] / p[1]])
@@ -435,7 +424,7 @@ function companion(p::P) where {T, P <: StandardBasisPolynomial{T}}
 end
 
 # block companion matrix
-function companion(p::P) where {T, M <: AbstractMatrix{T}, P<:StandardBasisPolynomial{M}}
+function companion(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractUnivariatePolynomial{StandardBasis,M}}
     C₀, C₁ = companion_pencil(p)
     C₀ * inv(C₁) # could be more efficient
 end
@@ -443,7 +432,7 @@ end
 # the companion pencil is `C₀`, `C₁` where `λC₁ - C₀` is singular for
 # eigen values of the companion matrix: `vᵀ(λC₁ - C₀) = 0` => `vᵀλ = vᵀ(C₀C₁⁻¹)`, where `C₀C₁⁻¹`
 # is the companion matrix.
-function companion_pencil(p::P) where {T, P<:StandardBasisPolynomial{T}}
+function companion_pencil(p::P) where {T, P<:AbstractUnivariatePolynomial{StandardBasis,T}}
     n = degree(p)
     C₁ = diagm(0 => ones(T, n))
     C₁[end,end] = p[end]
@@ -456,7 +445,7 @@ function companion_pencil(p::P) where {T, P<:StandardBasisPolynomial{T}}
 end
 
 # block version
-function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:StandardBasisPolynomial{M}}
+function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractUnivariatePolynomial{StandardBasis,M}}
 
     m,m′ = size(p[0])
     @assert m == m′  # square matrix
@@ -480,7 +469,7 @@ function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:StandardBas
     C₀, C₁
 end
 
-function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
+function  roots(p::P; kwargs...)  where  {T, P <: AbstractUnivariatePolynomial{StandardBasis, T}}
 
     R = eltype(one(T)/one(T))
     d = degree(p)
@@ -505,6 +494,11 @@ function  roots(p::P; kwargs...)  where  {T, P <: StandardBasisPolynomial{T}}
 
     L
 end
+
+## --------------------------------------------------
+## Code for fitting polynomials
+
+## --------------------------------------------------
 
 function vander(P::Type{<:StandardBasisPolynomial}, x::AbstractVector{T}, n::Integer) where {T <: Number}
     vander(P, x, 0:n)
@@ -602,9 +596,9 @@ function fit(P::Type{<:StandardBasisPolynomial},
              x::AbstractVector{T},
              y::AbstractVector{T},
              J,
-             cs::Dict{Int, S};
+             cs::Dict;
              weights = nothing,
-             var = :x,) where {T,S}
+             var = :x,) where {T}
 
     for i ∈ J
         haskey(cs, i) && throw(ArgumentError("cs can't overlap with deg"))
@@ -759,6 +753,7 @@ Base.convert(::Type{P}, p::ArnoldiFit{T,M,X}) where {P <: AbstractPolynomial,T,M
 
 
 
+
 ## --------------------------------------------------
 """
     compensated_horner(p::P, x)
@@ -778,7 +773,7 @@ As noted, this reflects the accuracy of a backward stable computation performed 
 
 Pointed out in https://discourse.julialang.org/t/more-accurate-evalpoly/45932/5.
 """
-function compensated_horner(p::P, x) where {T, P <: StandardBasisPolynomial{T}}
+function compensated_horner(p::P, x) where {P <: StandardBasisPolynomial}
     compensated_horner(coeffs(p), x)
 end
 
@@ -835,10 +830,32 @@ end
 end
 
 
-# Condition number of a standard basis polynomial
-# rule of thumb: p̂ a compute value
-# |p(x) - p̃(x)|/|p(x)| ≤ α(n)⋅u ⋅ cond(p,x), where u = finite precision of computation (2^-p)
-function LinearAlgebra.cond(p::P, x) where {P <: StandardBasisPolynomial}
+
+## --------------------------------------------------
+## put here, not with type definition, in case reuse is possible
+## `conv` can be used with matrix entries, unlike `fastconv`
+function conv(p::Vector{T}, q::Vector{S}) where {T,S}
+    (isempty(p) || isempty(q)) && return promote_type(T, S)[]
+    as = [p[1]*q[1]]
+    z = zero(as[1])
+    n,m = length(p)-1, length(q)-1
+    for i ∈ 1:n+m
+        Σ = z
+        for j ∈ max(0, i-m):min(i,n)
+            Σ = muladd(p[1+j], q[1 + i-j], Σ)
+        end
+        push!(as, Σ)
+    end
+    as
+end
+
+## --------------------------------------------------
+
+function LinearAlgebra.cond(p::StandardBasisPolynomial, x)
     p̃ = map(abs, p)
     p̃(abs(x))/ abs(p(x))
 end
+
+## the future if this causes confusion with the "vector" interpretation of polys.
+LinearAlgebra.dot(xv::AbstractArray{T}, yv::AbstractArray{T}) where {T <: StandardBasisPolynomial} =
+    sum(conj(x)*y for (x,y) = zip(xv, yv))

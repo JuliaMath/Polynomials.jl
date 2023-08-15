@@ -2,7 +2,7 @@
     RationalFunction(p::AbstractPolynomial, q::AbstractPolynomial)
     p // q
 
-Create a rational expression (`p//q`) from the two polynomials. 
+Create a rational expression (`p//q`) from the two polynomials.
 
 Common factors are not cancelled by the constructor, as they are for
 the base `Rational` type. The [`lowest_terms(pq)`](@ref) function attempts
@@ -37,7 +37,7 @@ julia> derivative(pq)
 ```
 
 !!! note
-    The [RationalFunctions.jl](https://github.com/aytekinar/RationalFunctions.jl) package was a helpful source of ideas. 
+    The [RationalFunctions.jl](https://github.com/aytekinar/RationalFunctions.jl) package was a helpful source of ideas.
 
 !!! note
     The `ImmutablePolynomial` type can not be used for rational functions, as the type requires the numerator and denominator to have the exact same type.
@@ -58,8 +58,7 @@ struct RationalFunction{T, X, P<:AbstractPolynomial{T,X}} <: AbstractRationalFun
     end
 end
 
-RationalFunction(p,q)  = RationalFunction(promote(p,q)...)
-RationalFunction(p::ImmutablePolynomial,q::ImmutablePolynomial) = throw(ArgumentError("Sorry, immutable #polynomials are not a valid polynomial type for RationalFunction"))
+RationalFunction(p,q)  = RationalFunction(convert(LaurentPolynomial,p), convert(LaurentPolynomial,q))
 function RationalFunction(p::LaurentPolynomial,q::LaurentPolynomial)
     𝐩 = convert(RationalFunction, p)
     𝐪 = convert(RationalFunction, q)
@@ -77,5 +76,3 @@ RationalFunction(p::AbstractPolynomial) = RationalFunction(p,one(p))
 function Base.://(p::AbstractPolynomial,q::AbstractPolynomial)
     RationalFunction(p,q)
 end
-
-

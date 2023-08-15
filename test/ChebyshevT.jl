@@ -10,12 +10,11 @@
         @test p.coeffs == coeff
         @test coeffs(p) == coeff
         @test degree(p) == length(coeff) - 1
-        @test (@test_deprecated Polynomials.order(p)) == length(coeff) - 1 # issue 457
         @test Polynomials.indeterminate(p) == :x
         @test length(p) == length(coeff)
         @test size(p) == size(coeff)
         @test size(p, 1) == size(coeff, 1)
-        @test typeof(p).parameters[1] == eltype(coeff)
+        @test typeof(p).parameters[2] == eltype(coeff)
         @test eltype(p) == eltype(coeff)
     end
 end
@@ -34,7 +33,8 @@ end
     @test p.coeffs == [30]
 
     p = zero(ChebyshevT{Int})
-    @test p.coeffs == [0]
+    @test_broken p.coeffs == [0]
+    @test p.coeffs == Int[]
 
     p = one(ChebyshevT{Int})
     @test p.coeffs == [1]
@@ -58,9 +58,9 @@ end
 end
 
 @testset "Roots $i" for i in 1:5
-    roots = cos.(range(-π, stop=0, length = 2i + 1)[2:2:end])
+    rts = cos.(range(-π, stop=0, length = 2i + 1)[2:2:end])
     target = ChebyshevT(vcat(zeros(i), 1))
-    res = fromroots(ChebyshevT, roots) .* 2^(i - 1)
+    res = fromroots(ChebyshevT, rts) .* 2^(i - 1)
     @test res == target
 end
 
@@ -159,6 +159,7 @@ end
     d, r = divrem(c2, c1)
 
     @test d.coeffs ≈ [0, 2]
+    @test coeffs(d) ≈ [0, 2]
     @test r.coeffs ≈ [-2, -4]
 
     # evaluation

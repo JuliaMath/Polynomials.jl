@@ -35,10 +35,10 @@ end
 ## e.g. 1 => I
 module EvalPoly
 using LinearAlgebra
-function evalpoly(x::S, p::Tuple) where {S}
+function evalpoly(x, p::Tuple)
     if @generated
-        N = length(p.parameters)
-        ex = :(p[end]*_one(S))
+        N = length(p.parameters::Core.SimpleVector)
+        ex = :(p[end]*_one(x))
         for i in N-1:-1:1
             ex = :(_muladd($ex, x, p[$i]))
         end
@@ -52,15 +52,13 @@ evalpoly(x, p::AbstractVector) = _evalpoly(x, p)
 
 # https://discourse.julialang.org/t/i-have-a-much-faster-version-of-evalpoly-why-is-it-faster/79899; improvement *and* closes #313
 function _evalpoly(x::S, p) where {S}
-
-    i = lastindex(p)
+    a,i = firstindex(p), lastindex(p)
     @inbounds out = p[i] * _one(x)
     i -= 1
-    while i >= firstindex(p)
+    while i >= a #firstindex(p)
 	@inbounds out = _muladd(out, x, p[i])
 	i -= 1
     end
-
     return out
 end
 

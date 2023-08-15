@@ -2,7 +2,7 @@ name = "Polynomials"
 uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 license = "MIT"
 author = "JuliaMath"
-version = "3.2.15"
+version = "4.0.0"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
@@ -10,6 +10,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
 MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 
 [weakdeps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
@@ -26,19 +27,21 @@ ChainRulesCore = "1"
 MakieCore = "0.6"
 MutableArithmetics = "1"
 RecipesBase = "0.7, 0.8, 1"
+Setfield = "1"
 julia = "1.6"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
 ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
 MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
+OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["ChainRulesCore", "DualNumbers", "LinearAlgebra", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]
+test = ["Aqua", "ChainRulesCore", "DualNumbers", "LinearAlgebra", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]

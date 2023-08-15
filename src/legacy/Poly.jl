@@ -20,7 +20,7 @@ This type provides support for `poly`, `polyval`, `polyder`, and
 base. Call `using Polynomials.PolyCompat` to enable this module.
 
 """
-struct Poly{T <: Number,X} <: Polynomials.StandardBasisPolynomial{T,X}
+struct Poly{T <: Number,X} <: AbstractPolynomial{T,X} #Polynomials.StandardBasisPolynomial{T,X}
     coeffs::Vector{T}
     function Poly(a::AbstractVector{T}, var::Polynomials.SymbolLike = :x) where {T <: Number}
         # if a == [] we replace it with a = [0]
@@ -38,6 +38,26 @@ end
 
 Polynomials.@register Poly
 
+function Polynomials.showterm(io::IO, ::Type{<:Poly}, pj::T, var, j, first::Bool, mimetype) where {T}
+
+    if Polynomials._iszero(pj) return false end
+
+    pj = Polynomials.printsign(io, pj, first, mimetype)
+
+    if Polynomials.hasone(T)
+        if !(Polynomials._isone(pj) && !(Polynomials.showone(T) || j == 0))
+            Polynomials.printcoefficient(io, pj, j, mimetype)
+        end
+    else
+        Polynomials.printcoefficient(io, pj, j, mimetype)
+    end
+
+    Polynomials.printproductsign(io, pj, j, mimetype)
+    Polynomials.printexponent(io, var, j, mimetype)
+    return true
+end
+
+
 Poly{T,X}(coeffs::AbstractVector{S}) where {T,X,S} = Poly(convert(Vector{T},coeffs), X)
 
 Base.convert(P::Type{<:Polynomial}, p::Poly{T}) where {T} = Polynomial{eltype(P),indeterminate(P,p)}(p.coeffs)
@@ -53,6 +73,10 @@ function Base.iterate(p::Poly, state = firstindex(p))
 end
 Base.collect(p::Poly) = [pᵢ for pᵢ ∈ p]
 
+Polynomials.domain(::Type{<:Poly}) = Polynomials.Interval{Polynomials.Open,Polynomials.Open}(-Inf, Inf)
+Polynomials.mapdomain(::Type{<:Poly}, x::AbstractArray) = x
+Polynomials.coeffs(p::Poly) = p.coeffs
+
 # need two here as `eltype(P)` is `_eltype(P)`.
 Base.zero(::Type{P}) where {P <: Poly} = Poly{_eltype(P), Polynomials.indeterminate(P)}([0])
 Base.zero(::Type{P},var::Polynomials.SymbolLike) where {P <: Poly} = Poly(zeros(_eltype(P),1), var)
@@ -65,6 +89,17 @@ function Polynomials.basis(P::Type{<:Poly}, k::Int, _var::Polynomials.SymbolLike
     zs[end] = 1
     Polynomials.constructorof(P){_eltype(P), Symbol(var)}(zs)
 end
+
+function Base.evalpoly(x::S, p::Poly{T})  where {T,S}
+    oS = one(x)
+    length(p) == 0 && return zero(T) *  oS
+    b = p[end]  *  oS
+    @inbounds for i in (lastindex(p) - 1):-1:0
+        b = p[i]*oS .+ x * b
+    end
+    return b
+end
+
 
 function (p::Poly{T})(x::S) where {T,S}
     oS = one(x)
@@ -103,7 +138,7 @@ end
 
 poly(r, var = :x) = fromroots(Poly, r; var = var)
 
-polyval(p::Poly, x::Number) = p(x)
+polyval(p::Poly, x::Number) = evalpoly(x, p) #p(x)
 polyval(p::Poly, x) = p.(x)
 polyval(p::AbstractPolynomial, x) = error("`polyval` is a legacy name for use with `Poly` objects only. Use `p(x)`.")
 
@@ -114,7 +149,56 @@ function Base.getproperty(p::Poly, nm::Symbol)
     return getfield(p, nm)
 end
 
-function Polynomials.integrate(p::P, k::S) where {T, X, P <: Poly{T, X}, S<:Number}
+function Base.divrem(num::P, den::Q) where {T, X, P <: Poly{T,X}, S, Q <: Poly{S,X}}
+
+    n = degree(num)
+    m = degree(den)
+
+    m == -1 && throw(DivideError())
+    if m == 0 && den[0] ≈ 0 throw(DivideError()) end
+
+    R = eltype(one(T)/one(S))
+
+    deg = n - m + 1
+
+    if deg ≤ 0
+        return zero(P), num
+    end
+
+    q_coeff = zeros(R, deg)
+    r_coeff = R[ num[i-1] for i in 1:n+1 ]
+
+    @inbounds for i in n:-1:m
+        q = r_coeff[i + 1] / den[m]
+        q_coeff[i - m + 1] = q
+        @inbounds for j in 0:m
+            elem = den[j] * q
+            r_coeff[i - m + j + 1] -= elem
+        end
+    end
+    resize!(r_coeff, min(length(r_coeff), m))
+
+    return Poly(q_coeff,X), Poly(r_coeff,X)
+
+end
+
+function derivative(p::P, order::Integer = 1) where {T, X, P <: Poly{T,X}}
+
+    order < 0 && throw(ArgumentError("Order of derivative must be non-negative"))
+    order == 0 && return p
+    d = degree(p)
+    order > d  && return 0*p
+    hasnan(p) && return  Poly(zero(T)/zero(T), X) # NaN{T}
+
+    n = d + 1
+    dp = [reduce(*, (i - order + 1):i, init = p[i]) for i ∈ order:d]
+    return Poly(dp, X)
+
+end
+
+
+integrate(p::P, a, b) where {T,X,P <: Poly{T,X}} = (∫ = integrate(p); ∫(b) - ∫(a))
+function integrate(p::P, k::S=0) where {T, X, P <: Poly{T, X}, S<:Number}
 
     R = eltype(one(T)/1 + one(S))
     Q = Poly{R,X}
@@ -140,10 +224,23 @@ polyder(p::AbstractPolynomial, args...) =  error("`polyder` is a legacy name for
 polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
 polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)
 
+function Polynomials.vander(P::Type{<:Poly}, x::AbstractVector{T}, d::Int) where {T <: Number}
+    A = Matrix{T}(undef, length(x),  d+1)
+    Aᵢ = ones(T, length(x))
+
+    i′ = 1
+    for i ∈ 1:(d+1)
+        A[:, i] = Aᵢ
+        Aᵢ .*= x
+    end
+    A
+end
+
+
 export Poly, poly, polyval, polyint, polyder, polyfit
 
 ## Pade
-include("../pade.jl")
+include("pade.jl")
 using .PadeApproximation
 export Pade
 export padeval
