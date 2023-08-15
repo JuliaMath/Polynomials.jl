@@ -2,7 +2,7 @@ The Polynomial Math Library is licensed under the MIT License:
 
 > Copyright (c) 2013-2023: Jameson Nash and other contributors:
 >
-> https://github.com/JuliaMath/Polynomial.jl/contributors
+> https://github.com/JuliaMath/Polynomials.jl/contributors
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the
