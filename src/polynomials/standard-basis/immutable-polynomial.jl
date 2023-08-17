@@ -106,8 +106,18 @@ function polynomial_composition(p::ImmutableDensePolynomial{B,T,X,N}, q::Immutab
     cs = evalpoly(q, p.coeffs)
     convert(P, cs)
 end
+function polynomial_composition(p::AbstractUnivariatePolynomial{B,T,X}, q::ImmutableDensePolynomial{B,S,Y,0}) where {B<:StandardBasis,T,S,X,Y}
+    P = ImmutableDensePolynomial{B,promote_type(T,S), Y,0}
+    zero(P)
+end
+
+function polynomial_composition(p::AbstractUnivariatePolynomial{B,T,X}, q::ImmutableDensePolynomial{B,S,Y,1}) where {B<:StandardBasis,T,S,X,Y}
+    P = ImmutableDensePolynomial{B,promote_type(T,S), Y,1}
+    P(evalpoly(constantterm(q),p))
+end
 
 # special cases of polynomial composition
+
 # ... TBD ...
 
 
