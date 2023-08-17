@@ -1017,7 +1017,7 @@ end
 
 #=
 arithmetic =#
-Scalar = Union{Number, Matrix}
+const Scalar = Union{Number, Matrix}
 
 # scalar operations
 # scalar_add utilized polynomial addition. May be more performant to provide new method

@@ -50,7 +50,7 @@ ImmutablePolynomial(1.0)
     This was modeled after [StaticUnivariatePolynomials](https://github.com/tkoolen/StaticUnivariatePolynomials.jl) by `@tkoolen`.
 
 """
-ImmutablePolynomial = ImmutableDensePolynomial{StandardBasis}
+const ImmutablePolynomial = ImmutableDensePolynomial{StandardBasis}
 export ImmutablePolynomial
 
 _typealias(::Type{P}) where {P<:ImmutablePolynomial} = "ImmutablePolynomial"
