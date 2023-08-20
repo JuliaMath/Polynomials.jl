@@ -208,10 +208,6 @@ function degree(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N}
     return i - 1
 end
 
-function coeffs(p::P) where {P <: ImmutableDensePolynomial}
-    trim_trailing_zeros!!(p.coeffs)
-end
-
 # zero, one
 Base.zero(::Type{<:ImmutableDensePolynomial{B,T,X}}) where {B,T,X} =
     ImmutableDensePolynomial{B,T,X,0}(())
