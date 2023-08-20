@@ -98,7 +98,7 @@ function trim_trailing_zeros!!(cs::Tuple)
     !iszero(last(cs)) && return cs
     i = findlast(!iszero, cs)
     i == nothing && return ()
-    xs = ntuple(Base.Fix1(getindex,cs), Val(i))
+    xs = ntuple(Base.Fix1(getindex,cs), i)
     xs
 end
 
@@ -112,7 +112,7 @@ function Base.chop(p::ImmutableDensePolynomial{B,T,X,N};
         N′ = 0
     else
         N′ = i
-        xs = ntuple(Base.Fix1(getindex, p.coeffs), Val(N′))
+        xs = ntuple(Base.Fix1(getindex, p.coeffs), N′)
     end
     ImmutableDensePolynomial{B,T,X,N′}(xs)
 end
