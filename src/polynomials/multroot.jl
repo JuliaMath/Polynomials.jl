@@ -7,7 +7,7 @@ using ..Polynomials
 using LinearAlgebra
 
 
-import ..Polynomials: PnPolynomial, StandardBasisPolynomial
+import ..Polynomials: PnPolynomial, StandardBasisPolynomial, trim_trailing_zeros!!, chop!!, coeffs0
 
 """
     multroot(p; verbose=false, method=:direct, kwargs...)
@@ -102,10 +102,11 @@ function multroot(p::StandardBasisPolynomial{T}; verbose=false,
                   kwargs...) where {T}
 
     # degenerate case, constant
+    p = chop(p; atol=0, rtol=0)
     degree(p) == 0 && return (values=T[], multiplicities=Int[], κ=NaN, ϵ=NaN)
 
     # degenerate case, all zeros
-    if (nz = findfirst(!iszero, coeffs(p))) == length(coeffs(p))
+    if (nz = findfirst(!iszero, coeffs0(p))) == length(coeffs0(p))
         return (values=zeros(T,1), multiplicities=[nz-1], κ=NaN, ϵ=NaN)
     end
 
@@ -146,6 +147,7 @@ function pejorative_manifold(
     )  where {T,X}
 
     S = float(T)
+    p = chop(p; atol=0, rtol=0)
     u = convert(PnPolynomial{S,X}, p)
     nu₂ = norm(u, 2)
     θ2, ρ2 =  θ * nu₂, ρ * nu₂
@@ -243,6 +245,7 @@ This follows Algorithm 1 of [Zeng](https://www.ams.org/journals/mcom/2005-74-250
 """
 function pejorative_root(p::StandardBasisPolynomial,
                          zs::Vector{S}, ls; kwargs...) where {S}
+    p = chop(p; atol=0, rtol=0)
     ps = reverse(coeffs(p))
     pejorative_root(ps, zs, ls; kwargs...)
 end
@@ -259,7 +262,6 @@ function pejorative_root(p, zs::Vector{S}, ls;
     ## using weights min(1/|aᵢ|), i ≠ 1
 
     m,n = sum(ls), length(zs)
-
     # storage
     a = p[2:end]./p[1]     # a ~ (p[n-1], p[n-2], ..., p[0])/p[n]
     W = Diagonal([min(1, 1/abs(aᵢ)) for aᵢ in a])
@@ -377,6 +379,7 @@ function backward_error(p, z̃s::Vector{S}, ls) where {S}
 end
 
 function stats(p::AbstractPolynomial, zs, ls)
+    p = chop(p; atol=0, rtol=0)
     cond_zl(p, zs, ls), backward_error(p, zs, ls)
 end
 
@@ -408,7 +411,8 @@ function pejorative_manifold(
     error("Does this get called?")
 
     S = float(T)
-    u = PnPolynomial{S,X}(S.(coeffs(p)))
+    p = chop(p; atol=0, rtol=0)
+    u = PnPolynomial{S,X}(p)
 
     nu₂ = norm(u, 2)
 
