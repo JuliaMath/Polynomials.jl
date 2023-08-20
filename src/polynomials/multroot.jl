@@ -102,11 +102,11 @@ function multroot(p::StandardBasisPolynomial{T}; verbose=false,
                   kwargs...) where {T}
 
     # degenerate case, constant
-    p = chop(p; atol=0, rtol=0)
-    degree(p) == 0 && return (values=T[], multiplicities=Int[], κ=NaN, ϵ=NaN)
+    cs = coeffs0(p)
+    length(cs) <= 1 && return (values=T[], multiplicities=Int[], κ=NaN, ϵ=NaN)
 
     # degenerate case, all zeros
-    if (nz = findfirst(!iszero, coeffs0(p))) == length(coeffs0(p))
+    if (nz = findfirst(!iszero, cs)) == length(cs)
         return (values=zeros(T,1), multiplicities=[nz-1], κ=NaN, ϵ=NaN)
     end
 
@@ -147,8 +147,7 @@ function pejorative_manifold(
     )  where {T,X}
 
     S = float(T)
-    p = chop(p; atol=0, rtol=0)
-    u = convert(PnPolynomial{S,X}, p)
+    u = convert(PnPolynomial{S,X}, coeffs0(p))
     nu₂ = norm(u, 2)
     θ2, ρ2 =  θ * nu₂, ρ * nu₂
     u, v, w, ρⱼ, κ = Polynomials.ngcd(
@@ -245,8 +244,7 @@ This follows Algorithm 1 of [Zeng](https://www.ams.org/journals/mcom/2005-74-250
 """
 function pejorative_root(p::StandardBasisPolynomial,
                          zs::Vector{S}, ls; kwargs...) where {S}
-    p = chop(p; atol=0, rtol=0)
-    ps = reverse(coeffs(p))
+    ps = reverse(coeffs0(p))
     pejorative_root(ps, zs, ls; kwargs...)
 end
 
@@ -411,8 +409,7 @@ function pejorative_manifold(
     error("Does this get called?")
 
     S = float(T)
-    p = chop(p; atol=0, rtol=0)
-    u = PnPolynomial{S,X}(p)
+    u = PnPolynomial{S,X}(coeffs0(p))
 
     nu₂ = norm(u, 2)
 

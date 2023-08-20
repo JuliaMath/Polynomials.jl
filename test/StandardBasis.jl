@@ -995,7 +995,7 @@ end
         @test out.ϵ <= sqrt(eps())
         @test out.κ * out.ϵ < sqrt(eps())  # small forward error
         # one for which the multiplicities are not correctly identified
-        n = 2 # was 4? was 3, but SparsePolynomial loses accuracy
+        n = P == SparsePolynomial ? 2 : 4 # can be much higher (was 4), but SparsePolynomial loses accuracy.
         q = p^n
         out = Polynomials.Multroot.multroot(q)
         @test (out.multiplicities == n*ls) || (out.κ * out.ϵ > sqrt(eps()))  # large  forward error, l misidentified
