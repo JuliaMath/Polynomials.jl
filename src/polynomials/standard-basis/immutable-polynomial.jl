@@ -100,6 +100,32 @@ function Base.:*(p::ImmutableDensePolynomial{B,T,X,N},
 end
 
 
+# This can be *really* slow using power_by_squaring the first time. Here we trade off a bit
+# julia> p = ImmutablePolynomial(-5:5);
+
+# julia> @time p^15;
+#   0.412306 seconds (502.65 k allocations: 34.132 MiB, 6.21% gc time, 99.95% compilation time)
+
+# julia> @time p^15;
+#   0.000023 seconds (21 allocations: 5.547 KiB)
+
+# julia> @time Base.power_by_squaring(p,15);
+#  43.284660 seconds (20.41 M allocations: 1.013 GiB, 1.31% gc time, 100.00% compilation time)
+
+# julia> @time Base.power_by_squaring(p,15);
+#   0.000145 seconds (7 allocations: 6.547 KiB)
+# This is not inferrable, as `n` is not a compile time constant
+Base.:^(p::ImmutablePolynomial, n::Integer) = immutable_power(p, n)
+function immutable_power(p::ImmutablePolynomial{T,X,N}, n::Integer) where {T,X,N}
+    iszero(p) && return p
+    isone(N) && return ImmutablePolynomial{T,X,1}(p[0]^n)
+    qs =  (PnPolynomial(p)^n).coeffs
+    m = length(qs)
+    N′ = n * (N-1) + 1
+    z = zero(p[0])
+    ImmutablePolynomial{T,X,N′}(ntuple(i -> i ≤ m ? qs[i] : z, Val(N′)))
+end
+
 #
 function polynomial_composition(p::ImmutableDensePolynomial{B,T,X,N}, q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
     P = ImmutableDensePolynomial{B,promote_type(T,S), X, N*M}
