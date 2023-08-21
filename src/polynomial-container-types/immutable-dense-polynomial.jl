@@ -29,6 +29,11 @@ function ImmutableDensePolynomial{B,T,X,N}(xs::NTuple{M,S}) where {B,T,S,X,N,M}
     convert(ImmutableDensePolynomial{B,T,X,N}, ImmutableDensePolynomial{B,T,X,M}(xs))
 end
 
+# vector case with N
+function ImmutableDensePolynomial{B,T,X,N}(xs::AbstractVector{S}) where {B,T,S,X,N}
+    ImmutableDensePolynomial{B,T,X,N}(ntuple(Base.Fix1(getindex, xs), Val(N)))
+    end
+
 # constant
 function ImmutableDensePolynomial{B,T,X,N}(c::S) where {B,T,X,N,S<:Scalar}
     if N == 0
