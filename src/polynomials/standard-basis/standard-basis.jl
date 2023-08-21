@@ -829,6 +829,113 @@ end
     x, y
 end
 
+#### --------------------------------------------------
+
+## Issue 511 for alternatives to polynomial composition
+# https://ens-lyon.hal.science/ensl-00546102/document
+# should be faster, but not using O(nlog(n)) multiplication below.
+function ranged_horner(f::StandardBasisPolynomial, g::StandardBasisPolynomial, i, l)
+    out = f[i+l-1] * one(g)
+    for j ∈ (l-2):-1:0
+        out = muladd(out, g, f[i+j])
+    end
+    out
+end
+
+# Compute `p(q)`. Seems more performant than
+function practical_polynomial_composition(f::StandardBasisPolynomial, g::StandardBasisPolynomial)
+    l = 4
+    n = degree(f)
+
+    kᵢ = ceil(Int, (n + 1)/l)
+    isone(kᵢ) && return f(g)
+
+    hij = [ranged_horner(f, g, j*l, l) for j ∈ 0:(kᵢ-1)]
+
+    G = g^l
+    o = 1
+    while kᵢ > 1
+        kᵢ = ceil(Int, kᵢ/2)
+        isodd(length(hij)) && push!(hij, zero(f))
+        hij = [hij[2j+o] + hij[2j+1+o]*G for j ∈ 0:(kᵢ-1)]
+        kᵢ > 1 && (G = G^2)
+    end
+
+    return only(hij)
+end
+
+## issue #519 polynomial multiplication via FFT
+## cf. http://www.cs.toronto.edu/~denisp/csc373/docs/tutorial3-adv-writeup.pdf
+## Compute recursive_fft
+## assumes length(as) = 2^k for some k
+## ωₙ is exp(-2pi*im/n) or Cyclotomics.E(n), the latter slower but non-lossy
+function recursive_fft(as, ωₙ = nothing)
+    n = length(as)
+    N = 2^ceil(Int, log2(n))
+    ω = something(ωₙ, exp(-2pi*im/N))
+    R = typeof(ω * first(as))
+    ys = Vector{R}(undef, N)
+    recursive_fft!(ys, as, ω)
+    ys
+end
+
+## pass in same ωₙ as recursive_fft
+function inverse_fft(as, ωₙ=nothing)
+    n = length(as)
+    ω = something(ωₙ, exp(-2pi*im/n))
+    recursive_fft(as, conj(ω)) / n
+end
+
+# note: can write version for big coefficients, but still allocates a bit
+function recursive_fft!(ys, as, ωₙ)
+
+    n = length(as)
+    @assert n == length(ys) == 2^(ceil(Int, log2(n)))
+
+    ω = one(ωₙ) * one(first(as))
+    isone(n) && (ys[1] = ω * as[1]; return ys)
+
+    o = 1
+    eidx = o .+ range(0, n-2, step=2)
+    oidx = o .+ range(1, n-1, step=2)
+
+    n2 = n ÷ 2
+
+    ye = recursive_fft!(view(ys, 1:n2),     view(as, eidx), ωₙ^2)
+    yo = recursive_fft!(view(ys, (n2+1):n), view(as, oidx), ωₙ^2)
+
+    @inbounds for k ∈ o .+ range(0, n2 - 1)
+        yₑ, yₒ = ye[k], yo[k]
+        ys[k     ] = muladd(ω,  yₒ, yₑ)
+        ys[k + n2] = yₑ - ω*yₒ
+        ω *= ωₙ
+    end
+    return ys
+end
+
+# This *should* be faster -- (O(nlog(n)), but this version is definitely not so.
+# when `ωₙ = Cyclotomics.E` and T,S are integer, this can be exact
+function poly_multiplication_fft(p::P, q::Q, ωₙ=nothing) where {T,P<:StandardBasisPolynomial{T},
+                                                                S,Q<:StandardBasisPolynomial{S}}
+    as, bs = coeffs0(p), coeffs0(q)
+    n = maximum(length, (as, bs))
+    N = 2^ceil(Int, log2(n))
+
+    as′ = zeros(promote_type(T,S), 2N)
+    copy!(view(as′, 1:length(as)), as)
+
+    ω = something(ωₙ, n -> exp(-2im*pi/n))(2N)
+    âs = recursive_fft(as′, ω)
+
+    as′ .= 0
+    copy!(view(as′, 1:length(bs)), bs)
+    b̂s = recursive_fft(as′, ω)
+
+    âb̂s = âs .* b̂s
+
+    PP = promote_type(P,Q)
+    ⟒(PP)(inverse_fft(âb̂s, ω))
+end
 
 
 ## --------------------------------------------------
