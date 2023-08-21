@@ -100,15 +100,15 @@ function coeffs(p::AbstractLaurentUnivariatePolynomial)
     [p[i] for i ∈ firstindex(p):lastindex(p)]
 end
 
-# a₀, …, aₙ or error even for Laurent
+# copy of a₀, …, aₙ or error even for Laurent
 function coeffs0(p::AbstractUnivariatePolynomial)
-    a,b = firstindex(p), lastindex(p)
+    a,b = firstindex(p), degree(p)
     a < 0 && throw(ArgumentError("Polynomial has negative index terms. Use `pairs` instead."))
     [p[i] for i ∈ 0:b]
 end
 function coeffs0(p::AbstractDenseUnivariatePolynomial)
-    a,b = firstindex(p), lastindex(p)
-    iszero(a) && return p.coeffs
+    a,b = firstindex(p), degree(p)
+    iszero(a) && return copy(p.coeffs)
     [p[i] for i ∈ 0:b]
 end
 

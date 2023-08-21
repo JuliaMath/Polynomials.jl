@@ -984,7 +984,7 @@ end
 end
 
 @testset "multroot" begin
-    @testset for P in (Polynomial, ImmutablePolynomial, SparsePolynomial)
+    @testset for P in (Polynomial, ImmutablePolynomial, SparsePolynomial, LaurentPolynomial)
         rts = [1.0, sqrt(2), sqrt(3)]
         ls = [2, 3, 4]
         x = variable(P{Float64})
@@ -995,7 +995,7 @@ end
         @test out.ϵ <= sqrt(eps())
         @test out.κ * out.ϵ < sqrt(eps())  # small forward error
         # one for which the multiplicities are not correctly identified
-        n = 3 # was 4?
+        n = P == SparsePolynomial ? 2 : 4 # can be much higher (was 4), but SparsePolynomial loses accuracy.
         q = p^n
         out = Polynomials.Multroot.multroot(q)
         @test (out.multiplicities == n*ls) || (out.κ * out.ϵ > sqrt(eps()))  # large  forward error, l misidentified

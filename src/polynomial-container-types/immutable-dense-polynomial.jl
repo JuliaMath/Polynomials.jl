@@ -102,6 +102,9 @@ function trim_trailing_zeros!!(cs::Tuple)
     xs
 end
 
+coeffs0(p::ImmutableDensePolynomial) = trim_trailing_zeros!!(p.coeffs)
+
+
 ## chop. Also, not type stable
 function Base.chop(p::ImmutableDensePolynomial{B,T,X,N};
                    rtol::Real = Base.rtoldefault(real(T)),
@@ -206,10 +209,6 @@ function degree(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N}
     i = findlast(!iszero, p.coeffs)
     isnothing(i) && return -1
     return i - 1
-end
-
-function coeffs(p::P) where {P <: ImmutableDensePolynomial}
-    trim_trailing_zeros!!(p.coeffs)
 end
 
 # zero, one
