@@ -46,4 +46,4 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "ChainRulesCore", "DualNumbers", "FFTW", "LinearAlgebra", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]
+test = ["Aqua", "ChainRulesCore", "DualNumbers", "FFTW", "LinearAlgebra", "MakieCore", "MutableArithmetics", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]
