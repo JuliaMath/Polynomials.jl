@@ -15,5 +15,5 @@ using OffsetArrays
 if VERSION >= v"1.9.0-"
     @testset "Aqua" begin include("aqua.jl") end
     @testset "MutableArithmetics" begin include("mutable-arithmetics.jl") end
-    @testset "Extensions" include("test-extensions.jl") end
+    @testset "Extensions" begin include("test-extensions.jl") end
 end
