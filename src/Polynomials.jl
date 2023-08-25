@@ -53,9 +53,7 @@ include("legacy/misc.jl")
 include("legacy/Poly.jl")
 
 if !isdefined(Base, :get_extension)
-    include("../ext/PolynomialsChainRulesCoreExt.jl")
     include("../ext/PolynomialsMakieCoreExt.jl")
-    include("../ext/PolynomialsMutableArithmeticsExt.jl")
 end
 
 include("precompiles.jl")

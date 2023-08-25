@@ -865,10 +865,31 @@ function practical_polynomial_composition(f::StandardBasisPolynomial, g::Standar
 end
 
 ## issue #519 polynomial multiplication via FFT
+##
+## This implements [Cooley-Tukey](https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm) radix-2
 ## cf. http://www.cs.toronto.edu/~denisp/csc373/docs/tutorial3-adv-writeup.pdf
-## Compute recursive_fft
-## assumes length(as) = 2^k for some k
-## ωₙ is exp(-2pi*im/n) or Cyclotomics.E(n), the latter slower but non-lossy
+##
+## This is **much slower** than that of FFTW.jl (and more restrictive). However it does allow for exact computation
+## using `Cyclotomics.jl`, or with `Mods.jl`.
+## This assumes length(as) = 2^k for some k
+## ωₙ is an nth root of unity, for example `exp(-2pi*im/n)` (also available with `sincos(2pi/n)`) for floating point
+## or Cyclotomics.E(n), the latter much slower but non-lossy.
+##
+## Should implement NTT https://www.nayuki.io/page/number-theoretic-transform-integer-dft to close #519
+
+struct Pad{T} <: AbstractVector{T}
+    a::Vector{T}
+    n::Int
+end
+Base.length(a::Pad) = a.n
+Base.size(a::Pad) = (a.n,)
+function Base.getindex(a::Pad, i)
+    u = length(a.a)
+    i ≤ u && return a.a[i]
+    return zero(first(a.a))
+end
+
+
 function recursive_fft(as, ωₙ = nothing)
     n = length(as)
     N = 2^ceil(Int, log2(n))
@@ -886,7 +907,7 @@ function inverse_fft(as, ωₙ=nothing)
     recursive_fft(as, conj(ω)) / n
 end
 
-# note: can write version for big coefficients, but still allocates a bit
+# note: could write version for big coefficients, but still allocates a bit
 function recursive_fft!(ys, as, ωₙ)
 
     n = length(as)
@@ -915,22 +936,19 @@ end
 
 # This *should* be faster -- (O(nlog(n)), but this version is definitely not so.
 # when `ωₙ = Cyclotomics.E` and T,S are integer, this can be exact
+# using `FFTW.jl` over `Float64` types is much better and is
+# implemented in an extension
 function poly_multiplication_fft(p::P, q::Q, ωₙ=nothing) where {T,P<:StandardBasisPolynomial{T},
                                                                 S,Q<:StandardBasisPolynomial{S}}
     as, bs = coeffs0(p), coeffs0(q)
     n = maximum(length, (as, bs))
     N = 2^ceil(Int, log2(n))
-
-    as′ = zeros(promote_type(T,S), 2N)
-    copy!(view(as′, 1:length(as)), as)
+    as′ = Pad(as, 2N)
+    bs′ = Pad(bs, 2N)
 
     ω = something(ωₙ, n -> exp(-2im*pi/n))(2N)
     âs = recursive_fft(as′, ω)
-
-    as′ .= 0
-    copy!(view(as′, 1:length(bs)), bs)
-    b̂s = recursive_fft(as′, ω)
-
+    b̂s = recursive_fft(bs′, ω)
     âb̂s = âs .* b̂s
 
     PP = promote_type(P,Q)
