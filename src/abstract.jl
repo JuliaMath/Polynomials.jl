@@ -11,7 +11,6 @@ Var(x::Char) = Var(Symbol(x))
 Symbol(::Var{T}) where {T} = T
 
 const SymbolLike = Union{AbstractString,Char,Symbol, Var{T} where T}
-Base.Symbol(::Val{T}) where {T} = Symbol(T)
 
 
 """
