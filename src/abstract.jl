@@ -8,7 +8,7 @@ Var(x::Type{Var{u}}) where {u} = x
 Var(x::AbstractString) = Var(Symbol(x))
 Var(x::Char) = Var(Symbol(x))
 
-Symbol(::Var{T}) where {T} = T
+Base.Symbol(::Var{T}) where {T} = T
 
 const SymbolLike = Union{AbstractString,Char,Symbol, Var{T} where T}
 
