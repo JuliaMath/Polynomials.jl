@@ -45,9 +45,9 @@ export SparsePolynomial
 
 _typealias(::Type{P}) where {P<:SparsePolynomial} = "SparsePolynomial"
 
-function evalpoly(x, p::MutableSparsePolynomial)
+function evalpoly(x, p::SparsePolynomial)
     tot = zero(p[0]*x)
-    for (i, cᵢ) ∈ p.coeffs
+    for (i, cᵢ) ∈ pairs(p)
         tot = muladd(cᵢ, x^i, tot)
     end
     return tot

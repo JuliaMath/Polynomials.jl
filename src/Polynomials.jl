@@ -4,6 +4,7 @@ module Polynomials
 using LinearAlgebra
 import Base: evalpoly
 using Setfield
+using SparseArrays
 
 include("abstract.jl")
 include("show.jl")
@@ -20,8 +21,9 @@ include("polynomial-container-types/mutable-dense-view-polynomial.jl")
 include("polynomial-container-types/mutable-dense-laurent-polynomial.jl")
 include("polynomial-container-types/immutable-dense-polynomial.jl")
 include("polynomial-container-types/mutable-sparse-polynomial.jl")
+include("polynomial-container-types/mutable-sparse-vector-polynomial.jl")
 const PolynomialContainerTypes = (:MutableDensePolynomial, :MutableDenseViewPolynomial, :ImmutableDensePolynomial,
-                                  :MutableDenseLaurentPolynomial, :MutableSparsePolynomial) # useful for some purposes
+                                  :MutableDenseLaurentPolynomial, :MutableSparsePolynomial, :MutableSparseVectorPolynomial) # useful for some purposes
 const ZeroBasedDensePolynomialContainerTypes = (:MutableDensePolynomial, :MutableDenseViewPolynomial, :ImmutableDensePolynomial)
 
 include("polynomials/standard-basis/standard-basis.jl")
@@ -30,6 +32,7 @@ include("polynomials/standard-basis/pn-polynomial.jl")
 include("polynomials/standard-basis/laurent-polynomial.jl")
 include("polynomials/standard-basis/immutable-polynomial.jl")
 include("polynomials/standard-basis/sparse-polynomial.jl")
+include("polynomials/standard-basis/sparse-vector-polynomial.jl")
 
 include("polynomials/ngcd.jl")
 include("polynomials/multroot.jl")
