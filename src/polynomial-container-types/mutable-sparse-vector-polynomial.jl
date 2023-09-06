@@ -1,9 +1,9 @@
 """
+    MutableSparseVectorPolynomial{B,T,X}
 
 This polynomial type uses an `SparseVector{T,Int}` to store the coefficients of a polynomial relative to the basis `B` with indeterminate `X`.
 The type `T` should have `zero(T)` defined.
 
-0-based polynomial
 
 """
 struct MutableSparseVectorPolynomial{B,T,X} <:  AbstractUnivariatePolynomial{B, T,X}
@@ -87,13 +87,16 @@ function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableSparseVecto
 end
 
 ## ---
-
+Base.collect(p::MutableSparseVectorPolynomial) = collect(p.coeffs)
+Base.collect(::Type{T}, p::MutableSparseVectorPolynomial) where {T} = collect(T, p.coeffs)
 minimumexponent(::Type{<:MutableSparseVectorPolynomial}) =  0
 
 Base.length(p::MutableSparseVectorPolynomial) = length(p.coeffs)
 
 function degree(p::MutableSparseVectorPolynomial)
-    n = maximum(findall(!iszero, p.coeffs))
+    idx = findall(!iszero, p.coeffs)
+    isempty(idx) && return -1
+    n = maximum(idx)
     n - 1
 end
 
@@ -102,6 +105,26 @@ Base.copy(p::MutableSparseVectorPolynomial{B,T,X}) where {B,T,X} = MutableSparse
 function Base.convert(::Type{MutableSparseVectorPolynomial{B,T,X}}, p::MutableSparseVectorPolynomial{B,S,X}) where {B,T,S,X}
     cs = convert(SparseVector{T,Int}, p.coeffs)
     MutableSparseVectorPolynomial{B,T,X}(cs)
+end
+
+function Base.:(==)(p1::P, p2::P) where {P <: MutableSparseVectorPolynomial}
+    iszero(p1) && iszero(p2) && return true
+
+    ks1 = findall(!iszero, p1.coeffs)
+    ks2 = findall(!iszero, p2.coeffs)
+    length(ks1) == length(ks2) || return false
+    idx = sortperm(ks1)
+    for i ∈ idx
+        ks1[i] == ks2[i] || return false
+        p1.coeffs[ks1[i]] == p2.coeffs[ks2[i]] || return false
+    end
+
+    return true
+    # #    eachindex(p1) == eachindex(p2) || return false
+    # # coeffs(p1) == coeffs(p2), but non-allocating
+    # p1val = (p1[i] for i in eachindex(p1))
+    # p2val = (p2[i] for i in eachindex(p2))
+    # all(((a,b),) -> a == b, zip(p1val, p2val))
 end
 
 # ---
@@ -130,12 +153,13 @@ end
 Base.keys(p::MutableSparseVectorPolynomial) = Base.Generator(first, pairs(p))
 Base.values(p::MutableSparseVectorPolynomial) = Base.Generator(last, pairs(p))
 
+basis(P::Type{<:MutableSparseVectorPolynomial{B, T, X}}, i::Int) where {B,T,X} = P(SparseVector(1+i, [i+1], [1]))
 
 # return coeffs as  a vector
 function coeffs(p::MutableSparseVectorPolynomial{B,T})  where {B,T}
     d = degree(p)
     ps = p.coeffs
-    [p[i] for i ∈ 1:(d+1)]
+    [ps[i] for i ∈ 1:(d+1)]
 end
 
 
@@ -155,14 +179,30 @@ end
 
 chop_exact_zeros!(d::SparseVector{T, Int}) where {T} = d
 
+
+function _truncate!(v::SparseVector{T,X};
+                    rtol::Real = Base.rtoldefault(real(T)),
+                    atol::Real = 0) where {T,X}
+    isempty(v) && return v
+    δ = something(rtol,0)
+    ϵ = something(atol,0)
+    τ = max(ϵ, norm(values(v),2) * δ)
+    for (i,pᵢ) ∈ pairs(v)
+        abs(pᵢ) ≤ τ && (v[i] = zero(T))
+    end
+    v
+end
+
+
 chop!(p::MutableSparseVectorPolynomial; kwargs...) = (chop!(p.coeffs; kwargs...); p)
 function chop!(d::SparseVector{T, Int}; atol=nothing, rtol=nothing) where {T}
     isempty(d) && return d
     δ = something(rtol,0)
     ϵ = something(atol,0)
     τ = max(ϵ, norm(values(d),2) * δ)
-    for (i,pᵢ) ∈ pairs(d)
-        abs(pᵢ) ≤ τ && (d[i+1] = zero(T))
+    for (i, pᵢ) ∈ Base.Iterators.reverse(pairs(d))
+        abs(pᵢ) ≥ τ && break
+        d[i] = zero(T)
     end
     d
 end
@@ -176,7 +216,7 @@ Base.zero(::Type{MutableSparseVectorPolynomial{B,T,X}}) where {B,T,X} = MutableS
 ## ---
 
 function isconstant(p::MutableSparseVectorPolynomial)
-    maximum(keys(p)) <= 0
+    degree(p) <= 0
 end
 
 Base.:+(p::MutableSparseVectorPolynomial{B,T,X}, q::MutableSparseVectorPolynomial{B,S,X}) where{B,X,T,S} =

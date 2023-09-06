@@ -128,7 +128,7 @@ end
 chop!(p::ImmutableDensePolynomial; kwargs...) = chop(p; kwargs...) ## misnamed, should be chop!!
 chop!!(p::ImmutableDensePolynomial; kwargs...) = chop(p; kwargs...)
 
-function truncate!(p::ImmutableDensePolynomial{B,T,X,N};
+function _truncate!(p::ImmutableDensePolynomial{B,T,X,N};
                    rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0) where {B,T,X,N}
 
