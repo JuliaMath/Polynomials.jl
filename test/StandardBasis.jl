@@ -548,7 +548,7 @@ end
 
     # p - p requires a zero
     @testset for P ∈ Ps
-        P ∈ (LaurentPolynomial, SparsePolynomial,FactoredPolynomial) && continue
+        P ∈ (LaurentPolynomial, SparsePolynomial, Polynomials.SparseVectorPolynomial, FactoredPolynomial) && continue
         for v ∈ ([1,2,3],
                  [[1,2,3],[1,2,3]],
                  [[1 2;3 4], [3 4; 5 6]]
