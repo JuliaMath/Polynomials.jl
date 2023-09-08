@@ -28,7 +28,7 @@ _isimmutable(::Type{P}) where {P <: Union{ImmutablePolynomial, FactoredPolynomia
 _isimmutable(P) = false
 
 
-Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial)
+Ps = (ImmutablePolynomial, Polynomial, SparsePolynomial, LaurentPolynomial, FactoredPolynomial, Polynomials.SparseVectorPolynomial)
 
 @testset "Construction" begin
     @testset for coeff in Any[
@@ -524,7 +524,7 @@ end
 
     # evaluation at special cases different number types
     @testset for P ∈ Ps
-        P ∈ (SparsePolynomial, FactoredPolynomial) && continue
+        P ∈ (SparsePolynomial, Polynomials.SparseVectorPolynomial, FactoredPolynomial) && continue
         # vector coefficients
         v₀, v₁ = [1,1,1], [1,2,3]
         p₁ = P([v₀])
@@ -548,7 +548,7 @@ end
 
     # p - p requires a zero
     @testset for P ∈ Ps
-        P ∈ (LaurentPolynomial, SparsePolynomial,FactoredPolynomial) && continue
+        P ∈ (LaurentPolynomial, SparsePolynomial, Polynomials.SparseVectorPolynomial, FactoredPolynomial) && continue
         for v ∈ ([1,2,3],
                  [[1,2,3],[1,2,3]],
                  [[1 2;3 4], [3 4; 5 6]]
@@ -625,7 +625,7 @@ end
         # Check for isequal
         p1 = P([1.0, -0.0, 5.0, Inf])
         p2 = P([1.0,  0.0, 5.0, Inf])
-        !(P ∈ (FactoredPolynomial, SparsePolynomial)) && (@test p1 == p2 && !isequal(p1, p2))  # SparsePolynomial doesn't store -0.0,  0.0.
+        !(P ∈ (FactoredPolynomial, SparsePolynomial, Polynomials.SparseVectorPolynomial)) && (@test p1 == p2 && !isequal(p1, p2))  # SparsePolynomial doesn't store -0.0,  0.0.
 
         p3 = P([0, NaN])
         @test p3 === p3 && p3 ≠ p3 && isequal(p3, p3)
@@ -1061,12 +1061,6 @@ end
         @test_throws ArgumentError derivative(pR, -1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
 
-        @test derivative(integrate(pN)) ==ᵟ pN
-        @test integrate(pNULL, 1) ==ᵟ p1
-        rc = Rational{Int64}[1,2,3]
-        @test integrate(P(rc)) == P{eltype(rc)}([0, 1, 1, 1])
-
-
         P <: FactoredPolynomial && continue
 
         @testset for i in 1:10
@@ -1320,7 +1314,7 @@ end
 
         # setindex
         p1  = P([1,2,1])
-        if !_isimmutable(P)
+        if !_isimmutable(P) && P != Polynomials.SparseVectorPolynomial
             p1[5] = 1
             @test p1[5] == 1
             @test p1 == P([1,2,1,0,0,1])

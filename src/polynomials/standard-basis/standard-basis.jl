@@ -113,6 +113,14 @@ function LinearAlgebra.mul!(cs, p::AbstractDenseUnivariatePolynomial, q::Abstrac
     nothing
 end
 
+# check for finite
+function is_finite_polynomial(pᵢ, P)
+    isfinite(pᵢ) && return (true, nothing)
+    isnan(pᵢ) && return (false, P([NaN]))
+    isinf(pᵢ) && return (false, P([Inf]))
+    return (true, nothing)
+end
+
 
 # derivative
 function derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractDenseUnivariatePolynomial{B,T,X}}
@@ -408,7 +416,7 @@ function fromroots(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, 
 end
 
 function companion(p::P) where {T, P <: AbstractUnivariatePolynomial{StandardBasis,T}}
-    d = length(p) - 1
+    d = degree(p)
     d < 1 && throw(ArgumentError("Series must have degree greater than 1"))
     d == 1 && return diagm(0 => [-p[0] / p[1]])
 
@@ -416,7 +424,7 @@ function companion(p::P) where {T, P <: AbstractUnivariatePolynomial{StandardBas
     R = eltype(one(T)/one(T))
 
     comp = diagm(-1 => ones(R, d - 1))
-    ani = 1 / p[end]
+    ani = 1 / p[d]
     for j in  0:(degree(p)-1)
         comp[1,(d-j)] = -p[j] * ani # along top row has smaller residual than down column
     end
@@ -486,7 +494,6 @@ function  roots(p::P; kwargs...)  where  {T, P <: AbstractUnivariatePolynomial{S
     k =  findfirst(!iszero, as)::Int
 
     k == K && return zeros(R, k-1)
-
     # find eigenvalues of the companion matrix of the 0-deflated polynomial
     comp  = companion(⟒(P)(as[k:K], Var(indeterminate(p))))
     L = eigvals(comp; kwargs...)

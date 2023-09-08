@@ -311,15 +311,17 @@ end
 
 In-place version of [`truncate`](@ref)
 """
-function truncate!(p::AbstractPolynomial{T};
+truncate!(p::AbstractPolynomial; kwargs...) = _truncate!(p; kwargs...)
+
+function _truncate!(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0,) where {T}
-    truncate!(p.coeffs, rtol=rtol, atol=atol)
+    _truncate!(p.coeffs, rtol=rtol, atol=atol)
     chop!(p, rtol = rtol, atol = atol)
 end
 
-## truncate! underlying storage type
-function truncate!(ps::Vector{T};
+## _truncate! underlying storage type
+function _truncate!(ps::Vector{T};
                    rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0,) where {T}
     max_coeff = norm(ps, Inf)
@@ -332,7 +334,7 @@ function truncate!(ps::Vector{T};
     nothing
 end
 
-function truncate!(ps::Dict{S,T};
+function _truncate!(ps::Dict{S,T};
                    rtol::Real = Base.rtoldefault(real(T)),
                    atol::Real = 0,) where {S,T}
 
@@ -348,7 +350,7 @@ function truncate!(ps::Dict{S,T};
     nothing
 end
 
-truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined."))
+_truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined for tuples."))
 
 # _truncate(ps::NTuple{0}; kwargs...) = ps
 # function _truncate(ps::NTuple{N,T};
@@ -370,7 +372,7 @@ Rounds off coefficients close to zero, as determined by `rtol` and `atol`, and t
 function Base.truncate(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
     atol::Real = 0,) where {T}
-    truncate!(deepcopy(p), rtol = rtol, atol = atol)
+    _truncate!(deepcopy(p), rtol = rtol, atol = atol)
 end
 
 """
@@ -455,8 +457,8 @@ end
 
 
 # for generic usage, as immutable types are not mutable
-chop!!(p::AbstractPolynomial; kwargs...) = (p = chop!(p); p)
-truncate!!(p::AbstractPolynomial; kwargs...) = truncate!(p)
+chop!!(p::AbstractPolynomial; kwargs...) = (p = chop!(p; kwargs...); p)
+truncate!!(p::AbstractPolynomial; kwargs...) = _truncate!(p; kwargs...)
 
 ## --------------------------------------------------
 
