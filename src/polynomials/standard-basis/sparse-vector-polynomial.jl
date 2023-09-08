@@ -61,10 +61,7 @@ function derivative(p:: MutableSparseVectorPolynomial{B,T,X}) where {B<:Standard
     cs = spzeros(R, n)
 
     @inbounds for (i, aᵢ) ∈ zip(findnz(p.coeffs)...) #pairs(p)
-        if !isfinite(aᵢ)
-            isnan(aᵢ) && return P([NaN])
-            isinf(aᵢ) && return P([Inf])
-        end
+        !isfinite(aᵢ) && isnan(aᵢ) && return P([NaN])
         j = i - 1
         iszero(j) && continue
         cs[j] = j * aᵢ
@@ -81,10 +78,7 @@ function integrate(p::MutableSparseVectorPolynomial{B,T,X}) where {B<:StandardBa
     cs = spzeros(R, n+1)
 
     @inbounds for (i, aᵢ) ∈ zip(findnz(p.coeffs)...) #pairs(p)
-        if !isfinite(aᵢ)
-            isnan(aᵢ) && return P([NaN])
-            isinf(aᵢ) && return P([Inf])
-        end
+        !isfinite(aᵢ) && isnan(aᵢ) && return P([NaN])
         j = i# + 1
         cs[j + 1] =  aᵢ / j
     end

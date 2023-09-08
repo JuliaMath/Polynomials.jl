@@ -113,6 +113,14 @@ function LinearAlgebra.mul!(cs, p::AbstractDenseUnivariatePolynomial, q::Abstrac
     nothing
 end
 
+# check for finite
+function is_finite_polynomial(pᵢ, P)
+    isfinite(pᵢ) && return (true, nothing)
+    isnan(pᵢ) && return (false, P([NaN]))
+    isinf(pᵢ) && return (false, P([Inf]))
+    return (true, nothing)
+end
+
 
 # derivative
 function derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractDenseUnivariatePolynomial{B,T,X}}
