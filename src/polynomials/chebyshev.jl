@@ -135,7 +135,8 @@ julia> c.(-1:0.5:1)
 ```
 """
 function evalpoly(x::S, ch::ChebyshevT) where {S}
-    x ∉ domain(ch) && throw(ArgumentError("$x outside of domain"))
+    d = domain(ch)
+    x ∉ d && throw(DomainError(x, "evaluation point must lie in $d"))
     evalpoly(x, ch, false)
 end
 

@@ -16,6 +16,8 @@
         @test size(p, 1) == size(coeff, 1)
         @test typeof(p).parameters[2] == eltype(coeff)
         @test eltype(p) == eltype(coeff)
+
+        @test_throws DomainError p(2)
     end
 end
 
