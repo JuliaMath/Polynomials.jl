@@ -124,7 +124,7 @@ end
     target[abs(i - j) + 1] += 0.5
     c1 = ChebyshevT(vcat(zeros(i), 1))
     c2 = ChebyshevT(vcat(zeros(j), 1))
-    @test c1 * c2 ≈ ChebyshevT(target)
+    @test @inferred(c1 * c2) ≈ ChebyshevT(target)
 
     # divrem
     target = c1 + c2

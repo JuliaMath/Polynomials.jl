@@ -174,7 +174,7 @@ function Base.:*(p1::MutableDensePolynomial{B,T,X}, p2::MutableDensePolynomial{B
     z2 = _c_to_z(coeffs(p2))
     prod = fastconv(z1, z2)
     cs = _z_to_c(prod)
-    ret = ChebyshevT(cs,X)
+    ret = ChebyshevT(cs, Var(X))
     return ret
 end
 
