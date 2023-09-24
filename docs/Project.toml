@@ -6,5 +6,5 @@ Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
-Documenter = "0.27"
+Documenter = "1"
 GR_jll = "< 0.58"
