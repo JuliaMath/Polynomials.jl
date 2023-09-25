@@ -1,7 +1,7 @@
 """
     ngcd(p, q, [k]; kwargs...)
 
-Find numerical GCD of polynomials `p` and `q`. Refer to [`NGCD.ngcd(p,q)`](@ref) for details.
+Find numerical GCD of polynomials `p` and `q`. Refer to `NGCD.ngcd` for details.
 
 The main entry point for this function is `gcd(p, q, method=:numerical)`, but `ngcd` outputs the gcd factorization -- `u, v, w` with `u*v ≈ p` and `u*w ≈ q` -- along with `Θ`, an estimate on how close `p`,`q` is to a gcd factorization of degree `k` and `κ` the GCD condition number.
 

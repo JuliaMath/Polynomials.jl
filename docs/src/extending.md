@@ -1,6 +1,6 @@
 # Extending Polynomials
 
-The [`AbstractUnivaeriatePolynomial`](@ref) type was made to be extended.
+The [`AbstractUnivariatePolynomial`](@ref) type was made to be extended.
 
 A polynomial's  coefficients  are  relative to some *basis*. The `Polynomial` type relates coefficients  `[a0, a1,  ..., an]`, say,  to the  polynomial  ``a_0 +  a_1\cdot x + a_2\cdot x^2  + \cdots +  a_n\cdot x^n``,  through the standard  basis  ``1,  x,  x^2, ..., x^n``.  New polynomial  types typically represent the polynomial through a different  basis. For example,  `CheyshevT` uses a basis  ``T_0=1, T_1=x,  T_2=2x^2-1,  \cdots,  T_n  =  2xT_{n-1} - T_{n-2}``.  For this type  the  coefficients  `[a0,a1,...,an]` are associated with  the polynomial  ``a0\cdot T_0  + a_1 \cdot T_1 +  \cdots  +  a_n\cdot T_n`.
 

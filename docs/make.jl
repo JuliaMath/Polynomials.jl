@@ -22,6 +22,7 @@ makedocs(
         ],
         "Extending" => "extending.md",
     ],
+    warnonly = [:cross_references, :missing_docs],
 )
 
 deploydocs(repo = "github.com/JuliaMath/Polynomials.jl.git")
