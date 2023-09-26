@@ -5,7 +5,7 @@
 Create a rational expression (`p//q`) from the two polynomials.
 
 Common factors are not cancelled by the constructor, as they are for
-the base `Rational` type. The [`lowest_terms(pq)`](@ref) function attempts
+the base `Rational` type. The [`lowest_terms`](@ref) function attempts
 that operation.
 
 For purposes of iteration, a rational function is treated like a two-element container.

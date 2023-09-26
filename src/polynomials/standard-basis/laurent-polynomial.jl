@@ -219,7 +219,7 @@ The `cconj` of a polynomial, `p̃`, conjugates the coefficients and applies `s -
 
 This satisfies for *imaginary* `s`: `conj(p(s)) = p̃(s) = (conj ∘ p)(s) = cconj(p)(s) `
 
-[ref](https://github.com/hurak/PolynomialEquations.jl#symmetrix-conjugate-equation-continuous-time-case)
+[reference](https://github.com/hurak/PolynomialEquations.jl#symmetrix-conjugate-equation-continuous-time-case)
 
 Examples:
 ```jldoctest laurent

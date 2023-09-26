@@ -105,7 +105,7 @@ the variance-covariance matrix.)
 
 ## large degree
 
-For fitting with a large degree, the Vandermonde matrix is exponentially ill-conditioned. The [`ArnoldiFit`](@ref) type introduces an Arnoldi orthogonalization that fixes this problem.
+For fitting with a large degree, the Vandermonde matrix is exponentially ill-conditioned. The `ArnoldiFit` type introduces an Arnoldi orthogonalization that fixes this problem.
 
 
 """

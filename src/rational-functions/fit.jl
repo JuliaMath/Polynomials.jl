@@ -83,7 +83,7 @@ end
 """
     fit(::Type{RationalFunction}, r::Polynomial, m, n; var=:x)
 
-Fit a Pade approximant ([`pade_fit`](@ref)) to `r`.
+Fit a Pade approximant (cf docstring for `Polynomials.pade_fit`) to `r`.
 
 Examples:
 

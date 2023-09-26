@@ -232,7 +232,7 @@ By default, uses the Euclidean division algorithm (`method=:euclidean`), which i
 
 Passing `method=:noda_sasaki` uses scaling to circumvent some of these.
 
-Passing `method=:numerical` will call the internal method `NGCD.ngcd` for the numerical gcd. See the help page of [`Polynomials.NGCD.ngcd(p,q)`](@ref) for details.
+Passing `method=:numerical` will call the internal method `NGCD.ngcd` for the numerical gcd. See the docstring of `NGCD.ngcd` for details.
 """
 function Base.gcd(p1::P, p2::Q, args...;
                   method=:euclidean,
