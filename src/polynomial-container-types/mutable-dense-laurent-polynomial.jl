@@ -3,7 +3,7 @@
 
 This polynomial type essentially uses an offset vector (`Vector{T}`,`order`) to store the coefficients of a polynomial relative to the basis `B` with indeterminate `X`.
 
-The typical offset is to have `0` as the order, but, say, to accomodate Laurent polynomials, or more efficient storage of basis elements any order may be specified.
+The typical offset is to have `0` as the order, but, say, to accommodate Laurent polynomials, or more efficient storage of basis elements any order may be specified.
 
 This type trims trailing zeros and the leading zeros on construction.
 

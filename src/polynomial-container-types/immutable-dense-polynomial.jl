@@ -23,7 +23,7 @@ ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{false}}, cs::NTuple{N,T}) wher
 ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{true}}, cs::NTuple{N,T}) where {B,N, T,X} =
     ImmutableDensePolynomial{B,T,X,N}(cs)
 
-# tuple with mis-matched size
+# tuple with mismatched size
 function ImmutableDensePolynomial{B,T,X,N}(xs::NTuple{M,S}) where {B,T,S,X,N,M}
     p = ImmutableDensePolynomial{B,S,X,M}(xs)
     convert(ImmutableDensePolynomial{B,T,X,N}, ImmutableDensePolynomial{B,T,X,M}(xs))

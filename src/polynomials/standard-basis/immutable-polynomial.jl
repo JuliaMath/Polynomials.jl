@@ -114,7 +114,7 @@ end
 
 # julia> @time Base.power_by_squaring(p,15);
 #   0.000145 seconds (7 allocations: 6.547 KiB)
-# This is not inferrable, as `n` is not a compile time constant
+# This is not inferable, as `n` is not a compile time constant
 Base.:^(p::ImmutablePolynomial, n::Integer) = immutable_power(p, n)
 function immutable_power(p::ImmutablePolynomial{T,X,N}, n::Integer) where {T,X,N}
     iszero(p) && return p

@@ -312,13 +312,13 @@ function _gcd_noda_sasaki(a::Vector{T}, b::Vector{S};
     tol = atol + rtol
 
     # determine the degree of GCD as the nullity of the Sylvester matrix
-    # this computation can be replaced by simply setting nd = 1, in which case the Sylvester matrix is not formed
+    # this computation can be replaced by simply setting nᵣ = 1, in which case the Sylvester matrix is not formed
 
-    nd = na1 + nb1 - 2 - rank([NGCD.convmtx(a1,nb1-1) NGCD.convmtx(b1,na1-1)], atol = tol) # julia 1.1
-    nd == 0 && (return [one(R)])
+    nᵣ = na1 + nb1 - 2 - rank([NGCD.convmtx(a1,nb1-1) NGCD.convmtx(b1,na1-1)], atol = tol) # julia 1.1
+    nᵣ == 0 && (return [one(R)])
 
     sc = one(R)
-    while na1 > nd
+    while na1 > nᵣ
          na1 < nb1 && ((a1, b1, na1, nb1) = (b1, a1, nb1, na1))
          @inbounds for i in na1:-1:nb1
             s = -a1[i] / b1[nb1]

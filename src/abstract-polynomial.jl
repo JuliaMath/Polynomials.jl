@@ -57,7 +57,7 @@ basis_symbol(::Type{AbstractUnivariatePolynomial{B,T,X}}) where {B,T,X} = "Χ($(
 
 ## idea is vector space stuff (scalar_add, scalar_mult, vector +/-, ^) goes here
 ## connection (convert, transform) is specific to a basis (storage)
-## ⊗(p::P{T,X}, q::P{S,Y}) is specic to basis/storage
+## ⊗(p::P{T,X}, q::P{S,Y}) is specific to basis/storage
 
 # type of basis
 basistype(p::AbstractUnivariatePolynomial{B,T,X}) where {B,T,X} = B
