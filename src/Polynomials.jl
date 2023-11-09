@@ -1,3 +1,8 @@
+"""
+    Polynomials.jl
+
+Basic arithmetic, integration, differentiation, evaluation, root finding, and fitting for [univariate polynomials](https://en.wikipedia.org/wiki/Polynomial) in [Julia](https://julialang.org/).
+"""
 module Polynomials
 
 #  using GenericLinearAlgebra ## remove for now. cf: https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl/pull/71#issuecomment-743928205

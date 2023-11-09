@@ -1005,7 +1005,7 @@ basis(p::P, k::Int, _var=indeterminate(p); var=_var) where {P<:AbstractPolynomia
 
 #=
 composition
-cf. https://github.com/JuliaMath/Polynomials.jl/issues/511 for a paper with implentations
+cf. https://github.com/JuliaMath/Polynomials.jl/issues/511 for a paper with implementations
 
 =#
 """
@@ -1062,7 +1062,7 @@ Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = scalar_add(c, p)
 Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S} = scalar_add(c,p)
 
 ## polynomial + polynomial when different types
-## - each polynomial container type implents PB{B,T,X} + PB{B,S,X}
+## - each polynomial container type implements PB{B,T,X} + PB{B,S,X}
 ## - this handles case X ≠ Y unless constant
 ## - when PB₁ ≠ PB₂ we promote both polynomials
 function Base.:+(p::P, q::Q) where {T,X,P <: AbstractPolynomial{T,X}, S,Y,Q <: AbstractPolynomial{S,Y}}
@@ -1126,7 +1126,7 @@ Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
 
 
-# Th ⊕ methd below is used in Special Polynomials, but not here, as it was removed for
+# Th ⊕ method below is used in Special Polynomials, but not here, as it was removed for
 # similar methods in the polynomial-basetypes
 # addition of polynomials is just vector space addition, so can be done regardless
 # of basis, as long as the same. These ⊕ methods try to find a performant means to add
