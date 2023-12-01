@@ -24,7 +24,8 @@ ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{true}}, cs::NTuple{N,T}) where
     ImmutableDensePolynomial{B,T,X,N}(cs)
 
 # tuple with mismatched size
-function ImmutableDensePolynomial{B,T,X,N}(xs::NTuple{M,S}) where {B,T,S,X,N,M}
+function ImmutableDensePolynomial{B,T,X,N}(xs::Tuple{S,Vararg{S}}) where {B,T,S,X,N}
+    M = length(xs)
     p = ImmutableDensePolynomial{B,S,X,M}(xs)
     convert(ImmutableDensePolynomial{B,T,X,N}, ImmutableDensePolynomial{B,T,X,M}(xs))
 end
@@ -46,10 +47,13 @@ function ImmutableDensePolynomial{B,T,X,N}(c::S) where {B,T,X,N,S<:Scalar}
     cs = ntuple(i -> i == 1 ? T(c) : zero(T), Val(N))
     return ImmutableDensePolynomial{B,T,X,N}(cs)
 end
-ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::NTuple{N,S}) where {B,T,S,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
+function ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::Tuple{S,Vararg{S}}) where {B,T,S,X}
+    N = length(xs)
+    ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
+end
 ImmutableDensePolynomial{B,T,X}(xs::NTuple{N}) where {B,T,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
 ImmutableDensePolynomial{B,T}(xs::NTuple{N}, var::SymbolLike=Var(:x)) where {B,T,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
-ImmutableDensePolynomial{B}(xs::NTuple{N,T}, var::SymbolLike=Var(:x)) where {B,T,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
+ImmutableDensePolynomial{B}(xs::Tuple{T,Vararg{T}}, var::SymbolLike=Var(:x)) where {B,T} = ImmutableDensePolynomial{B,T,Symbol(var),length(xs)}(xs)
 
 # abstract vector. Must eat order
 ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::AbstractVector, order::Int=0) where {B,T,X} =
