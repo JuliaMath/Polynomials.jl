@@ -12,23 +12,26 @@ Immutable is a bit of a misnomer, as using the `@set!` macro from `Setfield.jl` 
 """
 struct ImmutableDensePolynomial{B,T,X,N} <: AbstractDenseUnivariatePolynomial{B,T,X}
     coeffs::NTuple{N,T}
-    function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N}) where {B,N,T,X}
+    #function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N,T}) where {B,N,T,X}
+    #    new{B,T,Symbol(X),N}(cs)
+    #end
+    function ImmutableDensePolynomial{B,T,X,N}(cs::Tuple{S,Vararg{S}}) where {B,N,T,X, S}
+        m = length(cs)
+        m > N && throw(ArgumentError("Tuple too large for N"))
+        m < N && (cs = ntuple(i -> i <= m ? cs[i] : zero(T), Val(N)))
+        new{B,T,Symbol(X),N}(T.(cs))
+    end
+    function ImmutableDensePolynomial{B,T,X,N}(cs::Tuple{}) where {B,N,T,X}
         new{B,T,Symbol(X),N}(cs)
     end
 end
+
 
 ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{false}}, cs::NTuple{N,T}) where {B,N,T,X} =
     ImmutableDensePolynomial{B,T,X}(cs)
 
 ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{true}}, cs::NTuple{N,T}) where {B,N, T,X} =
     ImmutableDensePolynomial{B,T,X,N}(cs)
-
-# tuple with mismatched size
-function ImmutableDensePolynomial{B,T,X,N}(xs::Tuple{S,Vararg{S}}) where {B,T,S,X,N}
-    M = length(xs)
-    p = ImmutableDensePolynomial{B,S,X,M}(xs)
-    convert(ImmutableDensePolynomial{B,T,X,N}, ImmutableDensePolynomial{B,T,X,M}(xs))
-end
 
 # vector case with N
 function ImmutableDensePolynomial{B,T,X,N}(xs::AbstractVector{S}) where {B,T,S,X,N}
