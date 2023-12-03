@@ -12,22 +12,23 @@ Immutable is a bit of a misnomer, as using the `@set!` macro from `Setfield.jl` 
 """
 struct ImmutableDensePolynomial{B,T,X,N} <: AbstractDenseUnivariatePolynomial{B,T,X}
     coeffs::NTuple{N,T}
-    function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N}) where {B,N,T,X}
+    function ImmutableDensePolynomial{B,T,X,N}(cs::Tuple{S,Vararg{S}}) where {B,N,T,X, S}
+        m = length(cs)
+        m > N && throw(ArgumentError("Tuple too large for N"))
+        m < N && (cs = ntuple(i -> i <= m ? cs[i] : zero(T), Val(N)))
+        new{B,T,Symbol(X),N}(T.(cs))
+    end
+    function ImmutableDensePolynomial{B,T,X,N}(cs::Tuple{}) where {B,N,T,X}
         new{B,T,Symbol(X),N}(cs)
     end
 end
+
 
 ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{false}}, cs::NTuple{N,T}) where {B,N,T,X} =
     ImmutableDensePolynomial{B,T,X}(cs)
 
 ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{true}}, cs::NTuple{N,T}) where {B,N, T,X} =
     ImmutableDensePolynomial{B,T,X,N}(cs)
-
-# tuple with mismatched size
-function ImmutableDensePolynomial{B,T,X,N}(xs::NTuple{M,S}) where {B,T,S,X,N,M}
-    p = ImmutableDensePolynomial{B,S,X,M}(xs)
-    convert(ImmutableDensePolynomial{B,T,X,N}, ImmutableDensePolynomial{B,T,X,M}(xs))
-end
 
 # vector case with N
 function ImmutableDensePolynomial{B,T,X,N}(xs::AbstractVector{S}) where {B,T,S,X,N}
@@ -46,10 +47,13 @@ function ImmutableDensePolynomial{B,T,X,N}(c::S) where {B,T,X,N,S<:Scalar}
     cs = ntuple(i -> i == 1 ? T(c) : zero(T), Val(N))
     return ImmutableDensePolynomial{B,T,X,N}(cs)
 end
-ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::NTuple{N,S}) where {B,T,S,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
+function ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::Tuple{S,Vararg{S}}) where {B,T,S,X}
+    N = length(xs)
+    ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
+end
 ImmutableDensePolynomial{B,T,X}(xs::NTuple{N}) where {B,T,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
 ImmutableDensePolynomial{B,T}(xs::NTuple{N}, var::SymbolLike=Var(:x)) where {B,T,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
-ImmutableDensePolynomial{B}(xs::NTuple{N,T}, var::SymbolLike=Var(:x)) where {B,T,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
+ImmutableDensePolynomial{B}(xs::Tuple{T,Vararg{T}}, var::SymbolLike=Var(:x)) where {B,T} = ImmutableDensePolynomial{B,T,Symbol(var),length(xs)}(xs)
 
 # abstract vector. Must eat order
 ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::AbstractVector, order::Int=0) where {B,T,X} =
