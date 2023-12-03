@@ -12,9 +12,6 @@ Immutable is a bit of a misnomer, as using the `@set!` macro from `Setfield.jl` 
 """
 struct ImmutableDensePolynomial{B,T,X,N} <: AbstractDenseUnivariatePolynomial{B,T,X}
     coeffs::NTuple{N,T}
-    #function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N,T}) where {B,N,T,X}
-    #    new{B,T,Symbol(X),N}(cs)
-    #end
     function ImmutableDensePolynomial{B,T,X,N}(cs::Tuple{S,Vararg{S}}) where {B,N,T,X, S}
         m = length(cs)
         m > N && throw(ArgumentError("Tuple too large for N"))
