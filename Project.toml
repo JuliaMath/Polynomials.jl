@@ -24,7 +24,7 @@ PolynomialsMakieCoreExt = "MakieCore"
 PolynomialsMutableArithmeticsExt = "MutableArithmetics"
 
 [compat]
-Aqua = "0.8"
+Aqua = "0.6, 0.7"
 ChainRulesCore = "1"
 ChainRulesTestUtils = "1"
 DualNumbers = "0.6"
