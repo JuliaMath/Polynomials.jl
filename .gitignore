@@ -6,3 +6,5 @@ docs/site/
 
 Manifest.toml
 archive/
+/.benchmarkci
+/benchmark/*.json
