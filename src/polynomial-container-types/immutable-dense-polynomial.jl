@@ -12,9 +12,35 @@ Immutable is a bit of a misnomer, as using the `@set!` macro from `Setfield.jl` 
 """
 struct ImmutableDensePolynomial{B,T,X,N} <: AbstractDenseUnivariatePolynomial{B,T,X}
     coeffs::NTuple{N,T}
-    function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N}) where {B,N,T,X}
+    function ImmutableDensePolynomial{B,T,X,N}(cs::NTuple{N,T}) where {B,N,T,X}
         new{B,T,Symbol(X),N}(cs)
     end
+
+    # tuple with mismatched size/type
+    # need zero(T) defined if padding needed
+    function ImmutableDensePolynomial{B,T,X,N}(xs::Tuple{Vararg}) where {B,T,X,N}
+        M = length(xs)
+        N′ = findlast(!iszero, xs)
+        N < N′ && throw(ArgumentError("Too many coefficients for type"))
+        if  N == N′ == M
+            cs = T.(xs)
+        elseif isnothing(N′)
+            cs = ntuple(i -> zero(T), Val(N))
+        else
+            cs = ntuple(i -> i <= N′ ? T(xs[i]) : zero(first(xs)), Val(N))
+        end
+        new{B,T,X,N}(cs)
+    end
+
+    # zero polynomial
+    function ImmutableDensePolynomial{B,T,X,N}(cs::Tuple{}) where {B,T,X,N}
+        cs = ntuple(i->zero(T), Val(N))
+        new{B,T,Symbol(X),N}(cs)
+    end
+    function ImmutableDensePolynomial{B,T,X,0}(cs::Tuple{}) where {B,T,X}
+        new{B,T,Symbol(X),0}(())
+    end
+
 end
 
 ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{false}}, cs::NTuple{N,T}) where {B,N,T,X} =
@@ -23,37 +49,38 @@ ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{false}}, cs::NTuple{N,T}) wher
 ImmutableDensePolynomial{B,T,X,N}(check::Type{Val{true}}, cs::NTuple{N,T}) where {B,N, T,X} =
     ImmutableDensePolynomial{B,T,X,N}(cs)
 
-# tuple with mismatched size
-function ImmutableDensePolynomial{B,T,X,N}(xs::Tuple{S,Vararg{S}}) where {B,T,S,X,N}
-    M = length(xs)
-    p = ImmutableDensePolynomial{B,S,X,M}(xs)
-    convert(ImmutableDensePolynomial{B,T,X,N}, ImmutableDensePolynomial{B,T,X,M}(xs))
-end
-
 # vector case with N
 function ImmutableDensePolynomial{B,T,X,N}(xs::AbstractVector{S}) where {B,T,S,X,N}
     ImmutableDensePolynomial{B,T,X,N}(ntuple(Base.Fix1(getindex, xs), Val(N)))
-    end
+end
 
 # constant
 function ImmutableDensePolynomial{B,T,X,N}(c::S) where {B,T,X,N,S<:Scalar}
-    if N == 0
-        if iszero(c)
-            throw(ArgumentError("Can't create zero-length polynomial"))
-        else
-            return zero(ImmutableDensePolynomial{B,T,X})
-        end
-    end
-    cs = ntuple(i -> i == 1 ? T(c) : zero(T), Val(N))
-    return ImmutableDensePolynomial{B,T,X,N}(cs)
+    return ImmutableDensePolynomial{B,T,X,N}((c,))
 end
+
 function ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::Tuple{S,Vararg{S}}) where {B,T,S,X}
     N = length(xs)
     ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
 end
-ImmutableDensePolynomial{B,T,X}(xs::NTuple{N}) where {B,T,X,N} = ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
-ImmutableDensePolynomial{B,T}(xs::NTuple{N}, var::SymbolLike=Var(:x)) where {B,T,N} = ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
-ImmutableDensePolynomial{B}(xs::Tuple{T,Vararg{T}}, var::SymbolLike=Var(:x)) where {B,T} = ImmutableDensePolynomial{B,T,Symbol(var),length(xs)}(xs)
+
+ImmutableDensePolynomial{B,T,X}(xs::NTuple{N}) where {B,T,X,N} =
+    ImmutableDensePolynomial{B,T,X,N}(convert(NTuple{N,T}, xs))
+
+ImmutableDensePolynomial{B,T,X}(xs::Tuple{}) where {B,T,X} =
+    ImmutableDensePolynomial{B,T,X,0}(())
+
+ImmutableDensePolynomial{B,T}(xs::NTuple{N}, var::SymbolLike=Var(:x)) where {B,T,N} =
+    ImmutableDensePolynomial{B,T,Symbol(var),N}(xs)
+
+ImmutableDensePolynomial{B,T}(xs::Tuple{}, var::SymbolLike=Var(:x)) where {B,T} =
+    ImmutableDensePolynomial{B,T,Symbol(var),0}(xs)
+
+ImmutableDensePolynomial{B}(xs::Tuple{T,Vararg{T}}, var::SymbolLike=Var(:x)) where {B,T} =
+    ImmutableDensePolynomial{B,T,Symbol(var),length(xs)}(xs)
+
+ImmutableDensePolynomial{B}(xs::Tuple{}, var::SymbolLike=Var(:x)) where {B} =
+    ImmutableDensePolynomial{B,Float64,Symbol(var),0}(xs)
 
 # abstract vector. Must eat order
 ImmutableDensePolynomial{B,T,X}(::Val{false}, xs::AbstractVector, order::Int=0) where {B,T,X} =
@@ -84,17 +111,36 @@ Base.promote_rule(::Type{P}, ::Type{<:S}) where {S<:Number,B,T,X,N,P<:ImmutableD
 
 function Base.convert(::Type{<:ImmutableDensePolynomial{B,T,X,N}},
                       p::ImmutableDensePolynomial{B,T′,X,N′}) where {B,T,T′,X,N,N′}
-    N′′ = findlast(!iszero, p)
-    isnothing(N′′) && return zero(ImmutableDensePolynomial{B,T,X,N})
-    N < N′′ && throw(ArgumentError("Wrong size"))
-    ImmutableDensePolynomial{B,T,X,N}(ntuple(i -> T(p[i-1]), Val(N)))
+    ImmutableDensePolynomial{B,T,X,N}(p.coeffs)
 end
 
-function Base.map(fn, p::P, args...)  where {B,T,X, P<:ImmutableDensePolynomial{B,T,X}}
+function Base.map(fn, p::P, args...)  where {B,T,X,N, P<:ImmutableDensePolynomial{B,T,X,N}}
     xs = map(fn, p.coeffs, args...)
     R = eltype(xs)
-    return ImmutableDensePolynomial{B,R,X}(xs)
+    return ImmutableDensePolynomial{B,R,X,N}(xs)
 end
+
+# map has a type instability
+function scalar_mult(p::P, c::S) where {B, S<:Scalar, T, X, N, P<:ImmutableDensePolynomial{B,T,X,N}}
+    R = Base.promote_op(*, T, S)
+    #cs = map(Base.Fix2(*,c), p.coeffs)
+    cs =  p.coeffs .* (c,)
+
+    ImmutableDensePolynomial{B,R,X,N}(cs)
+end
+
+function scalar_mult(c::S, p::P) where {B, S<:Scalar, T, X, N, P<:ImmutableDensePolynomial{B,T,X,N}}
+    R = Base.promote_op(*, T, S)
+    #cs = map(Base.Fix1(*,c), p.coeffs)
+    cs = (c,) .* p.coeffs
+    ImmutableDensePolynomial{B,R,X,N}(cs)
+end
+
+# scalar mult faster with 0 default
+scalar_mult(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B,T,X,S<:Scalar} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,0}) where {B,T,X,S<:Scalar} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
+
+
 
 
 Base.copy(p::ImmutableDensePolynomial) = p
@@ -260,10 +306,6 @@ function _tuple_combine(op, p::ImmutableDensePolynomial{B,T,X,N}, q::ImmutableDe
     ImmutableDensePolynomial{B,R,X,N}(xs)
 end
 
-
-# scalar mult faster with 0 default
-scalar_mult(p::ImmutableDensePolynomial{B,T,X,0}, c::S) where {B,T,X,S<:Scalar} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
-scalar_mult(c::S, p::ImmutableDensePolynomial{B,T,X,0}) where {B,T,X,S<:Scalar} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})
 
 
 ## ---
