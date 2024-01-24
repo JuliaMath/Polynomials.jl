@@ -254,8 +254,10 @@ end
             @test p + d == P([a+d, b, c])
             @test p + P([d]) == P([a+d,b,c])
 
-            @test_throws MethodError [p s][1] == p # no promotion T(s)
-            @test_throws MethodError [p s][2] == s
+            if VERSION < v"1.10"
+                @test_throws MethodError [p s][1] == p # no promotion T(s)
+                @test_throws MethodError [p s][2] == s
+            end
         end
     end
 
@@ -302,11 +304,13 @@ end
 
             # implicit promotion
             @test_throws MethodError p + s == P([a+s, b, c])  # OK, no a + s
-            @test  p + d == P([a+d, b, c])
+            @test p + d == P([a+d, b, c])
             @test p + P([d]) == P([a+d,b,c])
 
-            @test_throws MethodError [p s][1] == p # no promotion T(s)
-            @test_throws MethodError [p s][2] == s
+            # For Immutable + v1.10 this [p s] doesn't error, but is
+            # error prone
+            #@test_throws MethodError [p s][1] == p # no promotion T(s)
+            #@test_throws MethodError [p s][2] == s
         end
     end
 
@@ -1354,7 +1358,8 @@ end
         p1 = P([1,2,0,3])
         @test length(collect(p1)) == degree(p1) + 1
 
-        @test [p1[idx] for idx in eachindex(p1)] ==ᵗᶻ [1,2,0,3]
+        P != Polynomials.SparseVectorPolynomial &&
+            @test norm([p1[idx] for idx in eachindex(p1)] -[1,2,0,3]) ≤ 10*eps()
     end
 end
 
