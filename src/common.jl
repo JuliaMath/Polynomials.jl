@@ -1310,3 +1310,7 @@ Base.isapprox(n::S,p1::AbstractPolynomial{T}; kwargs...) where {S,T} = isapprox(
 
 Base.isapprox(::AbstractPolynomial{T}, ::Missing, args...; kwargs...) where T = missing
 Base.isapprox(::Missing, ::AbstractPolynomial{T}, args...; kwargs...) where T = missing
+
+function LinearAlgebra.dot(::AbstractPolynomial, ::AbstractPolynomial, args...; kwargs...)
+    throw(ArgumentError("No generic `dot` method is defined for polynomials."))
+end

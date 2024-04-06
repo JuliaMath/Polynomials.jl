@@ -534,9 +534,9 @@ function refine_uvw!(u::P, v::P, w::P,
     ρ₁ = residual_error(p, q, uv, uw)
     iszero(ρ₁) && return (ρ₁, NaN)
     # storage
-    h, β =  u, dot(u,u)  # h = constant * u₀ is used
+    h, β =  u, dot(u.coeffs,u.coeffs)  # h = constant * u₀ is used
     A = JF(h, u, v, w)
-    Δfβ = Fmp(dot(h, u) - β, p, q, uv, uw)
+    Δfβ = Fmp(dot(h.coeffs, u.coeffs) - β, p, q, uv, uw)
     Δz = ones(T, length(u) + length(v) + length(w))
     n = size(A, 2)
     R = UpperTriangular(Matrix{T}(undef, n, n))
@@ -568,7 +568,7 @@ function refine_uvw!(u::P, v::P, w::P,
             steps ≥ Maxᵢ && break
             # update A,b for next iteration
             JF!(A, h, u, v, w)
-            Fmp!(Δfβ,  dot(h, u) - β, p, q, uv, uw)
+            Fmp!(Δfβ,  dot(h.coeffs, u.coeffs) - β, p, q, uv, uw)
         else
             steps == 1 && copy!(R′, R)
             break
