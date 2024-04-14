@@ -16,7 +16,7 @@ struct MutableDenseLaurentPolynomial{B,T,X} <: AbstractLaurentUnivariatePolynomi
     end
     function MutableDenseLaurentPolynomial{B,T,X}(::Val{true}, cs::AbstractVector, order::Int=0) where {B,T,X}
         if Base.has_offset_axes(cs)
-            @warn "Using the axis offset of the coefficient vector"
+            # Using the axis offset of the coefficient vector
             cs, order = cs.parent, firstindex(cs)
         end
 
