@@ -120,7 +120,7 @@ end
     @test eltype([1, p, pp]) == PP
     promote(im, p); promote(p, pp) # but promote(im, pp) fails
     ## this is a bad test, a,b =promote(im,p) leave a P{Complex}
-    ## which doesn't conver to type pp.
+    ## which doesn't convert to type pp.
     # @test eltype(eltype(eltype([im, p, pp]))) == Complex{Int}
 
     ## test mixed types promote polynomial type
