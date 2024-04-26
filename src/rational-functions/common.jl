@@ -69,7 +69,8 @@ function Base.convert(::Type{PQ}, p::P) where {PQ <: AbstractRationalFunction, P
     T =  isnothing(T′) ? eltype(p) : T′
     X = indeterminate(PQ, p)
 
-    𝐩 = convert(Polynomial{T,X}, p)
+    𝑃 = Polynomials.:⟒(p)
+    𝐩 = convert(𝑃{T,X}, p)
     rational_function(PQ, 𝐩, one(𝐩))
 end
 
