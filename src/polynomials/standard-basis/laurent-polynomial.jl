@@ -99,6 +99,10 @@ function evalpoly(c, p::LaurentPolynomial{T,X}) where {T,X}
     EvalPoly.evalpoly(c, p.coeffs) * c^p.order[]
 end
 
+# ---
+
+
+
 # scalar add
 function scalar_add(c::S, p::LaurentPolynomial{T,X}) where {S, T, X}
     R = promote_type(T,S)

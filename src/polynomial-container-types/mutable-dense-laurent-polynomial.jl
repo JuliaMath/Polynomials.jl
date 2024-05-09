@@ -204,6 +204,10 @@ function offset_vector_combine(op, p::MutableDenseLaurentPolynomial{B,T,X}, q::M
 
 end
 
+# multiply by xⁿ
+_shift(p::P, n::Int) where {P <: MutableDenseLaurentPolynomial} =
+    P(Val(false), p.coeffs, firstindex(p) + n)
+
 function Base.numerator(q::MutableDenseLaurentPolynomial{B,T,X}) where {B,T,X}
     p = chop(q)
     o = firstindex(p)
