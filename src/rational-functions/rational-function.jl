@@ -47,25 +47,51 @@ julia> derivative(pq)
 struct RationalFunction{T, X, P<:AbstractPolynomial{T,X}} <: AbstractRationalFunction{T,X,P}
     num::P
     den::P
-    function RationalFunction(p::P, q::P) where {T,X, P<:AbstractPolynomial{T,X}}
+    function RationalFunction{T,X,P}(p, q) where {T,X, P<:AbstractPolynomial{T,X}}
         new{T,X,P}(p, q)
     end
-    function RationalFunction(p::P, q::T) where {T,X, P<:AbstractPolynomial{T,X}}
-        new{T,X,P}(p, q*one(P))
-    end
-    function RationalFunction(p::T, q::Q) where {T,X, Q<:AbstractPolynomial{T,X}}
-        new{T,X,Q}(p*one(Q), q)
+
+end
+
+function RationalFunction(p::P, q::P) where {T,X, P<:AbstractPolynomial{T,X}}
+    RationalFunction{T,X,P}(p, q)
+end
+
+RationalFunction(p::AbstractPolynomial{T,X}, q::AbstractPolynomial{S,X}) where {T,S,X} =
+    RationalFunction(promote(p,q)...)
+
+function RationalFunction(p::P, q::T) where {T,X, P<:AbstractPolynomial{T,X}}
+    RationalFunction(p, (q * one(p)))
+end
+function RationalFunction(p::T, q::Q) where {T,X, Q<:AbstractPolynomial{T,X}}
+    RationalFunction(p * one(q),  q)
+end
+
+function RationalFunction(p::P,q::P) where {T, X, P <: LaurentPolynomial{T,X}}
+
+    m,n = firstindex(p), firstindex(q)
+    p′,q′ = _shift(p, -m), _shift(q, -n)
+    if m-n ≥ 0
+        return RationalFunction{T,X,P}(_shift(p′, m-n), q′)
+    else
+        return RationalFunction{T,X,P}(p′, _shift(q′, n-m))
     end
 end
 
-RationalFunction(p,q)  = RationalFunction(convert(LaurentPolynomial,p), convert(LaurentPolynomial,q))
-function RationalFunction(p::LaurentPolynomial,q::LaurentPolynomial)
-    𝐩 = convert(RationalFunction, p)
-    𝐪 = convert(RationalFunction, q)
-    𝐩 // 𝐪
+# RationalFunction(p,q)  = RationalFunction(convert(LaurentPolynomial,p), convert(LaurentPolynomial,q))
+
+
+# special case Laurent
+function lowest_terms(pq::PQ; method=:numerical, kwargs...) where {T,X,
+                                                                   P<:LaurentPolynomial{T,X}, #StandardBasisPolynomial{T,X},
+                                                                   PQ<:AbstractRationalFunction{T,X,P}}
+    p,q = pqs(pq)
+    p′,q′ = convert(Polynomial, p), convert(Polynomial,q)
+    u,v,w = uvw(p′,q′; method=method, kwargs...)
+    v′,w′ = convert(LaurentPolynomial, v), convert(LaurentPolynomial, w)
+    rational_function(PQ, v′/w′[end], w′/w′[end])
 end
-RationalFunction(p::LaurentPolynomial,q::Number) = convert(RationalFunction, p) // q
-RationalFunction(p::Number,q::LaurentPolynomial) = q // convert(RationalFunction, p)
+
 
 RationalFunction(p::AbstractPolynomial) = RationalFunction(p,one(p))
 
@@ -75,4 +101,15 @@ RationalFunction(p::AbstractPolynomial) = RationalFunction(p,one(p))
 # Look like rational numbers
 function Base.://(p::AbstractPolynomial,q::AbstractPolynomial)
     RationalFunction(p,q)
+end
+
+
+# promotion
+function Base.promote(pq::RationalFunction{T,X,P},
+                      rs::RationalFunction{S,X,Q}) where {T,S,X,P<:AbstractPolynomial{T,X},
+                                                          Q<:AbstractPolynomial{S,X}}
+    𝑃 = promote_type(P, Q)
+    p,q = pq
+    r,s = rs
+    (convert(𝑃,p) // convert(𝑃,q), convert(𝑃,r) // convert(𝑃,s))
 end

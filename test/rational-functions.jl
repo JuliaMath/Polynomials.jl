@@ -11,7 +11,7 @@ using LinearAlgebra
     # constructor
     @test p // q isa RationalFunction
     @test p // r isa RationalFunction
-    @test_throws ArgumentError r // s
+    @test_throws MethodError r // s
     @test RationalFunction(p) == p // one(p)
 
     pq = p // t # promotes to type of t
@@ -76,6 +76,21 @@ using LinearAlgebra
     @test numerator(p) == p * variable(p)^2
     @test denominator(p) == convert(Polynomial, variable(p)^2)
 
+    # issue 566
+    q = LaurentPolynomial([1], -1)
+    p = LaurentPolynomial([1], 1)
+    @test degree(numerator(q // p)) == 0 # q/p = 1/x^2
+    @test degree(denominator(q // p)) == 2
+
+    @test degree(numerator(p // q)) == 2 # p/q = x^2 / 1
+    @test degree(denominator(p // q)) == 0
+
+    @test degree(numerator(q // q^2)) == 1
+    @test degree(denominator(q // q^2)) == 0
+
+    @test degree(numerator(q^2 // q)) == 0
+    @test degree(denominator(q^2 // q)) == 1
+
 end
 
 @testset "zeros, poles, residues" begin
@@ -112,7 +127,7 @@ end
     p, q = Polynomial([1,2], :x), Polynomial([1,2],:y)
     pp = p // (p-1)
     PP = typeof(pp)
-
+    PP′ = RationalFunction{Int64, :x, LaurentPolynomial{Int64, :x}}
     r, s = SparsePolynomial([1,2], :x), SparsePolynomial([1,2],:y)
     rr = r // (r-1)
 
@@ -124,7 +139,7 @@ end
     # @test eltype(eltype(eltype([im, p, pp]))) == Complex{Int}
 
     ## test mixed types promote polynomial type
-    @test eltype([pp rr p r]) == PP
+    @test eltype([pp rr p r]) == PP′ # promotes to LaurentPolynomial
 
     ## test non-constant polys of different symbols throw error
     @test_throws ArgumentError [pp, q]

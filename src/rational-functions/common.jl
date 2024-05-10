@@ -49,21 +49,6 @@ function Base.convert(::Type{PQ}, p::Number) where {PQ <: AbstractRationalFuncti
    rational_function(PQ, p * one(P), one(P))
 end
 
-function Base.convert(::Type{PQ}, q::LaurentPolynomial) where {PQ <: AbstractRationalFunction}
-    m = firstindex(q)
-    if m >= 0
-        p = convert(Polynomial, q)
-        return convert(PQ, p)
-    else
-        z = variable(q)
-        zᵐ = z^(-m)
-        p = convert(Polynomial, zᵐ * q)
-        return rational_function(PQ, p, convert(Polynomial, zᵐ))
-    end
-
-end
-
-
 function Base.convert(::Type{PQ}, p::P) where {PQ <: AbstractRationalFunction, P<:AbstractPolynomial}
     T′ = _eltype(_eltype((PQ)))
     T =  isnothing(T′) ? eltype(p) : T′
@@ -73,9 +58,6 @@ function Base.convert(::Type{PQ}, p::P) where {PQ <: AbstractRationalFunction, P
     𝐩 = convert(𝑃{T,X}, p)
     rational_function(PQ, 𝐩, one(𝐩))
 end
-
-
-
 
 function Base.convert(::Type{P}, pq::PQ) where {P<:AbstractPolynomial, PQ<:AbstractRationalFunction}
     p,q = pqs(pq)
@@ -97,7 +79,8 @@ function Base.promote_rule(::Type{PQ}, ::Type{PQ′}) where {T,X,P,PQ <: Abstrac
     assert_same_variable(X,X′)
     PQ_, PQ′_ = constructorof(PQ), constructorof(PQ′)
     𝑷𝑸 = PQ_ == PQ′ ? PQ_ : RationalFunction
-    𝑷 = constructorof(typeof(variable(P)+variable(P′)));  𝑷 = Polynomial
+    𝑷 = constructorof(typeof(variable(P)+variable(P′)));
+    #𝑷 = Polynomial
     𝑻 = promote_type(T,T′)
     𝑷𝑸{𝑻,X,𝑷{𝑻,X}}
 end
