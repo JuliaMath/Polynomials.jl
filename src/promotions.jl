@@ -18,7 +18,8 @@ Base.promote_rule(::Type{P}, ::Type{Q}) where {B,T,S,X,
 # Methods to ensure that matrices of polynomials behave as desired
 Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
                                               S,   Q<:AbstractPolynomial{S,X}} =
-                                                   Polynomial{promote_type(T, S),X}
+                                                   LaurentPolynomial{promote_type(T, S),X}
+
 
 Base.promote_rule(::Type{P},::Type{Q}) where {T,X, P<:AbstractPolynomial{T,X},
                                               S,Y, Q<:AbstractPolynomial{S,Y}} =

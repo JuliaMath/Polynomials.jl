@@ -51,20 +51,21 @@ struct RationalFunction{T, X, P<:AbstractPolynomial{T,X}} <: AbstractRationalFun
         new{T,X,P}(p, q)
     end
 
-    function RationalFunction(p::P, q::P) where {T,X, P<:AbstractPolynomial{T,X}}
-        new{T,X,P}(p, q)
-    end
-    function RationalFunction(p::P, q::T) where {T,X, P<:AbstractPolynomial{T,X}}
-        new{T,X,P}(p, q*one(P))
-    end
-    function RationalFunction(p::T, q::Q) where {T,X, Q<:AbstractPolynomial{T,X}}
-        new{T,X,Q}(p*one(Q), q)
-    end
 end
 
-# RationalFunction(p,q)  = RationalFunction(convert(LaurentPolynomial,p), convert(LaurentPolynomial,q))
+function RationalFunction(p::P, q::P) where {T,X, P<:AbstractPolynomial{T,X}}
+    RationalFunction{T,X,P}(p, q)
+end
 
-RationalFunction(p::AbstractPolynomial{T,X}, q::AbstractPolynomial{S,X}) where {T,S,X} = RationalFunction(promote(p,q)...)
+RationalFunction(p::AbstractPolynomial{T,X}, q::AbstractPolynomial{S,X}) where {T,S,X} =
+    RationalFunction(promote(p,q)...)
+
+function RationalFunction(p::P, q::T) where {T,X, P<:AbstractPolynomial{T,X}}
+    RationalFunction(p, (q * one(p)))
+end
+function RationalFunction(p::T, q::Q) where {T,X, Q<:AbstractPolynomial{T,X}}
+    RationalFunction(p * one(q),  q)
+end
 
 function RationalFunction(p::P,q::P) where {T, X, P <: LaurentPolynomial{T,X}}
 
@@ -76,6 +77,21 @@ function RationalFunction(p::P,q::P) where {T, X, P <: LaurentPolynomial{T,X}}
         return RationalFunction{T,X,P}(p′, _shift(q′, n-m))
     end
 end
+
+# RationalFunction(p,q)  = RationalFunction(convert(LaurentPolynomial,p), convert(LaurentPolynomial,q))
+
+
+# special case Laurent
+function lowest_terms(pq::PQ; method=:numerical, kwargs...) where {T,X,
+                                                                   P<:LaurentPolynomial{T,X}, #StandardBasisPolynomial{T,X},
+                                                                   PQ<:AbstractRationalFunction{T,X,P}}
+    p,q = pqs(pq)
+    p′,q′ = convert(Polynomial, p), convert(Polynomial,q)
+    u,v,w = uvw(p′,q′; method=method, kwargs...)
+    v′,w′ = convert(LaurentPolynomial, v), convert(LaurentPolynomial, w)
+    rational_function(PQ, v′/w′[end], w′/w′[end])
+end
+
 
 RationalFunction(p::AbstractPolynomial) = RationalFunction(p,one(p))
 

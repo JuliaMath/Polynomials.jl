@@ -79,7 +79,8 @@ function Base.promote_rule(::Type{PQ}, ::Type{PQ′}) where {T,X,P,PQ <: Abstrac
     assert_same_variable(X,X′)
     PQ_, PQ′_ = constructorof(PQ), constructorof(PQ′)
     𝑷𝑸 = PQ_ == PQ′ ? PQ_ : RationalFunction
-    𝑷 = constructorof(typeof(variable(P)+variable(P′)));  𝑷 = Polynomial
+    𝑷 = constructorof(typeof(variable(P)+variable(P′)));
+    #𝑷 = Polynomial
     𝑻 = promote_type(T,T′)
     𝑷𝑸{𝑻,X,𝑷{𝑻,X}}
 end
