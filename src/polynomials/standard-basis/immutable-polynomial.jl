@@ -45,7 +45,9 @@ ImmutablePolynomial(1.0)
 ```
 
 !!! note
-    This was modeled after [StaticUnivariatePolynomials](https://github.com/tkoolen/StaticUnivariatePolynomials.jl) by `@tkoolen`.
+    This was modeled after
+    [StaticUnivariatePolynomials](https://github.com/tkoolen/StaticUnivariatePolynomials.jl)
+    by `@tkoolen`.
 
 """
 const ImmutablePolynomial = ImmutableDensePolynomial{StandardBasis}

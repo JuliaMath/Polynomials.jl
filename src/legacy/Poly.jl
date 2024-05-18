@@ -219,7 +219,7 @@ polyint(p::Poly, a, b) = integrate(p, a, b)
 polyint(p::AbstractPolynomial, args...)  = error("`polyint` is a legacy name for use with `Poly` objects only. Use `integrate(p,...)`.")
 
 polyder(p::Poly, ord = 1) = derivative(p, ord)
-polyder(p::AbstractPolynomial, args...) =  error("`polyder` is a legacy name for use with `Poly` objects only. Use `derivative(p,[order=1])`.")
+polyder(p::AbstractPolynomial, args...) = error("`polyder` is a legacy name for use with `Poly` objects only. Use `derivative(p,[order=1])`.")
 
 polyfit(x, y, n = length(x) - 1, sym=:x) = fit(Poly, x, y, n; var = sym)
 polyfit(x, y, sym::Symbol) = fit(Poly, x, y, var = sym)

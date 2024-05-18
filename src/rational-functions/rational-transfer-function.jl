@@ -18,14 +18,14 @@ struct RationalTransferFunction{T,X,P<:AbstractPolynomial{T,X},Ts} <: AbstractRa
         new{T,X,P,Ts}(num,den)
     end
     function RationalTransferFunction{T,X,P,Ts}(num::P, den::P,ts::Union{Real,Nothing}) where{T,X,P<:AbstractPolynomial{T,X}, Ts}
-        check_den(den)        
-        check_Ts(Ts,ts)        
+        check_den(den)
+        check_Ts(Ts,ts)
         new{T,X,P,Ts}(num,den)
     end
     # can promote constants to polynomials too
     function  RationalTransferFunction{T,X,P,Ts}(num::S, den::P, ts::Union{Real,Nothing}) where{S, T,X,P<:AbstractPolynomial{T,X}, Ts}
         check_den(den)
-        check_Ts(Ts,ts)        
+        check_Ts(Ts,ts)
         new{T,X,P,Ts}(convert(P,num),den)
     end
     function  RationalTransferFunction{T,X,P,Ts}(num::P,den::S, ts::Union{Real,Nothing}) where{S, T,X,P<:AbstractPolynomial{T,X}, Ts}
@@ -69,7 +69,7 @@ end
 ## helpers for constructors
 # standardize Ts or throw error
 function standardize_Ts(Ts)
-    isnothing(Ts) || Ts >= 0 || Ts == -1 || 
+    isnothing(Ts) || Ts >= 0 || Ts == -1 ||
         throw(ArgumentError("Ts must be either a positive number, 0 (continuous system), or -1 (unspecified)"))
     Ts′ = isnothing(Ts) ? Ts : Float64(Ts)
 end
@@ -103,7 +103,7 @@ end
 function promote_Ts(Ts1::Union{Float64,Nothing}, Ts2::Union{Float64,Nothing})
     isnothing(Ts1) && (return Ts2)
     isnothing(Ts2) && (return Ts1)
-    Ts1 == Ts2 && (return Ts1)  
+    Ts1 == Ts2 && (return Ts1)
     Ts1 == -1 && (Ts2 > 0 ? (return Ts2) : error("Sampling time mismatch"))
     Ts2 == -1 && (Ts1 > 0 ? (return Ts1) : error("Sampling time mismatch"))
     error("Sampling time mismatch")
@@ -119,8 +119,8 @@ function Base.promote_rule(::Type{PQ}, ::Type{PQ′}) where {T,X,P,Ts,PQ <: Rati
     ts = promote_Ts(PQ, PQ′)
     RationalTransferFunction{S,Y,Q,Val(ts)}
 end
-                    
-                         
+
+
 
 
 
@@ -135,12 +135,12 @@ function gain(pq::PQ) where {PQ <: RationalTransferFunction}
     p[end]/q[end]
 end
 
-    
+
 # need to check here
 #
 """
-     rt = adjoint(r)
-Compute the adjoint `rt(λ)` of the rational transfer function `r(λ)` such that for 
+    rt = adjoint(r)
+Compute the adjoint `rt(λ)` of the rational transfer function `r(λ)` such that for
 `r(λ) = num(λ)/den(λ)` we have:
     (1) `rt(λ) = conj(num(-λ))/conj(num(-λ))`, if `r.Ts = 0`; 
     (2) `rt(λ) = conj(num(1/λ))/conj(num(1/λ))`, if `r.Ts = -1` or `r.Ts > 0`.
