@@ -33,9 +33,7 @@ are precluded from use in rational functions.
 
 # Examples
 
-```jldoctest immutable_polynomials
-julia> using Polynomials
-
+```jldoctest
 julia> ImmutablePolynomial((1, 0, 3, 4))
 ImmutablePolynomial(1 + 3*x^2 + 4*x^3)
 

@@ -24,9 +24,7 @@ export fromroots,
 Construct a polynomial of the given type given the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest common
-julia> using Polynomials
-
+```jldoctest
 julia> r = [3, 2]; # (x - 3)(x - 2)
 
 julia> fromroots(r)
@@ -49,9 +47,7 @@ fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
 Construct a polynomial of the given type using the eigenvalues of the given matrix as the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest common
-julia> using Polynomials
-
+```jldoctest
 julia> A = [1 2; 3 4]; # (x - 5.37228)(x + 0.37228)
 
 julia> fromroots(A)
@@ -722,9 +718,7 @@ domain(::P) where {P <: AbstractPolynomial} = domain(P)
 Given values of x that are assumed to be unbounded (-∞, ∞), return values rescaled to the domain of the given polynomial.
 
 # Examples
-```jldoctest  common
-julia> using Polynomials
-
+```jldoctest
 julia> x = -10:10
 -10:10
 
@@ -946,9 +940,7 @@ Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
 Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent to `P(var)`.
 
 # Examples
-```jldoctest  common
-julia> using Polynomials
-
+```jldoctest
 julia> x = variable()
 Polynomial(x)
 
@@ -959,7 +951,6 @@ julia> roots((x - 3) * (x + 2))
 2-element Vector{Float64}:
  -2.0
   3.0
-
 ```
 """
 variable(::Type{P}) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P), indeterminate(P)})
@@ -1210,12 +1201,9 @@ Find the greatest common denominator of two polynomials recursively using
 
 # Examples
 
-```jldoctest common
-julia> using Polynomials
-
+```jldoctest
 julia> gcd(fromroots([1, 1, 2]), fromroots([1, 2, 3]))
 Polynomial(4.0 - 6.0*x + 2.0*x^2)
-
 ```
 """
 function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}; kwargs...) where {T,S}

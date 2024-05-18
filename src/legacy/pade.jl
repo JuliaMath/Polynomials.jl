@@ -89,9 +89,8 @@ end
 Evaluate the Pade approximant at the given point.
 
 # Examples
-```jldoctest pade
+```jldoctest
 julia> using Polynomials, Polynomials.PolyCompat, SpecialFunctions
-
 
 julia> p = Polynomial(@.(1 // BigInt(gamma(1:17))));
 
@@ -107,7 +106,5 @@ true
 ## Compat
 padeval(PQ::Pade, x::Number) = PQ(x)
 padeval(PQ::Pade, x) = PQ.(x)
-
-
 
 end
