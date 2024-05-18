@@ -755,14 +755,14 @@ minimumexponent(::Type{<:AbstractPolynomial}) = 0
 """
     firstindex(p::AbstractPolynomial)
 
-The index of the smallest basis element, ``\beta_i``,  represented by the coefficients. This is ``0`` for
+The index of the smallest basis element, ``\\beta_i``,  represented by the coefficients. This is ``0`` for
 a zero polynomial.
 """
 Base.firstindex(p::AbstractPolynomial) = 0  # XXX() is a better default
 """
     lastindex(p::AbstractPolynomial)
 
-The index of the largest basis element, ``\beta_i``,  represented by the coefficients.
+The index of the largest basis element, ``\\beta_i``,  represented by the coefficients.
 May be ``-1`` or ``0`` for the zero polynomial, depending on the storage type.
 """
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1 + firstindex(p) # not degree, which accounts for any trailing zeros
@@ -943,7 +943,7 @@ Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
     variable(::Type{<:AbstractPolynomial}, var=:x)
     variable(p::AbstractPolynomial, var=indeterminate(p))
 
-Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
+Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent to `P(var)`.
 
 # Examples
 ```jldoctest  common

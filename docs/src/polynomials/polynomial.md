@@ -43,5 +43,3 @@ FactoredPolynomial
 RationalFunction
 lowest_terms
 ```
-
-
