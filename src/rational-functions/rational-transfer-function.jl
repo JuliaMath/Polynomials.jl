@@ -142,8 +142,8 @@ end
     rt = adjoint(r)
 Compute the adjoint `rt(λ)` of the rational transfer function `r(λ)` such that for
 `r(λ) = num(λ)/den(λ)` we have:
-    (1) `rt(λ) = conj(num(-λ))/conj(num(-λ))`, if `r.Ts = 0`; 
-    (2) `rt(λ) = conj(num(1/λ))/conj(num(1/λ))`, if `r.Ts = -1` or `r.Ts > 0`.
+    1. `rt(λ) = conj(num(-λ))/conj(num(-λ))`, if `r.Ts = 0`;
+    2. `rt(λ) = conj(num(1/λ))/conj(num(1/λ))`, if `r.Ts = -1` or `r.Ts > 0`.
 """
 function Base.adjoint(pq::PQ) where {PQ <: RationalTransferFunction}
     p,q = pqs(pq)
