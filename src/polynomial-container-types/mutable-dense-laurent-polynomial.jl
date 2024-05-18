@@ -21,7 +21,7 @@ struct MutableDenseLaurentPolynomial{B,T,X} <: AbstractLaurentUnivariatePolynomi
         end
 
         i = findlast(!iszero, cs)
-        if i == nothing
+        if i === nothing
             xs = T[]
         else
             j = findfirst(!iszero, cs)
