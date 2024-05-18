@@ -283,24 +283,24 @@ We need to add in the vector-space operations:
 
 ```jldoctest new_container_type
 julia> function Base.:+(p::AliasPolynomialType{B,T,X}, q::AliasPolynomialType{B,S,X}) where {B,S,T,X}
-                       R = promote_type(T,S)
-                        n = maximum(degree, (p,q))
-                   cs = [p[i] + q[i] for i in 0:n]
-                   AliasPolynomialType{B,R,X}(Val(false), cs)  # save a copy
-                       end
+           R = promote_type(T,S)
+           n = maximum(degree, (p,q))
+           cs = [p[i] + q[i] for i in 0:n]
+           AliasPolynomialType{B,R,X}(Val(false), cs)  # save a copy
+       end
 
 julia> function Base.:-(p::AliasPolynomialType{B,T,X}, q::AliasPolynomialType{B,S,X}) where {B,S,T,X}
-                       R = promote_type(T,S)
-                               n = maximum(degree, (p,q))
-                               cs = [p[i] - q[i] for i in 0:n]
-                               AliasPolynomialType{B,R,X}(Val(false), cs)
-                       end
+           R = promote_type(T,S)
+           n = maximum(degree, (p,q))
+           cs = [p[i] - q[i] for i in 0:n]
+           AliasPolynomialType{B,R,X}(Val(false), cs)
+       end
 
 julia> function Base.map(fn, p::P) where {B,T,X,P<:AliasPolynomialType{B,T,X}}
-                  cs = map(fn, p.coeffs)
-                  R = eltype(cs)
-                  AliasPolynomialType{B,R,X}(Val(false), cs)
-              end
+           cs = map(fn, p.coeffs)
+           R = eltype(cs)
+           AliasPolynomialType{B,R,X}(Val(false), cs)
+       end
 
 ```
 

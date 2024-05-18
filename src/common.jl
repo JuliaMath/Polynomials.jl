@@ -105,7 +105,9 @@ the variance-covariance matrix.)
 
 ## large degree
 
-For fitting with a large degree, the Vandermonde matrix is exponentially ill-conditioned. The `ArnoldiFit` type introduces an Arnoldi orthogonalization that fixes this problem.
+For fitting with a large degree, the Vandermonde matrix is exponentially
+ill-conditioned. The `ArnoldiFit` type introduces an Arnoldi orthogonalization
+that fixes this problem.
 
 
 """
@@ -180,7 +182,9 @@ _wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 
 Returns the roots, or zeros, of the given polynomial.
 
-For non-factored, standard basis polynomials the roots are calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgebra.eigvals` call.
+For non-factored, standard basis polynomials the roots are calculated via the
+eigenvalues of the companion matrix. The `kwargs` are passed to the
+`LinearAlgebra.eigvals` call.
 
 !!! note
     The default `roots` implementation is for polynomials in the
@@ -230,7 +234,8 @@ integrate(P::AbstractPolynomial) = throw(ArgumentError("`integrate` not implemen
 """
     integrate(::AbstractPolynomial, C)
 
-Returns the indefinite integral of the polynomial with constant `C` when expressed in the standard basis.
+Returns the indefinite integral of the polynomial with constant `C` when
+expressed in the standard basis.
 """
 function integrate(p::P, C) where {P <: AbstractPolynomial}
     ∫p = integrate(p)
@@ -241,7 +246,8 @@ end
 """
     integrate(::AbstractPolynomial, a, b)
 
-Compute the definite integral of the given polynomial from `a` to `b`. Will throw an error if either `a` or `b` are out of the polynomial's domain.
+Compute the definite integral of the given polynomial from `a` to `b`. Will
+throw an error if either `a` or `b` are out of the polynomial's domain.
 """
 function integrate(p::AbstractPolynomial, a, b)
     P = integrate(p)
@@ -251,7 +257,8 @@ end
 """
     derivative(::AbstractPolynomial, order::Int = 1)
 
-Returns a polynomial that is the `order`th derivative of the given polynomial. `order` must be non-negative.
+Returns a polynomial that is the `order`th derivative of the given polynomial.
+`order` must be non-negative.
 """
 derivative(::AbstractPolynomial, ::Int)
 
@@ -263,7 +270,9 @@ Return the critical points of `p` (real zeros of the derivative) within `I` in s
 
 * `p`: a polynomial
 
-* `I`: a specification of a closed or infinite domain, defaulting to `Polynomials.domain(p)`. When specified, the values of `extrema(I)` are used with closed endpoints when finite.
+* `I`: a specification of a closed or infinite domain, defaulting to
+  `Polynomials.domain(p)`. When specified, the values of `extrema(I)` are used
+  with closed endpoints when finite.
 
 * `endpoints::Bool`: if `true`, return the endpoints of `I` along with the critical points
 
@@ -271,7 +280,7 @@ Return the critical points of `p` (real zeros of the derivative) within `I` in s
 Can be used in conjunction with `findmax`, `findmin`, `argmax`, `argmin`, `extrema`, etc.
 
 ## Example
-```
+```julia
 x = variable()
 p = x^2 - 2
 cps = Polynomials.critical_points(p)
@@ -1168,9 +1177,9 @@ function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) wh
 
 
     # this allocates in the union
-#    for i in union(eachindex(p1), eachindex(p2))
-#        p[i] = p1[i] + p2[i]
-#    end
+    #for i in union(eachindex(p1), eachindex(p2))
+    #    p[i] = p1[i] + p2[i]
+    #end
 
     for (i,pi) ∈ pairs(p1)
         @inbounds p[i] = pi + get(p2, i, zero(R))

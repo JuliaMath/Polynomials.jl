@@ -50,7 +50,6 @@ For example, the basis polynomial ``T_4`` can be represented with `ChebyshevT([0
 julia> c = ChebyshevT([1, 0, 3, 4])
 ChebyshevT(1⋅T_0(x) + 3⋅T_2(x) + 4⋅T_3(x))
 
-
 julia> p = convert(Polynomial, c)
 Polynomial(-2.0 - 12.0*x + 6.0*x^2 + 16.0*x^3)
 

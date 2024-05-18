@@ -50,7 +50,6 @@ Polynomial(1 - x^2)
 
 julia> p(1)
 0
-
 ```
 
 The `Polynomial` constructor stores all coefficients using the standard basis with a vector. Other types (e.g. `ImmutablePolynomial`, `SparsePolynomial`, or `FactoredPolynomial`) use different back-end containers which may have advantage for some uses.
@@ -117,7 +116,7 @@ Polynomial(2 + 2*x + 3*x^2)
 
 Arithmetic of different polynomial types is supported through promotion to a common type, which is typically the `Polynomial` type, but may be the `LaurentPolynomial` type when negative powers of the indeterminate are possible:
 
-```jldoctext
+```jldoctest
 julia> p, q = ImmutablePolynomial([1,2,3]), Polynomial([3,2,1])
 (ImmutablePolynomial(1 + 2*x + 3*x^2), Polynomial(3 + 2*x + x^2))
 
@@ -184,7 +183,7 @@ a polynomial. This is an `𝑶(n^3)` operation.
 For polynomials with `BigFloat` coefficients, the
 `GenericLinearAlgebra` package can be seamlessly used:
 
-```
+```jldoctest
 julia> p = fromroots(Polynomial{BigFloat}, [1,2,3])
 Polynomial(-6.0 + 11.0*x - 6.0*x^2 + 1.0*x^3)
 
@@ -209,7 +208,7 @@ julia> roots(p)
   to univariate polynomials that is more performant than `roots`. It
   is based on an algorithm of Skowron and Gould.
 
-```
+```julia-repl
 julia> import PolynomialRoots # import as `roots` conflicts
 
 julia> p = fromroots(Polynomial, [1,2,3])
@@ -234,7 +233,7 @@ The roots are always returned as complex numbers.
   package implements the algorithm in Julia, allowing the use of other
   number types.
 
-```
+```julia-repl
 julia> using AMRVW
 
 julia> AMRVW.roots(float.(coeffs(p)))
@@ -249,11 +248,11 @@ The roots are returned as complex numbers.
 Both `PolynomialRoots` and `AMRVW` are generic and work with
 `BigFloat` coefficients, for example.
 
-The `AMRVW` package works with much larger polynomials than either
-`roots` or `PolynomialRoots.roots`. For example, the roots of this 1000
-degree random polynomial are quickly and accurately solved for:
+The `AMRVW` package works with much larger polynomials than either `roots`
+or `PolynomialRoots.roots`. For example, the roots of this 1000 degree
+random polynomial are quickly and accurately solved for:
 
-```
+```julia-repl
 julia> filter(isreal, AMRVW.roots(rand(1001) .- 1/2))
 2-element Vector{ComplexF64}:
   0.993739974989572 + 0.0im
@@ -262,7 +261,7 @@ julia> filter(isreal, AMRVW.roots(rand(1001) .- 1/2))
 
 * The [Hecke](https://github.com/thofma/Hecke.jl/tree/master/src) package has a `roots` function. The `Hecke` package utilizes the `Arb` library for performant, high-precision numbers:
 
-```
+```julia-repl
 julia> import Hecke # import as `roots` conflicts
 
 julia> Qx, x = Hecke.PolynomialRing(Hecke.QQ)
@@ -280,7 +279,7 @@ julia> Hecke.roots(q)
 
 This next polynomial has 3 real roots, 2 of which are in a cluster; `Hecke` quickly identifies them:
 
-```
+```julia-repl
 julia> p = -1 + 254*x - 16129*x^2 + 1*x^17
 x^17 - 16129*x^2 + 254*x - 1
 
@@ -300,7 +299,7 @@ To find just the real roots of a polynomial with real coefficients there are a f
   identifies real zeros of univariate functions and can be used to find
   isolating intervals for the real roots. For example,
 
-```
+```julia-repl
 julia> using Polynomials, IntervalArithmetic
 
 julia> import IntervalRootFinding # its `roots` method conflicts with `roots`
@@ -321,7 +320,7 @@ The output is a set of intervals. Those flagged with `:unique` are guaranteed to
 
 * The `RealPolynomialRoots` package provides a function `ANewDsc` to find isolating intervals for  the roots of a square-free polynomial, specified through its coefficients:
 
-```
+```julia-repl
 julia> using RealPolynomialRoots
 
 julia> st = ANewDsc(coeffs(p))
@@ -333,7 +332,7 @@ There were 3 isolating intervals found:
 
 These isolating intervals can be refined to find numeric estimates for the roots over `BigFloat` values.
 
-```
+```julia-repl
 julia> refine_roots(st)
 3-element Vector{BigFloat}:
  2.99999999999999999999...
@@ -343,7 +342,7 @@ julia> refine_roots(st)
 
 This specialized algorithm can identify very nearby roots. For example, returning to this Mignotte-type polynomial:
 
-```
+```julia-repl
 julia> p = SparsePolynomial(Dict(0=>-1, 1=>254, 2=>-16129, 17=>1))
 SparsePolynomial(-1 + 254*x - 16129*x^2 + x^17)
 
@@ -356,7 +355,7 @@ There were 3 isolating intervals found:
 
 `IntervalRootFinding` has issues disambiguating the clustered roots of this example:
 
-```
+```julia-repl
 julia> IntervalRootFinding.roots(x -> p(x), 0..3.5)
 7-element Vector{IntervalRootFinding.Root{Interval{Float64}}}:
  Root([1.90663, 1.90664], :unique)
@@ -380,7 +379,7 @@ square free polynomial. For non-square free polynomials:
 
 Here we see `IntervalRootFinding.roots` having trouble isolating the roots due to the multiplicities:
 
-```
+```julia-repl
 julia> p = fromroots(Polynomial, [1,2,2,3,3])
 Polynomial(-36 + 96*x - 97*x^2 + 47*x^3 - 11*x^4 + x^5)
 
@@ -397,7 +396,7 @@ julia> IntervalRootFinding.roots(x -> p(x), 0..10)
 
 The `roots` function identifies the roots, but the multiplicities would need identifying:
 
-```
+```julia-repl
 julia> roots(p)
 5-element Vector{Float64}:
  1.000000000000011
@@ -410,14 +409,14 @@ julia> roots(p)
 
 Whereas, the roots along with the multiplicity structure are correctly identified with `multroot`:
 
-```
+```julia-repl
 julia> Polynomials.Multroot.multroot(p)
 (values = [1.0000000000000004, 1.9999999999999984, 3.0000000000000018], multiplicities = [1, 2, 2], κ = 35.11176306900731, ϵ = 0.0)
 ```
 
 The `square_free` function can help:
 
-```
+```julia-repl
 julia> q = Polynomials.square_free(p)
 ANewDsc(q)
 Polynomial(-0.20751433915978448 + 0.38044295512633425*x - 0.20751433915986722*x^2 + 0.03458572319332053*x^3)
@@ -431,7 +430,7 @@ julia> IntervalRootFinding.roots(x -> q(x), 0..10)
 
 Similarly:
 
-```
+```julia-repl
 julia> ANewDsc(coeffs(q))
 There were 3 isolating intervals found:
 [2.62…, 3.62…]₂₅₆
@@ -816,7 +815,6 @@ julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
                d += rᵢ//(x-λ)^i
            end
        end
-
 
 julia> d
 ((x - 4.0) * (x - 1.0000000000000002)) // ((x - 5.0) * (x - 2.0))
