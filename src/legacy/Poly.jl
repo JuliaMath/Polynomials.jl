@@ -216,7 +216,7 @@ end
 
 polyint(p::Poly, C = 0) = integrate(p, C)
 polyint(p::Poly, a, b) = integrate(p, a, b)
-polyint(p::AbstractPolynomial, args...)  = error("`polyint` is a legacy name for use with `Poly` objects only. Use `integrate(p,...)`.")
+polyint(p::AbstractPolynomial, args...) = error("`polyint` is a legacy name for use with `Poly` objects only. Use `integrate(p,...)`.")
 
 polyder(p::Poly, ord = 1) = derivative(p, ord)
 polyder(p::AbstractPolynomial, args...) = error("`polyder` is a legacy name for use with `Poly` objects only. Use `derivative(p,[order=1])`.")

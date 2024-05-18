@@ -28,8 +28,9 @@ immutable polynomials can not promote to a common type. As such, they
 are precluded from use in rational functions.
 
 !!! note
-    `ImmutablePolynomial` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first
-    index always corresponding to the constant term.
+    `ImmutablePolynomial` is not axis-aware, and it treats `coeffs` simply as a
+    list of coefficients with the first index always corresponding to the
+    constant term.
 
 # Examples
 
