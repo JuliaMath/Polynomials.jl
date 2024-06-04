@@ -1025,7 +1025,7 @@ const Scalar = Union{Number, Matrix}
 # scalar_add utilized polynomial addition. May be more performant to provide new method
 scalar_add(c::S, p::AbstractPolynomial) where {S} = p + c * one(p)
 
-# Scalar multiplication; no assumption of commutivity
+# Scalar multiplication; no assumption of commutativity
 scalar_mult(p::P, c::S) where {S, T, X, P<:AbstractPolynomial{T,X}} = map(Base.Fix2(*,c), p)
 scalar_mult(c::S, p::P) where {S, T, X, P<:AbstractPolynomial{T,X}} = map(Base.Fix1(*,c), p)
 scalar_mult(p1::AbstractPolynomial, p2::AbstractPolynomial) =
