@@ -16,9 +16,7 @@ Integration will fail if there is a `x⁻¹` term in the polynomial.
     `LaurentPolynomial` is axis-aware, unlike the other polynomial types in this package.
 
 # Examples:
-```jldoctest laurent
-julia> using Polynomials
-
+```jldoctest
 julia> P = LaurentPolynomial;
 
 julia> p = P([1,1,1],  -1)
@@ -185,9 +183,7 @@ Call `p̂ = paraconj(p)` and `p̄` = conj(p)`, then this satisfies
 
 Examples:
 
-```jldoctest laurent
-julia> using Polynomials;
-
+```jldoctest
 julia> z = variable(LaurentPolynomial, :z)
 LaurentPolynomial(z)
 
@@ -226,9 +222,7 @@ This satisfies for *imaginary* `s`: `conj(p(s)) = p̃(s) = (conj ∘ p)(s) = cco
 [reference](https://github.com/hurak/PolynomialEquations.jl#symmetrix-conjugate-equation-continuous-time-case)
 
 Examples:
-```jldoctest laurent
-julia> using Polynomials;
-
+```jldoctest
 julia> s = 2im
 0 + 2im
 

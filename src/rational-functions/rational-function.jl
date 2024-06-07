@@ -11,7 +11,7 @@ that operation.
 For purposes of iteration, a rational function is treated like a two-element container.
 
 ## Examples
-```
+```julia-repl
 julia> using Polynomials
 
 julia> p,q = fromroots(Polynomial, [1,2,3]), fromroots(Polynomial, [2,3,4])

@@ -577,7 +577,7 @@ Using constrained least squares, fit a polynomial of the type
 The degrees in `cs` and those in `J` should not intersect.
 
 Example
-```
+```julia
 x = range(0, pi/2, 10)
 y = sin.(x)
 P = Polynomial
@@ -647,7 +647,10 @@ This representation is useful for *evaluating* the polynomial, but does not lend
 
 # Returns
 
-Returns an instance of `ArnoldiFit`. This object can be used to evaluate the polynomial. To manipulate the polynomial, the object can be `convert`ed to other polynomial types, though there may be some loss in accuracy when doing polynomial evaluations afterwards for higher-degree polynomials.
+Returns an instance of `ArnoldiFit`. This object can be used to evaluate the
+polynomial. To manipulate the polynomial, the object can be `convert`ed to other
+polynomial types, though there may be some loss in accuracy when doing
+polynomial evaluations afterwards for higher-degree polynomials.
 
 # Citations:
 
@@ -665,7 +668,7 @@ Lei-Hong Zhang, Yangfeng Su, Ren-Cang Li. Accurate polynomial fitting and evalua
 
 # Examples:
 
-```
+```julia
 f(x) = 1/(1 + 25x^2)
 N = 80; xs = [cos(j*pi/N) for j in N:-1:0];
 p = fit(Polynomial, xs, f.(xs));
@@ -674,7 +677,7 @@ maximum(abs, p(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 3.304586010148
 maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 1.1939520722092922e-7
 ```
 
-```
+```julia
 N = 250; xs = [cos(j*pi/N) for j in N:-1:0];
 p = fit(Polynomial, xs, f.(xs));
 q = fit(ArnoldiFit, xs, f.(xs));
@@ -682,7 +685,7 @@ maximum(abs, p(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 3.553181862545
 maximum(abs, q(x) - f(x) for x ∈ range(-1,stop=1,length=500)) # 8.881784197001252e-16
 ```
 
-```
+```julia
 p = fit(Polynomial, xs, f.(xs), 10); # least-squares fit
 q = fit(ArnoldiFit, xs, f.(xs), 10);
 maximum(abs, q(x) - p(x) for x ∈ range(-1,stop=1,length=500)) # 4.6775083806238626e-14
@@ -736,9 +739,14 @@ end
 """
     ArnoldiFit
 
-A polynomial type produced through fitting a degree ``n`` or less polynomial to data ``(x_1,y_1),…,(x_N, y_N), N ≥ n+1``, This uses Arnoldi orthogonalization to avoid the exponentially ill-conditioned Vandermonde polynomial. See [`Polynomials.polyfitA`](@ref) for details.
+A polynomial type produced through fitting a degree ``n`` or less polynomial to
+data ``(x_1,y_1),…,(x_N, y_N), N ≥ n+1``, This uses Arnoldi orthogonalization to
+avoid the exponentially ill-conditioned Vandermonde polynomial. See
+[`Polynomials.polyfitA`](@ref) for details.
 
-This is useful for polynomial evaluation, but other polynomial operations are not defined. Though these fitted polynomials may be converted to other types, for larger degrees this will prove unstable.
+This is useful for polynomial evaluation, but other polynomial operations are
+not defined. Though these fitted polynomials may be converted to other types,
+for larger degrees this will prove unstable.
 
 """
 struct ArnoldiFit{T, M<:AbstractArray{T,2}, X}  <: AbstractPolynomial{T,X}
@@ -766,7 +774,9 @@ Base.convert(::Type{P}, p::ArnoldiFit{T,M,X}) where {P <: AbstractPolynomial,T,M
     compensated_horner(p::P, x)
     compensated_horner(ps, x)
 
-Evaluate `p(x)` using a compensation scheme of S. Graillat, Ph. Langlois, N. Louve [Compensated Horner Scheme](https://cadxfem.org/cao/Compensation-horner.pdf). Either a `Polynomial` `p` or its coefficients may be passed in.
+Evaluate `p(x)` using a compensation scheme of
+S. Graillat, Ph. Langlois, N. Louve [Compensated Horner Scheme](https://cadxfem.org/cao/Compensation-horner.pdf).
+Either a `Polynomial` `p` or its coefficients may be passed in.
 
 The Horner scheme has relative error given by
 
@@ -776,7 +786,11 @@ The compensated Horner scheme has relative error bounded by
 
 `|(p(x) - p̂(x))/p(x)| ≤  u +  β(n) ⋅ u² ⋅ cond(p, x)`.
 
-As noted, this reflects the accuracy of a backward stable computation performed in doubled working precision `u²`. (E.g., polynomial evaluation of a `Polynomial{Float64}` object through `compensated_horner` is as accurate as evaluation of a `Polynomial{Double64}` object (using the `DoubleFloat` package), but significantly faster.
+As noted, this reflects the accuracy of a backward stable computation performed
+in doubled working precision `u²`. (E.g., polynomial evaluation of a
+`Polynomial{Float64}` object through `compensated_horner` is as accurate as
+evaluation of a `Polynomial{Double64}` object (using the `DoubleFloat` package),
+but significantly faster.
 
 Pointed out in https://discourse.julialang.org/t/more-accurate-evalpoly/45932/5.
 """

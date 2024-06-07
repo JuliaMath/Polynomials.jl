@@ -10,9 +10,7 @@ advantageous.
 # Examples:
 
 ```jldoctest
-julia> using Polynomials
-
-julia> P  = SparsePolynomial;
+julia> P = SparsePolynomial;
 
 julia> p, q = P([1,2,3]), P([4,3,2,1])
 (SparsePolynomial(1 + 2*x + 3*x^2), SparsePolynomial(4 + 3*x + 2*x^2 + x^3))

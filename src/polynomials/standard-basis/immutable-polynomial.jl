@@ -28,14 +28,13 @@ immutable polynomials can not promote to a common type. As such, they
 are precluded from use in rational functions.
 
 !!! note
-    `ImmutablePolynomial` is not axis-aware, and it treats `coeffs` simply as a list of coefficients with the first
-    index always corresponding to the constant term.
+    `ImmutablePolynomial` is not axis-aware, and it treats `coeffs` simply as a
+    list of coefficients with the first index always corresponding to the
+    constant term.
 
 # Examples
 
-```jldoctest immutable_polynomials
-julia> using Polynomials
-
+```jldoctest
 julia> ImmutablePolynomial((1, 0, 3, 4))
 ImmutablePolynomial(1 + 3*x^2 + 4*x^3)
 
@@ -47,7 +46,9 @@ ImmutablePolynomial(1.0)
 ```
 
 !!! note
-    This was modeled after [StaticUnivariatePolynomials](https://github.com/tkoolen/StaticUnivariatePolynomials.jl) by `@tkoolen`.
+    This was modeled after
+    [StaticUnivariatePolynomials](https://github.com/tkoolen/StaticUnivariatePolynomials.jl)
+    by `@tkoolen`.
 
 """
 const ImmutablePolynomial = ImmutableDensePolynomial{StandardBasis}

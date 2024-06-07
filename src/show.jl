@@ -222,17 +222,12 @@ parentheses.
 ```jldoctest
 julia> using Polynomials, DualNumbers
 
-
-
-
 julia> Polynomial([Dual(1,2), Dual(3,4)])
 Polynomial(1 + 2ɛ + 3 + 4ɛ*x)
 ```
 
 ```jldoctest
 julia> using DualNumbers, Polynomials
-
-
 
 julia> function Base.show_unquoted(io::IO, pj::Dual, indent::Int, prec::Int)
             if Base.operator_precedence(:+) <= prec
@@ -243,8 +238,6 @@ julia> function Base.show_unquoted(io::IO, pj::Dual, indent::Int, prec::Int)
                 show(io, pj)
             end
         end
-
-
 
 julia> Polynomial([Dual(1,2), Dual(3,4)])
 Polynomial((1 + 2ɛ) + (3 + 4ɛ)*x)

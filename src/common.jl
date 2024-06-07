@@ -24,9 +24,7 @@ export fromroots,
 Construct a polynomial of the given type given the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest common
-julia> using Polynomials
-
+```jldoctest
 julia> r = [3, 2]; # (x - 3)(x - 2)
 
 julia> fromroots(r)
@@ -49,9 +47,7 @@ fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
 Construct a polynomial of the given type using the eigenvalues of the given matrix as the roots. If no type is given, defaults to `Polynomial`.
 
 # Examples
-```jldoctest common
-julia> using Polynomials
-
+```jldoctest
 julia> A = [1 2; 3 4]; # (x - 5.37228)(x + 0.37228)
 
 julia> fromroots(A)
@@ -105,7 +101,9 @@ the variance-covariance matrix.)
 
 ## large degree
 
-For fitting with a large degree, the Vandermonde matrix is exponentially ill-conditioned. The `ArnoldiFit` type introduces an Arnoldi orthogonalization that fixes this problem.
+For fitting with a large degree, the Vandermonde matrix is exponentially
+ill-conditioned. The `ArnoldiFit` type introduces an Arnoldi orthogonalization
+that fixes this problem.
 
 
 """
@@ -180,7 +178,9 @@ _wlstsq(vand, y, W::AbstractMatrix) = (vand' * W * vand) \ (vand' * W * y)
 
 Returns the roots, or zeros, of the given polynomial.
 
-For non-factored, standard basis polynomials the roots are calculated via the eigenvalues of the companion matrix. The `kwargs` are passed to the `LinearAlgebra.eigvals` call.
+For non-factored, standard basis polynomials the roots are calculated via the
+eigenvalues of the companion matrix. The `kwargs` are passed to the
+`LinearAlgebra.eigvals` call.
 
 !!! note
     The default `roots` implementation is for polynomials in the
@@ -230,7 +230,8 @@ integrate(P::AbstractPolynomial) = throw(ArgumentError("`integrate` not implemen
 """
     integrate(::AbstractPolynomial, C)
 
-Returns the indefinite integral of the polynomial with constant `C` when expressed in the standard basis.
+Returns the indefinite integral of the polynomial with constant `C` when
+expressed in the standard basis.
 """
 function integrate(p::P, C) where {P <: AbstractPolynomial}
     ∫p = integrate(p)
@@ -241,7 +242,8 @@ end
 """
     integrate(::AbstractPolynomial, a, b)
 
-Compute the definite integral of the given polynomial from `a` to `b`. Will throw an error if either `a` or `b` are out of the polynomial's domain.
+Compute the definite integral of the given polynomial from `a` to `b`. Will
+throw an error if either `a` or `b` are out of the polynomial's domain.
 """
 function integrate(p::AbstractPolynomial, a, b)
     P = integrate(p)
@@ -251,7 +253,8 @@ end
 """
     derivative(::AbstractPolynomial, order::Int = 1)
 
-Returns a polynomial that is the `order`th derivative of the given polynomial. `order` must be non-negative.
+Returns a polynomial that is the `order`th derivative of the given polynomial.
+`order` must be non-negative.
 """
 derivative(::AbstractPolynomial, ::Int)
 
@@ -263,7 +266,9 @@ Return the critical points of `p` (real zeros of the derivative) within `I` in s
 
 * `p`: a polynomial
 
-* `I`: a specification of a closed or infinite domain, defaulting to `Polynomials.domain(p)`. When specified, the values of `extrema(I)` are used with closed endpoints when finite.
+* `I`: a specification of a closed or infinite domain, defaulting to
+  `Polynomials.domain(p)`. When specified, the values of `extrema(I)` are used
+  with closed endpoints when finite.
 
 * `endpoints::Bool`: if `true`, return the endpoints of `I` along with the critical points
 
@@ -271,7 +276,7 @@ Return the critical points of `p` (real zeros of the derivative) within `I` in s
 Can be used in conjunction with `findmax`, `findmin`, `argmax`, `argmin`, `extrema`, etc.
 
 ## Example
-```
+```julia
 x = variable()
 p = x^2 - 2
 cps = Polynomials.critical_points(p)
@@ -713,9 +718,7 @@ domain(::P) where {P <: AbstractPolynomial} = domain(P)
 Given values of x that are assumed to be unbounded (-∞, ∞), return values rescaled to the domain of the given polynomial.
 
 # Examples
-```jldoctest  common
-julia> using Polynomials
-
+```jldoctest
 julia> x = -10:10
 -10:10
 
@@ -746,14 +749,14 @@ minimumexponent(::Type{<:AbstractPolynomial}) = 0
 """
     firstindex(p::AbstractPolynomial)
 
-The index of the smallest basis element, ``\beta_i``,  represented by the coefficients. This is ``0`` for
+The index of the smallest basis element, ``\\beta_i``,  represented by the coefficients. This is ``0`` for
 a zero polynomial.
 """
 Base.firstindex(p::AbstractPolynomial) = 0  # XXX() is a better default
 """
     lastindex(p::AbstractPolynomial)
 
-The index of the largest basis element, ``\beta_i``,  represented by the coefficients.
+The index of the largest basis element, ``\\beta_i``,  represented by the coefficients.
 May be ``-1`` or ``0`` for the zero polynomial, depending on the storage type.
 """
 Base.lastindex(p::AbstractPolynomial) = length(p) - 1 + firstindex(p) # not degree, which accounts for any trailing zeros
@@ -934,12 +937,10 @@ Base.oneunit(p::P, args...) where {P <: AbstractPolynomial} = one(p, args...)
     variable(::Type{<:AbstractPolynomial}, var=:x)
     variable(p::AbstractPolynomial, var=indeterminate(p))
 
-Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent  to  `P(var)`.
+Return the monomial `x` in the indicated polynomial basis.  If no type is give, will default to [`Polynomial`](@ref). Equivalent to `P(var)`.
 
 # Examples
-```jldoctest  common
-julia> using Polynomials
-
+```jldoctest
 julia> x = variable()
 Polynomial(x)
 
@@ -950,7 +951,6 @@ julia> roots((x - 3) * (x + 2))
 2-element Vector{Float64}:
  -2.0
   3.0
-
 ```
 """
 variable(::Type{P}) where {P <: AbstractPolynomial} = variable(⟒(P){eltype(P), indeterminate(P)})
@@ -1168,9 +1168,9 @@ function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) wh
 
 
     # this allocates in the union
-#    for i in union(eachindex(p1), eachindex(p2))
-#        p[i] = p1[i] + p2[i]
-#    end
+    #for i in union(eachindex(p1), eachindex(p2))
+    #    p[i] = p1[i] + p2[i]
+    #end
 
     for (i,pi) ∈ pairs(p1)
         @inbounds p[i] = pi + get(p2, i, zero(R))
@@ -1201,12 +1201,9 @@ Find the greatest common denominator of two polynomials recursively using
 
 # Examples
 
-```jldoctest common
-julia> using Polynomials
-
+```jldoctest
 julia> gcd(fromroots([1, 1, 2]), fromroots([1, 2, 3]))
 Polynomial(4.0 - 6.0*x + 2.0*x^2)
-
 ```
 """
 function Base.gcd(p1::AbstractPolynomial{T}, p2::AbstractPolynomial{S}; kwargs...) where {T,S}

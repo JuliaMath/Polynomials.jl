@@ -31,12 +31,14 @@ Fit a rational function of the form `pq = (a₀ + a₁x¹ + … + aₘxᵐ) / (1
     real poles and arbitrarily high approximation orders on any real
     interval, regardless of the distribution of the points")
 
-    The [RationalApproximations](https://github.com/billmclean/RationalApproximations) package also has implementations of the AAA algorithm.
+    The [RationalApproximations](https://github.com/billmclean/RationalApproximations)
+    package also has implementations of the AAA algorithm.
 
-    A python library, [polyrat](https://github.com/jeffrey-hokanson/polyrat), has implementations of other algorithms.
+    A python library, [polyrat](https://github.com/jeffrey-hokanson/polyrat),
+    has implementations of other algorithms.
 
 ## Example
-```
+```julia-repl
 julia> x = variable(Polynomial{Float64})
 Polynomial(1.0*x)
 
@@ -87,7 +89,7 @@ Fit a Pade approximant (cf docstring for `Polynomials.pade_fit`) to `r`.
 
 Examples:
 
-```jldoctext
+```julia-repl
 julia> using Polynomials, PolynomialRatios
 
 julia> x = variable()

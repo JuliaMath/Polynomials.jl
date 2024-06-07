@@ -2,7 +2,7 @@
     MutableDensePolynomial{B,T,X}
 
 """
-struct MutableDensePolynomial{B,T,X} <: AbstractDenseUnivariatePolynomial{B,T, X}
+struct MutableDensePolynomial{B,T,X} <: AbstractDenseUnivariatePolynomial{B,T,X}
     coeffs::Vector{T}
     function MutableDensePolynomial{B,T,X}(::Val{true}, cs::AbstractVector{S}, order::Int=0) where {B,T,X,S}
         if Base.has_offset_axes(cs)

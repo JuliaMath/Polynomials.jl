@@ -36,7 +36,7 @@ function rational_function_trim(pq, a, b, xlims, ylims)
 
     a = isnothing(a) ? xlims[1] : a
     b = isnothing(b) ? xlims[2] : b
-    
+
     if isnothing(a) && isnothing(b)
         u= poly_interval(p)
         v= poly_interval(q)
@@ -64,4 +64,3 @@ function rational_function_trim(pq, a, b, xlims, ylims)
     xs, ys′
 
 end
-

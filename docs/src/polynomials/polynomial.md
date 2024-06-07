@@ -41,6 +41,5 @@ FactoredPolynomial
 ## Rational Function
 ```@docs
 RationalFunction
+lowest_terms
 ```
-
-
