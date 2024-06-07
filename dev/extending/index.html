@@ -94,24 +94,24 @@ julia&gt; Polynomials.@poly_register AliasPolynomialType</code></pre><p>The call
 julia&gt; Base.lastindex(p::AliasPolynomialType) = length(p.coeffs) - 1
 </code></pre><pre><code class="language-julia-repl hljs">julia&gt; Polynomials.constructorof(::Type{&lt;:AliasPolynomialType{B}}) where {B} = AliasPolynomialType{B}
 </code></pre><p>We need to add in the vector-space operations:</p><pre><code class="language-julia-repl hljs">julia&gt; function Base.:+(p::AliasPolynomialType{B,T,X}, q::AliasPolynomialType{B,S,X}) where {B,S,T,X}
-                       R = promote_type(T,S)
-                        n = maximum(degree, (p,q))
-                   cs = [p[i] + q[i] for i in 0:n]
-                   AliasPolynomialType{B,R,X}(Val(false), cs)  # save a copy
-                       end
+           R = promote_type(T,S)
+           n = maximum(degree, (p,q))
+           cs = [p[i] + q[i] for i in 0:n]
+           AliasPolynomialType{B,R,X}(Val(false), cs)  # save a copy
+       end
 
 julia&gt; function Base.:-(p::AliasPolynomialType{B,T,X}, q::AliasPolynomialType{B,S,X}) where {B,S,T,X}
-                       R = promote_type(T,S)
-                               n = maximum(degree, (p,q))
-                               cs = [p[i] - q[i] for i in 0:n]
-                               AliasPolynomialType{B,R,X}(Val(false), cs)
-                       end
+           R = promote_type(T,S)
+           n = maximum(degree, (p,q))
+           cs = [p[i] - q[i] for i in 0:n]
+           AliasPolynomialType{B,R,X}(Val(false), cs)
+       end
 
 julia&gt; function Base.map(fn, p::P) where {B,T,X,P&lt;:AliasPolynomialType{B,T,X}}
-                  cs = map(fn, p.coeffs)
-                  R = eltype(cs)
-                  AliasPolynomialType{B,R,X}(Val(false), cs)
-              end
+           cs = map(fn, p.coeffs)
+           R = eltype(cs)
+           AliasPolynomialType{B,R,X}(Val(false), cs)
+       end
 </code></pre><p>A type and a basis defines a polynomial type. This example uses the  <code>StandardBasis</code> basis type and consequently inherits the methods mentioned above that otherwise would need implementing.</p><pre><code class="language-julia-repl hljs">julia&gt; AliasPolynomial = AliasPolynomialType{Polynomials.StandardBasis};
 </code></pre><p>To see this new polynomial type in action, we have:</p><pre><code class="language-julia-repl hljs">julia&gt; xs = [1,2,3,4];
 
@@ -158,4 +158,4 @@ AliasPolynomialType(1 + 2*x + 3*x^2 + 4*x^3)</code></pre><p>Trying to divide aga
  5
  6</code></pre><p>The unexported <code>Polynomials.PnPolynomial</code> polynomial type implements much of the above.</p><hr/><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Polynomials.AbstractUnivariatePolynomial" href="#Polynomials.AbstractUnivariatePolynomial"><code>Polynomials.AbstractUnivariatePolynomial</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia hljs">AbstractUnivariatePolynomial{B,T,X} &lt;: AbstractPolynomial{T,X}
 AbstractDenseUnivariatePolynomial{B,T,X} &lt;: AbstractUnivariatePolynomial{B,T,X}
-AbstractLaurentUnivariatePolynomial{B,T,X} &lt;: AbstractUnivariatePolynomial{B,T,X}</code></pre><p>Abstract container types for polynomials with an explicit basis, <code>B</code>. <code>AbstractDenseUnivariatePolynomial</code> is for <code>0</code>-based polynomials; <code>AbstractLaurentUnivariatePolynomial</code> is for polynomials with possibly negative powers of the indeterminate.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaMath/Polynomials.jl/blob/c6b09ea35da7030afb42eaa3060dc91fc89d0b46/src/abstract-polynomial.jl#L1-L10">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Polynomials.AbstractBasis" href="#Polynomials.AbstractBasis"><code>Polynomials.AbstractBasis</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia hljs">AbstractBasis</code></pre><p>Abstract type for specifying a polynomial basis.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaMath/Polynomials.jl/blob/c6b09ea35da7030afb42eaa3060dc91fc89d0b46/src/abstract-polynomial.jl#L19-L23">source</a></section></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../polynomials/chebyshev/">« Chebyshev</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.1 on <span class="colophon-date" title="Friday 7 June 2024 21:04">Friday 7 June 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+AbstractLaurentUnivariatePolynomial{B,T,X} &lt;: AbstractUnivariatePolynomial{B,T,X}</code></pre><p>Abstract container types for polynomials with an explicit basis, <code>B</code>. <code>AbstractDenseUnivariatePolynomial</code> is for <code>0</code>-based polynomials; <code>AbstractLaurentUnivariatePolynomial</code> is for polynomials with possibly negative powers of the indeterminate.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaMath/Polynomials.jl/blob/8b8055dcc9fea4ef2af0638fa574c6209f0a3716/src/abstract-polynomial.jl#L1-L10">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Polynomials.AbstractBasis" href="#Polynomials.AbstractBasis"><code>Polynomials.AbstractBasis</code></a> — <span class="docstring-category">Type</span></header><section><div><pre><code class="language-julia hljs">AbstractBasis</code></pre><p>Abstract type for specifying a polynomial basis.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaMath/Polynomials.jl/blob/8b8055dcc9fea4ef2af0638fa574c6209f0a3716/src/abstract-polynomial.jl#L19-L23">source</a></section></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../polynomials/chebyshev/">« Chebyshev</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.1 on <span class="colophon-date" title="Friday 7 June 2024 21:22">Friday 7 June 2024</span>. Using Julia version 1.10.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
