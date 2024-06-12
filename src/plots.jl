@@ -1,3 +1,4 @@
+## XXX todo: make this an extension when minimum Julia supports that
 using RecipesBase
 
 function poly_interval(p::AbstractPolynomial)
