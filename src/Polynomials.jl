@@ -60,10 +60,16 @@ include("rational-functions/plot-recipes.jl")
 include("legacy/misc.jl")
 include("legacy/Poly.jl")
 
-if !isdefined(Base, :get_extension)
-    include("../ext/PolynomialsMakieCoreExt.jl")
+include("precompiles.jl")
+
+@static if !isdefined(Base, :get_extension)
+    using Requires
 end
 
-include("precompiles.jl")
+function __init__()
+    @static if !isdefined(Base, :get_extension)
+        @require MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b" include("../ext/PolynomialsMakieCoreExt.jl")
+    end
+end
 
 end # module
