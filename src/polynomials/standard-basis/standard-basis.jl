@@ -403,6 +403,7 @@ end
 ## polynomial-roots
 function fromroots(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
     n = length(r)
+    r = lejaorder(r)
     c = zeros(T, n + 1)
     c[1] = one(T)
     for j in 1:n, i in j:-1:1
