@@ -21,13 +21,28 @@ function lejaorder!(roots) # see https://doi.org/10.1023/A:1025555803588
     if length(roots) <= 2
         return roots
     end
-    ii = argmax(j -> abs(roots[j]), eachindex(roots))
+    #ii = argmax(j -> abs(roots[j]), eachindex(roots))
+    ii = firstindex(roots)
+    rmax = abs(roots[ii])
+    for j in eachindex(roots)
+        rabs = abs(roots[j])
+        if rabs > rmax
+            ii = j
+            rmax = rabs
+        end
+    end
     roots[1], roots[ii] = roots[ii], roots[1]
     products = abs.(roots .- roots[1])
     for k in eachindex(roots)[begin+1:end-1]
         ii = findnext(iszero, products, k) # product[ii] == 0 means that roots[ii] == roots[k-1]
         if isnothing(ii)
-            ii = argmax(i -> products[i], k:lastindex(roots))
+            #ii = argmax(i -> products[i], k:lastindex(roots))
+            ii = k
+            for j in k+1:lastindex(products)
+                if products[j] > products[ii]
+                    ii = j
+                end
+            end
         end
         roots[k], roots[ii] = roots[ii], roots[k]
         products[k], products[ii] = products[ii], products[k]
