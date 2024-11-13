@@ -17,6 +17,41 @@ export fromroots,
        isintegral,
        ismonic
 
+function lejaorder!(roots) # see https://doi.org/10.1023/A:1025555803588
+    if length(roots) <= 2
+        return roots
+    end
+    #ii = argmax(j -> abs(roots[j]), eachindex(roots))
+    ii = firstindex(roots)
+    rmax = abs(roots[ii])
+    for j in eachindex(roots)
+        rabs = abs(roots[j])
+        if rabs > rmax
+            ii = j
+            rmax = rabs
+        end
+    end
+    roots[1], roots[ii] = roots[ii], roots[1]
+    products = abs.(roots .- roots[1])
+    for k in eachindex(roots)[begin+1:end-1]
+        ii = findnext(iszero, products, k) # product[ii] == 0 means that roots[ii] == roots[k-1]
+        if isnothing(ii)
+            #ii = argmax(i -> products[i], k:lastindex(roots))
+            ii = k
+            for j in k+1:lastindex(products)
+                if products[j] > products[ii]
+                    ii = j
+                end
+            end
+        end
+        roots[k], roots[ii] = roots[ii], roots[k]
+        products[k], products[ii] = products[ii], products[k]
+        products .*= abs.(roots .- roots[k])
+    end
+    return roots
+end
+lejaorder(roots) = lejaorder!(copy(roots))
+
 """
     fromroots(::AbstractVector{<:Number}; var=:x)
     fromroots(::Type{<:AbstractPolynomial}, ::AbstractVector{<:Number}; var=:x)
@@ -33,7 +68,7 @@ Polynomial(6 - 5*x + x^2)
 """
 function fromroots(P::Type{<:AbstractPolynomial}, rs; var::SymbolLike = :x)
     x = variable(P, var)
-    p = prod(x-r for r ∈ rs; init=one(x))
+    p = prod(x-r for r ∈ lejaorder(rs); init=one(x))
     p = truncate!!(p)
     p
 end
