@@ -95,7 +95,13 @@ Polynomial(1 + 2*s + 3*s^2)
 
 julia> p + q
 ERROR: ArgumentError: Polynomials have different indeterminates
-[...]
+Stacktrace:
+ [1] assert_same_variable(X::Symbol, Y::Symbol)
+   @ Polynomials ~/julia/Polynomials/src/common.jl:522
+ [2] +(p::Polynomial{Int64, :x}, q::Polynomial{Int64, :s})
+   @ Polynomials ~/julia/Polynomials/src/common.jl:1114
+ [3] top-level scope
+   @ none:1
 ```
 
 Except for operations involving constant polynomials.
@@ -189,15 +195,70 @@ Polynomial(-6.0 + 11.0*x - 6.0*x^2 + 1.0*x^3)
 
 julia> roots(p)
 ERROR: MethodError: no method matching eigvals!(::Matrix{BigFloat})
-[...]
+The function `eigvals!` exists, but no method is defined for this combination of argument types.
+
+Closest candidates are:
+  eigvals!(::AbstractMatrix{T}, !Matched::LinearAlgebra.Cholesky{T}; sortby) where T<:Number
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/symmetriceigen.jl:260
+  eigvals!(::StridedMatrix{T}, !Matched::LinearAlgebra.LU{T, <:StridedMatrix{T} where T}; sortby) where T
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/symmetriceigen.jl:286
+  eigvals!(!Matched::LinearAlgebra.SymTridiagonal{<:Union{Float32, Float64}, <:StridedVector{T} where T})
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/tridiag.jl:270
+  ...
+
+Stacktrace:
+ [1] eigvals(A::Matrix{BigFloat}; kws::@Kwargs{})
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/eigen.jl:343
+ [2] eigvals(A::Matrix{BigFloat})
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/eigen.jl:343
+ [3] roots(p::Polynomial{BigFloat, :x}; kwargs::@Kwargs{})
+   @ Polynomials ~/julia/Polynomials/src/polynomials/standard-basis/standard-basis.jl:500
+ [4] roots(p::Polynomial{BigFloat, :x})
+   @ Polynomials ~/julia/Polynomials/src/polynomials/standard-basis/standard-basis.jl:481
+ [5] top-level scope
+   @ none:1
 
 julia> using GenericLinearAlgebra
+ERROR: ArgumentError: Package GenericLinearAlgebra not found in current path.
+- Run `import Pkg; Pkg.add("GenericLinearAlgebra")` to install the GenericLinearAlgebra package.
+Stacktrace:
+ [1] macro expansion
+   @ ./loading.jl:2223 [inlined]
+ [2] macro expansion
+   @ ./lock.jl:273 [inlined]
+ [3] __require(into::Module, mod::Symbol)
+   @ Base ./loading.jl:2198
+ [4] #invoke_in_world#3
+   @ ./essentials.jl:1089 [inlined]
+ [5] invoke_in_world
+   @ ./essentials.jl:1086 [inlined]
+ [6] require(into::Module, mod::Symbol)
+   @ Base ./loading.jl:2191
 
 julia> roots(p)
-3-element Vector{Complex{BigFloat}}:
- 0.9999999999999999999999999999999999999999999999999999999999999999999999999999655 + 0.0im
-  1.999999999999999999999999999999999999999999999999999999999999999999999999999931 - 0.0im
-  2.999999999999999999999999999999999999999999999999999999999999999999999999999793 + 0.0im
+ERROR: MethodError: no method matching eigvals!(::Matrix{BigFloat})
+The function `eigvals!` exists, but no method is defined for this combination of argument types.
+
+Closest candidates are:
+  eigvals!(::AbstractMatrix{T}, !Matched::LinearAlgebra.Cholesky{T}; sortby) where T<:Number
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/symmetriceigen.jl:260
+  eigvals!(::StridedMatrix{T}, !Matched::LinearAlgebra.LU{T, <:StridedMatrix{T} where T}; sortby) where T
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/symmetriceigen.jl:286
+  eigvals!(!Matched::LinearAlgebra.SymTridiagonal{<:Union{Float32, Float64}, <:StridedVector{T} where T})
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/tridiag.jl:270
+  ...
+
+Stacktrace:
+ [1] eigvals(A::Matrix{BigFloat}; kws::@Kwargs{})
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/eigen.jl:343
+ [2] eigvals(A::Matrix{BigFloat})
+   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/eigen.jl:343
+ [3] roots(p::Polynomial{BigFloat, :x}; kwargs::@Kwargs{})
+   @ Polynomials ~/julia/Polynomials/src/polynomials/standard-basis/standard-basis.jl:500
+ [4] roots(p::Polynomial{BigFloat, :x})
+   @ Polynomials ~/julia/Polynomials/src/polynomials/standard-basis/standard-basis.jl:481
+ [5] top-level scope
+   @ none:1
 ```
 
 ### Comments on root finding
@@ -576,7 +637,7 @@ julia> p = Polynomial([24, -50, 35, -10, 1])
 Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 
 julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
-FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
+FactoredPolynomial((x - 4.0000000000000036) * (x - 1.0000000000000002) * (x - 2.9999999999999942) * (x - 2.0000000000000018))
 
 julia> map(x -> round(x, digits=10), q)
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
@@ -651,7 +712,23 @@ However, as there would be an ambiguous outcome of the following
 ```jldoctest natural_inclusion
 julia> [one(p) one(q)]
 ERROR: ArgumentError: Polynomials have different indeterminates
-[...]
+Stacktrace:
+ [1] assert_same_variable(X::Symbol, Y::Symbol)
+   @ Polynomials ~/julia/Polynomials/src/common.jl:522
+ [2] promote_rule(::Type{Polynomial{Int64, :x}}, ::Type{Polynomial{Int64, :y}})
+   @ Polynomials ~/julia/Polynomials/src/promotions.jl:24
+ [3] promote_type
+   @ ./promotion.jl:318 [inlined]
+ [4] promote_eltypeof(v1::Polynomial{Int64, :x}, v2::Polynomial{Int64, :y})
+   @ Base ./abstractarray.jl:1618
+ [5] _cat(::Val{2}, ::Polynomial{Int64, :x}, ::Polynomial{Int64, :y})
+   @ Base ./abstractarray.jl:1820
+ [6] cat
+   @ ./abstractarray.jl:2084 [inlined]
+ [7] hcat(::Polynomial{Int64, :x}, ::Polynomial{Int64, :y})
+   @ Base ./abstractarray.jl:1968
+ [8] top-level scope
+   @ none:1
 ```
 
 an error is thrown.
@@ -683,7 +760,19 @@ but not this one:
 ```jldoctest natural_inclusion
 julia> [one(p), one(p) + one(q)]
 ERROR: ArgumentError: Polynomials have different indeterminates
-[...]
+Stacktrace:
+ [1] assert_same_variable(X::Symbol, Y::Symbol)
+   @ Polynomials ~/julia/Polynomials/src/common.jl:522
+ [2] promote_rule(::Type{Polynomial{Int64, :x}}, ::Type{Polynomial{Int64, :y}})
+   @ Polynomials ~/julia/Polynomials/src/promotions.jl:24
+ [3] promote_type
+   @ ./promotion.jl:318 [inlined]
+ [4] promote_typeof(x::Polynomial{Int64, :x}, y::Polynomial{Int64, :y})
+   @ Base ./promotion.jl:378
+ [5] vect(::Polynomial{Int64, :x}, ::Vararg{Any})
+   @ Base ./array.jl:184
+ [6] top-level scope
+   @ none:1
 ```
 
 Also, mixing types can result in unspecific symbols, as this example shows:
@@ -792,10 +881,10 @@ julia> P = FactoredPolynomial
 FactoredPolynomial
 
 julia> p,q = fromroots(P, [1,2,3,4]), fromroots(P, [2,2,3,5])
-(FactoredPolynomial((x - 4) * (x - 2) * (x - 3) * (x - 1)), FactoredPolynomial((x - 5) * (x - 2)² * (x - 3)))
+(FactoredPolynomial((x - 4) * (x - 1) * (x - 3) * (x - 2)), FactoredPolynomial((x - 5) * (x - 2)² * (x - 3)))
 
 julia> pq = p // q
-((x - 4) * (x - 2) * (x - 3) * (x - 1)) // ((x - 5) * (x - 2)² * (x - 3))
+((x - 4) * (x - 1) * (x - 3) * (x - 2)) // ((x - 5) * (x - 2)² * (x - 3))
 
 julia> lowest_terms(pq)
 ((x - 4.0) * (x - 1.0)) // ((x - 5.0) * (x - 2.0))
@@ -814,7 +903,7 @@ julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
        end
 
 julia> d
-((x - 4.0) * (x - 1.0000000000000002)) // ((x - 5.0) * (x - 2.0))
+((x - 1.0000000000000002) * (x - 4.0)) // ((x - 5.0) * (x - 2.0))
 ```
 
 A basic plot recipe is provided.
