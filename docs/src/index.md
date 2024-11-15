@@ -219,46 +219,12 @@ Stacktrace:
    @ none:1
 
 julia> using GenericLinearAlgebra
-ERROR: ArgumentError: Package GenericLinearAlgebra not found in current path.
-- Run `import Pkg; Pkg.add("GenericLinearAlgebra")` to install the GenericLinearAlgebra package.
-Stacktrace:
- [1] macro expansion
-   @ ./loading.jl:2223 [inlined]
- [2] macro expansion
-   @ ./lock.jl:273 [inlined]
- [3] __require(into::Module, mod::Symbol)
-   @ Base ./loading.jl:2198
- [4] #invoke_in_world#3
-   @ ./essentials.jl:1089 [inlined]
- [5] invoke_in_world
-   @ ./essentials.jl:1086 [inlined]
- [6] require(into::Module, mod::Symbol)
-   @ Base ./loading.jl:2191
 
 julia> roots(p)
-ERROR: MethodError: no method matching eigvals!(::Matrix{BigFloat})
-The function `eigvals!` exists, but no method is defined for this combination of argument types.
-
-Closest candidates are:
-  eigvals!(::AbstractMatrix{T}, !Matched::LinearAlgebra.Cholesky{T}; sortby) where T<:Number
-   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/symmetriceigen.jl:260
-  eigvals!(::StridedMatrix{T}, !Matched::LinearAlgebra.LU{T, <:StridedMatrix{T} where T}; sortby) where T
-   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/symmetriceigen.jl:286
-  eigvals!(!Matched::LinearAlgebra.SymTridiagonal{<:Union{Float32, Float64}, <:StridedVector{T} where T})
-   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/tridiag.jl:270
-  ...
-
-Stacktrace:
- [1] eigvals(A::Matrix{BigFloat}; kws::@Kwargs{})
-   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/eigen.jl:343
- [2] eigvals(A::Matrix{BigFloat})
-   @ LinearAlgebra ~/.julia/juliaup/julia-1.11.1+0.x64.apple.darwin14/share/julia/stdlib/v1.11/LinearAlgebra/src/eigen.jl:343
- [3] roots(p::Polynomial{BigFloat, :x}; kwargs::@Kwargs{})
-   @ Polynomials ~/julia/Polynomials/src/polynomials/standard-basis/standard-basis.jl:500
- [4] roots(p::Polynomial{BigFloat, :x})
-   @ Polynomials ~/julia/Polynomials/src/polynomials/standard-basis/standard-basis.jl:481
- [5] top-level scope
-   @ none:1
+3-element Vector{Complex{BigFloat}}:
+ 0.9999999999999999999999999999999999999999999999999999999999999999999999999999655 + 0.0im
+  1.999999999999999999999999999999999999999999999999999999999999999999999999999931 - 0.0im
+  2.999999999999999999999999999999999999999999999999999999999999999999999999999793 + 0.0im
 ```
 
 ### Comments on root finding
