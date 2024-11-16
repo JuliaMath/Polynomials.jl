@@ -50,11 +50,7 @@ LaurentPolynomial(1.0*x + 0.5*x² + 0.3333333333333333*x³)
 
 julia> integrate(p)  # x⁻¹  term is an issue
 ERROR: ArgumentError: Can't integrate Laurent polynomial with  `x⁻¹` term
-Stacktrace:
- [1] integrate(p::LaurentPolynomial{Int64, :x})
-   @ Polynomials ~/julia/Polynomials/src/polynomials/standard-basis/standard-basis.jl:174
- [2] top-level scope
-   @ none:1
+[...]
 
 julia> integrate(P([1,1,1], -5))
 LaurentPolynomial(-0.25*x⁻⁴ - 0.3333333333333333*x⁻³ - 0.5*x⁻²)
