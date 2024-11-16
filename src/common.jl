@@ -1336,7 +1336,7 @@ function Base.isapprox(p1::AbstractPolynomial{T,X},
                        atol::Real = 0,) where {T,S,X}
     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
     # copy over from abstractarray.jl
-    Δ  = norm(p1-p2)
+    Δ  = norm(p1-p2) # p1 - p2 does conversion to common type
     if isfinite(Δ)
         return Δ <= max(atol, rtol*max(norm(p1), norm(p2)))
     else
