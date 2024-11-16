@@ -2,10 +2,11 @@ name = "Polynomials"
 uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 license = "MIT"
 author = "JuliaMath"
-version = "4.0.11"
+version = "4.0.12"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
@@ -33,6 +34,7 @@ LinearAlgebra = "<0.0.1, 1"
 MakieCore = "0.6,0.7, 0.8"
 MutableArithmetics = "1"
 OffsetArrays = "1"
+OrderedCollections = "1.6.3"
 RecipesBase = "0.7, 0.8, 1"
 Requires = "1.1"
 Setfield = "1"
@@ -56,5 +58,4 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "ChainRulesCore", "DualNumbers", "FFTW", "LinearAlgebra",
-"MutableArithmetics", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]
+test = ["Aqua", "ChainRulesCore", "DualNumbers", "FFTW", "LinearAlgebra", "MutableArithmetics", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]

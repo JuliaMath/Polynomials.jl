@@ -16,10 +16,10 @@ julia> p = FactoredPolynomial(Dict([0=>1, 1=>2, 3=>4]))
 FactoredPolynomial(x * (x - 3)⁴ * (x - 1)²)
 
 julia> q = fromroots(FactoredPolynomial, [0,1,2,3])
-FactoredPolynomial(x * (x - 2) * (x - 3) * (x - 1))
+FactoredPolynomial((x - 3) * x * (x - 2) * (x - 1))
 
 julia> p*q
-FactoredPolynomial(x² * (x - 2) * (x - 3)⁵ * (x - 1)³)
+FactoredPolynomial(x² * (x - 3)⁵ * (x - 1)³ * (x - 2))
 
 julia> p^1000
 FactoredPolynomial(x¹⁰⁰⁰ * (x - 3)⁴⁰⁰⁰ * (x - 1)²⁰⁰⁰)
@@ -31,29 +31,29 @@ julia> p = Polynomial([24, -50, 35, -10, 1])
 Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 
 julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
-FactoredPolynomial((x - 4.0000000000000036) * (x - 2.9999999999999942) * (x - 1.0000000000000002) * (x - 2.0000000000000018))
+FactoredPolynomial((x - 4.0000000000000036) * (x - 1.0000000000000002) * (x - 2.9999999999999942) * (x - 2.0000000000000018))
 
 julia> map(x->round(x, digits=12), q) # map works over factors and leading coefficient -- not coefficients in the standard basis
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 """
 struct FactoredPolynomial{T <: Number, X} <: AbstractPolynomial{T, X}
-    coeffs::Dict{T,Int}
+    coeffs::OrderedDict{T,Int}
     c::T
-    function FactoredPolynomial{T, X}(checked::Val{false}, cs::Dict{T,Int}, c::T) where {T, X}
-        new{T,X}(cs,T(c))
+    function FactoredPolynomial{T, X}(checked::Val{false}, cs::AbstractDict{T,Int}, c::T) where {T, X}
+        new{T,X}(convert(OrderedDict,cs),T(c))
     end
-    function FactoredPolynomial{T, X}(cs::Dict{T,Int}, c=one(T)) where {T, X}
-        D = Dict{T,Int}()
+    function FactoredPolynomial{T, X}(cs::AbstractDict{T,Int}, c=one(T)) where {T, X}
+        D = OrderedDict{T,Int}()
         for (k,v) ∈ cs
             v > 0 && (D[k] = v)
         end
         FactoredPolynomial{T,X}(Val(false), D,T(c))
     end
-    function FactoredPolynomial(cs::Dict{T,Int}, c::S=1, var::SymbolLike=:x) where {T,S}
+    function FactoredPolynomial(cs::AbstractDict{T,Int}, c::S=1, var::SymbolLike=:x) where {T,S}
         X = Symbol(var)
         R = promote_type(T,S)
-        D = convert(Dict{R,Int}, cs)
+        D = convert(OrderedDict{R,Int}, cs)
         FactoredPolynomial{R,X}(D, R(c))
     end
 end
@@ -72,8 +72,14 @@ function FactoredPolynomial{T,X}(coeffs::AbstractVector{S}) where {T,S,X}
 
     zs = Multroot.multroot(p)
     c = p[end]
-    D = Dict(zip(zs.values, zs.multiplicities))
-    FactoredPolynomial(D, c, X)
+
+    D = LittleDict(k=>v for (k,v) ∈ zip(zs.values, zs.multiplicities))
+    D′ = OrderedDict{eltype(zs.values), Int}()
+    for z ∈ lejaorder(zs.values)
+        D′[z] = D[z]
+    end
+
+    FactoredPolynomial(D′, c, X)
 end
 
 function FactoredPolynomial{T}(coeffs::AbstractVector{S}, var::SymbolLike=:x) where {T,S}
@@ -100,15 +106,23 @@ function Base.convert(P::Type{<:FactoredPolynomial}, p::FactoredPolynomial{T,X})
     copy!(d, p.coeffs)
     FactoredPolynomial{𝑻,𝑿}(d, p.c)
 end
+
 Base.promote(p::P,q::Q) where {X,T,P<:FactoredPolynomial{T,X},Q<:FactoredPolynomial{T,X}} = p,q
+
 Base.promote_rule(::Type{<:FactoredPolynomial{T,X}}, ::Type{<:FactoredPolynomial{S,X}}) where {T,S,X} =
     FactoredPolynomial{promote_type(T,S), X}
+
 Base.promote_rule(::Type{<:FactoredPolynomial{T,X}}, ::Type{S}) where {T,S<:Number,X} =
     FactoredPolynomial{promote_type(T,S), X}
+
 FactoredPolynomial{T,X}(n::S) where {T,X,S<:Number} = T(n) * one(FactoredPolynomial{T,X})
+
 FactoredPolynomial{T}(n::S, var::SymbolLike=:x) where {T,S<:Number} = T(n) * one(FactoredPolynomial{T,Symbol(var)})
+
 FactoredPolynomial(n::S, var::SymbolLike=:x) where {S<:Number} = n * one(FactoredPolynomial{S,Symbol(var)})
+
 FactoredPolynomial(var::SymbolLike=:x) = variable(FactoredPolynomial, Symbol(var))
+
 (p::FactoredPolynomial)(x) = evalpoly(x, p)
 
 function Base.convert(::Type{<:Polynomial}, p::FactoredPolynomial{T,X}) where {T,X}
@@ -116,6 +130,7 @@ function Base.convert(::Type{<:Polynomial}, p::FactoredPolynomial{T,X}) where {T
     isconstant(p) && return Polynomial{T,X}(p.c)
     p(x)
 end
+
 function Base.convert(P::Type{<:FactoredPolynomial}, p::Polynomial{T,X}) where {T,X}
     isconstant(p) && return ⟒(P)(constantterm(p), X)
     ⟒(P)(coeffs(p), X)
@@ -239,8 +254,8 @@ end
 
 function fromroots(::Type{P}, r::AbstractVector{T}; var::SymbolLike=:x) where {T <: Number, P<:FactoredPolynomial}
     X = Symbol(var)
-    d = Dict{T,Int}()
-    for rᵢ ∈ r
+    d = OrderedDict{T,Int}()
+    for rᵢ ∈ lejaorder(r)
         d[rᵢ] = get(d, rᵢ, 0) + 1
     end
     FactoredPolynomial{T, X}(d)
@@ -291,8 +306,10 @@ end
 # scalar mult
 function scalar_mult(p::P, c::S) where {S<:Number, T, X, P <: FactoredPolynomial{T, X}}
     R = promote_type(T,S)
-    d = Dict{R, Int}() # wident
-    copy!(d, p.coeffs)
+    d = OrderedDict{R, Int}() # wident
+    for (k,v) ∈ p.coeffs
+        d[k] = v
+    end
     FactoredPolynomial{R,X}(d, c * p.c)
 end
 scalar_mult(c::S, p::P) where {S<:Number, T, X, P <: FactoredPolynomial{T, X}} = scalar_mult(p, c) # assume commutative, as we have S <: Number
@@ -304,7 +321,7 @@ end
 
 function Base.:^(p::P, n::Integer) where {T,X, P<:FactoredPolynomial{T,X}}
     n >= 0 || throw(ArgumentError("n must be non-negative"))
-    d = Dict{T,Int}()
+    d = OrderedDict{T,Int}()
     for (k,v) ∈ p.coeffs
         d[k] = v*n
     end
@@ -316,7 +333,7 @@ end
 function Base.gcd(p::P, q::P) where {T, X, P<:FactoredPolynomial{T,X}}
     iszero(p) && return q
     iszero(q) && return p
-    d = Dict{T,Int}()
+    d = OrderedDict{T,Int}()
 
     for k ∈ intersect(keys(p.coeffs), keys(q.coeffs))
         d[k] = min(p.coeffs[k], q.coeffs[k])
@@ -327,7 +344,7 @@ end
 
 # return u,v,w with p = u*v , q = u*w
 function uvw(p::P, q::P; kwargs...) where {T, X, P<:FactoredPolynomial{T,X}}
-    du, dv, dw = Dict{T,Int}(), Dict{T,Int}(), Dict{T,Int}()
+    du, dv, dw = OrderedDict{T,Int}(), OrderedDict{T,Int}(), OrderedDict{T,Int}()
     dp,dq = p.coeffs, q.coeffs
     kp,kq = keys(dp), keys(dq)
 

@@ -17,6 +17,8 @@ Integration will fail if there is a `x⁻¹` term in the polynomial.
 
 # Examples:
 ```jldoctest
+julia> using Polynomials
+
 julia> P = LaurentPolynomial;
 
 julia> p = P([1,1,1],  -1)
@@ -48,6 +50,7 @@ LaurentPolynomial(1.0*x + 0.5*x² + 0.3333333333333333*x³)
 
 julia> integrate(p)  # x⁻¹  term is an issue
 ERROR: ArgumentError: Can't integrate Laurent polynomial with  `x⁻¹` term
+[...]
 
 julia> integrate(P([1,1,1], -5))
 LaurentPolynomial(-0.25*x⁻⁴ - 0.3333333333333333*x⁻³ - 0.5*x⁻²)
@@ -184,6 +187,8 @@ Call `p̂ = paraconj(p)` and `p̄` = conj(p)`, then this satisfies
 Examples:
 
 ```jldoctest
+julia> using Polynomials
+
 julia> z = variable(LaurentPolynomial, :z)
 LaurentPolynomial(z)
 
@@ -223,6 +228,8 @@ This satisfies for *imaginary* `s`: `conj(p(s)) = p̃(s) = (conj ∘ p)(s) = cco
 
 Examples:
 ```jldoctest
+julia> using Polynomials
+
 julia> s = 2im
 0 + 2im
 
