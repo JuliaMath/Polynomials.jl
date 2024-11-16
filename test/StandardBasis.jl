@@ -985,9 +985,7 @@ end
             (b ≈ a) & isreal(coeffs(b))    # the coeff should be real
         end
         p = Polynomial([1; zeros(99); -1])
-        if P !== FactoredPolynomial
-            @test fromroots(P, roots(p)) * p[end] ≈ p
-        end
+        @test fromroots(P, roots(p)) * p[end] ≈ p
     end
 end
 

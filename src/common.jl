@@ -60,6 +60,8 @@ Construct a polynomial of the given type given the roots. If no type is given, d
 
 # Examples
 ```jldoctest
+julia> using Polynomials
+
 julia> r = [3, 2]; # (x - 3)(x - 2)
 
 julia> fromroots(r)
@@ -83,6 +85,8 @@ Construct a polynomial of the given type using the eigenvalues of the given matr
 
 # Examples
 ```jldoctest
+julia> using Polynomials
+
 julia> A = [1 2; 3 4]; # (x - 5.37228)(x + 0.37228)
 
 julia> fromroots(A)
@@ -754,6 +758,8 @@ Given values of x that are assumed to be unbounded (-∞, ∞), return values re
 
 # Examples
 ```jldoctest
+julia> using Polynomials
+
 julia> x = -10:10
 -10:10
 
@@ -976,6 +982,8 @@ Return the monomial `x` in the indicated polynomial basis.  If no type is give, 
 
 # Examples
 ```jldoctest
+julia> using Polynomials
+
 julia> x = variable()
 Polynomial(x)
 
@@ -1237,6 +1245,8 @@ Find the greatest common denominator of two polynomials recursively using
 # Examples
 
 ```jldoctest
+julia> using Polynomials
+
 julia> gcd(fromroots([1, 1, 2]), fromroots([1, 2, 3]))
 Polynomial(4.0 - 6.0*x + 2.0*x^2)
 ```
@@ -1326,7 +1336,7 @@ function Base.isapprox(p1::AbstractPolynomial{T,X},
                        atol::Real = 0,) where {T,S,X}
     (hasnan(p1) || hasnan(p2)) && return false  # NaN poisons comparisons
     # copy over from abstractarray.jl
-    Δ  = norm(p1-p2)
+    Δ  = norm(p1-p2) # p1 - p2 does conversion to common type
     if isfinite(Δ)
         return Δ <= max(atol, rtol*max(norm(p1), norm(p2)))
     else

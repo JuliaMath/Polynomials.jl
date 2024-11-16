@@ -10,6 +10,7 @@ using LinearAlgebra
 import Base: evalpoly
 using Setfield
 using SparseArrays
+using OrderedCollections
 
 include("abstract.jl")
 include("show.jl")
