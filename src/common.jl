@@ -64,7 +64,7 @@ julia> using Polynomials
 
 julia> r = [3, 2]; # (x - 3)(x - 2)
 
-julia> Polynomials.fromroots(r)
+julia> fromroots(r)
 Polynomial(6 - 5*x + x^2)
 ```
 """
