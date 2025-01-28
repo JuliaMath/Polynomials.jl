@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Extending · Polynomials.jl</title><meta name="title" content="Extending · Polynomials.jl"/><meta property="og:title" content="Extending · Polynomials.jl"/><meta property="twitter:title" content="Extending · Polynomials.jl"/><meta name="description" content="Documentation for Polynomials.jl."/><meta property="og:description" content="Documentation for Polynomials.jl."/><meta property="twitter:description" content="Documentation for Polynomials.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../"><img src="../assets/logo.png" alt="Polynomials.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../">Polynomials.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../reference/">Reference/API</a></li><li><span class="tocitem">Polynomial Types</span><ul><li><a class="tocitem" href="../polynomials/polynomial/">Polynomial</a></li><li><a class="tocitem" href="../polynomials/chebyshev/">Chebyshev</a></li></ul></li><li class="is-active"><a class="tocitem" href>Extending</a><ul class="internal"><li><a class="tocitem" href="#A-new-basis-type"><span>A new basis type</span></a></li><li><a class="tocitem" href="#A-new-container-type"><span>A new container type</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Extending</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Extending</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaMath/Polynomials.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaMath/Polynomials.jl/blob/master/docs/src/extending.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Extending-Polynomials"><a class="docs-heading-anchor" href="#Extending-Polynomials">Extending Polynomials</a><a id="Extending-Polynomials-1"></a><a class="docs-heading-anchor-permalink" href="#Extending-Polynomials" title="Permalink"></a></h1><p>The <a href="#Polynomials.AbstractUnivariatePolynomial"><code>AbstractUnivariatePolynomial</code></a> type was made to be extended.</p><p>A polynomial&#39;s  coefficients  are  relative to some <em>basis</em>. The <code>Polynomial</code> type relates coefficients  <code>[a0, a1,  ..., an]</code>, say,  to the  polynomial  <span>$a_0 +  a_1\cdot x + a_2\cdot x^2  + \cdots +  a_n\cdot x^n$</span>,  through the standard  basis  <span>$1,  x,  x^2, ..., x^n$</span>.  New polynomial  types typically represent the polynomial through a different  basis. For example,  <code>CheyshevT</code> uses a basis  <span>$T_0=1, T_1=x,  T_2=2x^2-1,  \cdots,  T_n  =  2xT_{n-1} - T_{n-2}$</span>.  For this type  the  coefficients  <code>[a0,a1,...,an]</code> are associated with  the polynomial  `<code>a0\cdot T_0  + a_1 \cdot T_1 +  \cdots  +  a_n\cdot T_n</code>.</p><p>A polynomial type consists of a container type (with parent type <code>AbstractUnivariatePolynomial</code>) and a basis type (with parent type <code>AbstractBasis</code>). There a several different storage types implemented.</p><p>To implement a new polynomial type, <code>P</code>, the following methods should be implemented:</p><table><tr><th style="text-align: right">Function</th><th style="text-align: center">Required</th><th style="text-align: left">Notes</th></tr><tr><td style="text-align: right">A container type</td><td style="text-align: center">x</td><td style="text-align: left">Usually selected from an available one.</td></tr><tr><td style="text-align: right">A basis type</td><td style="text-align: center">x</td><td style="text-align: left"></td></tr><tr><td style="text-align: right"><code>variable</code></td><td style="text-align: center"></td><td style="text-align: left">Convenience to find the monomial <code>x</code> in the new basis.</td></tr><tr><td style="text-align: right"><code>Base.evalpoly(x, p::P)</code></td><td style="text-align: center">x</td><td style="text-align: left">To evaluate the polynomial at <code>x</code></td></tr><tr><td style="text-align: right"><code>*(::P, ::P)</code></td><td style="text-align: center"></td><td style="text-align: left">Multiplication of polynomials</td></tr><tr><td style="text-align: right"><code>convert(::P, p::Polynomial)</code></td><td style="text-align: center">Defaults to polynomial evaluation. Can be used to define <code>*</code> by round trip through <code>Polynomial</code> type</td><td style="text-align: left"></td></tr><tr><td style="text-align: right"><code>convert(::Polynomial, p)</code></td><td style="text-align: center"></td><td style="text-align: left">Defaults to polynomial evaluation, which uses <code>evalpoly</code>, <code>variable</code>, <code>*</code></td></tr><tr><td style="text-align: right"><code>scalar_add(c::S, ::P)</code></td><td style="text-align: center"></td><td style="text-align: left">Scalar addition. Default requires <code>one</code> to be defined.</td></tr><tr><td style="text-align: right"><code>one</code></td><td style="text-align: center">x</td><td style="text-align: left">Convenience to find the constant <span>$1$</span> in the new basis.</td></tr><tr><td style="text-align: right"><code>map(f, p)</code></td><td style="text-align: center">x</td><td style="text-align: left">Used to define scalar multiplication</td></tr><tr><td style="text-align: right"><code>divrem</code></td><td style="text-align: center"></td><td style="text-align: left">Required for <a href="../reference/#Base.gcd"><code>gcd</code></a></td></tr><tr><td style="text-align: right"><code>vander</code></td><td style="text-align: center"></td><td style="text-align: left">Required for <a href="../reference/#Polynomials.fit"><code>fit</code></a></td></tr><tr><td style="text-align: right"><code>companion</code></td><td style="text-align: center"></td><td style="text-align: left">Required for <a href="../reference/#Polynomials.roots"><code>roots</code></a></td></tr><tr><td style="text-align: right"><code>Polynomials.domain</code></td><td style="text-align: center"></td><td style="text-align: left">Should return a <code>Polynomials.Interval</code> instance</td></tr></table><p>As always, if the default implementation does not work or there are more efficient ways of implementing, feel free to overwrite functions from <code>common.jl</code> for your type.</p><p>The general idea is the container type should provide the vector operations of polynomial addition, subtraction, and scalar multiplication. The latter is generically implemented through a <code>map(f,p)</code> method. The second example illustrates, though it isn&#39;t expected that container types will need being defined by users of this package.</p><p>The basis type directs dispatch for other operations and allows definitions for <code>one</code> and <code>variable</code>. An <code>evalpoly</code> method may be defined for a given basis type, though specializations based on the container may be desirable.</p><p>Methods like <code>*</code> will typically need to consider both the underlying container type and the basis, though if <code>convert</code> methods are defined, the defaults can be utilized as converting to the <code>Polynomial</code> type, performing the operation, then converting back is possible, though likely not as efficient.</p><div class="admonition is-info"><header class="admonition-header">Note</header><div class="admonition-body"><p>Most promotion rules will coerce towards the <a href="../polynomials/polynomial/#Polynomials.Polynomial"><code>Polynomial</code></a> type, so not all methods have to be implemented if you provide a conversion function.</p></div></div><h2 id="A-new-basis-type"><a class="docs-heading-anchor" href="#A-new-basis-type">A new basis type</a><a id="A-new-basis-type-1"></a><a class="docs-heading-anchor-permalink" href="#A-new-basis-type" title="Permalink"></a></h2><p>The generalized Laguerre polynomials are orthogonal polynomials parameterized  by <span>$\alpha$</span> and defined recursively by</p><p class="math-container">\[\begin{align*}
+L^\alpha_1(x) &amp;= 1\\
+L^\alpha_2(x) &amp;= 1 + \alpha - x\\
+L^\alpha_{n+1}(x) &amp;= \frac{2n+1+\alpha -x}{n+1} L^\alpha_n(x) - \frac{n+\alpha}{n+1} L^\alpha_{n-1}(x)\\
+&amp;= (A_nx +B_n) \cdot L^\alpha_n(x) - C_n \cdot L^\alpha_{n-1}(x).
+\end{align*}\]</p><p>There are other <a href="https://en.wikipedia.org/wiki/Laguerre_polynomials">characterizations available</a>. The three-point recursion, described by <code>A</code>,<code>B</code>, and <code>C</code> is used below for evaluation.</p><p>We show how to define a new basis type, <code>LaguerreBasis</code>, leveraging one of the existing container types. In this example our basis type has a parameter. The <code>ChebyshevT</code> type, gives a related example of how this task can be implemented.</p><p>First we load the package and import a few non-exported functions:</p><pre><code class="language-julia-repl hljs">julia&gt; using Polynomials;
+
+julia&gt; import Polynomials: AbstractUnivariatePolynomial, AbstractBasis, MutableDensePolynomial;</code></pre><p>We define the basis with:</p><pre><code class="language-julia-repl hljs">julia&gt; struct LaguerreBasis{alpha} &lt;: AbstractBasis end
+
+julia&gt; Polynomials.basis_symbol(::Type{&lt;:AbstractUnivariatePolynomial{LaguerreBasis{α},T,X}}) where {α,T,X} =
+           &quot;L^$(α)&quot;</code></pre><p>We added a method to <code>basis_symbol</code> to show this basis. The display of the basis symbol has a poor default. The method above requires the full type, as the indeterminate, <code>X</code>, may be part of the desired output.  More generally, <code>Polynomials.printbasis</code> can have methods added to adjust for different display types.</p><p>Polynomial types can be initiated through specifying a storage type and a basis type, say:</p><pre><code class="language-julia-repl hljs">julia&gt; P = MutableDensePolynomial{LaguerreBasis{0}}
+MutableDensePolynomial{LaguerreBasis{0}}</code></pre><p>Instances can now be created:</p><pre><code class="language-julia-repl hljs">julia&gt; p = P([1,2,3])
+MutableDensePolynomial(1L^0_0 + 2*L^0_1 + 3*L^0_2)</code></pre><p>Or using other storage types:</p><pre><code class="language-julia-repl hljs">julia&gt; Polynomials.ImmutableDensePolynomial{LaguerreBasis{1}}((1,2,3))
+Polynomials.ImmutableDensePolynomial(1L^1_0 + 2*L^1_1 + 3*L^1_2)</code></pre><p>All polynomial types have vector addition and scalar multiplication defined, as these are basis independent:</p><pre><code class="language-julia-repl hljs">julia&gt; q = P([1,2])
+MutableDensePolynomial(1L^0_0 + 2*L^0_1)
+
+julia&gt; p + q
+MutableDensePolynomial(2L^0_0 + 4*L^0_1 + 3*L^0_2)
+
+julia&gt; 2p
+MutableDensePolynomial(2L^0_0 + 4*L^0_1 + 6*L^0_2)</code></pre><p>For a new basis, there are no default methods for polynomial evaluation and polynomial multiplication; and no defaults for <code>one</code> (used by default for scalar addition), and <code>variable</code> (used by default in conversion).</p><p>For the Laguerre Polynomials, Clenshaw recursion can be used for evaluation.</p><pre><code class="language-julia-repl hljs">julia&gt; function ABC(::Type{LaguerreBasis{α}}, n) where {α}
+           o = one(α)
+           d = n + o
+           (A=-o/d, B=(2n + o + α)/d, C=(n+α)/d)
+       end
+ABC (generic function with 1 method)</code></pre><pre><code class="language-julia-repl hljs">julia&gt; function clenshaw_eval(p::P, x::S) where {α, Bᵅ&lt;: LaguerreBasis{α}, T, P&lt;:AbstractUnivariatePolynomial{Bᵅ,T}, S}
+           d = degree(p)
+           R = typeof(((one(α) * one(T)) * one(S)) / 1)
+           p₀ = one(R)
+           d == -1 &amp;&amp; return zero(R)
+           d == 0 &amp;&amp; return p[0] * one(R)
+           Δ0 = p[d-1]
+           Δ1 = p[d]
+           @inbounds for i in (d - 1):-1:1
+               A,B,C = ABC(Bᵅ, i)
+               Δ0, Δ1 =
+                   p[i] - Δ1 * C, Δ0 + Δ1 * muladd(x, A, B)
+           end
+           A,B,C = ABC(Bᵅ, 0)
+           p₁ = muladd(x, A, B) * p₀
+           return Δ0 * p₀ + Δ1 * p₁
+       end
+clenshaw_eval (generic function with 1 method)</code></pre><p>Internally, <code>evalpoly</code> is called so we forward that method.</p><pre><code class="language-julia-repl hljs">julia&gt; Polynomials.evalpoly(x, p::P) where {P&lt;:AbstractUnivariatePolynomial{&lt;:LaguerreBasis}} =
+               clenshaw_eval(p, x)</code></pre><p>We test this out by passing in the variable <code>x</code> in the standard basis:</p><pre><code class="language-julia-repl hljs">julia&gt; p = P([0,0,1])
+MutableDensePolynomial(L^0_2)
+
+julia&gt; x = variable(Polynomial)
+Polynomial(1.0*x)
+
+julia&gt; p(x)
+Polynomial(1.0 - 2.0*x + 0.5*x^2)</code></pre><p>This shows evaluation works and also that conversion to the <code>Polynomial</code> type is available through polynomial evaluation. This is used by default by <code>convert</code>, so we immediately have other <code>convert</code> methods available:</p><pre><code class="language-julia-repl hljs">julia&gt; convert(ChebyshevT, p)
+ChebyshevT(1.25⋅T_0(x) - 2.0⋅T_1(x) + 0.25⋅T_2(x))</code></pre><p>Or, using some extra annotations to have rational arithmetic used, we can compare to easily found representations in the standard basis:</p><pre><code class="language-julia-repl hljs">julia&gt; q = Polynomials.basis(MutableDensePolynomial{LaguerreBasis{0//1}, Int}, 5)
+MutableDensePolynomial(L^0//1_5)
+
+julia&gt; x = variable(Polynomial{Int})
+Polynomial(x)
+
+julia&gt; q(x)
+Polynomial(1//1 - 5//1*x + 5//1*x^2 - 5//3*x^3 + 5//24*x^4 - 1//120*x^5)</code></pre><p>The values of <code>one</code> and <code>variable</code> are straightforward to define, as <span>$L_0=1$</span> and <span>$L_1=1 - x$</span> or <span>$x = L_0 - L_1$</span></p><pre><code class="language-julia-repl hljs">julia&gt; Polynomials.one(::Type{P}) where {B&lt;:LaguerreBasis,T,X,P&lt;:AbstractUnivariatePolynomial{B,T,X}} =
+           P([one(T)])
+
+julia&gt; Polynomials.variable(::Type{P}) where {B&lt;:LaguerreBasis,T,X,P&lt;:AbstractUnivariatePolynomial{B,T,X}} =
+           P([one(T), -one(T)])</code></pre><p>To see this is correct, we have:</p><pre><code class="language-julia-repl hljs">julia&gt; variable(P)(x) == x
+true</code></pre><p>Scalar addition defaults to a call to <code>one(p)</code>, so this is now defined:</p><pre><code class="language-julia-repl hljs">julia&gt; 2 + p
+MutableDensePolynomial(2L^0_0 + L^0_2)</code></pre><p>Often it is more performant to implement a specific method for <code>scalar_add</code>. Here we utilize the fact that <span>$L_0 = 1$</span> to manipulate the coefficients. Below we specialize to a container type:</p><pre><code class="language-julia-repl hljs">julia&gt; function Polynomials.scalar_add(c::S, p::P) where {B&lt;:LaguerreBasis,T,X,
+                                                          P&lt;:MutableDensePolynomial{B,T,X},S}
+           R = promote_type(T,S)
+           iszero(p) &amp;&amp; return MutableDensePolynomial{B,R,X}(c)
+           cs = convert(Vector{R}, copy(p.coeffs))
+           cs[1] += c
+           MutableDensePolynomial{B,R,X}(cs)
+       end
+
+julia&gt; p + 3
+MutableDensePolynomial(3L^0_0 + L^0_2)</code></pre><p>Multiplication defaults to a code path where the two polynomials are promoted to a common type and then multiplied. Here we implement polynomial multiplication through conversion to the polynomial type. The <a href="https://londmathsoc.onlinelibrary.wiley.com/doi/pdf/10.1112/jlms/s1-36.1.399">direct formula</a> could be implemented, but that isn&#39;t so illustrative for this example. See the <code>SpecialPolynomials</code> package for an implementation.</p><pre><code class="language-julia-repl hljs">julia&gt; function Base.:*(p::MutableDensePolynomial{B,T,X},
+                        q::MutableDensePolynomial{B,S,X}) where {B&lt;:LaguerreBasis, T,S,X}
+           x = variable(Polynomial{T,X})
+           p(x) * q(x)
+       end</code></pre><p>Were it defined, a <code>convert</code> method from <code>Polynomial</code> to the <code>LaguerreBasis</code> could be used to implement multiplication, as we have defined a <code>variable</code> method.</p><h2 id="A-new-container-type"><a class="docs-heading-anchor" href="#A-new-container-type">A new container type</a><a id="A-new-container-type-1"></a><a class="docs-heading-anchor-permalink" href="#A-new-container-type" title="Permalink"></a></h2><p>This example shows how to make a new container type, though this should be unnecessary, given the current variety, there may be gains to be had (e.g. an immutable, sparse type?) In this case, we offer a minimal example where the polynomial type aliases the vector defining the coefficients is created.  For other bases, more methods may be necessary to define (again, refer to ChebyshevT for an example).</p><p>We have two constructor methods. The first is the typical code path. It makes a copy of the coefficients and then wraps those within the polynomial container type. For performance reasons, generically it is helpful to pass in a flag to indicate no copying or checking of the input is needed (<code>Val{false}</code>). This is used by some inherited methods when we specialize to the <code>StandardBasis</code> type. Generically, a container type <em>may</em> accept an offset, though this type won&#39;t; a <code>0</code>-based vector is implicit.</p><pre><code class="language-julia-repl hljs">julia&gt; using Polynomials
+
+julia&gt; struct AliasPolynomialType{B,T,X} &lt;: Polynomials.AbstractDenseUnivariatePolynomial{B, T, X}
+           coeffs::Vector{T}
+           function AliasPolynomialType{B, T, X}(coeffs::AbstractVector{S}, o::Int=0) where {B, T, S, X}
+               new{B,T,Symbol(X)}(convert(Vector{T}, copy(coeffs)))
+           end
+           function AliasPolynomialType{B, T, X}(::Val{false}, coeffs::AbstractVector{S}, o::Int=0) where {B, T, S, X}
+               new{B,T,Symbol(X)}(convert(Vector{T}, coeffs))
+           end
+       end
+
+julia&gt; Polynomials.@poly_register AliasPolynomialType</code></pre><p>The call to <code>@poly_register</code> adds many different means to construct polynomials of this type along with some other default methods.</p><p>A few methods need defining to get indexing to work:</p><pre><code class="language-julia-repl hljs">julia&gt; Base.firstindex(p::AliasPolynomialType) = 0
+
+julia&gt; Base.lastindex(p::AliasPolynomialType) = length(p.coeffs) - 1
+</code></pre><pre><code class="language-julia-repl hljs">julia&gt; Polynomials.constructorof(::Type{&lt;:AliasPolynomialType{B}}) where {B} = AliasPolynomialType{B}
+</code></pre><p>We need to add in the vector-space operations:</p><pre><code class="language-julia-repl hljs">julia&gt; function Base.:+(p::AliasPolynomialType{B,T,X}, q::AliasPolynomialType{B,S,X}) where {B,S,T,X}
+           R = promote_type(T,S)
+           n = maximum(degree, (p,q))
+           cs = [p[i] + q[i] for i in 0:n]
+           AliasPolynomialType{B,R,X}(Val(false), cs)  # save a copy
+       end
+
+julia&gt; function Base.:-(p::AliasPolynomialType{B,T,X}, q::AliasPolynomialType{B,S,X}) where {B,S,T,X}
+           R = promote_type(T,S)
+           n = maximum(degree, (p,q))
+           cs = [p[i] - q[i] for i in 0:n]
+           AliasPolynomialType{B,R,X}(Val(false), cs)
+       end
+
+julia&gt; function Base.map(fn, p::P) where {B,T,X,P&lt;:AliasPolynomialType{B,T,X}}
+           cs = map(fn, p.coeffs)
+           R = eltype(cs)
+           AliasPolynomialType{B,R,X}(Val(false), cs)
+       end
+</code></pre><p>A type and a basis defines a polynomial type. This example uses the  <code>StandardBasis</code> basis type and consequently inherits the methods mentioned above that otherwise would need implementing.</p><pre><code class="language-julia-repl hljs">julia&gt; AliasPolynomial = AliasPolynomialType{Polynomials.StandardBasis};
+</code></pre><p>To see this new polynomial type in action, we have:</p><pre><code class="language-julia-repl hljs">julia&gt; xs = [1,2,3,4];
+
+julia&gt; p = AliasPolynomial(xs)
+AliasPolynomialType(1 + 2*x + 3*x^2 + 4*x^3)
+
+julia&gt; q = AliasPolynomial(1.0, :y)
+AliasPolynomialType(1.0)
+
+julia&gt; 2p - q
+AliasPolynomialType(3.0 + 4.0*x + 6.0*x^2 + 8.0*x^3)
+
+julia&gt; (derivative ∘ integrate)(p) == p
+true
+
+julia&gt; p(3)
+142</code></pre><p>The default for polynomial multiplication is to call <code>*</code> for two instances of the type with the same variable, and possibly different element types. For standard basis types, we can add this method:</p><pre><code class="language-julia-repl hljs">julia&gt; Base.:*(p::AliasPolynomialType{T,X}, q::AliasPolynomialType{S,X}) where {T,S,X} = Polynomials._standard_basis_multiplication(p,q)
+
+julia&gt; p * p
+AliasPolynomialType(1 + 4*x + 10*x^2 + 20*x^3 + 25*x^4 + 24*x^5 + 16*x^6)</code></pre><p>For the Polynomial type, the default on operations is to copy the array. For this type, it might seem reasonable – to avoid allocations – to update the coefficients in place for scalar addition and scalar multiplication.</p><p>Scalar addition, <code>p+c</code>, defaults to <code>p + c*one(p)</code>, or polynomial addition, which is not inplace without additional work. As such, we create a new method and an infix operator</p><pre><code class="language-julia-repl hljs">julia&gt; function scalar_add!(c::T, p::AliasPolynomial{T}) where {T}
+           p.coeffs[1] += c
+           p
+       end;
+
+julia&gt; p::AliasPolynomial +ₛ c::Number = scalar_add!(c, p);
+
+julia&gt; c::Number +ₛ p::AliasPolynomial = scalar_add!(c, p);</code></pre><p>The viewpoint that a polynomial represents a vector of coefficients leads to an expectation that vector operations should match when possible. Scalar multiplication is a vector operation, so it seems reasonable to override the broadcast machinery to implement an in place operation (e.g. <code>p .*= 2</code>). By default, the polynomial types are not broadcastable over their coefficients. We would need to make a change there and modify the <code>copyto!</code> function:</p><pre><code class="language-julia-repl hljs">julia&gt; Base.broadcastable(p::AliasPolynomial) = p.coeffs;
+
+julia&gt; Base.ndims(::Type{&lt;:AliasPolynomial}) = 1
+
+julia&gt; Base.copyto!(p::AliasPolynomial, x) = (copyto!(p.coeffs, x); chop!(p));
+
+julia&gt; p
+AliasPolynomialType(1 + 2*x + 3*x^2 + 4*x^3)
+
+julia&gt; p .*= 2
+AliasPolynomialType(2 + 4*x + 6*x^2 + 8*x^3)
+
+julia&gt; p ./= 2
+AliasPolynomialType(1 + 2*x + 3*x^2 + 4*x^3)</code></pre><p>Trying to divide again would throw an error, as the result would not fit with the integer type of <code>p</code>.</p><p>Now <code>p</code> is treated as the vector <code>p.coeffs</code>, as regards broadcasting, so some things may be surprising, for example this expression returns a vector, not a polynomial:</p><pre><code class="language-julia-repl hljs">julia&gt; p .+ 2
+4-element Vector{Int64}:
+ 3
+ 4
+ 5
+ 6</code></pre><p>The unexported <code>Polynomials.PnPolynomial</code> polynomial type implements much of the above.</p><hr/><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Polynomials.AbstractUnivariatePolynomial" href="#Polynomials.AbstractUnivariatePolynomial"><code>Polynomials.AbstractUnivariatePolynomial</code></a> — <span class="docstring-category">Type</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">AbstractUnivariatePolynomial{B,T,X} &lt;: AbstractPolynomial{T,X}
+AbstractDenseUnivariatePolynomial{B,T,X} &lt;: AbstractUnivariatePolynomial{B,T,X}
+AbstractLaurentUnivariatePolynomial{B,T,X} &lt;: AbstractUnivariatePolynomial{B,T,X}</code></pre><p>Abstract container types for polynomials with an explicit basis, <code>B</code>. <code>AbstractDenseUnivariatePolynomial</code> is for <code>0</code>-based polynomials; <code>AbstractLaurentUnivariatePolynomial</code> is for polynomials with possibly negative powers of the indeterminate.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaMath/Polynomials.jl/blob/9b4af665eb7119e430e012a354ca6d706d917568/src/abstract-polynomial.jl#L1-L10">source</a></section></article><article class="docstring"><header><a class="docstring-article-toggle-button fa-solid fa-chevron-down" href="javascript:;" title="Collapse docstring"></a><a class="docstring-binding" id="Polynomials.AbstractBasis" href="#Polynomials.AbstractBasis"><code>Polynomials.AbstractBasis</code></a> — <span class="docstring-category">Type</span><span class="is-flex-grow-1 docstring-article-toggle-button" title="Collapse docstring"></span></header><section><div><pre><code class="language-julia hljs">AbstractBasis</code></pre><p>Abstract type for specifying a polynomial basis.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaMath/Polynomials.jl/blob/9b4af665eb7119e430e012a354ca6d706d917568/src/abstract-polynomial.jl#L19-L23">source</a></section></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../polynomials/chebyshev/">« Chebyshev</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Tuesday 28 January 2025 21:13">Tuesday 28 January 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
