@@ -1019,6 +1019,14 @@ end
         @test isempty(out.values)
         @test isempty(out.multiplicities)
     end
+
+    ## past issues
+
+    ## issue #590
+    pb = BigInt[-1, 2, -1]
+    out = Polynomials.Multroot.multroot(Polynomials.Polynomial(pb))
+    @test out.values ≈ [1.0] && out.multiplicities == [2]
+
 end
 
 @testset "critical points" begin
