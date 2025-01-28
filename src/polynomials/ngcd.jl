@@ -540,7 +540,7 @@ function refine_uvw!(u::P, v::P, w::P,
     Δz = ones(T, length(u) + length(v) + length(w))
     n = size(A, 2)
     R = UpperTriangular(Matrix{T}(undef, n, n))
-    R′ = copy(R)
+    R′ = deepcopy(R)
     ũ, ṽ, w̃ = copy(u), copy(v), copy(w)
 
     steps = 0
