@@ -427,15 +427,22 @@ end
 
 ## ---- zeros, poles, ...
 """
-    poles(pq::AbstractRationalFunction; method=:numerical, kwargs...)
+    poles(pq::AbstractRationalFunction;
+        method=:numerical, multroot_method=:direct, kwargs...)
 
 For a rational function `p/q`, first reduces to normal form, then finds the roots and multiplicities of the resulting denominator.
 
+* `method` is used to pass to `lowest_terms`
+* `multroot_method` is passed to the method argument of `multroot`, which can be `:direct` (the faster default) or `:iterative` (the slower, and possibly more robust alternate)
+
 """
-function poles(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
+function poles(pq::AbstractRationalFunction;
+               method=:numerical, # for lowest_terms
+               multroot_method=:direct, # or :iterative
+               kwargs...)
     pq′ = lowest_terms(pq; method=method, kwargs...)
     den = denominator(pq′)
-    mr = Multroot.multroot(den)
+    mr = Multroot.multroot(den; method=multroot_method)
     (zs=mr.values, multiplicities = mr.multiplicities)
 end
 
