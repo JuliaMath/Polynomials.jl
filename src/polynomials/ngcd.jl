@@ -49,7 +49,6 @@ function ngcd(p::P, q::Q,
     p′ = P′{R,X}(ps[nz:end])
     q′ = P′{R,X}(qs[nz:end])
     out = NGCD.ngcd(p′, q′, args...; kwargs...)
-
     ## convert to original polynomial type
     𝑷 = Polynomials.constructorof(P){R,X}
     u,v,w = convert.(𝑷, (out.u,out.v,out.w))

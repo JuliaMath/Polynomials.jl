@@ -1027,6 +1027,20 @@ end
     out = Polynomials.Multroot.multroot(Polynomials.Polynomial(pb))
     @test out.values ≈ [1.0] && out.multiplicities == [2]
 
+    ## Issue #592
+    p = Polynomial([NaN,NaN,NaN,NaN,NaN,NaN,NaN])
+    @test_throws ArgumentError roots(p//p)
+
+    ## issue #593
+    numcoeffs = Complex{BigFloat}[-0.0 + 0.0im, -0.0 + 0.0im, -0.0 + 0.0im, -0.0 + 0.0im, -0.0 + 0.0im, -0.0 + 0.0im, -6.4095e+257 - 3.314e+243im, -5.6118e+244 - 3.9514e+230im, -4.0102e+236 - 2.0735e+222im, -3.0725e+223 - 2.1631e+209im, -1.0975e+215 - 5.6751e+200im, -7.2072e+201 - 5.0751e+187im, -1.7167e+193 - 8.877e+178im, -9.3936e+179 - 6.6134e+165im, -1.678e+171 - 8.6782e+156im, -7.3448e+157 - 5.1693e+143im, -1.0499e+149 - 5.43e+134im, -3.4468e+135 - 2.4259e+121im, -4.1052e+126 - 2.1231e+112im, -8.9846e+112 - 6.3225e+98im, -9.1725e+103 - 4.742e+89im, -1.0036e+90 - 7.0656e+75im, -8.9646e+80 - 4.6354e+66im]
+    dencoeffs = Complex{BigFloat}[0.0 + 0.0im, 0.0 + 0.0im, -0.0 + 0.0im, -0.0 + 0.0im, 0.0 + 0.0im, 0.0 + 0.0im, -3.0837e+258 + 0.0im, -3.5997e+245 - 9.309e+230im, -1.9292e+237 - 7.0217e+217im, -1.9709e+224 - 5.0951e+209im, -5.2803e+215 - 3.2932e+196im, -4.6214e+202 - 1.1952e+188im, -8.2587e+193 - 6.4383e+174im, -6.0237e+180 - 1.5577e+166im, -8.0763e+171 - 6.7125e+152im, -4.711e+158 - 1.2183e+144im, -5.0507e+149 - 3.937e+130im, -2.2106e+136 - 5.7173e+121im, -1.9752e+127 - 1.2316e+108im, -5.7628e+113 - 1.4904e+99im, -4.4151e+104 - 1.6057e+85im, -6.4393e+90 - 1.6651e+76im, -4.3167e+81 + 0.0im]
+    p = Polynomial(numcoeffs)
+    q = Polynomial(dencoeffs)
+    r = p//q
+
+    @test_throws ArgumentError poles(r)
+    out = poles(r; multroot_method=:iterative)
+    @test out.multiplicities == [3]
 end
 
 @testset "critical points" begin

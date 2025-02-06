@@ -145,7 +145,6 @@ function pejorative_manifold(
     ϕ = 100,      # residual growth factor
     kwargs...
     )  where {T,X}
-
     S = float(T)
     u = convert(PnPolynomial{S,X}, coeffs0(p))
     nu₂ = norm(u, 2)
@@ -156,9 +155,9 @@ function pejorative_manifold(
         atol  = ρ2, rtol  = zero(ρ2))
     ρⱼ /= nu₂
 
+    hasnan(v) && throw(ArgumentError("NaN in reduced polynomial"))
     # root approximations
     zs = roots(v)
-
     # recover multiplicities
     ls = pejorative_manifold_multiplicities(Val(method),
                                             u, v, w,
@@ -206,7 +205,6 @@ function pejorative_manifold_multiplicities(
         end
 
     end
-
     ls
 
 end
@@ -225,6 +223,7 @@ function pejorative_manifold_multiplicities(
 
     dv = derivative(v)
     ls = w.(zs) ./ dv.(zs)
+
     ls = round.(Int, real.(ls))
 
     return ls
@@ -258,7 +257,6 @@ function pejorative_root(p, zs::Vector{S}, ls;
 
     ## Solve WJ Δz = W(Gl(z) - a)
     ## using weights min(1/|aᵢ|), i ≠ 1
-
     m,n = sum(ls), length(zs)
     # storage
     a = p[2:end]./p[1]     # a ~ (p[n-1], p[n-2], ..., p[0])/p[n]
