@@ -1038,9 +1038,14 @@ end
     q = Polynomial(dencoeffs)
     r = p//q
 
-    @test_throws ArgumentError poles(r)
-    out = poles(r; multroot_method=:iterative)
+    out = roots(r)
     @test out.multiplicities == [3]
+    our = poles(r)
+    @test out.multiplicities == [3]
+
+    multroot_method = :direct # fails if direct
+    @test_throws ArgumentError poles(r; multroot_method)
+    @test_throws ArgumentError roots(r; multroot_method)
 end
 
 @testset "critical points" begin

@@ -427,22 +427,23 @@ end
 
 ## ---- zeros, poles, ...
 """
-    poles(pq::AbstractRationalFunction;
-        method=:numerical, multroot_method=:direct, kwargs...)
+    poles(pq::AbstractRationalFunction{T};
+        method=:numerical, multroot_method=nothing, kwargs...) where {T}
 
 For a rational function `p/q`, first reduces to normal form, then finds the roots and multiplicities of the resulting denominator.
 
 * `method` is used to pass to `lowest_terms`
-* `multroot_method` is passed to the method argument of `multroot`, which can be `:direct` (the faster default) or `:iterative` (the slower, and possibly more robust alternate)
+* `multroot_method` is passed to the method argument of `multroot`, which can be `:direct` (the faster default) or `:iterative` (the slower, and possibly more robust alternate). The default is `:direct` save for `Big` values in which case `:iterative` is used.
 
 """
-function poles(pq::AbstractRationalFunction;
+function poles(pq::AbstractRationalFunction{T};
                method=:numerical, # for lowest_terms
-               multroot_method=:direct, # or :iterative
-               kwargs...)
+               multroot_method=nothing, # :direct or:iterative
+               kwargs...) where {T}
     pq′ = lowest_terms(pq; method=method, kwargs...)
     den = denominator(pq′)
-    mr = Multroot.multroot(den; method=multroot_method)
+    mmethod = something(multroot_method, default_multroot_method(T))
+    mr = Multroot.multroot(den; method=mmethod)
     (zs=mr.values, multiplicities = mr.multiplicities)
 end
 
@@ -452,12 +453,19 @@ end
 Return the `zeros` of the rational function (after cancelling commong factors, the `zeros` are the roots of the numerator.
 
 """
-function roots(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
+function roots(pq::AbstractRationalFunction{T};
+               method=:numerical,
+               multroot_method=nothing, # :direct or:iterative
+               kwargs...) where {T}
     pq′ = lowest_terms(pq; method=method, kwargs...)
     den = numerator(pq′)
-    mr = Multroot.multroot(den)
+    mmethod = something(multroot_method, default_multroot_method(T))
+    mr = Multroot.multroot(den; method=mmethod)
     (zs=mr.values, multiplicities = mr.multiplicities)
 end
+default_multroot_method(::Type{T}) where {T<:Union{BigFloat, Complex{BigFloat}, BigInt, Complex{BigInt}}} = :iterative
+default_multroot_method(::Any) = :direct
+
 
 """
     residues(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
