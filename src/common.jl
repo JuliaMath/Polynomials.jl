@@ -1347,8 +1347,11 @@ function Base.isapprox(p1::AbstractPolynomial{T,X},
     end
 end
 
-Base.isapprox(p1::AbstractPolynomial{T}, n::S;kwargs...) where {S,T} = isapprox(p1, n*one(p1))
-Base.isapprox(n::S,p1::AbstractPolynomial{T}; kwargs...) where {S,T} = isapprox(p1, n; kwargs...)
+Base.isapprox(p1::AbstractPolynomial{T}, n::S;kwargs...) where {S,T} =
+    isapprox(promote(p1, n)...; kwargs...)
+#    isapprox(p1, n*one(p1))
+Base.isapprox(n::S,p1::AbstractPolynomial{T}; kwargs...) where {S,T} =
+    isapprox(p1, n; kwargs...)
 
 Base.isapprox(::AbstractPolynomial{T}, ::Missing, args...; kwargs...) where T = missing
 Base.isapprox(::Missing, ::AbstractPolynomial{T}, args...; kwargs...) where T = missing

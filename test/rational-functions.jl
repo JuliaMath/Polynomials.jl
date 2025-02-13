@@ -91,6 +91,10 @@ using LinearAlgebra
     @test degree(numerator(q^2 // q)) == 0
     @test degree(denominator(q^2 // q)) == 1
 
+    # issue 596
+    p = Polynomial([0,1])
+    r = p//1
+    @test (p//1) ≈ p
 end
 
 @testset "zeros, poles, residues" begin
