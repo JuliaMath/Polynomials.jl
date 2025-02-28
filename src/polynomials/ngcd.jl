@@ -12,6 +12,13 @@ function ngcd(p::P, q::Q,
               args...;
               kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
                                 S,Y,Q<:StandardBasisPolynomial{S,Y}}
+
+    # easy cases
+    degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
+    degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
+    degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
+    degree(q) == 0 && return (u=one(p), v=p, w=q,       Θ=NaN, κ=NaN)
+
     if (degree(q) > degree(p))
         u,w,v,Θ,κ =  ngcd(q,p,args...; kwargs...)
         return (u=u,v=v,w=w, Θ=Θ, κ=κ)
@@ -21,13 +28,11 @@ function ngcd(p::P, q::Q,
         return ngcd(q, b, args...; λ=100,  kwargs...)
     end
 
-    # easy cases
-    degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
-    degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
-    degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
-    degree(q) == 0 && return (u=one(p), v=p, w=q,       Θ=NaN, κ=NaN)
+    # other easy cases
     p ≈ q          && return (u=p,v=one(p),  w=one(p),  θ=NaN, κ=NaN)
     Polynomials.assert_same_variable(p,q)
+
+
 
     R = promote_type(float(T))
     𝑷 = Polynomials.constructorof(P){R,X}

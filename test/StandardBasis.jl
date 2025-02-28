@@ -1558,6 +1558,15 @@ end
             @test out.u == x^k
         end
     end
+
+    # issue #598 ultimately ngcd issue not checking 0 polynomial earlier
+    x = Polynomial([0,1])
+    A = (1.0 + 2.0*x^2) // (1.0 + 2.0*x^2)
+    B = (0.0) // (1.0 + 2.0*x^2)
+    C = (3.0*x) // (1.0 + 2.0*x^2)
+    D = (1.0 + 2.0*x^2) // (1.0 + 2.0*x^2)
+    ab,cd = [A B], [C D]
+    @test [A B; C D] == [ab; cd]
 end
 
 @testset "Showing" begin
