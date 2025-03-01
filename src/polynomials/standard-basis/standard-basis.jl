@@ -196,7 +196,14 @@ function Base.divrem(num::P, den::Q) where {B<:StandardBasis,
     m = degree(den)
 
     m == -1 && throw(DivideError())
-    if m == 0 && den[0] ≈ 0 throw(DivideError()) end
+    if m == 0
+        if hasmethod(eps, S) # some way to check if useing ≈ or == is appropriate
+            den[0] ≈ 0 && throw(DivideError())
+        else
+            den[0] == 0 && throw(DivideError())
+        end
+    end
+
 
     R = eltype(one(T)/one(S))
 
