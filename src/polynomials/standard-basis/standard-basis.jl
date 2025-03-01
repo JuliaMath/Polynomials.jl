@@ -197,7 +197,7 @@ function Base.divrem(num::P, den::Q) where {B<:StandardBasis,
 
     m == -1 && throw(DivideError())
     if m == 0
-        if hasmethod(eps, S) # some way to check if using ≈ or == is appropriate
+        if hasmethod(eps, (S,)) # some way to check if using ≈ or == is appropriate
             den[0] ≈ 0 && throw(DivideError())
         else
             den[0] == 0 && throw(DivideError())
