@@ -13,6 +13,13 @@ function ngcd(p::P, q::Q,
               kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
                                 S,Y,Q<:StandardBasisPolynomial{S,Y}}
 
+    # deflate leading zeroes when present in top and bottom
+    i,j = findfirst.(!iszero, (p,q))
+    if !isnothing(i) && !isnothing(j)
+        k = min(i,j)
+        p,q = P(coeffs(p)[k+1:end]), Q(coeffs(q)[k+1:end])
+    end
+
     # easy cases
     degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
     degree(p) == 0 && return (u=one(q), v=p, w=q,       θ=NaN, κ=NaN)
