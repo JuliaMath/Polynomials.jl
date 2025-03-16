@@ -124,6 +124,20 @@ end
     end
     @test norm(numerator(lowest_terms(d - pq)), Inf) <= sqrt(eps())
 
+
+    ## issue #602
+    s = Polynomial([0,1],:s)
+    r = (15s^14 + 1e-16s^15)//(s)
+    num = numerator(Polynomials.lowest_terms(r))
+    @test length(roots(num)) == 14
+    @test_throws DimensionMismatch Polynomials.Multroot.multroot(num) # where to fix
+
+    r = (15s^14 + 1e-16s^15)//(1s + 14s^14)
+    num = numerator(Polynomials.lowest_terms(r))
+    @test length(roots(num)) == 14
+    @test_throws DimensionMismatch Polynomials.Multroot.multroot(num) # where to fix
+
+
 end
 
 @testset "As matrix elements" begin
