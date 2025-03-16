@@ -13,12 +13,6 @@ function ngcd(p::P, q::Q,
               kwargs...) where {T,X,P<:StandardBasisPolynomial{T,X},
                                 S,Y,Q<:StandardBasisPolynomial{S,Y}}
 
-    # deflate leading zeroes when present in top and bottom
-    i,j = findfirst.(!iszero, (p,q))
-    if !isnothing(i) && !isnothing(j)
-        k = min(i,j)
-        p,q = P(coeffs(p)[k+1:end]), Q(coeffs(q)[k+1:end])
-    end
 
     # easy cases
     degree(p) < 0  && return (u=q,      v=p, w=one(q),  θ=NaN, κ=NaN)
@@ -26,20 +20,11 @@ function ngcd(p::P, q::Q,
     degree(q) < 0  && return (u=one(q), v=p, w=zero(q), θ=NaN, κ=NaN)
     degree(q) == 0 && return (u=one(p), v=p, w=q,       Θ=NaN, κ=NaN)
 
+
     if (degree(q) > degree(p))
         u,w,v,Θ,κ =  ngcd(q,p,args...; kwargs...)
         return (u=u,v=v,w=w, Θ=Θ, κ=κ)
     end
-    if degree(p) > 5*(1+degree(q))
-        a,b = divrem(p,q)
-        return ngcd(q, b, args...; λ=100,  kwargs...)
-    end
-
-    # other easy cases
-    p ≈ q          && return (u=p,v=one(p),  w=one(p),  θ=NaN, κ=NaN)
-    Polynomials.assert_same_variable(p,q)
-
-
 
     R = promote_type(float(T))
     𝑷 = Polynomials.constructorof(P){R,X}
@@ -52,14 +37,30 @@ function ngcd(p::P, q::Q,
     if nz == length(qs)
         x = variable(p)
         u = x^(nz-1)
-        v,w = 𝑷(ps[nz:end]), 𝑷(qs[nz:end])
+        ps,qs = ps[nz:end], qs[nz:end]
+        v,w = 𝑷(ps), 𝑷(qs)
         return (u=u, v=v, w=w, Θ=NaN, κ=NaN)
+    elseif 1 <= nz < length(qs)
+        ps,qs = ps[nz:end], qs[nz:end]
+        p,q = P(ps), Q(qs)
     end
+
+    if degree(p) > 5*(1+degree(q))
+        a,b = divrem(p,q)
+        return ngcd(q, b, args...; λ=100,  kwargs...)
+    end
+
+    # other easy cases
+    p ≈ q          && return (u=p,v=one(p),  w=one(p),  θ=NaN, κ=NaN)
+    Polynomials.assert_same_variable(p,q)
+
+    @show ps, qs
 
     ## call ngcd
     P′ = PnPolynomial
-    p′ = P′{R,X}(ps[nz:end])
-    q′ = P′{R,X}(qs[nz:end])
+    p′ = P′{R,X}(ps)
+    q′ = P′{R,X}(qs)
+
     out = NGCD.ngcd(p′, q′, args...; kwargs...)
     ## convert to original polynomial type
     𝑷 = Polynomials.constructorof(P){R,X}
