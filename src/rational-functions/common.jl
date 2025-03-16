@@ -459,6 +459,7 @@ function roots(pq::AbstractRationalFunction{T};
                kwargs...) where {T}
     pq′ = lowest_terms(pq; method=method, kwargs...)
     den = numerator(pq′)
+    (hasnan(den) || any(isinf, den)) && throw(ArgumentError("Reduced expression has numeric issues"))
     mmethod = something(multroot_method, default_multroot_method(T))
     mr = Multroot.multroot(den; method=mmethod)
     (zs=mr.values, multiplicities = mr.multiplicities)
