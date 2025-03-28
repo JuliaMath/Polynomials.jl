@@ -1186,6 +1186,23 @@ end
     end
 end
 
+@testset "map/any/all" begin
+    # map over a polynomial and return a polynomial
+    p = Polynomial([1,2,3])
+    pp = map(float,p)
+    @test !(eltype(p) <: AbstractFloat)
+    @test eltype(pp) <: AbstractFloat
+    @test pp ≈ p
+    @test all(isinteger, p)
+    @test any(>=(2), p)
+
+    p = Polynomial([im, 2, 3])
+    q = Polynomial([0,2,3])
+    @test map(real, p) == q
+
+    v = [1,2,3]
+    @test map(sin, Polynomial(v)) == Polynomial(sin.(v))
+end
 
 @testset "As matrix elements" begin
 
