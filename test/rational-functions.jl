@@ -134,7 +134,7 @@ end
             Y += vᵢ / (s-k)^i
         end
     end
-    @test iszero(Y-X)
+    @test X ≈ Y
 
     X = 1//(s^3*(s+2))
     _, r = residues(X)
@@ -144,7 +144,7 @@ end
             Y += vᵢ / (s-k)^i
         end
     end
-    @test iszero(Y-X)
+    @test X ≈ Y
 
 end
 
