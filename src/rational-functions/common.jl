@@ -555,8 +555,9 @@ function residues(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
             F = lowest_terms(r*(s-λₖ)^mₖ)
             rs = [F(λₖ)]
             j! = 1
+            dF = F
             for j ∈ 1:mₖ-1
-                dF = lowest_terms(derivative(F))
+                dF = lowest_terms(derivative(dF))
                 pushfirst!(rs, 1/j! * dF(λₖ))
                 j! *= (j+1)
             end

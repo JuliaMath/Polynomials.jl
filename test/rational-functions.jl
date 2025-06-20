@@ -124,6 +124,28 @@ end
     end
     @test norm(numerator(lowest_terms(d - pq)), Inf) <= sqrt(eps())
 
+    ## issue #605
+    s = x//1
+    X = 1//(s^4*(s+2))
+    _, r = residues(X)
+    Y = zero(s)
+    for (k,v) ∈ r
+        for (i,vᵢ) ∈ enumerate(v)
+            Y += vᵢ / (s-k)^i
+        end
+    end
+    @test X ≈ Y
+
+    X = 1//(s^3*(s+2))
+    _, r = residues(X)
+    Y = zero(s)
+    for (k,v) ∈ r
+        for (i,vᵢ) ∈ enumerate(v)
+            Y += vᵢ / (s-k)^i
+        end
+    end
+    @test X ≈ Y
+
 end
 
 @testset "As matrix elements" begin
