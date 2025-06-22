@@ -69,7 +69,7 @@ end
 
 function __init__()
     @static if !isdefined(Base, :get_extension)
-        @require MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b" include("../ext/PolynomialsMakieCoreExt.jl")
+        @require Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a" include("../ext/PolynomialsCoreExt.jl")
     end
 end
 

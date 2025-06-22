@@ -1,3 +1,3 @@
 using FFTW
-using MakieCore
+using Makie
 using ChainRulesCore
