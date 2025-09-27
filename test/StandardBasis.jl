@@ -1094,6 +1094,15 @@ end
         @test_throws ArgumentError derivative(pR, -1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
 
+        p₀, p₁, p₂ = zero(P), one(P), variable(P)
+        @test derivative(p₂) == p₁
+        @test derivative(p₁) == p₀
+        @test integrate(p₀, 1) == p₁
+        @test integrate(p₁) == p₂
+        if P != Polynomials.MutableSparseVectorPolynomial{Polynomials.StandardBasis}
+            @test repr(derivative(p₁)) == string(P)*"(0.0)" # #615 display issue
+        end
+
         P <: FactoredPolynomial && continue
 
         @testset for i in 1:10
