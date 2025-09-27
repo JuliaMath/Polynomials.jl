@@ -145,8 +145,6 @@ derivative(p::ImmutableDensePolynomial{B,T,X,0}) where {B<:StandardBasis,T,X} = 
 derivative(p::ImmutableDensePolynomial{B,T,X,1}) where {B<:StandardBasis,T,X} = zero(p)
 
 function derivative(p::ImmutableDensePolynomial{B,T,X,N}) where {B<:StandardBasis,T,X,N}
-    N == 0 && return p
-    N == 1 && return zero(p)
     hasnan(p) && return ImmutableDensePolynomial{B,T,X,1}(zero(T)/zero(T)) # NaN{T}
     cs = ntuple(i -> i*p.coeffs[i+1], Val(N-1))
     R = eltype(cs)
