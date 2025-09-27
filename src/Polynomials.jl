@@ -63,14 +63,4 @@ include("legacy/Poly.jl")
 
 include("precompiles.jl")
 
-@static if !isdefined(Base, :get_extension)
-    using Requires
-end
-
-function __init__()
-    @static if !isdefined(Base, :get_extension)
-        @require Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a" include("../ext/PolynomialsCoreExt.jl")
-    end
-end
-
 end # module
