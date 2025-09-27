@@ -1099,6 +1099,9 @@ end
         @test derivative(p₁) == p₀
         @test integrate(p₀, 1) == p₁
         @test integrate(p₁) == p₂
+        if P != Polynomials.MutableSparseVectorPolynomial{Polynomials.StandardBasis}
+            @test repr(derivative(p₁)) == string(P)*"(0.0)" # #615 display issue
+        end
 
         P <: FactoredPolynomial && continue
 
