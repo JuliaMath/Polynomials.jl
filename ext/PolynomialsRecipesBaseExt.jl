@@ -1,4 +1,6 @@
-## XXX todo: make this an extension when minimum Julia supports that
+module PolynomialsRecipesBaseExt
+
+using Polynomials
 using RecipesBase
 
 function poly_interval(p::AbstractPolynomial)
@@ -50,4 +52,6 @@ end
     xs = a:step:b
     ys = p.(xs)
     xs, ys
+end
+
 end
