@@ -14,7 +14,6 @@ using OrderedCollections
 
 include("abstract.jl")
 include("show.jl")
-include("plots.jl")
 include("contrib.jl")
 
 # Interface for all AbstractPolynomials
@@ -55,7 +54,6 @@ include("rational-functions/common.jl")
 include("rational-functions/rational-function.jl")
 include("rational-functions/fit.jl")
 #include("rational-functions/rational-transfer-function.jl")
-include("rational-functions/plot-recipes.jl")
 
 # compat; opt-in with `using Polynomials.PolyCompat`
 include("legacy/misc.jl")
