@@ -57,7 +57,7 @@ end
 ## Plot recipe
 ## define a heuristic to work around asymptotes
 ## just sort of successful
-@recipe function f(pq::AbstractRationalFunction{T}, a=nothing, b=nothing) where {T}
+@recipe function f(pq::Polynomials.AbstractRationalFunction{T}, a=nothing, b=nothing) where {T}
 
     xlims = get(plotattributes, :xlims, (nothing, nothing))
     ylims = get(plotattributes, :ylims, (nothing, nothing))
