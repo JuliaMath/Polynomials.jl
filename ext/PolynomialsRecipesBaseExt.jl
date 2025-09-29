@@ -1,6 +1,7 @@
 module PolynomialsRecipesBaseExt
 
 using Polynomials
+using Polynomials: domain
 using RecipesBase
 
 function poly_interval(p::AbstractPolynomial)
