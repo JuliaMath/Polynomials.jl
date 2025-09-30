@@ -30,8 +30,7 @@ FactoredPolynomial(x * (x - 3) * (x - 1))
 julia> p = Polynomial([24, -50, 35, -10, 1])
 Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 
-julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
-FactoredPolynomial((x - 4.0000000000000036) * (x - 1.0000000000000002) * (x - 2.9999999999999942) * (x - 2.0000000000000018))
+julia> q = convert(FactoredPolynomial, p); # noisy form of `factor`, subject to floating point issues
 
 julia> map(x->round(x, digits=12), q) # map works over factors and leading coefficient -- not coefficients in the standard basis
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))

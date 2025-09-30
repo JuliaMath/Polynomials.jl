@@ -98,9 +98,12 @@ gcd
 derivative
 integrate
 roots
+residues
+poles
 companion
 fit
 vander
+ArnoldiFit
 ```
 
 ## Plotting
