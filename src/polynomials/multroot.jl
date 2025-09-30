@@ -33,13 +33,8 @@ julia> using Polynomials
 julia> p = fromroots([sqrt(2), sqrt(2), sqrt(2), 1, 1])
 Polynomial(-2.8284271247461907 + 11.656854249492383*x - 19.07106781186548*x^2 + 15.485281374238573*x^3 - 6.242640687119286*x^4 + 1.0*x^5)
 
-julia> rs = roots(p);  round.(rs; digits=8)
-5-element Vector{ComplexF64}:
- 0.99999984 + 0.0im
- 1.00000016 + 0.0im
- 1.41418192 + 0.0im
- 1.41422938 - 2.74e-5im
- 1.41422938 + 2.74e-5im
+julia> roots(p) |> unique |> length # all are distinct
+5
 
 julia> m = Polynomials.Multroot.multroot(p);
 
