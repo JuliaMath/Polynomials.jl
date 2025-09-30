@@ -33,20 +33,19 @@ julia> using Polynomials
 julia> p = fromroots([sqrt(2), sqrt(2), sqrt(2), 1, 1])
 Polynomial(-2.8284271247461907 + 11.656854249492383*x - 19.07106781186548*x^2 + 15.485281374238573*x^3 - 6.242640687119286*x^4 + 1.0*x^5)
 
-julia> roots(p)
+julia> roots(p) |> p -> map(x -> round(x,digits=8), p)
 5-element Vector{ComplexF64}:
-  0.999999677417768 + 0.0im
- 1.0000003225831504 + 0.0im
- 1.4141705716005881 + 0.0im
- 1.4142350577588914 - 3.722737728087131e-5im
- 1.4142350577588914 + 3.722737728087131e-5im
+ 0.99999984 + 0.0im
+ 1.00000016 + 0.0im
+ 1.41418192 + 0.0im
+ 1.41422938 - 2.74e-5im
+ 1.41422938 + 2.74e-5im
 
 julia> m = Polynomials.Multroot.multroot(p);
 
-julia> Dict(m.values .=> m.multiplicities)
-Dict{Float64, Int64} with 2 entries:
-  1.41421 => 3
-  1.0     => 2
+julia> ind = sortperm(m.values); [m.values[ind] .=> m.multiplicities[ind]]
+1-element Vector{Vector{Pair{Float64, Int64}}}:
+ [0.9999999999999998 => 2, 1.4142135623730954 => 3]
 ```
 
 ## Extended help
