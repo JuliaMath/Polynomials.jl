@@ -14,7 +14,6 @@ using OrderedCollections
 
 include("abstract.jl")
 include("show.jl")
-include("plots.jl")
 include("contrib.jl")
 
 # Interface for all AbstractPolynomials
@@ -55,22 +54,11 @@ include("rational-functions/common.jl")
 include("rational-functions/rational-function.jl")
 include("rational-functions/fit.jl")
 #include("rational-functions/rational-transfer-function.jl")
-include("rational-functions/plot-recipes.jl")
 
 # compat; opt-in with `using Polynomials.PolyCompat`
 include("legacy/misc.jl")
 include("legacy/Poly.jl")
 
 include("precompiles.jl")
-
-@static if !isdefined(Base, :get_extension)
-    using Requires
-end
-
-function __init__()
-    @static if !isdefined(Base, :get_extension)
-        @require MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b" include("../ext/PolynomialsMakieCoreExt.jl")
-    end
-end
 
 end # module

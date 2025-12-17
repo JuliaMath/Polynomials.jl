@@ -703,7 +703,7 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0 && firstindex(p) == 0
     coeffs(::AbstractLaurentUnivariatePolynomial)
 
 For a dense, univariate polynomial return the coefficients ``(a_0, a_1, \\dots, a_n)``
-as an interable. This may be a vector or tuple, and may alias the
+as an iterable. This may be a vector or tuple, and may alias the
 polynomials coefficients.
 
 For a Laurent type polynomial (e.g. `LaurentPolynomial`, `SparsePolynomial`) return the coefficients ``(a_i, a_{i+1}, \\dots, a_j)`` where
