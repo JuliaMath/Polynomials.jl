@@ -98,7 +98,7 @@ _zeros(::Type{<:MutableDensePolynomial}, z, N)  = fill(z, N)
 Base.similar(p::MutableDensePolynomial, args...) = similar(p.coeffs, args...)
 
 # iszero
-Base.iszero(p::MutableDensePolynomial) = iszero(p.coeffs)::Bool
+Base.iszero(p::MutableDensePolynomial)::Bool = all(_iscoeffzero, p.coeffs)
 
 function degree(p::MutableDensePolynomial)
     length(p.coeffs) - 1
