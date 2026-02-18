@@ -20,11 +20,11 @@ struct MutableDenseLaurentPolynomial{B,T,X} <: AbstractLaurentUnivariatePolynomi
             cs, order = cs.parent, firstindex(cs)
         end
 
-        i = findlast(!iszero, cs)
+        i = findlast(!iscoeffzero, cs)
         if i === nothing
             xs = T[]
         else
-            j = findfirst(!iszero, cs)
+            j = findfirst(!iscoeffzero, cs)
             xs = T[cs[i] for i ∈ j:i]
             order = order + j - 1
         end
@@ -101,10 +101,10 @@ _zeros(::Type{<:MutableDenseLaurentPolynomial}, z, N)  = fill(z, N)
 Base.similar(p::MutableDenseLaurentPolynomial, args...) = similar(p.coeffs, args...)
 
 # iszero
-Base.iszero(p::MutableDenseLaurentPolynomial) = iszero(p.coeffs)::Bool
+Base.iszero(p::MutableDenseLaurentPolynomial) = all(iscoeffzero, p.coeffs)::Bool
 
 function degree(p::MutableDenseLaurentPolynomial)
-    i = findlast(!iszero, p.coeffs)
+    i = findlast(!iscoeffzero, p.coeffs)
     isnothing(i) && return -1
     firstindex(p) + i - 1
 end
@@ -226,7 +226,7 @@ end
 
 ## ---
 function LinearAlgebra.lmul!(c::Scalar, p::MutableDenseLaurentPolynomial{B,T,X}) where {B,T,X}
-    if iszero(c)
+    if iscoeffzero(c)
         empty!(p.coeffs)
         p.order[] = 0
     else
@@ -236,7 +236,7 @@ function LinearAlgebra.lmul!(c::Scalar, p::MutableDenseLaurentPolynomial{B,T,X})
 end
 
 function LinearAlgebra.rmul!(p::MutableDenseLaurentPolynomial{B,T,X}, c::Scalar) where {B,T,X}
-    if iszero(c)
+    if iscoeffzero(c)
         empty!(p.coeffs)
         p.order[] = 0
     else

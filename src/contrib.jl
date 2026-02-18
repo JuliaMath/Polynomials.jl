@@ -147,9 +147,9 @@ end
 constructorof(::Type{T}) where T = Base.typename(T).wrapper
 
 ## Issue #623 with Interval package
-## Can override this method
-_iscoeffzero(x::Number) = iszero(x)
-
+## Can override these methods, say with IntervalArithmetic
+iscoeffzero(x) = iszero(x)
+iscoeffone(x)  = isone(x)
 
 # Define our own minimal Interval type, inspired by Intervals.jl.
 # We vendor it in to avoid adding the heavy Intervals.jl dependency and
@@ -209,7 +209,7 @@ end
 
 Base.isopen(I::Interval{T,L,R}) where {T,L,R} = (L != Closed && R != Closed)
 
-function _iscoeffzero(I::Interval)
+function iscoeffzero(I::Interval)
     l,r = extrema(I)
     iszero(l) && iszero(r)
 end
