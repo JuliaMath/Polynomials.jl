@@ -1,28 +1,28 @@
 name = "Polynomials"
 uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 license = "MIT"
+version = "4.1.1"
 author = "JuliaMath"
-version = "4.0.19"
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
-RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
-Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 Setfield = "efcf1570-3423-57d1-acb7-fd33fddbac46"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [weakdeps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
-MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
+RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 
 [extensions]
 PolynomialsChainRulesCoreExt = "ChainRulesCore"
 PolynomialsFFTWExt = "FFTW"
-PolynomialsMakieCoreExt = "MakieCore"
+PolynomialsMakieExt = "Makie"
 PolynomialsMutableArithmeticsExt = "MutableArithmetics"
+PolynomialsRecipesBaseExt = "RecipesBase"
 
 [compat]
 Aqua = "0.8"
@@ -31,17 +31,16 @@ ChainRulesTestUtils = "1"
 DualNumbers = "0.6"
 FFTW = "1"
 LinearAlgebra = "<0.0.1, 1"
-MakieCore = "0.6,0.7, 0.8, 0.9"
+Makie = "0.24"
 MutableArithmetics = "1"
 OffsetArrays = "1"
 OrderedCollections = "1.6.3"
 RecipesBase = "0.7, 0.8, 1"
-Requires = "1.1"
 Setfield = "1"
 SparseArrays = "<0.0.1, 1"
 SpecialFunctions = "1,2"
 Test = "<0.0.1, 1"
-julia = "1.6"
+julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
@@ -50,12 +49,13 @@ ChainRulesTestUtils = "cdddcdb0-9152-4a09-a978-84456f9df70a"
 DualNumbers = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-MakieCore = "20f20a25-4f0e-4fdf-b5d1-57303727442b"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 MutableArithmetics = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
 OffsetArrays = "6fe1bfb0-de20-5000-8ca7-80f57d26f881"
+RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "ChainRulesCore", "DualNumbers", "FFTW", "LinearAlgebra", "MutableArithmetics", "SparseArrays", "OffsetArrays", "SpecialFunctions", "Test"]
+test = ["Aqua", "ChainRulesCore", "DualNumbers", "FFTW", "LinearAlgebra", "MutableArithmetics", "SparseArrays", "OffsetArrays", "RecipesBase", "SpecialFunctions", "Test"]

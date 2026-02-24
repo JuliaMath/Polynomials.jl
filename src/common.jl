@@ -611,7 +611,7 @@ Is this a ``0`` polynomial.
 For most types, the ``0`` polynomial is one with no coefficients (coefficient vector `T[]`),
 though some types have the possibility of trailing zeros. The degree of a zero polynomial is conventionally ``-1``, though this is not the convention for Laurent polynomials.
 """
-Base.iszero(p::AbstractPolynomial) = all(iszero, values(p))::Bool
+Base.iszero(p::AbstractPolynomial) = all(iscoeffzero, values(p))::Bool
 
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258
@@ -646,7 +646,6 @@ function Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial}
     X = indeterminate(p)
     return ⟒(P){R,X}(xs)
 end
-
 
 """
     isreal(p::AbstractPolynomial)
@@ -704,7 +703,7 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0 && firstindex(p) == 0
     coeffs(::AbstractLaurentUnivariatePolynomial)
 
 For a dense, univariate polynomial return the coefficients ``(a_0, a_1, \\dots, a_n)``
-as an interable. This may be a vector or tuple, and may alias the
+as an iterable. This may be a vector or tuple, and may alias the
 polynomials coefficients.
 
 For a Laurent type polynomial (e.g. `LaurentPolynomial`, `SparsePolynomial`) return the coefficients ``(a_i, a_{i+1}, \\dots, a_j)`` where

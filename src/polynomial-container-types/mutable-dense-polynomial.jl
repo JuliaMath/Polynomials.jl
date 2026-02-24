@@ -9,7 +9,7 @@ struct MutableDensePolynomial{B,T,X} <: AbstractDenseUnivariatePolynomial{B,T,X}
             @warn "ignoring the axis offset of the coefficient vector"
             cs = parent(cs)
         end
-        i = findlast(!iszero, cs)
+        i = findlast(!iscoeffzero, cs)
         if i == nothing
             xs = T[]
         else
@@ -87,7 +87,7 @@ Base.pairs(p::MutableDensePolynomial) =
 
 function coeffs(p::MutableDensePolynomial)
     firstindex(p) < 0 && throw(ArgumentError("Polynomial has negative index terms. Use `pairs` instead`"))
-    iszero(firstindex(p)) && return p.coeffs
+    iscoeffzero(firstindex(p)) && return p.coeffs
     return [p[i] for i ∈ 0:lastindex(p)]
 end
 
@@ -98,7 +98,7 @@ _zeros(::Type{<:MutableDensePolynomial}, z, N)  = fill(z, N)
 Base.similar(p::MutableDensePolynomial, args...) = similar(p.coeffs, args...)
 
 # iszero
-Base.iszero(p::MutableDensePolynomial) = iszero(p.coeffs)::Bool
+Base.iszero(p::MutableDensePolynomial)::Bool = all(iscoeffzero, p.coeffs)
 
 function degree(p::MutableDensePolynomial)
     length(p.coeffs) - 1
@@ -108,8 +108,8 @@ basis(::Type{MutableDensePolynomial{B,T,X}},i::Int) where {B,T,X} = MutableDense
 
 function trim_trailing_zeros!!(cs::Vector{T}) where {T}
     isempty(cs) && return cs
-    !iszero(last(cs)) && return cs
-    i = findlast(!iszero, cs)
+    !iscoeffzero(last(cs)) && return cs
+    i = findlast(!iscoeffzero, cs)
     if isnothing(i)
         empty!(cs)
     else

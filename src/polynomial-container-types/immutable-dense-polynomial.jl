@@ -20,7 +20,7 @@ struct ImmutableDensePolynomial{B,T,X,N} <: AbstractDenseUnivariatePolynomial{B,
     # need zero(T) defined if padding needed
     function ImmutableDensePolynomial{B,T,X,N}(xs::Tuple{Vararg}) where {B,T,X,N}
         M = length(xs)
-        N′ = findlast(!iszero, xs)
+        N′ = findlast(!iscoeffzero, xs)
         N < N′ && throw(ArgumentError("Too many coefficients for type"))
         if  N == N′ == M
             cs = T.(xs)
@@ -150,8 +150,8 @@ Base.similar(p::ImmutableDensePolynomial, args...) = p.coeffs
 # not type stable, as N is value dependent
 function trim_trailing_zeros!!(cs::Tuple)
     isempty(cs) && return cs
-    !iszero(last(cs)) && return cs
-    i = findlast(!iszero, cs)
+    !iscoeffzero(last(cs)) && return cs
+    i = findlast(!iscoeffzero, cs)
     i == nothing && return ()
     xs = ntuple(Base.Fix1(getindex,cs), i)
     xs
@@ -261,7 +261,7 @@ end
 ## ---
 degree(p::ImmutableDensePolynomial{B,T,X,0}) where {B,T,X} = -1
 function degree(p::ImmutableDensePolynomial{B,T,X,N}) where {B,T,X,N}
-    i = findlast(!iszero, p.coeffs)
+    i = findlast(!iscoeffzero, p.coeffs)
     isnothing(i) && return -1
     return i - 1
 end

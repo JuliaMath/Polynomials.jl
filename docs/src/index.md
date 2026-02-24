@@ -575,8 +575,7 @@ internally when converting to the `FactoredPolynomial` type:
 julia> p = Polynomial([24, -50, 35, -10, 1])
 Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 
-julia> q = convert(FactoredPolynomial, p) # noisy form of `factor`:
-FactoredPolynomial((x - 4.0000000000000036) * (x - 1.0000000000000002) * (x - 2.9999999999999942) * (x - 2.0000000000000018))
+julia> q = convert(FactoredPolynomial, p);  # noisy form of `factor` subject to floating point vagaries
 
 julia> map(x -> round(x, digits=10), q)
 FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))

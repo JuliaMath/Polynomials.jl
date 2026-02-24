@@ -124,7 +124,6 @@ end
     end
     @test norm(numerator(lowest_terms(d - pq)), Inf) <= sqrt(eps())
 
-
     ## issue #602
     s = Polynomial([0,1],:s)
     r = (15s^14 + 1e-16s^15)//(s)
@@ -137,7 +136,27 @@ end
     @test length(roots(num)) == 14
     @test_throws DimensionMismatch Polynomials.Multroot.multroot(num) # where to fix
 
+    ## issue #605
+    s = x//1
+    X = 1//(s^4*(s+2))
+    _, r = residues(X)
+    Y = zero(s)
+    for (k,v) ∈ r
+        for (i,vᵢ) ∈ enumerate(v)
+            Y += vᵢ / (s-k)^i
+        end
+    end
+    @test X ≈ Y
 
+    X = 1//(s^3*(s+2))
+    _, r = residues(X)
+    Y = zero(s)
+    for (k,v) ∈ r
+        for (i,vᵢ) ∈ enumerate(v)
+            Y += vᵢ / (s-k)^i
+        end
+    end
+    @test X ≈ Y
 end
 
 @testset "As matrix elements" begin

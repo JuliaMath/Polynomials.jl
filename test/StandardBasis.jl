@@ -1094,6 +1094,15 @@ end
         @test_throws ArgumentError derivative(pR, -1)
         @test integrate(P([1,1,0,0]), 0, 2) == 4.0
 
+        p₀, p₁, p₂ = zero(P), one(P), variable(P)
+        @test derivative(p₂) == p₁
+        @test derivative(p₁) == p₀
+        @test integrate(p₀, 1) == p₁
+        @test integrate(p₁) == p₂
+        if P != Polynomials.MutableSparseVectorPolynomial{Polynomials.StandardBasis}
+            @test repr(derivative(p₁)) == string(P)*"(0.0)" # #615 display issue
+        end
+
         P <: FactoredPolynomial && continue
 
         @testset for i in 1:10
@@ -1186,6 +1195,23 @@ end
     end
 end
 
+@testset "map/any/all" begin
+    # map over a polynomial and return a polynomial
+    p = Polynomial([1,2,3])
+    pp = map(float,p)
+    @test !(eltype(p) <: AbstractFloat)
+    @test eltype(pp) <: AbstractFloat
+    @test pp ≈ p
+    @test all(isinteger, p)
+    @test any(>=(2), p)
+
+    p = Polynomial([im, 2, 3])
+    q = Polynomial([0,2,3])
+    @test map(real, p) == q
+
+    v = [1,2,3]
+    @test map(sin, Polynomial(v)) == Polynomial(sin.(v))
+end
 
 @testset "As matrix elements" begin
 
@@ -1676,22 +1702,6 @@ end
     # negative indices
     @test printpoly_to_string(LaurentPolynomial([-1:3;], -2)) == "-x⁻² + 1 + 2*x + 3*x²"
     @test printpoly_to_string(SparsePolynomial(Dict(.=>(-2:2, -1:3)))) == "-x^-2 + 1 + 2*x + 3*x^2"
-end
-
-@testset "Plotting" begin
-    p = fromroots([-1, 1]) # x^2 - 1
-    rec = apply_recipe(Dict{Symbol,Any}(), p)
-    @test rec[1].plotattributes[:label] == "-1 + x^2"
-    @test rec[1].plotattributes[:xlims] == (-1.4, 1.4)
-
-
-    rec = apply_recipe(Dict{Symbol,Any}(), p, -1, 1)
-    @test rec[1].plotattributes[:label] == "-1 + x^2"
-
-    p = ChebyshevT([1,1,1])
-    rec = apply_recipe(Dict{Symbol,Any}(), p)
-    @test !isnothing(match(r"T_0", rec[1].plotattributes[:label]))
-    @test rec[1].plotattributes[:xlims] == (-1.0, 1.0) # uses domain(p)
 end
 
 @testset "Promotion"  begin
