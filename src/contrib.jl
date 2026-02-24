@@ -146,6 +146,10 @@ end
 # https://discourse.julialang.org/t/how-do-a-i-get-a-type-stripped-of-parameters/73465/11
 constructorof(::Type{T}) where T = Base.typename(T).wrapper
 
+## Issue #623 with Interval package
+## Can override these methods, say with IntervalArithmetic
+iscoeffzero(x) = iszero(x)
+iscoeffone(x)  = isone(x)
 
 # Define our own minimal Interval type, inspired by Intervals.jl.
 # We vendor it in to avoid adding the heavy Intervals.jl dependency and
@@ -204,3 +208,8 @@ function Base.in(x, I::Interval{T,L,R}) where {T, L, R}
 end
 
 Base.isopen(I::Interval{T,L,R}) where {T,L,R} = (L != Closed && R != Closed)
+
+function iscoeffzero(I::Interval)
+    l,r = extrema(I)
+    iszero(l) && iszero(r)
+end

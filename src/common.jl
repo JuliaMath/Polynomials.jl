@@ -611,7 +611,7 @@ Is this a ``0`` polynomial.
 For most types, the ``0`` polynomial is one with no coefficients (coefficient vector `T[]`),
 though some types have the possibility of trailing zeros. The degree of a zero polynomial is conventionally ``-1``, though this is not the convention for Laurent polynomials.
 """
-Base.iszero(p::AbstractPolynomial) = all(iszero, values(p))::Bool
+Base.iszero(p::AbstractPolynomial) = all(iscoeffzero, values(p))::Bool
 
 
 # See discussions in https://github.com/JuliaMath/Polynomials.jl/issues/258

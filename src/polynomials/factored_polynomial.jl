@@ -223,7 +223,7 @@ end
 ## ----
 domain(::Type{<:FactoredPolynomial}) = Interval{Open,Open}(-Inf, Inf)
 mapdomain(::Type{<:FactoredPolynomial}, x::AbstractArray) = x
-Base.iszero(p::FactoredPolynomial) = iszero(p.c)
+Base.iszero(p::FactoredPolynomial) = iscoeffzero(p.c)
 
 Base.zero(::Type{FactoredPolynomial{T,X}}) where {T, X} = FactoredPolynomial{T,X}(Dict{T,Int}(),     zero(T))
 Base.one(::Type{FactoredPolynomial{T,X}}) where {T, X}  = FactoredPolynomial{T,X}(Dict{T,Int}(),     one(T))
