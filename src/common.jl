@@ -647,7 +647,6 @@ function Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial}
     return ⟒(P){R,X}(xs)
 end
 
-
 """
     isreal(p::AbstractPolynomial)
 
