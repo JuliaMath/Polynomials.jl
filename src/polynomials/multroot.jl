@@ -104,12 +104,23 @@ function multroot(p::StandardBasisPolynomial{T}; verbose=false,
         return (values=zeros(T,1), multiplicities=[nz-1], κ=NaN, ϵ=NaN)
     end
 
+    # deflate leading zeros?
+    i = findfirst(!Polynomials.iscoeffzero,cs)
+    if !isnothing(i) && i > 1
+        p = Polynomial(cs[i:end])
+    end
+
     # Basic algorithm is two steps
     z, l = pejorative_manifold(p; kwargs...)
     z̃ = pejorative_root(p, z, l)
     κ, ϵ = stats(p, z̃, l)
 
     verbose && show_stats(κ, ϵ)
+    if i > 1
+        push!(z̃, zero(T))
+        push!(l, i-1)
+    end
+
 
     (values = z̃, multiplicities = l, κ = κ, ϵ = ϵ)
 

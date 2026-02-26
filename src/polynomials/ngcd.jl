@@ -54,8 +54,6 @@ function ngcd(p::P, q::Q,
     p ≈ q          && return (u=p,v=one(p),  w=one(p),  θ=NaN, κ=NaN)
     Polynomials.assert_same_variable(p,q)
 
-    @show ps, qs
-
     ## call ngcd
     P′ = PnPolynomial
     p′ = P′{R,X}(ps)

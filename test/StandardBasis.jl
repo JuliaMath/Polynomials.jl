@@ -1046,6 +1046,7 @@ end
     multroot_method = :direct # fails if direct
     @test_throws ArgumentError poles(r; multroot_method)
     @test_throws ArgumentError roots(r; multroot_method)
+
 end
 
 @testset "critical points" begin
