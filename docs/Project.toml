@@ -8,4 +8,3 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
 Documenter = "1"
-GR_jll = "0.5, 0.6, 0.7, 0.8, 0.9"
