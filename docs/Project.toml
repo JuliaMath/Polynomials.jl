@@ -8,4 +8,3 @@ SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 
 [compat]
 Documenter = "1"
-GR_jll = "< 0.58"
