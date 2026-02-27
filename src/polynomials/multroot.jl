@@ -105,7 +105,7 @@ function multroot(p::StandardBasisPolynomial{T}; verbose=false,
         # degenerate case, all zeros
         throw(ArgumentError("Zero polynomial has no roots defined"))
     elseif i == length(cs)
-        return (values=zeros(T,1), multiplicities=[nz-1], κ=NaN, ϵ=NaN)
+        return (values=zeros(T,1), multiplicities=[i-1], κ=NaN, ϵ=NaN)
     elseif i > 1
         p = Polynomial(cs[i:end])
     end
