@@ -4,6 +4,9 @@ using JET
 @testset "Aqua" begin
     Aqua.test_all(Polynomials)
 end
-@testset "JET" begin
-    JET.test_package(Polynomials, ignored_modules=(AnyFrameModule(LinearAlgebra), AnyFrameModule(Base)))
+
+if VERSION ≥ v"1.12.0"
+    @testset "JET" begin
+        JET.test_package(Polynomials, ignored_modules=(AnyFrameModule(LinearAlgebra), AnyFrameModule(Base)))
+    end
 end
