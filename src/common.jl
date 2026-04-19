@@ -68,14 +68,16 @@ julia> fromroots(r)
 Polynomial(6 - 5*x + x^2)
 ```
 """
-function fromroots(P::Type{<:AbstractPolynomial}, rs; var::SymbolLike = :x)
+function fromroots(P::Type{<:AbstractPolynomial}, rs::AbstractVector, var::SymbolLike = Var(:x))
     x = variable(P, var)
     p = prod(x-r for r ∈ lejaorder(rs); init=one(x))
     p = truncate!!(p)
     p
 end
-fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) =
-    fromroots(Polynomial, r, var = var)
+fromroots(rs::AbstractVector{T}, var::SymbolLike) where {T <:Number} = fromroots(Polynomial{T}, rs, Var(var))
+# var as keyword
+fromroots(P::Type{<:AbstractPolynomial}, rs; var::SymbolLike = :x) = fromroots(P, rs, Var(var))
+fromroots(r::AbstractVector{<:Number}; var::SymbolLike = :x) = fromroots(Polynomial, r, Var(var))
 
 """
     fromroots(::AbstractMatrix{<:Number}; var=:x)

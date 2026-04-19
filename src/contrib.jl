@@ -145,6 +145,7 @@ end
 
 # https://discourse.julialang.org/t/how-do-a-i-get-a-type-stripped-of-parameters/73465/11
 constructorof(::Type{T}) where T = Base.typename(T).wrapper
+constructorof(::Type{Union{}}) = error("No type information")
 
 ## Issue #623 with Interval package
 ## Can override these methods, say with IntervalArithmetic
