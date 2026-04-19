@@ -69,6 +69,7 @@ end
 constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B <: AbstractBasis} = MutableSparsePolynomial{B}
 @poly_register MutableSparsePolynomial
 
+Base.delete!(q::MutableSparsePolynomial,k::Int) = delete!(q.coeffs, k)
 function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B,T,X}}
     xs = Dict(k => fn(v, args...) for (k,v) ∈ pairs(p.coeffs))
     xs = chop_exact_zeros!(xs)
@@ -78,8 +79,8 @@ end
 
 function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B,T,X},S,Q<:MutableSparsePolynomial{B,S,X}}
     for (k,v) ∈ pairs(p.coeffs)
-        val = fn(val, args...)
-        iszero(val) ? deleteat!(q,k) : (q[k] = val)
+        val = fn(v, args...)
+        iszero(val) ? delete!(q,k) : (q[k] = val)
     end
     nothing
 end

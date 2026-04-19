@@ -321,7 +321,8 @@ function _gcd_noda_sasaki(a::Vector{T}, b::Vector{S};
     # determine the degree of GCD as the nullity of the Sylvester matrix
     # this computation can be replaced by simply setting nᵣ = 1, in which case the Sylvester matrix is not formed
 
-    nᵣ = na1 + nb1 - 2 - rank([NGCD.convmtx(a1,nb1-1) NGCD.convmtx(b1,na1-1)], atol = tol) # julia 1.1
+    u::Matrix{R},v::Matrix{R} = NGCD.convmtx(a1,nb1-1), NGCD.convmtx(b1,na1-1)
+    nᵣ = na1 + nb1 - 2 - rank([u v]; atol = tol) # julia 1.1
     nᵣ == 0 && (return [one(R)])
 
     sc = one(R)
@@ -408,7 +409,7 @@ end
 
 ## --------------------------------------------------
 ## polynomial-roots
-function fromroots(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, r::AbstractVector{T}; var::SymbolLike = Var(:x)) where {T <: Number}
+function fromroots(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, r::AbstractVector{T}, var::SymbolLike = Var(:x)) where {T <: Number}
     n = length(r)
     r = lejaorder(r)
     c = zeros(T, n + 1)
@@ -468,8 +469,8 @@ function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractUni
 
     n = degree(p)
 
-    C₀ = zeros(T, n*m, n*m)
-    C₁ = zeros(T, n*m, n*m)
+    C₀ = zeros(T, n*m, n*m)::Matrix{T}
+    C₁ = zeros(T, n*m, n*m)::Matrix{T}
 
 
     Δ = 1:m
@@ -703,7 +704,7 @@ Polynomials.norm(q-p, Inf) # 2.2168933355715126e-12 # promotes `q` to `Polynomia
 To manipulate the fitted polynomial, conversion is necessary. Conversion can lead to wildly divergent polynomials when n is large.
 
 """
-function polyfitA(x, y, n=length(x)-1; var=:x)
+function polyfitA(x, y, n::Int=length(x)-1; var=Var(:x))
     m = length(x)
     T = eltype(y)
     Q = ones(T, m, n+1)
@@ -724,7 +725,7 @@ function polyfitA(x, y, n=length(x)-1; var=:x)
         Q[:,k+1] .= q/H[k+1,k]
     end
     d = Q \ y
-    ArnoldiFit{eltype(d),typeof(H),Symbol(var)}(d, H)
+    ArnoldiFit{eltype(d),Symbol(var)}(d, H)
 end
 
 # from Vₓ = QR, we get Vₛ = WR and f = Vₛa = WRa = W(d) stored above
@@ -757,13 +758,17 @@ not defined. Though these fitted polynomials may be converted to other types,
 for larger degrees this will prove unstable.
 
 """
-struct ArnoldiFit{T, M<:AbstractArray{T,2}, X}  <: AbstractPolynomial{T,X}
+struct ArnoldiFit{T, X}  <: AbstractPolynomial{T,X}
     coeffs::Vector{T}
-    H::M
+    H::AbstractMatrix{T}
 end
 export ArnoldiFit
 @register ArnoldiFit
 domain(::Type{<:ArnoldiFit}) = Interval{Open,Open}(-Inf, Inf)
+
+function ArnoldiFit{T,X}(coeffs::Vector{T}) where {T,X}
+    throw(ArgumentError("use `fit` to construct"))
+end
 
 Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "ArnoldiFit of degree $(length(p.coeffs)-1)")
 
@@ -771,7 +776,7 @@ evalpoly(x, p::ArnoldiFit) = polyvalA(p.coeffs, p.H, x)
 
 fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T} = polyfitA(x, y, deg; var=var)
 
-Base.convert(::Type{P}, p::ArnoldiFit{T,M,X}) where {P <: AbstractPolynomial,T,M,X} = p(variable(P,indeterminate(p)))
+Base.convert(::Type{P}, p::ArnoldiFit{T,X}) where {P <: AbstractPolynomial,T,X} = p(variable(P,indeterminate(p)))
 
 
 

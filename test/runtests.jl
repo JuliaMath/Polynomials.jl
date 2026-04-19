@@ -11,6 +11,7 @@ using OffsetArrays
 @testset "ChebyshevT" begin include("ChebyshevT.jl") end
 @testset "Rational functions" begin include("rational-functions.jl") end
 @testset "Poly, Pade (compatibility)" begin include("Poly.jl") end
+
 if VERSION >= v"1.9.0-"
     @testset "Aqua" begin include("aqua.jl") end
     @testset "MutableArithmetics" begin include("mutable-arithmetics.jl") end
