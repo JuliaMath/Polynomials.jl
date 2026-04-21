@@ -158,7 +158,7 @@ function initial_guess(xs::Vector{T}, ys::Vector{S}, n, m) where {T, S}
     # yᵢ + yᵢ * r(xᵢ) = p(xᵢ)
     # yᵢ = p(xᵢ) - r(xᵢ) * yᵢ
     k = n+1+m
-    A = zeros(T, k, k)
+    A = zeros(T, k, k)::Matrix{T}
     A[:,1] .= one(T)
     xs′ = xs[1:k]
     xs′′ = copy(xs′)

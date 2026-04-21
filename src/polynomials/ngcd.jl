@@ -502,7 +502,7 @@ end
 
 # extend QR to next size
 # Q gets a 1 in nc,nc, 0s should be elsewhere
-function extend_QR!(Q, R, nr, nc, A0)
+function extend_QR!(Q::AbstractMatrix{T}, R::AbstractMatrix{T}, nr, nc, A0) where {T}
 
     #old Q is m x m, old R is n x n; we add to these
     n = nc - 2

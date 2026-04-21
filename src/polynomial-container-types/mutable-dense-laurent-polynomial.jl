@@ -225,7 +225,10 @@ end
 
 
 ## ---
-function LinearAlgebra.lmul!(c::Scalar, p::MutableDenseLaurentPolynomial{B,T,X}) where {B,T,X}
+LinearAlgebra.lmul!(c::Number, p::MutableDenseLaurentPolynomial{B,T,X}) where {B,T,X} =
+    lmul!(T(c), p)
+
+function LinearAlgebra.lmul!(c::T, p::MutableDenseLaurentPolynomial{B,T,X}) where {B,T,X}
     if iscoeffzero(c)
         empty!(p.coeffs)
         p.order[] = 0
@@ -235,7 +238,10 @@ function LinearAlgebra.lmul!(c::Scalar, p::MutableDenseLaurentPolynomial{B,T,X})
     p
 end
 
-function LinearAlgebra.rmul!(p::MutableDenseLaurentPolynomial{B,T,X}, c::Scalar) where {B,T,X}
+LinearAlgebra.rmul!(p::MutableDenseLaurentPolynomial{B,T,X}, c::Number) where {B,T,X} =
+    rmul!(p, T(c))
+
+function LinearAlgebra.rmul!(p::MutableDenseLaurentPolynomial{B,T,X}, c::T) where {B,T,X}
     if iscoeffzero(c)
         empty!(p.coeffs)
         p.order[] = 0
