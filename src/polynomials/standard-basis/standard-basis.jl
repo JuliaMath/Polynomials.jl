@@ -742,6 +742,7 @@ function polyvalA(d, H::AbstractMatrix{S}, s::T) where {T, S}
     sum(W[i]*d[i] for i in eachindex(d))
 end
 
+#=
 # Finds a + bim following formula 5.3 of paper, which solves
 # Re(Vₙ) [a₀ ⋯ aₙ] - Im(Vₙ[2:n]) * [b₁ ⋯ bₙ] = [y₁ ⋯ yₘ]
 function polyfit_fourier_extension(x, y, n::Int=length(x) - 1; var=Var(:x))
@@ -752,7 +753,6 @@ function polyfit_fourier_extension(x, y, n::Int=length(x) - 1; var=Var(:x))
 
     q = zeros(T, m)
 
-    # we have Vₓ = QR, y = Vₓa = Q(Ra) = Qd, so d = Q \ y
     @inbounds for k = 1:n
         q .= x .* Q[:,k]
         for j in 1:k
@@ -763,11 +763,12 @@ function polyfit_fourier_extension(x, y, n::Int=length(x) - 1; var=Var(:x))
         H[k+1,k] = norm(q)/sqrt(m)
         Q[:,k+1] .= q/H[k+1,k]
     end
+
     d = [real(Q) imag(view(Q, :, 2:n+1))] \ y
     d = d[1:(n+1)] - vcat(0, view(d, (n+2):(2n+1)))
     ArnoldiFit{eltype(d),Symbol(var)}(d, H)
 end
-
+=#
 
 
 # Polynomial Interface
