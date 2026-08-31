@@ -490,7 +490,7 @@ savefig("polyfit.svg"); nothing # hide
 
 ### Arnoldi fit
 
-The use of a Vandermonde matrix to fit a polynomial to data is exponentially ill-conditioned for larger values of ``n``. The Arnoldi orthogonalization fixes this problem. The `ArnoldiFit` polynomial type can avoid this issue when evaluation of the polynomial---not other manipulations---is of interest. Cf. ArnoldiFit_BrubeckNakatsukasaTefethen, @ArnoldiFit_ZhangSuLi and the [ArnoldiVandermonde](https://github.com/complexvariables/ArnoldiVandermonde.jl) package.
+The use of a Vandermonde matrix to fit a polynomial to data is exponentially ill-conditioned for larger values of ``n``. The Arnoldi orthogonalization fixes this problem. The `ArnoldiFit` polynomial type can avoid this issue when evaluation of the polynomial---not other manipulations---is of interest. Cf. [ArnoldiFit_BrubeckNakatsukasaTefethen](@cite), [ArnoldiFit_ZhangSuLi](@cite) and the [ArnoldiVandermonde](https://github.com/complexvariables/ArnoldiVandermonde.jl) package.
 
 
 ```jldoctest

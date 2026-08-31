@@ -541,7 +541,7 @@ end
 
 ## as noted at https://github.com/jishnub/PolyFit.jl, using method from SpecialMatrices is faster
 ## https://github.com/JuliaMatrices/SpecialMatrices.jl/blob/master/src/vandermonde.jl
-## This is Algorithm 2 of @narep108
+## This is Algorithm 2 of [narep108](@cite)
 ## Solve V(αs)⋅x = y where V is (1+n) × (1+n) Vandermonde matrix (Vᵀ in the paper)
 function solve_vander!(ys, αs)
     n = length(ys) - 1
@@ -815,7 +815,7 @@ Base.convert(::Type{P}, p::ArnoldiFit{T,X}) where {P <: AbstractPolynomial,T,X} 
     compensated_horner(ps, x)
 
 Evaluate `p(x)` using a compensation scheme of
-S. Graillat, Ph. Langlois, N. Louve  [Compensated Horner Scheme](https://cadxfem.org/cao/Compensation-horner.pdf) @langlois_et_al:DSP:2006:442.
+S. Graillat, Ph. Langlois, N. Louve  [Compensated Horner Scheme](https://cadxfem.org/cao/Compensation-horner.pdf) [langlois_et_al:DSP:2006:442](@cite).
 Either a `Polynomial` `p` or its coefficients may be passed in.
 
 The Horner scheme has relative error given by

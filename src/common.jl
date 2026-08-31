@@ -17,7 +17,7 @@ export fromroots,
        isintegral,
        ismonic
 
-function lejaorder!(roots) # see https://doi.org/10.1023/A:1025555803588
+function lejaorder!(roots) # see [lejaorder](cite); https://doi.org/10.1023/A:1025555803588
     if length(roots) <= 2
         return roots
     end
