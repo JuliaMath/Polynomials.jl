@@ -13,7 +13,7 @@ import ..Polynomials: PnPolynomial, StandardBasisPolynomial, trim_trailing_zeros
     multroot(p; verbose=false, method=:direct, kwargs...)
 
 Use `multroot` algorithm of
-[Zeng](https://www.ams.org/journals/mcom/2005-74-250/S0025-5718-04-01692-8/S0025-5718-04-01692-8.pdf)
+[Zeng](https://www.ams.org/journals/mcom/2005-74-250/S0025-5718-04-01692-8/S0025-5718-04-01692-8.pdf) @10.1145/860854.860907
 to identify roots of polynomials with suspected multiplicities over
 `Float64` values, typically.
 

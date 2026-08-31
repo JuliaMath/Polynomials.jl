@@ -81,7 +81,7 @@ square_free(p) = ngcd(p, derivative(p)).v
 """
     rank_reveal(A; atol, rtol)
 
-This is the high rank-revealing algorithm of [Lee, Li, and Zeng](http://archive.ymsc.tsinghua.edu.cn/pacm_download/285/8743-RankRev_paper.pdf) DOI: DOI 10.1007/s11075-017-0328-7.
+This is the high rank-revealing algorithm of [Lee, Li, and Zeng](http://archive.ymsc.tsinghua.edu.cn/pacm_download/285/8743-RankRev_paper.pdf) @LeeLiZeng, DOI 10.1007/s11075-017-0328-7.
 """
 function rank_reveal(A::AbstractMatrix{T}; kwargs...) where {T <: AbstractFloat}
     m, n = size(A)
@@ -227,8 +227,8 @@ julia> degree(out.u)
 
 Reference:
 
-[1] The Numerical Greatest Common Divisor of Univariate Polynomials
-by Zhonggang Zeng;
+@ZengNGCD
+The Numerical Greatest Common Divisor of Univariate Polynomials by Zhonggang Zeng;
 [url](http://homepages.neiu.edu/~zzeng/uvgcd.pdf);
 [doi](https://doi.org/10.1090/conm/556/11014)
 

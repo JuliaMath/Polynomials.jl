@@ -1,3 +1,19 @@
+```@raw html
+---
+layout: home
+hero:
+  name: Polynomials.jl
+  text: univariate polynomials
+  tagline: Univariate polynomials in  Julia
+  actions:
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/JuliaMath/Polynomials.jl
+  image:
+    src: /logo.png
+    alt: Polynomials.jl
+```
+
 # Polynomials.jl
 
 [Polynomials.jl](https://github.com/JuliaMath/Polynomials.jl)
@@ -470,6 +486,29 @@ savefig("polyfit.svg"); nothing # hide
 ```
 
 ![](polyfit.svg)
+
+
+### Arnoldi fit
+
+The use of a Vandermonde matrix to fit a polynomial to data is exponentially ill-conditioned for larger values of ``n``. The Arnoldi orthogonalization fixes this problem. The `ArnoldiFit` polynomial type can avoid this issue when evaluation of the polynomial---not other manipulations---is of interest. Cf. ArnoldiFit_BrubeckNakatsukasaTefethen, @ArnoldiFit_ZhangSuLi and the [ArnoldiVandermonde](https://github.com/complexvariables/ArnoldiVandermonde.jl) package.
+
+
+```jldoctest
+julia> f(x) = 1/(1 + 25x^2)
+f (generic function with 1 method)
+
+julia> N = 80; xs = [cos(j*pi/N) for j in N:-1:0];
+
+julia> p = fit(Polynomial, xs, f.(xs));
+
+julia> q = fit(ArnoldiFit, xs, f.(xs));
+
+julia> maximum(abs, p(x) - f(x) for x ∈ range(-1, stop=1, length=500))
+3.304586010148457e16
+
+julia> maximum(abs, q(x) - f(x) for x ∈ range(-1, stop=1, length=500))
+1.1939520822012994e-7
+```
 
 ## Other bases
 
