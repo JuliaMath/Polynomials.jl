@@ -617,7 +617,7 @@ Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 julia> q = convert(FactoredPolynomial, p);  # noisy form of `factor` subject to floating point vagaries
 
 julia> map(x -> round(x, digits=10), q)
-FactoredPolynomial((x - 1.0) * (x - 2.0) * (x - 3.0) * (x - 4.0))
+FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
 ```
 
 ## The element type
@@ -830,13 +830,13 @@ julia> P = FactoredPolynomial
 FactoredPolynomial
 
 julia> p,q = fromroots(P, [1,2,3,4]), fromroots(P, [2,2,3,5])
-(FactoredPolynomial((x - 1) * (x - 2) * (x - 3) * (x - 4)), FactoredPolynomial((x - 2)² * (x - 3) * (x - 5)))
+(FactoredPolynomial((x - 4) * (x - 1) * (x - 3) * (x - 2)), FactoredPolynomial((x - 5) * (x - 2)² * (x - 3)))
 
 julia> pq = p // q
-((x - 1) * (x - 2) * (x - 3) * (x - 4)) // ((x - 2)² * (x - 3) * (x - 5))
+((x - 4) * (x - 1) * (x - 3) * (x - 2)) // ((x - 5) * (x - 2)² * (x - 3))
 
 julia> lowest_terms(pq)
-((x - 1.0) * (x - 4.0)) // ((x - 2.0) * (x - 5.0))
+((x - 4.0) * (x - 1.0)) // ((x - 5.0) * (x - 2.0))
 
 julia> d,r = residues(pq); r
 Dict{Float64, Vector{Float64}} with 2 entries:
@@ -852,7 +852,7 @@ julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
        end
 
 julia> d
-((x - 1.0000000000000002) * (x - 4.0)) // ((x - 2.0) * (x - 5.0))
+((x - 1.0000000000000002) * (x - 4.0)) // ((x - 5.0) * (x - 2.0))
 ```
 
 A basic plot recipe is provided.
