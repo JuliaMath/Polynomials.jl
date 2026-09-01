@@ -503,11 +503,11 @@ julia> p = fit(Polynomial, xs, f.(xs));
 
 julia> q = fit(ArnoldiFit, xs, f.(xs));
 
-julia> maximum(abs, p(x) - f(x) for x ∈ range(-1, stop=1, length=500))
-3.304586010148457e16
+julia> maximum(abs, p(x) - f(x) for x ∈ range(-1, stop=1, length=500)) ≈ 3.304586010148457e16
+true
 
-julia> maximum(abs, q(x) - f(x) for x ∈ range(-1, stop=1, length=500))
-1.1939520822012994e-7
+julia> maximum(abs, q(x) - f(x) for x ∈ range(-1, stop=1, length=500)) ≈ 1.1939520822012994e-7
+true
 ```
 
 ## Other bases
