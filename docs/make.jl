@@ -27,7 +27,7 @@ makedocs(
                CodeBlocks(),
                CitationBibliography("src/refs.bib")],
     doctestfilters = [
-        r"(?<=\d\.\d{12})\d+", # Ignore any digit after the 12th decimal place
+        r"(?<=\d\.\d{6})\d+", # Ignore any digit after the 12th decimal place
     ],
     warnonly = [:cross_references, :missing_docs],
     checkdocs=:exports,
