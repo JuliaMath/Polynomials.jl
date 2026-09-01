@@ -2,9 +2,9 @@
 
 The [`AbstractUnivariatePolynomial`](@ref) type was made to be extended.
 
-A polynomial's  coefficients  are  relative to some *basis*. The `Polynomial` type relates coefficients  `[a0, a1,  ..., an]`, say,  to the  polynomial  ``a_0 +  a_1\cdot x + a_2\cdot x^2  + \cdots +  a_n\cdot x^n``,  through the standard  basis  ``1,  x,  x^2, ..., x^n``.  New polynomial  types typically represent the polynomial through a different  basis. For example,  `CheyshevT` uses a basis  ``T_0=1, T_1=x,  T_2=2x^2-1,  \cdots,  T_n  =  2xT_{n-1} - T_{n-2}``.  For this type  the  coefficients  `[a0,a1,...,an]` are associated with  the polynomial  ``a0\cdot T_0  + a_1 \cdot T_1 +  \cdots  +  a_n\cdot T_n``.
+A polynomial's  coefficients  are  relative to some *basis*. The `Polynomial` type relates coefficients  `[a0, a1,  ..., an]`, say,  to the  polynomial  ``a_0 +  a_1\cdot x + a_2\cdot x^2  + \cdots +  a_n\cdot x^n``,  through the standard  basis  ``1,  x,  x^2, ..., x^n``.  New polynomial  types typically represent the polynomial through a different  basis. For example,  `ChebyshevT` uses a basis  ``T_0=1, T_1=x,  T_2=2x^2-1,  \cdots,  T_n  =  2xT_{n-1} - T_{n-2}``.  For this type  the  coefficients  `[a0,a1,...,an]` are associated with  the polynomial  ``a0\cdot T_0  + a_1 \cdot T_1 +  \cdots  +  a_n\cdot T_n``.
 
-A polynomial type consists of a container type (with parent type `AbstractUnivariatePolynomial`), a basis type (with parent type `AbstractBasis`), and element type, and a symbol. There a several different storage types implemented.
+A polynomial type consists of a container type (with parent type `AbstractUnivariatePolynomial`), a basis type (with parent type `AbstractBasis`), and element type, and a symbol. There are several different storage types implemented.
 
 To implement a new polynomial type, `P`, the following methods should be implemented:
 
@@ -242,7 +242,7 @@ Were it defined, a `convert` method from `Polynomial` to the `LaguerreBasis` cou
 ## A new container type
 
 This example shows how to make a new container type, though this should be unnecessary, given the current variety, there may be gains to be had (e.g. an immutable, sparse type?)
-In this case, we offer a minimal example where the polynomial type aliases the vector defining the coefficients is created.  For other bases, more methods may be necessary to define (again, refer to ChebyshevT for an example).
+In this case, we offer a minimal example where the polynomial type aliases the vector defining the coefficients is created.  For other bases, more methods may be necessary to define (again, refer to `ChebyshevT` for an example).
 
 
 We have two constructor methods. The first is the typical code path. It makes a copy of the coefficients and then wraps those within the polynomial container type. For performance reasons, generically it is helpful to pass in a flag to indicate no copying or checking of the input is needed (`Val{false}`). This is used by some inherited methods when we specialize to the `StandardBasis` type. Generically, a container type *may* accept an offset, though this type won't; a `0`-based vector is implicit.

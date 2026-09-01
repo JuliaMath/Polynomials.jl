@@ -40,7 +40,6 @@ struct FactoredPolynomial{T <: Number, X} <: AbstractPolynomial{T, X}
     coeffs::OrderedDict{T,Int}
     c::T
     function FactoredPolynomial{T, X}(checked::Val{false}, cs::AbstractDict{T,Int}, c::T) where {T, X}
-        #new{T,X}(convert(OrderedDict,cs),T(c))
         D = OrderedDict(pairs(cs))
         new{T,X}(D,T(c))
     end

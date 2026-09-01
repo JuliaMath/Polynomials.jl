@@ -25,7 +25,7 @@ Fit a rational function of the form `pq = (a₀ + a₁x¹ + … + aₘxᵐ) / (1
     implementation of the AAA algorithm ("which offers speed,
     flexibility, and robustness we have not seen in other algorithms"
     [Nakatsukasa, Sète,
-    Trefethen](https://arxiv.org/pdf/1612.00337.pdf)) [AAA_NakatsukasaSetTrefethen ](@cite)and one using
+    Trefethen](https://arxiv.org/pdf/1612.00337.pdf)) [AAA_NakatsukasaSetTrefethen](@cite)and one using
     Floater-Hormann weights [Floater,
     Hormann](https://doi.org/10.1007/s00211-007-0093-y) ("that have no
     real poles and arbitrarily high approximation orders on any real

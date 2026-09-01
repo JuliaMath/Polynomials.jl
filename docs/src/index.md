@@ -58,7 +58,7 @@ julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
 Polynomial(-6 + 11*x - 6*x^2 + x^3)
 ```
 
-A polynomial `p` can be evaluted at `1` using call notation:
+A polynomial `p` can be evaluated at `1` using call notation:
 
 ```jldoctest
 julia> p = Polynomial([1, 0, -1])
