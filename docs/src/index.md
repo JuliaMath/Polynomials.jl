@@ -21,7 +21,7 @@ is a Julia package that provides basic arithmetic, integration,
 differentiation, evaluation, root finding, and data fitting for univariate polynomials.
 
 The `Polynomials` package is hosted on GitHub and installed as other `Julia` packages.
-As of version `v3.0.0` Julia version `1.6` or higher is required.
+Julia version `1.10` or higher is required.
 
 The package can be loaded into the current session through
 
@@ -44,21 +44,21 @@ julia> Polynomial([1,0,3,4])
 Polynomial(1 + 3*x^2 + 4*x^3)
 ```
 
-An optional variable parameter can be added.
+An optional variable can be specified.
 
 ```jldoctest
 julia> Polynomial([1,2,3], :s)
 Polynomial(1 + 2*s + 3*s^2)
 ```
 
-Construct a polynomial from its roots.
+A polynomial can be constructed from its roots.
 
 ```jldoctest
 julia> fromroots([1,2,3]) # (x-1)*(x-2)*(x-3)
 Polynomial(-6 + 11*x - 6*x^2 + x^3)
 ```
 
-Evaluate the polynomial `p` at `1` using call notation:
+A polynomial `p` can be evaluted at `1` using call notation:
 
 ```jldoctest
 julia> p = Polynomial([1, 0, -1])
@@ -149,7 +149,7 @@ LaurentPolynomial(2 + 2*x + 6*x² + x¹⁰)
 
 ## Integrals and Derivatives
 
-Integrate the polynomial `p` term by term, optionally adding constant
+Integrate the polynomial `p`, optionally adding a constant
 term `C`. For non-zero polynomials, the degree of the resulting polynomial is one higher than the
 degree of `p`.
 
@@ -161,7 +161,7 @@ julia> integrate(Polynomial([1, 0, -1]), 2)
 Polynomial(2.0 + 1.0*x - 0.3333333333333333*x^3)
 ```
 
-Differentiate the polynomial `p` term by term. For non-zero polynomials, the degree of the
+Differentiate the polynomial `p`. For non-zero polynomials, the degree of the
 resulting polynomial is one lower than the degree of `p`.
 
 ```jldoctest
@@ -389,7 +389,7 @@ Most of the root finding algorithms have issues when the roots have
 multiplicities. For example, both `ANewDsc` and `Hecke.roots` assume a
 square free polynomial. For non-square free polynomials:
 
-* The `Polynomials.Multroot.multroot` function is available  for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng.
+* The `Polynomials.Multroot.multroot` function is available  for finding the roots of a polynomial and their multiplicities. This is based on work of Zeng. Cf. [10.1145/860854.860907](@cite), [LeeLiZeng](@cite), [ZengNGCD](@cite).
 
   Here we see `IntervalRootFinding.roots` having trouble isolating the roots due to the multiplicities:
 
@@ -512,7 +512,7 @@ julia> maximum(abs, q(x) - f(x) for x ∈ range(-1, stop=1, length=500))
 
 ## Other bases
 
-A polynomial, e.g. `a_0 + a_1 x + a_2 x^2 + ... + a_n x^n`, can be seen as a collection of coefficients, `[a_0, a_1, ..., a_n]`, relative to some polynomial basis. The most  familiar basis being  the standard one: `1`, `x`, `x^2`, ...  Alternative bases are possible.  The `ChebyshevT` polynomials are  implemented, as an example. The constructor is `ChebyshevT`, an exposed alias for `MutableDensePolynomial{ChebyshevTBasis}`.
+A polynomial, e.g. `a_0 + a_1 x + a_2 x^2 + ... + a_n x^n`, can be seen as a collection of coefficients, `[a_0, a_1, ..., a_n]`, relative to some polynomial basis. The most  familiar basis being  the standard one: `1`, `x`, `x^2`, `...`  Alternative bases are possible.  The `ChebyshevT` polynomials are  implemented, as an example. The constructor is `ChebyshevT`, an exposed alias for `MutableDensePolynomial{ChebyshevTBasis}`.
 
 ```jldoctest
 julia> p1 = ChebyshevT([1.0, 2.0, 3.0])
@@ -652,7 +652,7 @@ If `q` is non-constant, such as `variable(Polynomial, :y)`, then there would be 
 
 The same conversion is done for polynomial multiplication: constant polynomials are treated as numbers; non-constant polynomials must have their symbols match.
 
-There is an oddity -- though the following two computations look the same, they are technically different:
+There is an oddity---though the following two computations look the same, they are technically different:
 
 ```jldoctest natural_inclusion
 julia> one(Polynomial, :x) + one(Polynomial, :y)
@@ -684,7 +684,7 @@ julia> [1 one(q)]
  Polynomial(1)  Polynomial(1)
 ```
 
-However, as there would be an ambiguous outcome of the following
+However, as there would be an ambiguous outcome of the following an error is thrown.
 
 ```jldoctest natural_inclusion
 julia> [one(p) one(q)]
@@ -692,7 +692,6 @@ ERROR: ArgumentError: Polynomials have different indeterminates
 [...]
 ```
 
-an error is thrown.
 
 In general, arrays with mixtures of non-constant polynomials with *different* indeterminates will error. By default, an error will occur when constant polynomials with different indeterminates are used as components. However, for *typed* arrays, conversion will allow such constructs to be used.
 
@@ -823,7 +822,7 @@ But much doesn't. For example, implicit promotion can fail. For example, the sca
 
 ## Rational functions
 
-The package provides support for rational functions -- fractions of polynomials (for most types). The construction of the basic type mirrors the construction of rational numbers.
+The package provides support for rational functions---fractions of polynomials (for most types). The construction of the basic type mirrors the construction of rational numbers.
 
 ```jldoctest
 julia> P = FactoredPolynomial

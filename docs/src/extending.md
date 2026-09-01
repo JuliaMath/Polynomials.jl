@@ -2,9 +2,9 @@
 
 The [`AbstractUnivariatePolynomial`](@ref) type was made to be extended.
 
-A polynomial's  coefficients  are  relative to some *basis*. The `Polynomial` type relates coefficients  `[a0, a1,  ..., an]`, say,  to the  polynomial  ``a_0 +  a_1\cdot x + a_2\cdot x^2  + \cdots +  a_n\cdot x^n``,  through the standard  basis  ``1,  x,  x^2, ..., x^n``.  New polynomial  types typically represent the polynomial through a different  basis. For example,  `CheyshevT` uses a basis  ``T_0=1, T_1=x,  T_2=2x^2-1,  \cdots,  T_n  =  2xT_{n-1} - T_{n-2}``.  For this type  the  coefficients  `[a0,a1,...,an]` are associated with  the polynomial  ``a0\cdot T_0  + a_1 \cdot T_1 +  \cdots  +  a_n\cdot T_n`.
+A polynomial's  coefficients  are  relative to some *basis*. The `Polynomial` type relates coefficients  `[a0, a1,  ..., an]`, say,  to the  polynomial  ``a_0 +  a_1\cdot x + a_2\cdot x^2  + \cdots +  a_n\cdot x^n``,  through the standard  basis  ``1,  x,  x^2, ..., x^n``.  New polynomial  types typically represent the polynomial through a different  basis. For example,  `CheyshevT` uses a basis  ``T_0=1, T_1=x,  T_2=2x^2-1,  \cdots,  T_n  =  2xT_{n-1} - T_{n-2}``.  For this type  the  coefficients  `[a0,a1,...,an]` are associated with  the polynomial  ``a0\cdot T_0  + a_1 \cdot T_1 +  \cdots  +  a_n\cdot T_n``.
 
-A polynomial type consists of a container type (with parent type `AbstractUnivariatePolynomial`) and a basis type (with parent type `AbstractBasis`). There a several different storage types implemented.
+A polynomial type consists of a container type (with parent type `AbstractUnivariatePolynomial`), a basis type (with parent type `AbstractBasis`), and element type, and a symbol. There a several different storage types implemented.
 
 To implement a new polynomial type, `P`, the following methods should be implemented:
 
@@ -29,7 +29,7 @@ To implement a new polynomial type, `P`, the following methods should be impleme
 As always, if the default implementation does not work or there are more efficient ways of implementing, feel free to overwrite functions from `common.jl` for your type.
 
 The general idea is the container type should provide the vector operations of polynomial addition, subtraction, and scalar multiplication.
-The latter is generically implemented through a `map(f,p)` method. The second example illustrates, though it isn't expected that container types will need being defined by users of this package.
+The latter is generically implemented through a `map(f, p)` method. The second example illustrates, though it isn't expected, that container types will need being defined by users of this package.
 
 The basis type directs dispatch for other operations and allows definitions for `one` and `variable`. An `evalpoly` method may be defined for a given basis type, though specializations based on the container may be desirable.
 
@@ -344,7 +344,7 @@ AliasPolynomialType(1 + 4*x + 10*x^2 + 20*x^3 + 25*x^4 + 24*x^5 + 16*x^6)
 ```
 
 
-For the Polynomial type, the default on operations is to copy the array. For this type, it might seem reasonable -- to avoid allocations -- to update the coefficients in place for scalar addition and scalar multiplication.
+For the Polynomial type, the default on operations is to copy the array. For this type, it might seem reasonable---to avoid allocations--- to update the coefficients in place for scalar addition and scalar multiplication.
 
 Scalar addition, `p+c`, defaults to `p + c*one(p)`, or polynomial addition, which is not inplace without additional work. As such, we create a new method and an infix operator
 
