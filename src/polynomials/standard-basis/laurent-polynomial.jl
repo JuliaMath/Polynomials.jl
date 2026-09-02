@@ -3,9 +3,9 @@
 """
     LaurentPolynomial{T,X}(coeffs::AbstractVector, [m::Integer = 0], [var = :x])
 
-A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of the form `a_{m}x^m + ... + a_{n}x^n` where `m,n` are  integers (not necessarily positive) with ` m <= n`.
+A [Laurent](https://en.wikipedia.org/wiki/Laurent_polynomial) polynomial is of the form ``a_{m}x^m + ... + a_{n}x^n`` where ``m,n`` are  integers (not necessarily positive) with ``m ≤ n``.
 
-The `coeffs` specify `a_{m}, a_{m-1}, ..., a_{n}`.
+The `coeffs` specify ``a_{m}, a_{m-1}, ..., a_{n}``.
 The argument `m` represents the lowest exponent of the variable in the series, and is taken to be zero by default.
 
 Laurent polynomials and standard basis polynomials promote to  Laurent polynomials. Laurent polynomials may be  converted to a standard basis  polynomial when `m >= 0`,
@@ -67,6 +67,10 @@ Polynomial(x)
 julia> x^degree(p) * p(x⁻¹) # reverses  coefficients
 LaurentPolynomial(3.0 + 2.0*x + 1.0*x²)
 ```
+
+!!! note
+    The [LaurentPolynomials.jl](https://github.com/jmichel7/LaurentPolynomials.jl) package was consulted in developing this type.
+
 """
 const LaurentPolynomial = MutableDenseLaurentPolynomial{StandardBasis}
 export LaurentPolynomial
