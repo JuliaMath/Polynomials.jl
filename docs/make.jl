@@ -1,4 +1,5 @@
 using Documenter
+using DocumenterCodeBlocks, DocumenterCitations, DocumenterLandingPage
 using Polynomials
 
 
@@ -21,6 +22,12 @@ makedocs(
             "Chebyshev" => "polynomials/chebyshev.md",
         ],
         "Extending" => "extending.md",
+    ],
+    plugins = [LandingPage(),
+               CodeBlocks(),
+               CitationBibliography("src/refs.bib")],
+    doctestfilters = [
+        r"(?<=\d\.\d{6})\d+", # Ignore any digit after the 12th decimal place
     ],
     warnonly = [:cross_references, :missing_docs],
     checkdocs=:exports,
