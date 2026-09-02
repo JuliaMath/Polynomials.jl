@@ -1,7 +1,7 @@
 name = "Polynomials"
 uuid = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 license = "MIT"
-version = "4.1.1"
+version = "4.1.2"
 author = "JuliaMath"
 
 [deps]
@@ -35,7 +35,7 @@ LinearAlgebra = "<0.0.1, 1"
 Makie = "0.24"
 MutableArithmetics = "1"
 OffsetArrays = "1"
-OrderedCollections = "1.6.3"
+OrderedCollections = "1.6.3, 2.0"
 RecipesBase = "0.7, 0.8, 1"
 Setfield = "1"
 SparseArrays = "<0.0.1, 1"

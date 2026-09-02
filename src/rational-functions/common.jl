@@ -532,15 +532,15 @@ true
 
 
 !!! note
-    There are several areas where numerical issues can arise. The `divrem`, the identification of multiple roots (`multroot`), the evaluation of the derivatives, ...
+    There are several areas where numerical issues can arise. The `divrem` call, the identification of multiple roots (`multroot`), the evaluation of the derivatives, ...
 
 """
 function residues(pq::AbstractRationalFunction; method=:numerical,  kwargs...)
 
 
-    d,r′ = divrem(pq)
+    d, r′ = divrem(pq)
     r = lowest_terms(r′; method=method, kwargs...)
-    b,a = pqs(r)
+    b, a = pqs(r)
     a′ = derivative(a)
 
     residues = Any[]

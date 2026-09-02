@@ -17,7 +17,7 @@ export fromroots,
        isintegral,
        ismonic
 
-function lejaorder!(roots) # see https://doi.org/10.1023/A:1025555803588
+function lejaorder!(roots) # see [lejaorder](@cite); https://doi.org/10.1023/A:1025555803588
     if length(roots) <= 2
         return roots
     end
@@ -355,7 +355,7 @@ end
     truncate!(::AbstractPolynomial{T};
         rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
 
-In-place version of [`truncate`](@ref)
+In-place version of [`truncate`](@ref).
 """
 truncate!(p::AbstractPolynomial; kwargs...) = _truncate!(p; kwargs...)
 
@@ -413,7 +413,7 @@ _truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined
     truncate(::AbstractPolynomial{T};
         rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0)
 
-Rounds off coefficients close to zero, as determined by `rtol` and `atol`, and then chops any leading zeros. Returns a new polynomial.
+Rounds off all coefficients close to zero, as determined by `rtol` and `atol`, and then chops any leading zeros. Returns a new polynomial.
 """
 function Base.truncate(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
@@ -493,7 +493,7 @@ end
     chop(::AbstractPolynomial{T};
         rtol::Real = Base.rtoldefault(real(T)), atol::Real = 0))
 
-Removes any leading coefficients that are approximately 0 (using `rtol` and `atol` with `norm(p)`). Returns a polynomial whose degree will guaranteed to be equal to or less than the given polynomial's.
+Removes any leading coefficients that are approximately 0 (using `rtol` and `atol` with `norm(p)`). Returns a polynomial whose degree will be guaranteed to be equal to or less than the given polynomial's.
 """
 function Base.chop(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
@@ -640,7 +640,7 @@ Base.any(pred, p::AbstractPolynomial{T,X}) where {T, X} = any(pred, values(p))
 
 Transform coefficients of `p` by applying a function (or other callables) `fn` to each of them.
 
-You can implement `real`, etc., to a `Polynomial` by using `map`. The type of `p` may narrow using this function.
+You can implement `real`, etc., to a `Polynomial` by using `map`. The element type of `p` may narrow using this function.
 """
 function Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial}
     xs = map(fn, p.coeffs, args...)
@@ -950,7 +950,7 @@ zero, one, variable, basis =#
     zero(::Type{<:AbstractPolynomial})
     zero(::AbstractPolynomial)
 
-Returns a representation of 0 as the given polynomial.
+Returns a representation of ``0`` as the given polynomial.
 """
 function Base.zero(::Type{P}) where {P<:AbstractPolynomial}
     T,X = eltype(P), indeterminate(P)
@@ -962,7 +962,7 @@ Base.zero(p::P, var=indeterminate(p)) where {P <: AbstractPolynomial} = zero(P, 
     one(::Type{<:AbstractPolynomial})
     one(::AbstractPolynomial)
 
-Returns a representation of 1 as the given polynomial.
+Returns a representation of ``1`` as the given polynomial.
 """
 Base.one(::Type{P}) where {P <: AbstractPolynomial} =  one(⟒(P){eltype(P), indeterminate(P)})
 Base.one(::Type{P}, var::SymbolLike) where {P <: AbstractPolynomial} = one(⟒(P){eltype(P), Symbol(var)})

@@ -143,3 +143,9 @@ savefig("chebs.svg"); nothing # hide
 ```
 
 ![](chebs.svg)
+
+
+## Bibliography
+
+```@bibliography
+```

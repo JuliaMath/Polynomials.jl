@@ -21,18 +21,21 @@ Fit a rational function of the form `pq = (a₀ + a₁x¹ + … + aₘxᵐ) / (1
     problem for use with that package is suggested.
 
     Further, if an accurate rational function fit of adaptive degrees
-    is of interest, the `BaryRational.jl` package provides an
-    implementation of the AAA algorithm ("which offers speed,
+    is of interest, the
+    [RationalFunctionApproximation.jl](https://github.com/complexvariables/RationalFunctionApproximation.jl)
+    package implements the algorithm of Driscoll, Nakatsukasa, and
+    Trefethen from "AAA Rational Approximation on a Continuum"
+    [doi](https://doi.org/10.1137/23M1570508).
+
+    The `BaryRational.jl` package provides an
+    implementation of the original AAA algorithm ("which offers speed,
     flexibility, and robustness we have not seen in other algorithms"
     [Nakatsukasa, Sète,
-    Trefethen](https://arxiv.org/pdf/1612.00337.pdf)) and one using
+    Trefethen](https://arxiv.org/pdf/1612.00337.pdf)) [AAA_NakatsukasaSetTrefethen](@cite)and one using
     Floater-Hormann weights [Floater,
     Hormann](https://doi.org/10.1007/s00211-007-0093-y) ("that have no
     real poles and arbitrarily high approximation orders on any real
     interval, regardless of the distribution of the points")
-
-    The [RationalApproximations](https://github.com/billmclean/RationalApproximations)
-    package also has implementations of the AAA algorithm.
 
     A python library, [polyrat](https://github.com/jeffrey-hokanson/polyrat),
     has implementations of other algorithms.
