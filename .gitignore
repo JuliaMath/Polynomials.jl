@@ -1,5 +1,6 @@
 docs/build/
 docs/site/
+.idea/
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
