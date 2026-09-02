@@ -40,7 +40,8 @@ struct FactoredPolynomial{T <: Number, X} <: AbstractPolynomial{T, X}
     coeffs::OrderedDict{T,Int}
     c::T
     function FactoredPolynomial{T, X}(checked::Val{false}, cs::AbstractDict{T,Int}, c::T) where {T, X}
-        new{T,X}(convert(OrderedDict,cs),T(c))
+        D = OrderedDict(pairs(cs))
+        new{T,X}(D,T(c))
     end
     function FactoredPolynomial{T, X}(cs::AbstractDict{T,Int}, c=one(T)) where {T, X}
         D = OrderedDict{T,Int}()
@@ -52,7 +53,7 @@ struct FactoredPolynomial{T <: Number, X} <: AbstractPolynomial{T, X}
     function FactoredPolynomial(cs::AbstractDict{T,Int}, c::S=1, var::SymbolLike=:x) where {T,S}
         X = Symbol(var)
         R = promote_type(T,S)
-        D = convert(OrderedDict{R,Int}, cs)
+        D = OrderedDict{R,Int}(pairs(cs))
         FactoredPolynomial{R,X}(D, R(c))
     end
 end

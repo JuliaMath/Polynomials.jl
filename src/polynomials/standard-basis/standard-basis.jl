@@ -541,7 +541,7 @@ end
 
 ## as noted at https://github.com/jishnub/PolyFit.jl, using method from SpecialMatrices is faster
 ## https://github.com/JuliaMatrices/SpecialMatrices.jl/blob/master/src/vandermonde.jl
-## This is Algorithm 2 of https://www.maths.manchester.ac.uk/~higham/narep/narep108.pdf
+## This is Algorithm 2 of [narep108](@cite)
 ## Solve V(αs)⋅x = y where V is (1+n) × (1+n) Vandermonde matrix (Vᵀ in the paper)
 function solve_vander!(ys, αs)
     n = length(ys) - 1
@@ -665,9 +665,7 @@ polynomial evaluations afterwards for higher-degree polynomials.
 
 The two main functions are translations from example code in:
 
-*VANDERMONDE WITH ARNOLDI*;
-PABLO D. BRUBECK, YUJI NAKATSUKASA, AND LLOYD N. TREFETHEN;
-[arXiv:1911.09988](https://people.maths.ox.ac.uk/trefethen/vander_revised.pdf)
+Pablo D. Brubeck, Yuji Nakatsukasa, and Lloyd N. Trefethen, “Vandermonde with Arnoldi”, SIAM Review 63, doi.org/10.1137/19M130100X (2021).
 
 For more details, see also:
 
@@ -744,6 +742,35 @@ function polyvalA(d, H::AbstractMatrix{S}, s::T) where {T, S}
     sum(W[i]*d[i] for i in eachindex(d))
 end
 
+#=
+# Finds a + bim following formula 5.3 of paper, which solves
+# Re(Vₙ) [a₀ ⋯ aₙ] - Im(Vₙ[2:n]) * [b₁ ⋯ bₙ] = [y₁ ⋯ yₘ]
+function polyfit_fourier_extension(x, y, n::Int=length(x) - 1; var=Var(:x))
+    m = length(x)
+    T = eltype(y)
+    Q = ones(T, m, n+1)
+    H = zeros(T, n+1, n)
+
+    q = zeros(T, m)
+
+    @inbounds for k = 1:n
+        q .= x .* Q[:,k]
+        for j in 1:k
+            λ = dot(Q[:,j], q)/m
+            H[j,k] = λ
+            q .-= λ * Q[:,j]
+        end
+        H[k+1,k] = norm(q)/sqrt(m)
+        Q[:,k+1] .= q/H[k+1,k]
+    end
+
+    d = [real(Q) imag(view(Q, :, 2:n+1))] \ y
+    d = d[1:(n+1)] - vcat(0, view(d, (n+2):(2n+1)))
+    ArnoldiFit{eltype(d),Symbol(var)}(d, H)
+end
+=#
+
+
 # Polynomial Interface
 """
     ArnoldiFit
@@ -788,7 +815,7 @@ Base.convert(::Type{P}, p::ArnoldiFit{T,X}) where {P <: AbstractPolynomial,T,X} 
     compensated_horner(ps, x)
 
 Evaluate `p(x)` using a compensation scheme of
-S. Graillat, Ph. Langlois, N. Louve [Compensated Horner Scheme](https://cadxfem.org/cao/Compensation-horner.pdf).
+S. Graillat, Ph. Langlois, N. Louve  [Compensated Horner Scheme](https://cadxfem.org/cao/Compensation-horner.pdf) [langlois_et_al:DSP:2006:442](@cite).
 Either a `Polynomial` `p` or its coefficients may be passed in.
 
 The Horner scheme has relative error given by

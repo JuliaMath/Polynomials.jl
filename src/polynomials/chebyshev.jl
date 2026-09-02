@@ -30,14 +30,14 @@ ChebyshevT(1.0⋅T_0(x))
 julia> p(0.5)
 -4.5
 
-julia> Polynomials.evalpoly(5.0, p, false) # bypasses the domain check done in p(5.0)
+julia> evalpoly(5.0, p, false) # bypasses the domain check done in p(5.0)
 2088.0
 ```
 
-The latter shows how to evaluate a `ChebyshevT` polynomial outside of its domain, which is `[-1,1]`. (For newer versions of `Julia`, `evalpoly` is an exported function from Base with methods extended in this package, so the module qualification is unnecessary.
+The latter shows how to evaluate a `ChebyshevT` polynomial outside of its domain, which is `[-1,1]`.
 
 !!! note
-    The Chebyshev polynomials are also implemented in `ApproxFun`, `ClassicalOrthogonalPolynomials.jl`, `FastTransforms.jl`, and `SpecialPolynomials.jl`.
+    The Chebyshev polynomials are also implemented in `ApproxFun`, `ClassicalOrthogonalPolynomials.jl`, `FastTransforms.jl`, `SpecialPolynomials.jl`, and likely other packages in the ecosystem.
 
 """
 const ChebyshevT = MutableDensePolynomial{ChebyshevTBasis}
