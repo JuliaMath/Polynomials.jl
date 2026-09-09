@@ -31,11 +31,12 @@ jobs:
           - os: ubuntu-latest
             arch: x86
             julia-version: '1'
+
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
         with:
-          version: ${{ matrix.version }}
+          version: ${{ matrix.julia-version }}
           arch: ${{ matrix.arch }}
       - uses: actions/cache@v6
         env:
