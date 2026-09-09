@@ -241,6 +241,12 @@ end
             @test p(s) == a + b * s + c * s * s
             @test p(c) == a + b * c + c * c * c
 
+            # evaluation at a matrix argument multiplies the coefficients on the left;
+            # a, b, c commute with each other, so use an argument that does not commute with them
+            x = [1 1; 0 2]
+            @test p(x) == a + b * x + c * x^2
+            @test p(x) != a + x * b + x^2 * c
+
             # ∂, ∫
             @test derivative(p) == P([b, 2c])
             @test integrate(p) == P([0*a, a, b/2, c/3])

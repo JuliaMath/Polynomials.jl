@@ -786,6 +786,21 @@ julia> p(b)
  18  3
 ```
 
+For a matrix argument `X`, the coefficients are multiplied on the left: `p(X)` is `a + b*X + c*X^2`. This differs from `a + X*b + X^2*c` when the coefficients do not commute with `X` (the matrices `a`, `b`, `c` above commute with each other, so `p(b)` does not show the difference). Note that `Base.evalpoly` uses the other convention, `sum(X^(k-1) * p[k])`.
+
+```jldoctest non_number
+julia> X = [1 1; 0 2]
+2×2 Matrix{Int64}:
+ 1  1
+ 0  2
+
+julia> p(X) == a + b*X + c*X^2
+true
+
+julia> p(X) == a + X*b + X^2*c
+false
+```
+
 But if the type `T` lacks support of some generic functions, such as `zero(T)` and `one(T)`, then there may be issues. For example,  when `T <: AbstractMatrix` the output of `p[degree(p)+1]` is an error, as the implementation assumes `zero(T)` is defined. For static arrays, this isn't an issue, as there is support for `zero(T)`. Other polynomial types, such as `SparsePolynomial` have less support, as some specialized methods assume more of the generic interface be implemented.
 
 Similarly, using polynomials for `T` is a possibility:
