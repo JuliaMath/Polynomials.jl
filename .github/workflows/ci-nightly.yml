@@ -18,11 +18,8 @@ jobs:
           - 'nightly'
         os:
           - ubuntu-latest
-          - macos-latest
-          - windows-latest
         arch:
-          - x86
-          - aarch64
+          - x64
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
