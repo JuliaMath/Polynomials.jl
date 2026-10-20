@@ -59,6 +59,17 @@ function Base.convert(::Type{PQ}, p::P) where {PQ <: AbstractRationalFunction, P
     rational_function(PQ, 𝐩, one(𝐩))
 end
 
+function Base.convert(::Type{PQ}, p::P) where {T,X, 𝑃 <: AbstractPolynomial{T,X},
+                                               PQ <: AbstractRationalFunction{T,X,𝑃},
+                                               S, P <: AbstractPolynomial{S,X}}
+    T′ = promote_type(T,S)
+    P′ = promote_type(𝑃, P)
+    𝐩 = convert(constructorof(P′){T′,X}, p)
+    𝑃𝑄 = constructorof(PQ){T′, X, typeof(𝐩)}
+    return rational_function(PQ, 𝐩, one(𝐩))
+end
+
+
 function Base.convert(::Type{P}, pq::PQ) where {P<:AbstractPolynomial, PQ<:AbstractRationalFunction}
     p,q = pqs(pq)
     isconstant(q) || throw(ArgumentError("Can't convert rational function with non-constant denominator to a polynomial."))
@@ -85,7 +96,18 @@ function Base.promote_rule(::Type{PQ}, ::Type{PQ′}) where {T,X,P,PQ <: Abstrac
     𝑷𝑸{𝑻,X,𝑷{𝑻,X}}
 end
 Base.promote_rule(::Type{PQ}, ::Type{P}) where {PQ <: AbstractRationalFunction, P<:AbstractPolynomial} = PQ
-function Base.promote_rule(::Type{PQ}, ::Type{S}) where {T,X, P<:AbstractPolynomial{T,X}, PQ <: AbstractRationalFunction{T,X,P}, S<:Number}
+function Base.promote_rule(::Type{PQ}, ::Type{P}) where {S, T, X,
+                                                         𝑃 <: AbstractPolynomial{S, X},
+                                                         PQ <: AbstractRationalFunction{S,X,𝑃},
+                                                         P <: AbstractPolynomial{T,X}}
+    R = promote_type(S,T)
+    P′ = constructorof(promote_type(𝑃,P)){R,X}
+    constructorof(PQ){R,X,P′}
+end
+
+function Base.promote_rule(::Type{PQ}, ::Type{S}) where {T, X, P<:AbstractPolynomial{T,X},
+                                                         PQ <: AbstractRationalFunction{T,X,P},
+                                                         S <: Number}
     R = promote_type(S,T)
     P′ = constructorof(P){R,X}
     constructorof(PQ){R,X,P′}
