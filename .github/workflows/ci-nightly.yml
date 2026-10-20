@@ -20,6 +20,9 @@ jobs:
           - ubuntu-latest
           - macos-latest
           - windows-latest
+        arch:
+          - x64
+          - aarch64
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
