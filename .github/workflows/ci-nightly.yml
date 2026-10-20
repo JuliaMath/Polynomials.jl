@@ -21,7 +21,7 @@ jobs:
           - macos-latest
           - windows-latest
         arch:
-          - x64
+          - x86
           - aarch64
     steps:
       - uses: actions/checkout@v7
