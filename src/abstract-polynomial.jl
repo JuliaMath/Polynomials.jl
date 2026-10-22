@@ -274,7 +274,6 @@ macro poly_register(name)
     poly = esc(name)
     quote
         #Base.convert(::Type{P}, p::P) where {P<:$poly} = p
-        Base.promote(p::P, q::Q) where {B, X, T, P <:$poly{B,T,X}, Q <: $poly{B,T,X}} = p,q
         Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{<:$poly{B,S,X}}) where {B,T,S,X} =  $poly{B,promote_type(T, S),X}
         Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{S}) where {B,T,S<:Scalar,X} =
             $poly{B,promote_type(T, S), X}

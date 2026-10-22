@@ -165,7 +165,7 @@ end
     p, q = Polynomial([1,2], :x), Polynomial([1,2],:y)
     pp = p // (p-1)
     PP = typeof(pp)
-    PP′ = RationalFunction{Int64, :x, LaurentPolynomial{Int64, :x}}
+    PP′ = RationalFunction{eltype(p), :x, LaurentPolynomial{eltype(p), :x}}
     r, s = SparsePolynomial([1,2], :x), SparsePolynomial([1,2],:y)
     rr = r // (r-1)
 
