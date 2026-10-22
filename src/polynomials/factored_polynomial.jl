@@ -13,19 +13,19 @@ The structure is utilized for scalar multiplication, polynomial multiplication a
 julia> using Polynomials
 
 julia> p = FactoredPolynomial(Dict([0=>1, 1=>2, 3=>4]))
-FactoredPolynomial(x * (x - 3)⁴ * (x - 1)²)
+FactoredPolynomial(x * (x - 1)² * (x - 3)⁴)
 
 julia> q = fromroots(FactoredPolynomial, [0,1,2,3])
-FactoredPolynomial((x - 3) * x * (x - 2) * (x - 1))
+FactoredPolynomial(x * (x - 1) * (x - 2) * (x - 3))
 
 julia> p*q
-FactoredPolynomial(x² * (x - 3)⁵ * (x - 1)³ * (x - 2))
+FactoredPolynomial(x² * (x - 1)³ * (x - 2) * (x - 3)⁵)
 
 julia> p^1000
-FactoredPolynomial(x¹⁰⁰⁰ * (x - 3)⁴⁰⁰⁰ * (x - 1)²⁰⁰⁰)
+FactoredPolynomial(x¹⁰⁰⁰ * (x - 1)²⁰⁰⁰ * (x - 3)⁴⁰⁰⁰)
 
 julia> gcd(p,q)
-FactoredPolynomial(x * (x - 3) * (x - 1))
+FactoredPolynomial(x * (x - 1) * (x - 3))
 
 julia> p = Polynomial([24, -50, 35, -10, 1])
 Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
@@ -33,7 +33,7 @@ Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 julia> q = convert(FactoredPolynomial, p); # noisy form of `factor`, subject to floating point issues
 
 julia> map(x->round(x, digits=12), q) # map works over factors and leading coefficient -- not coefficients in the standard basis
-FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
+FactoredPolynomial((x - 1.0) * (x - 2.0) * (x - 3.0) * (x - 4.0))
 ```
 """
 struct FactoredPolynomial{T <: Number, X} <: AbstractPolynomial{T, X}
@@ -155,14 +155,21 @@ end
 
 ## ----
 
-function printpoly(io::IO, p::FactoredPolynomial{T,X}, mimetype=nothing) where {T,X}
+# keyword arguments are needed so that calls with keywords (e.g. `print`) dispatch here;
+# `descending_powers`, `offset`, and `mulsymbol` do not apply to the factored form
+function printpoly(io::IO, p::FactoredPolynomial{T,X}, mimetype=nothing;
+                   var=X, compact=false, kwargs...) where {T,X}
+    io = IOContext(io, :compact => get(io, :compact, compact))
     if iszero(p.c)
         print(io, p.c)
     else
         isone(p.c) && iszero(length(p.coeffs)) && print(io, p.c)
         !isone(p.c) && print(io, p.c)
-        x = string(X)
-        for (i,(k,v)) ∈ enumerate(p.coeffs)
+        x = string(var)
+        # print factors in a canonical order, as dictionary order depends on hashing
+        ks = sort!(collect(keys(p.coeffs)), by = k -> (real(k), imag(k)))
+        for (i,k) ∈ enumerate(ks)
+            v = p.coeffs[k]
             (!isone(p.c) || i != 1) && print(io, " * ")
             if iszero(k)
                 print(io, x)

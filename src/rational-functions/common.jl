@@ -523,10 +523,10 @@ julia> d,r = residues(pq);
 julia> d
 Polynomial(0.0)
 
-julia> r
-Dict{Float64, Vector{Float64}} with 2 entries:
-  -1.0 => [-1.25, 0.5]
-  1.0  => [0.25]
+julia> sort(collect(r)) # `r` is a `Dict`; sort for a stable display
+2-element Vector{Pair{Float64, Vector{Float64}}}:
+ -1.0 => [-1.2500000000000002, 0.5000000000000002]
+  1.0 => [0.25]
 
 julia> iszero(d)
 true
@@ -534,7 +534,7 @@ true
 julia> z = variable(pq)
 (1.0*s) // (1.0)
 
-julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
+julia> for (λ, rs) ∈ sort(collect(r)) # reconstruct p/q from output of `residues`
            for (i,rᵢ) ∈ enumerate(rs)
                d += rᵢ/(z-λ)^i
            end

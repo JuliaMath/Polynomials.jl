@@ -574,11 +574,11 @@ julia> collect(pairs(p))
 julia> collect(pairs(ip)) == collect(pairs(p))
 true
 
-julia> collect(pairs(sp)) # unordered dictionary with only non-zero terms
+julia> sort(collect(pairs(sp))) # only non-zero terms; sorted, as the underlying dictionary is unordered
 3-element Vector{Pair{Int64, Int64}}:
  0 => 1
- 3 => 4
  1 => 2
+ 3 => 4
 
 julia> collect(pairs(lp))
 4-element Vector{Pair{Int64, Int64}}:
@@ -617,7 +617,7 @@ Polynomial(24 - 50*x + 35*x^2 - 10*x^3 + x^4)
 julia> q = convert(FactoredPolynomial, p);  # noisy form of `factor` subject to floating point vagaries
 
 julia> map(x -> round(x, digits=10), q)
-FactoredPolynomial((x - 4.0) * (x - 2.0) * (x - 3.0) * (x - 1.0))
+FactoredPolynomial((x - 1.0) * (x - 2.0) * (x - 3.0) * (x - 4.0))
 ```
 
 ## The element type
@@ -844,29 +844,29 @@ julia> P = FactoredPolynomial
 FactoredPolynomial
 
 julia> p,q = fromroots(P, [1,2,3,4]), fromroots(P, [2,2,3,5])
-(FactoredPolynomial((x - 4) * (x - 1) * (x - 3) * (x - 2)), FactoredPolynomial((x - 5) * (x - 2)² * (x - 3)))
+(FactoredPolynomial((x - 1) * (x - 2) * (x - 3) * (x - 4)), FactoredPolynomial((x - 2)² * (x - 3) * (x - 5)))
 
 julia> pq = p // q
-((x - 4) * (x - 1) * (x - 3) * (x - 2)) // ((x - 5) * (x - 2)² * (x - 3))
+((x - 1) * (x - 2) * (x - 3) * (x - 4)) // ((x - 2)² * (x - 3) * (x - 5))
 
 julia> lowest_terms(pq)
-((x - 4.0) * (x - 1.0)) // ((x - 5.0) * (x - 2.0))
+((x - 1.0) * (x - 4.0)) // ((x - 2.0) * (x - 5.0))
 
-julia> d,r = residues(pq); r
-Dict{Float64, Vector{Float64}} with 2 entries:
-  5.0 => [1.33333]
-  2.0 => [0.666667]
+julia> d,r = residues(pq); sort(collect(r)) # `r` is a `Dict`; sort for a stable display
+2-element Vector{Pair{Float64, Vector{Float64}}}:
+ 2.0 => [0.6666666666666666]
+ 5.0 => [1.3333333333333333]
 
 julia> x = variable(p);
 
-julia> for (λ, rs) ∈ r # reconstruct p/q from output of `residues`
+julia> for (λ, rs) ∈ sort(collect(r)) # reconstruct p/q from output of `residues`
            for (i,rᵢ) ∈ enumerate(rs)
                d += rᵢ//(x-λ)^i
            end
        end
 
 julia> d
-((x - 1.0000000000000002) * (x - 4.0)) // ((x - 5.0) * (x - 2.0))
+((x - 1.0000000000000002) * (x - 4.000000000000001)) // ((x - 2.0) * (x - 5.0))
 ```
 
 A basic plot recipe is provided.
