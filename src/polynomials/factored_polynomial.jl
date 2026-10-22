@@ -107,8 +107,6 @@ function Base.convert(P::Type{<:FactoredPolynomial}, p::FactoredPolynomial{T,X})
     FactoredPolynomial{𝑻,𝑿}(d, p.c)
 end
 
-Base.promote(p::P,q::Q) where {X,T,P<:FactoredPolynomial{T,X},Q<:FactoredPolynomial{T,X}} = p,q
-
 Base.promote_rule(::Type{<:FactoredPolynomial{T,X}}, ::Type{<:FactoredPolynomial{S,X}}) where {T,S,X} =
     FactoredPolynomial{promote_type(T,S), X}
 

@@ -104,12 +104,3 @@ function Base.://(p::AbstractPolynomial,q::AbstractPolynomial)
 end
 
 
-# promotion
-function Base.promote(pq::RationalFunction{T,X,P},
-                      rs::RationalFunction{S,X,Q}) where {T,S,X,P<:AbstractPolynomial{T,X},
-                                                          Q<:AbstractPolynomial{S,X}}
-    𝑃 = promote_type(P, Q)
-    p,q = pq
-    r,s = rs
-    (convert(𝑃,p) // convert(𝑃,q), convert(𝑃,r) // convert(𝑃,s))
-end
