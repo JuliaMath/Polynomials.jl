@@ -4,11 +4,13 @@ on:
     branches: [master]
     tags: [v*]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
     name: ${{ matrix.package.repo }}/${{ matrix.package.group }}/${{ matrix.julia-version }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     env:
       GROUP: ${{ matrix.package.group }}
     strategy:
@@ -17,14 +19,15 @@ jobs:
         julia-version: [1]
         os: [ubuntu-latest]
         package:
-          - {user: JuliaControl, repo: ControlSystems.jl, group: All}
-          - {user: andreasvarga, repo: DescriptorSystems.jl, group: All}
-          - {user: andreasvarga, repo: MatrixPencils.jl, group: All}
           - {user: JuliaDSP,     repo: DSP.jl, group: All}
           - {user: tkluck,       repo: GaloisFields.jl, group: All}
           - {user: jverzani,     repo: SpecialPolynomials.jl, group: All}
           - {user: JuliaGNI,     repo: QuadratureRules.jl, group: All}
-          - {user: JuliaGNI,     repo: RungeKutta.jl, group: All}
+          # Disabled; each also fails against master, for reasons outside this package:
+          # - {user: JuliaControl, repo: ControlSystems.jl, group: All}    # ~36 min; its Aqua checks fail after `Pkg.develop` edits its Project.toml
+          # - {user: JuliaGNI,     repo: RungeKutta.jl, group: All}        # its Aqua check fails: no compat entry after `Pkg.develop`
+          # - {user: andreasvarga, repo: MatrixPencils.jl, group: All}     # GenericSchur convergence failure with BigFloat
+          # - {user: andreasvarga, repo: DescriptorSystems.jl, group: All} # l2norm tests return Inf
     steps:
       - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v3
@@ -45,6 +48,7 @@ jobs:
             # force it to use this PR's version of the package
             Pkg.develop(PackageSpec(path="."))  # resolver may fail with main deps
             Pkg.update()
+            Pkg.build() # some packages need their deps/build.jl run (e.g. GaloisFields)
             Pkg.test()  # resolver may fail with test time deps
           catch err
             err isa Pkg.Resolve.ResolverError || rethrow()
