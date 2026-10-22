@@ -1617,6 +1617,13 @@ end
     p = Polynomial{Rational{Int}}([1, 4])
     @test sprint(show, p) == "Polynomial(1//1 + 4//1*x)"
 
+    # FactoredPolynomial: factors in a canonical order; `print` passes keywords to `printpoly`
+    p = FactoredPolynomial(Dict([0=>1, 1=>2, 3=>4]))
+    @test repr(p) == "FactoredPolynomial(x * (x - 1)² * (x - 3)⁴)"
+    @test sprint(print, p) == "x * (x - 1)² * (x - 3)⁴"
+    @test printpoly_to_string(p, var=:z) == "z * (z - 1)² * (z - 3)⁴"
+    @test sprint(print, FactoredPolynomial(Dict(1.000000000000002 => 1))) == "(x - 1.0)"
+
     # XXX use $(PP) not $(P) below
     # @testset for P in (Polynomial,)#  ImmutablePolynomial) # ImmutablePolynomial prints with Basis!
     #     p = P([1, 2, 3])
