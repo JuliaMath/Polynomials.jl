@@ -1103,7 +1103,7 @@ Base.:+(p::AbstractPolynomial) = p
 # polynomial + scalar; implicit identification of c with c*one(p)
 # what are these here for?
 Base.:+(p::P, c::T) where {T,X, P<:AbstractPolynomial{T,X}} = scalar_add(c, p)
-Base.:+(p::P, c::S) where {T,X, P<:AbstractPolynomial{T,X}, S} = scalar_add(c,p)
+Base.:+(p::AbstractPolynomial, c::Scalar) = scalar_add(c, p)
 
 ## polynomial + polynomial when different types
 ## - each polynomial container type implements PB{B,T,X} + PB{B,S,X}

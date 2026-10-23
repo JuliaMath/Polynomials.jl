@@ -6,7 +6,6 @@ macro registerN(name, params...)
     quote
         Base.convert(::Type{P}, q::Q) where {$(αs...),T, P<:$poly{$(αs...),T}, Q <: $poly{$(αs...),T}} = q
         Base.convert(::Type{$poly{$(αs...)}}, q::Q) where {$(αs...),T, Q <: $poly{$(αs...),T}} = q
-        Base.promote(p::P, q::Q) where {$(αs...),T, X, P <:$poly{$(αs...),T,X}, Q <: $poly{$(αs...),T,X}} = p,q
         Base.promote_rule(::Type{<:$poly{$(αs...),T,X}}, ::Type{<:$poly{$(αs...),S,X}}) where {$(αs...),T,S,X} =
             $poly{$(αs...),promote_type(T, S),X}
         Base.promote_rule(::Type{<:$poly{$(αs...),T,X}}, ::Type{S}) where {$(αs...),T,X,S<:Number} =
