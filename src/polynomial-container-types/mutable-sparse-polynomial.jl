@@ -70,14 +70,14 @@ constructorof(::Type{<:MutableSparsePolynomial{B}}) where {B <: AbstractBasis} =
 @poly_register MutableSparsePolynomial
 
 Base.delete!(q::MutableSparsePolynomial,k::Int) = delete!(q.coeffs, k)
-function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B,T,X}}
+function Base.map(fn::F, p::P, args...)  where {F,B,T,X, P<:MutableSparsePolynomial{B,T,X}}
     xs = Dict(k => fn(v, args...) for (k,v) ∈ pairs(p.coeffs))
     xs = chop_exact_zeros!(xs)
     R = eltype(values(xs)) # narrow_eltype...
     return ⟒(P){R,X}(Val(false), xs)
 end
 
-function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B,T,X},S,Q<:MutableSparsePolynomial{B,S,X}}
+function Base.map!(fn::F, q::Q, p::P, args...)  where {F,B,T,X, P<:MutableSparsePolynomial{B,T,X},S,Q<:MutableSparsePolynomial{B,S,X}}
     cs = q === p ? copy(p.coeffs) : p.coeffs
     empty!(q.coeffs) # q's terms are replaced, not merged
     for (k,v) ∈ pairs(cs)
@@ -129,6 +129,10 @@ end
 
 Base.keys(p::MutableSparsePolynomial) = keys(p.coeffs)
 Base.values(p::MutableSparsePolynomial) = values(p.coeffs)
+
+# avoid recomputing firstindex/lastindex (a scan over the keys) at each step
+Base.iterate(p::MutableSparsePolynomial) = iterate(p, (firstindex(p), lastindex(p)))
+Base.iterate(p::MutableSparsePolynomial, (i, b)::Tuple{Int,Int}) = i <= b ? (p[i], (i+1, b)) : nothing
 
 # would like this, but fails a test... (iterate does not guarantee any order)
 #Base.iterate(p::MutableSparsePolynomial, args...) = throw(ArgumentError("Use `pairs` to iterate a sparse polynomial"))

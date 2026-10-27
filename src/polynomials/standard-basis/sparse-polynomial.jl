@@ -71,6 +71,25 @@ function Base.:*(p::MutableSparsePolynomial{StandardBasis,T,X},
     z = zero(p[0] + q[0])
     R = typeof(z)
     cs = Dict{Int, R}()
+    np, nq = length(p.coeffs), length(q.coeffs)
+    if np > 0 && nq > 0
+        a = firstindex(p) + firstindex(q)
+        b = lastindex(p) + lastindex(q)
+        if b - a + 1 <= 4 * np * nq # dense enough to accumulate in a vector
+            buf = fill(z, b - a + 1)
+            qk, qv = collect(keys(q.coeffs)), collect(values(q.coeffs))
+            for (i, pᵢ) ∈ pairs(p.coeffs)
+                @inbounds for l ∈ eachindex(qk, qv)
+                    k = i + qk[l] - a + 1
+                    buf[k] = muladd(pᵢ, qv[l], buf[k])
+                end
+            end
+            for (k, v) ∈ pairs(buf)
+                iszero(v) || (cs[k + a - 1] = v)
+            end
+            return MutableSparsePolynomial{StandardBasis,R,X}(Val(false), cs)
+        end
+    end
     dict_conv!(cs, p.coeffs, q.coeffs, z)
     MutableSparsePolynomial{StandardBasis,R,X}(Val(false), cs)
 end

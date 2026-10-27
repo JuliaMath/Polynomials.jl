@@ -410,8 +410,10 @@ function fromroots(P::Type{<:AbstractDenseUnivariatePolynomial{StandardBasis}}, 
         c[(i + 1)] = c[(i + 1)] - r[j] * c[i]
     end
     #return P(c, var)
-    if sort(r[imag(r).>0], lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y)) == sort(conj(r[imag(r).<0]), lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y))
-        c = real(c)             # if complex poles come in conjugate pairs, the coeffs are real
+    if !(T <: Real)
+        if sort(r[imag(r).>0], lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y)) == sort(conj(r[imag(r).<0]), lt = (x,y) -> real(x)==real(y) ? imag(x)<imag(y) : real(x)<real(y))
+            c = real(c)             # if complex poles come in conjugate pairs, the coeffs are real
+        end
     end
     return P(reverse(c), var)
 end
@@ -705,14 +707,15 @@ function polyfitA(x, y, n::Int=length(x)-1; var=Var(:x))
 
     # we have Vₓ = QR, y = Vₓa = Q(Ra) = Qd, so d = Q \ y
     @inbounds for k = 1:n
-        q .= x .* Q[:,k]
+        q .= x .* view(Q, :, k)
         for j in 1:k
-            λ = dot(Q[:,j], q)/m
+            Qⱼ = view(Q, :, j)
+            λ = dot(Qⱼ, q)/m
             H[j,k] = λ
-            q .-= λ * Q[:,j]
+            q .-= λ .* Qⱼ
         end
         H[k+1,k] = norm(q)/sqrt(m)
-        Q[:,k+1] .= q/H[k+1,k]
+        Q[:,k+1] .= q ./ H[k+1,k]
     end
     d = Q \ y
     ArnoldiFit{eltype(d),Symbol(var)}(d, H)
@@ -779,7 +782,7 @@ for larger degrees this will prove unstable.
 """
 struct ArnoldiFit{T, X}  <: AbstractPolynomial{T,X}
     coeffs::Vector{T}
-    H::AbstractMatrix{T}
+    H::Matrix{T}
 end
 export ArnoldiFit
 @register ArnoldiFit

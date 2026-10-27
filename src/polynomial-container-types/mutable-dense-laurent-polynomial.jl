@@ -46,7 +46,7 @@ function Base.convert(::Type{MutableDenseLaurentPolynomial{B,T,X}}, q::MutableDe
     MutableDenseLaurentPolynomial{B,T,X}(Val(false), convert(Vector{T},q.coeffs), q.order[])
 end
 
-function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDenseLaurentPolynomial{B,T,X}}
+function Base.map(fn::F, p::P, args...)  where {F,B,T,X, P<:MutableDenseLaurentPolynomial{B,T,X}}
     xs = map(fn, p.coeffs, args...)
     xs = trim_trailing_zeros!!(xs)
     R = eltype(xs)
@@ -54,13 +54,13 @@ function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDenseLaurentPolyno
 end
 
 
-function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableDenseLaurentPolynomial{B,T,X},S,Q<:MutableDenseLaurentPolynomial{B,S,X}}
+function Base.map!(fn::F, q::Q, p::P, args...)  where {F,B,T,X, P<:MutableDenseLaurentPolynomial{B,T,X},S,Q<:MutableDenseLaurentPolynomial{B,S,X}}
     map!(fn, q.coeffs, p.coeffs, args...)
     nothing
 end
 
 Base.copy(p::MutableDenseLaurentPolynomial{B,T,X}) where {B,T,X} =
-    MutableDenseLaurentPolynomial{B,T,Var(X)}(copy(p.coeffs), firstindex(p))
+    MutableDenseLaurentPolynomial{B,T,X}(Val(false), copy(p.coeffs), firstindex(p))
 
 Base.firstindex(p::MutableDenseLaurentPolynomial) = p.order[]
 Base.length(p::MutableDenseLaurentPolynomial) = length(p.coeffs)

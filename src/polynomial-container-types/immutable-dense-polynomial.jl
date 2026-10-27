@@ -114,7 +114,7 @@ function Base.convert(::Type{<:ImmutableDensePolynomial{B,T,X,N}},
     ImmutableDensePolynomial{B,T,X,N}(p.coeffs)
 end
 
-function Base.map(fn, p::P, args...)  where {B,T,X,N, P<:ImmutableDensePolynomial{B,T,X,N}}
+function Base.map(fn::F, p::P, args...)  where {F,B,T,X,N, P<:ImmutableDensePolynomial{B,T,X,N}}
     xs = map(fn, p.coeffs, args...)
     R = eltype(xs)
     return ImmutableDensePolynomial{B,R,X,N}(xs)
@@ -250,7 +250,7 @@ function Base.:(==)(p1::ImmutableDensePolynomial{B}, p2::ImmutableDensePolynomia
         return false # p1 is not constant
     end
     check_same_variable(p1, p2) || return false
-    for i ∈ union(eachindex(p1), eachindex(p2))
+    for i ∈ 0:max(lastindex(p1), lastindex(p2))
         p1[i] == p2[i] || return false
     end
     return true

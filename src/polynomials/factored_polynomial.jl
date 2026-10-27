@@ -141,7 +141,7 @@ end
 
 ## ----
 ## apply map to factors and the leading coefficient, not the coefficients
-function Base.map(fn, p::P, args...)  where {T,X,P<:FactoredPolynomial{T,X}}
+function Base.map(fn::F, p::P, args...)  where {F,T,X,P<:FactoredPolynomial{T,X}}
     𝒅 = Dict{T, Int}()
     for (k,v) ∈ p.coeffs
         𝒌 = fn(k, args...)
