@@ -522,9 +522,9 @@ julia> d,r = residues(pq);
 julia> d
 Polynomial(0.0)
 
-julia> sort(collect(r)) # `r` is a `Dict`; sort for a stable display
+julia> [λ => round.(rs, digits=8) for (λ, rs) ∈ sort(collect(r))] # `r` is a `Dict`; sort and round for a stable display
 2-element Vector{Pair{Float64, Vector{Float64}}}:
- -1.0 => [-1.2500000000000002, 0.5000000000000002]
+ -1.0 => [-1.25, 0.5]
   1.0 => [0.25]
 
 julia> iszero(d)
