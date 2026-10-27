@@ -26,6 +26,9 @@ include("polynomial-container-types/mutable-dense-laurent-polynomial.jl")
 include("polynomial-container-types/immutable-dense-polynomial.jl")
 include("polynomial-container-types/mutable-sparse-polynomial.jl")
 include("polynomial-container-types/mutable-sparse-vector-polynomial.jl")
+const PolynomialContainerTypes = (:MutableDensePolynomial, :MutableDenseViewPolynomial, :ImmutableDensePolynomial,
+                                  :MutableDenseLaurentPolynomial, :MutableSparsePolynomial, :MutableSparseVectorPolynomial) # useful for some purposes
+const ZeroBasedDensePolynomialContainerTypes = (:MutableDensePolynomial, :MutableDenseViewPolynomial, :ImmutableDensePolynomial)
 
 include("polynomials/standard-basis/standard-basis.jl")
 include("polynomials/standard-basis/polynomial.jl")

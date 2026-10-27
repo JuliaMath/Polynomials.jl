@@ -323,5 +323,12 @@ function unicode_exponent(io, j)
     end
 end
 
+function unicode_subscript(io, j)
+    a = ("₋","","","₀","₁","₂","₃","₄","₅","₆","₇","₈","₉")
+    for i in string(j)
+        print(io, a[Int(i)-44])
+    end
+end
+
 imagsymbol(::Any) = "im"
 imagsymbol(::MIME"text/latex") = "i"
