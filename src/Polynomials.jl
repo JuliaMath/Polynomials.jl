@@ -5,7 +5,6 @@ Basic arithmetic, integration, differentiation, evaluation, root finding, and fi
 """
 module Polynomials
 
-#  using GenericLinearAlgebra ## remove for now. cf: https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl/pull/71#issuecomment-743928205
 using LinearAlgebra
 import Base: evalpoly
 using Setfield
@@ -27,9 +26,6 @@ include("polynomial-container-types/mutable-dense-laurent-polynomial.jl")
 include("polynomial-container-types/immutable-dense-polynomial.jl")
 include("polynomial-container-types/mutable-sparse-polynomial.jl")
 include("polynomial-container-types/mutable-sparse-vector-polynomial.jl")
-const PolynomialContainerTypes = (:MutableDensePolynomial, :MutableDenseViewPolynomial, :ImmutableDensePolynomial,
-                                  :MutableDenseLaurentPolynomial, :MutableSparsePolynomial, :MutableSparseVectorPolynomial) # useful for some purposes
-const ZeroBasedDensePolynomialContainerTypes = (:MutableDensePolynomial, :MutableDenseViewPolynomial, :ImmutableDensePolynomial)
 
 include("polynomials/standard-basis/standard-basis.jl")
 include("polynomials/standard-basis/polynomial.jl")
@@ -53,7 +49,6 @@ include("promotions.jl")
 include("rational-functions/common.jl")
 include("rational-functions/rational-function.jl")
 include("rational-functions/fit.jl")
-#include("rational-functions/rational-transfer-function.jl")
 
 # compat; opt-in with `using Polynomials.PolyCompat`
 include("legacy/misc.jl")

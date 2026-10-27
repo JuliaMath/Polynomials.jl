@@ -67,13 +67,6 @@ function scalar_add(c::S, p::P) where {B<:StandardBasis, S, T, X, P<:AbstractDen
 end
 scalar_add(c::S, p::AbstractLaurentUnivariatePolynomial{StandardBasis}) where {S} = throw(ArgumentError("Default method not defined"))
 
-# special cases are faster
-# function Base.:*(p::AbstractUnivariatePolynomial{B,T,X},
-#            q::AbstractUnivariatePolynomial{B,S,X}) where {B <: StandardBasis, T,S,X}
-#     # simple convolution with order shifted
-#     throw(ArgumentError("Default method not defined"))
-# end
-
 # for dense 0-based polys with p.coeffs
 for P ∈ (:MutableDensePolynomial, :MutableDenseViewPolynomial)
     @eval begin
@@ -111,14 +104,6 @@ function LinearAlgebra.mul!(cs, p::AbstractDenseUnivariatePolynomial, q::Abstrac
         end
     end
     nothing
-end
-
-# check for finite
-function is_finite_polynomial(pᵢ, P)
-    isfinite(pᵢ) && return (true, nothing)
-    isnan(pᵢ) && return (false, P([NaN]))
-    isinf(pᵢ) && return (false, P([Inf]))
-    return (true, nothing)
 end
 
 
@@ -742,33 +727,6 @@ function polyvalA(d, H::AbstractMatrix{S}, s::T) where {T, S}
     sum(W[i]*d[i] for i in eachindex(d))
 end
 
-#=
-# Finds a + bim following formula 5.3 of paper, which solves
-# Re(Vₙ) [a₀ ⋯ aₙ] - Im(Vₙ[2:n]) * [b₁ ⋯ bₙ] = [y₁ ⋯ yₘ]
-function polyfit_fourier_extension(x, y, n::Int=length(x) - 1; var=Var(:x))
-    m = length(x)
-    T = eltype(y)
-    Q = ones(T, m, n+1)
-    H = zeros(T, n+1, n)
-
-    q = zeros(T, m)
-
-    @inbounds for k = 1:n
-        q .= x .* Q[:,k]
-        for j in 1:k
-            λ = dot(Q[:,j], q)/m
-            H[j,k] = λ
-            q .-= λ * Q[:,j]
-        end
-        H[k+1,k] = norm(q)/sqrt(m)
-        Q[:,k+1] .= q/H[k+1,k]
-    end
-
-    d = [real(Q) imag(view(Q, :, 2:n+1))] \ y
-    d = d[1:(n+1)] - vcat(0, view(d, (n+2):(2n+1)))
-    ArnoldiFit{eltype(d),Symbol(var)}(d, H)
-end
-=#
 
 
 # Polynomial Interface

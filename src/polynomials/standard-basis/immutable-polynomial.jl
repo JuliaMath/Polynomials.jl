@@ -84,10 +84,6 @@ end
 
 # return N*M
 # intercept promotion call
-# function Base.:*(p::ImmutableDensePolynomial{B,T,X,N},
-#                  q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,N,M}
-#     ⊗(p,q)
-# end
 
 Base.:*(p::ImmutableDensePolynomial{B,T,X,0},
   q::ImmutableDensePolynomial{B,S,X,M}) where {B<:StandardBasis,T,S,X,M} = zero(ImmutableDensePolynomial{B,promote_type(T,S),X,0})

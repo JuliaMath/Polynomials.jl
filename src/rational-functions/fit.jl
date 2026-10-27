@@ -152,8 +152,6 @@ end
 ## ---- Least Squares
 ## avoiding dependency on another package, LsqFit
 
-using LinearAlgebra
-
 # return pair ((a₀,...,aₙ), (b₁,...,bₘ))
 function initial_guess(xs::Vector{T}, ys::Vector{S}, n, m) where {T, S}
     # p(x) = a₀ + ... + aₙx^n

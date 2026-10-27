@@ -50,28 +50,6 @@ function MutableSparseVectorPolynomial{B,T,X}(coeffs::AbstractVector{S}, order::
 end
 
 
-# # cs iterable of pairs; ensuring tight value of T
-# function MutableSparseVectorPolynomial{B}(cs::Tuple, var::SymbolLike=:x) where {B}
-#     isempty(cs) && throw(ArgumentError("No type attached"))
-#     X = Var(var)
-#     if length(cs) == 1
-#         c = only(cs)
-#         d = Dict(first(c) => last(c))
-#         T = eltype(last(c))
-#         return MutableSparseVectorPolynomial{B,T,X}(d)
-#     else
-#         c₁, c... = cs
-#         T = typeof(last(c₁))
-#         for b ∈ c
-#             T = promote_type(T, typeof(b))
-#         end
-#         ks = 0:length(cs)-1
-#         vs = cs
-#         d = Dict{Int,T}(Base.Generator(=>, ks, vs))
-#         return MutableSparseVectorPolynomial{B,T,X}(d)
-#     end
-# end
-
 constructorof(::Type{<:MutableSparseVectorPolynomial{B}}) where {B <: AbstractBasis} = MutableSparseVectorPolynomial{B}
 @poly_register MutableSparseVectorPolynomial
 

@@ -8,8 +8,6 @@ export Pade, padeval
 
 #=
 Pade approximation
-
-Note: This can be moved to polynomials/Polynomial.jl after Poly type is removed
 =#
 
 export Pade

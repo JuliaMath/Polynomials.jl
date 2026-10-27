@@ -1,5 +1,3 @@
-using LinearAlgebra
-
 export fromroots,
        truncate!,
        chop!,
@@ -398,15 +396,6 @@ end
 
 _truncate!(ps::NTuple; kwargs...) = throw(ArgumentError("`truncate!` not defined for tuples."))
 
-# _truncate(ps::NTuple{0}; kwargs...) = ps
-# function _truncate(ps::NTuple{N,T};
-#                    rtol::Real = Base.rtoldefault(real(T)),
-#                    atol::Real = 0,) where {N,T}
-
-
-#     thresh = norm(ps, Inf) * rtol + atol
-#     return NTuple{N,T}(abs(pᵢ) <= thresh ? zero(T) : pᵢ for pᵢ ∈ values(ps))
-# end
 
 
 """
@@ -469,23 +458,6 @@ end
 
 chop!(ps::NTuple; kwargs...) = throw(ArgumentError("chop! not defined"))
 
-_chop(ps::NTuple{0}; kwargs...) = ps
-function _chop(ps::NTuple{N};
-               rtol = nothing,
-               atol = nothing) where {N}
-
-    T = real(eltype(ps))
-    rtol = something(rtol, Base.rtoldefault(T))
-    atol = something(atol, zero(T))
-
-    thresh = norm(ps, Inf) * rtol + atol
-    for i in N:-1:1
-        if abs(ps[i]) > thresh
-            return ps[1:i]
-        end
-    end
-    return NTuple{0,T}()
-end
 
 
 
@@ -599,11 +571,6 @@ copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {T, X, S, Y, P <:AbstractPolyn
     ⟒(P){T, Symbol(X)}(p.coeffs)
 copy_with_eltype(::Type{T}, p::P) where {T, S, Y, P <:AbstractPolynomial{S,Y}} =
     copy_with_eltype(T, Val(Y), p)
-# easier to type if performance isn't an issue, but could be dropped
-#copy_with_eltype(::Type{T}, X, p::P) where {T, S, Y, P<:AbstractPolynomial{S, Y}} =
-#    copy_with_eltype(Val(T), Val(X), p)
-#copy_with_eltype(::Type{T}, p::P) where {T, S, X, P<:AbstractPolynomial{S,X}} =
-#    copy_with_eltype(Val(T), Val(X), p)
 
 """
     iszero(p::AbstractPolynomial)
@@ -695,10 +662,6 @@ Is the polynomial  `p` a constant.
 """
 isconstant(p::AbstractPolynomial) = degree(p) <= 0 && firstindex(p) == 0
 
-# XXX docstring isn't quite right!
-# coeffs returns
-# * p.coeffs for Laurent types (caller needs to be aware that offset is possible)
-# * a container with (a₀, a₁, …, aₙ) which for some types may have trailing zeros (ImmutableDense)
 """
     coeffs(::AbstractPolynomial)
     coeffs(::AbstractDenseUnivariatePolynomial)
@@ -706,7 +669,8 @@ isconstant(p::AbstractPolynomial) = degree(p) <= 0 && firstindex(p) == 0
 
 For a dense, univariate polynomial return the coefficients ``(a_0, a_1, \\dots, a_n)``
 as an iterable. This may be a vector or tuple, and may alias the
-polynomials coefficients.
+polynomials coefficients. For some types (e.g. `ImmutablePolynomial`) the
+container may have trailing zeros.
 
 For a Laurent type polynomial (e.g. `LaurentPolynomial`, `SparsePolynomial`) return the coefficients ``(a_i, a_{i+1}, \\dots, a_j)`` where
 ``i`` is found from `firstindex(p)` and ``j`` from `lastindex(p)`.
@@ -794,7 +758,7 @@ minimumexponent(::Type{<:AbstractPolynomial}) = 0
 The index of the smallest basis element, ``\\beta_i``,  represented by the coefficients. This is ``0`` for
 a zero polynomial.
 """
-Base.firstindex(p::AbstractPolynomial) = 0  # XXX() is a better default
+Base.firstindex(p::AbstractPolynomial) = 0
 """
     lastindex(p::AbstractPolynomial)
 
@@ -819,7 +783,6 @@ function Base.getindex(p::AbstractPolynomial{T}, idx::Int) where {T}
     idx > M && return zero(T)
     p.coeffs[idx - m + 1]
 end
-#XXXBase.getindex(p::AbstractPolynomial, idx::Number) = getindex(p, convert(Int, idx))
 Base.getindex(p::AbstractPolynomial, indices) = [p[i] for i in indices]
 Base.getindex(p::AbstractPolynomial, ::Colon) = coeffs(p)
 
@@ -843,8 +806,6 @@ Base.setindex!(p::AbstractPolynomial, values, ::Colon) =
 
 #=
 Iteration =#
-## XXX breaking change in v2.0.0
-#
 # we want to keep iteration close to iteration over the coefficients as a vector:
 # `iterate` iterates over coefficients, includes 0s
 # `collect(T, p)` yields coefficients of `p` converted to type `T`
@@ -1159,14 +1120,6 @@ Base.:^(p::AbstractPolynomial, n::Integer) = Base.power_by_squaring(p, n)
 
 ## -----
 
-# <<< could be moved to SpecialPolynomials
-# Works when p,q of same type.
-# For Immutable, must remove N,M bit;
-# for others, can widen to Type{T,X}, Type{S,X} to avoid a promotion
-# function Base.:+(p::P, q::P) where {T,X,P<:AbstractPolynomial{T,X}}
-#     cs = degree(p) >= degree(q)  ? ⊕(P, p.coeffs, q.coeffs) : ⊕(P, q.coeffs, p.coeffs)
-#     return P(cs)
-# end
 
 
 
@@ -1211,10 +1164,6 @@ function ⊕(P::Type{<:AbstractPolynomial}, p1::Dict{Int,T}, p2::Dict{Int,S}) wh
     p = Dict{Int, R}()
 
 
-    # this allocates in the union
-    #for i in union(eachindex(p1), eachindex(p2))
-    #    p[i] = p1[i] + p2[i]
-    #end
 
     for (i,pi) ∈ pairs(p1)
         @inbounds p[i] = pi + get(p2, i, zero(R))
@@ -1281,7 +1230,6 @@ end
 return `u` the gcd of `p` and `q`, and `v` and `w`, where `u*v = p` and `u*w = q`.
 """
 uvw(p::AbstractPolynomial, q::AbstractPolynomial; kwargs...) = uvw(promote(p,q)...; kwargs...)
-#uvw(p1::P, p2::P; kwargs...) where {P <:AbstractPolynomial} = throw(ArgumentError("uvw not defined"))
 
 """
     div(::AbstractPolynomial, ::AbstractPolynomial)
