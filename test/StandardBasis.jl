@@ -247,6 +247,15 @@ end
             @test p(x) == a + b * x + c * x^2
             @test p(x) != a + x * b + x^2 * c
 
+            # roots are the polynomial eigenvalues, the λ with det(p(λ)) = 0
+            rs = roots(p)
+            @test length(rs) == 4
+            @test all(λ -> abs(det(p(λ))) < 1e-12, rs)
+            @test isempty(roots(P([a])))
+            # a singular leading coefficient gives infinite eigenvalues, which are dropped
+            r = P([[1 0; 0 2], [0 1; 1 0], [1 0; 0 0]])
+            @test sort(imag.(roots(r))) ≈ [-sqrt(2), sqrt(2)]
+
             # ∂, ∫
             @test derivative(p) == P([b, 2c])
             @test integrate(p) == P([0*a, a, b/2, c/3])

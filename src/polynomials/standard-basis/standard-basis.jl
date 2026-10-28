@@ -505,6 +505,16 @@ function  roots(p::P; kwargs...)  where  {T, P <: AbstractUnivariatePolynomial{S
     L
 end
 
+# matrix coefficients: the polynomial eigenvalues, the `λ` with `det(p(λ)) = 0`.
+# These are the generalized eigenvalues of the companion pencil, which unlike
+# `companion(p)` allows a singular leading coefficient; the infinite eigenvalues
+# that then arise are dropped.
+function roots(p::P; kwargs...) where {M <: AbstractMatrix, P <: AbstractUnivariatePolynomial{StandardBasis, M}}
+    degree(p) < 1 && return complex(float(eltype(M)))[]
+    C₀, C₁ = companion_pencil(p)
+    filter!(isfinite, complex(eigvals(C₀, C₁; kwargs...)))
+end
+
 ## --------------------------------------------------
 ## Code for fitting polynomials
 
