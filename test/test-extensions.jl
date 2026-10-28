@@ -1,5 +1,7 @@
 using FFTW
-using Makie
+if Sys.WORD_SIZE == 64 # Makie fails to precompile on 32-bit systems
+    using Makie
+end
 using ChainRulesCore
 using RecipesBase: apply_recipe
 

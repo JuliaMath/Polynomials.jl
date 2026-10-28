@@ -78,7 +78,6 @@ function RationalFunction(p::P,q::P) where {T, X, P <: LaurentPolynomial{T,X}}
     end
 end
 
-# RationalFunction(p,q)  = RationalFunction(convert(LaurentPolynomial,p), convert(LaurentPolynomial,q))
 
 
 # special case Laurent

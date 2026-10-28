@@ -291,7 +291,6 @@ function ngcd(p::PnPolynomial{T,X},
         V = UpperTriangular(view(R, 1:nc, 1:nc))
         xx = view(x, 1:nc)
         σ₋₁ = smallest_singular_value!(xx, V, ρ *  sqrt(m - j + 1))
-        #@show j, σ₋₁, ρ *  sqrt(m - j + 1), npq₂
 
         # Lemma 7.1: If (p,q) is w/in ϵ of P^k_{mn} then σ₋₁ < ϵ√(m-j+1)
         if σ₋₁ ≤ ρ *  sqrt(m - j + 1)
@@ -311,11 +310,9 @@ function ngcd(p::PnPolynomial{T,X},
             # `√eps()` for `rtol`, but that may be too lax and is subject to
             # change.
             ϵ = max(atol, npq₂ * κ * rtol)
-            #@show ϵₖ, ϵ, κ
             if ϵₖ ≤ ϵ
                 return (u=u, v=v, w=w, Θ=ϵₖ, κ=κ)
             end
-            #@show :failure, j
         end
 
         # reduce possible degree of u and try again with Sⱼ₋₁
@@ -554,7 +551,6 @@ function refine_uvw!(u::P, v::P, w::P,
     ũ, ṽ, w̃ = copy(u), copy(v), copy(w)
 
     steps = 0
-    #@show steps, ρ₁
     minᵢ, Maxᵢ = 3, 20
 
     while ρ₁ > 0.0
@@ -564,7 +560,6 @@ function refine_uvw!(u::P, v::P, w::P,
         mul!(uv, ũ, ṽ)
         mul!(uw, ũ, w̃)
         ρ′ = residual_error(p, q, uv, uw)
-        #@show steps, ρ′
         # don't worry as much about first few,
         # but afterwards each step must be productive
         # terminate when no longer decreasing

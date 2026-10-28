@@ -237,6 +237,6 @@ end
     # summation of a factorially divergent series
     d = Polynomial( (-big(1)).^(0:60) .* factorial.(big(0):60) )
     pq = fit(RationalFunction, d, 30, 30)
-    @test pq(1.0) ≈ exp(1)*(-Base.MathConstants.γ-sum([(-1).^k/k./factorial(k) for k=1:20]))
+    @test pq(1.0) ≈ exp(1)*(-Base.MathConstants.γ-sum([(-1).^k/k./Float64(factorial(big(k))) for k=1:20]))
 
 end

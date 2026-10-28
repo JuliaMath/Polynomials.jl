@@ -59,28 +59,6 @@ function showterm(io::IO, ::Type{ChebyshevT{T,X}}, pj::T, var, j, first::Bool, m
     return true
 end
 
-# function Base.convert(P::Type{<:Polynomial}, ch::MutableDensePolynomial{ChebyshevTBasis})
-
-#     T = _eltype(P,ch)
-#     X = indeterminate(P,ch)
-#     Q = ⟒(P){T,X}
-
-#     d = lastindex(ch)
-#     if d ≤ 1 # T₀, T₁ = 1, x
-#         return Q(coeffs(ch))
-#     end
-
-#     c0 = Q(ch[end - 1])
-#     c1 = Q(ch[end])
-#     x = variable(Q)
-#     @inbounds for i in d:-1:2
-#         tmp = c0
-#         c0 = Q(ch[i - 2]) - c1
-#         c1 = tmp + c1 * x * 2
-#     end
-#     return c0 + c1 * x
-# end
-
 function Base.convert(C::Type{<:ChebyshevT}, p::Polynomial)
     x = variable(C)
     isconstant(p) || assert_same_variable(indeterminate(x),indeterminate(p))
