@@ -1,8 +1,13 @@
 using Aqua
 using JET
 
+# The Downgrade workflow promotes the test-only packages into the [deps] of
+# Project.toml, which stale_deps and persistent_tasks then trip over. Both are
+# still run by the regular CI.
+const downgrade_ci = get(ENV, "POLYNOMIALS_DOWNGRADE_CI", "false") == "true"
+
 @testset "Aqua" begin
-    Aqua.test_all(Polynomials)
+    Aqua.test_all(Polynomials; stale_deps = !downgrade_ci, persistent_tasks = !downgrade_ci)
 end
 
 # Any two-argument `Base.promote` method, whatever its signature, invalidates all
