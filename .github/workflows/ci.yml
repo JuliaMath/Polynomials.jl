@@ -54,7 +54,8 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }} # required
-          fail_ci_if_error: true
+          # Dependabot PRs can't read the token, so a failed upload there is not an error
+          fail_ci_if_error: ${{ github.actor != 'dependabot[bot]' }}
           file: lcov.info
   docs:
     name: Documentation
