@@ -37,8 +37,8 @@ function Base.convert(::Type{PQ}, pq′::PQ′) where {T,X,P,PQ <: AbstractRatio
                                                    T′,X′,P′,PQ′<:AbstractRationalFunction{T′,X′,P′} }
     !isconstant(pq′) && assert_same_variable(X,X′)
     p′,q′=pqs(pq′)
-    𝑷 = isconstant(pq′) ? P : promote_type(P, P′)
-    p,q = convert(𝑷, p′), convert(𝑷, q′)
+    # `convert` must return a `PQ`; widening to a common type is left to `promote_rule`
+    p,q = convert(P, p′), convert(P, q′)
     rational_function(PQ, p, q)
 end
 
@@ -62,10 +62,7 @@ end
 function Base.convert(::Type{PQ}, p::P) where {T,X, 𝑃 <: AbstractPolynomial{T,X},
                                                PQ <: AbstractRationalFunction{T,X,𝑃},
                                                S, P <: AbstractPolynomial{S,X}}
-    T′ = promote_type(T,S)
-    P′ = promote_type(𝑃, P)
-    𝐩 = convert(constructorof(P′){T′,X}, p)
-    𝑃𝑄 = constructorof(PQ){T′, X, typeof(𝐩)}
+    𝐩 = convert(𝑃, p)
     return rational_function(PQ, 𝐩, one(𝐩))
 end
 
