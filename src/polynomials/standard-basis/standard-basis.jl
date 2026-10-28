@@ -507,12 +507,13 @@ end
 
 # matrix coefficients: the polynomial eigenvalues, the `λ` with `det(p(λ)) = 0`.
 # These are the generalized eigenvalues of the companion pencil, which unlike
-# `companion(p)` allows a singular leading coefficient; the infinite eigenvalues
-# that then arise are dropped.
+# `companion(p)` allows a singular leading coefficient. The infinite eigenvalues
+# that then arise are returned as `Inf`, as with MATLAB's `polyeig`.
 function roots(p::P; kwargs...) where {M <: AbstractMatrix, P <: AbstractUnivariatePolynomial{StandardBasis, M}}
     degree(p) < 1 && return complex(float(eltype(M)))[]
     C₀, C₁ = companion_pencil(p)
-    filter!(isfinite, complex(eigvals(C₀, C₁; kwargs...)))
+    λs = complex(eigvals(C₀, C₁; kwargs...))
+    map!(λ -> isfinite(λ) ? λ : oftype(λ, Inf), λs, λs) # LAPACK gives ±Inf + NaN*im
 end
 
 ## --------------------------------------------------
