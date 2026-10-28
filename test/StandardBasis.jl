@@ -774,6 +774,13 @@ end
     @test fit(Polynomial, x, y, 2) ≈ fit(Polynomial, Float64.(x), Float64.(y), 2)
     @test fit(Polynomial, x, y, 2) isa Polynomial{Float64}
     @test fit(Polynomial, x, y, 2, weights=ones(4)) ≈ fit(Polynomial, Float64.(x), Float64.(y), 2)
+    # the interpolating fit and ArnoldiFit too
+    x, y = Any[1,2,3], Any[2,3,1]
+    @test fit(Polynomial, x, y) ≈ fit(Polynomial, [1.0,2,3], [2.0,3,1])
+    @test fit(Polynomial, x, y) isa Polynomial{Float64}
+    @test fit(ImmutablePolynomial, x, y) ≈ fit(ImmutablePolynomial, [1.0,2,3], [2.0,3,1])
+    @test fit(ArnoldiFit, x, y).(x) ≈ y
+    @test fit(ArnoldiFit, [1,2,3], [2,3,1]).([1,2,3]) ≈ [2,3,1]
     # integer data with a vector of degrees
     p = fit(Polynomial, [1,2,3,4], [2,3,1,5], [0,2])
     @test p isa Polynomial{Float64}
