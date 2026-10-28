@@ -14,7 +14,8 @@ end
     @test isempty(ms)
 end
 
-if VERSION ≥ v"1.12.0"
+# JET is not functional on unreleased Julia versions (e.g. nightly)
+if VERSION ≥ v"1.12.0" && isempty(VERSION.prerelease)
     @testset "JET" begin
         JET.test_package(Polynomials, ignored_modules=(AnyFrameModule(LinearAlgebra), AnyFrameModule(Base)))
     end

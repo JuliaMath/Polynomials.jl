@@ -462,8 +462,8 @@ function companion_pencil(p::P) where {T, P<:AbstractUnivariatePolynomial{Standa
 end
 
 # block version
-function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractUnivariatePolynomial{StandardBasis,M}}
-
+function companion_pencil(p::P) where {M <: AbstractMatrix, P<:AbstractUnivariatePolynomial{StandardBasis,M}}
+    T = eltype(M)
     m,m′ = size(p[0])
     @assert m == m′  # square matrix
 
