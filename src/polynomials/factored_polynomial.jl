@@ -398,7 +398,7 @@ function derivative(p::P,n::Int=1) where {P <: FactoredPolynomial}
     convert(P, 𝒑⁽ⁿ⁾)
 end
 
-function Multroot.multroot(p::FactoredPolynomial)
+function Multroot.multroot(p::FactoredPolynomial; kwargs...) # the roots are known; `method` etc. are not needed
     d = p.coeffs
     (values = collect(keys(d)),
      multiplicities = collect(values(d)),

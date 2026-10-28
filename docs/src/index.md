@@ -852,6 +852,18 @@ julia> pq = p // q
 julia> lowest_terms(pq)
 ((x - 1.0) * (x - 4.0)) // ((x - 2.0) * (x - 5.0))
 
+julia> zs, ms = poles(pq); # roots and multiplicities of the denominator in lowest terms
+
+julia> sort(zs .=> ms)
+2-element Vector{Pair{Float64, Int64}}:
+ 2.0 => 1
+ 5.0 => 1
+
+julia> zs, ms = roots(pq); sort(zs .=> ms) # and of the numerator: the zeros of `pq`
+2-element Vector{Pair{Float64, Int64}}:
+ 1.0 => 1
+ 4.0 => 1
+
 julia> d,r = residues(pq); sort(collect(r)) # `r` is a `Dict`; sort for a stable display
 2-element Vector{Pair{Float64, Vector{Float64}}}:
  2.0 => [0.6666666666666666]
