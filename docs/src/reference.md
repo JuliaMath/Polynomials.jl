@@ -57,6 +57,7 @@ Polynomials.isconstant
 Polynomials.constantterm
 isreal
 real
+imag
 isintegral
 ismonic
 Polynomials.hasnan

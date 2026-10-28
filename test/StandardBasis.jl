@@ -1379,6 +1379,11 @@ end
         !_isimmutable(P) &&  @test transpose!(p) == p
         @test adjoint(Polynomial(im)) == Polynomial(-im) # issue 215
         @test conj(Polynomial(im)) == Polynomial(-im) # issue 215
+        # issue 584
+        @test imag(p) ≈ P([-1, -3])
+        @test real(p) ≈ P([1, 2])
+        @test real(p) + im * imag(p) ≈ p
+        @test iszero(imag(P([1.0, 2.0])))
 
         @test norm(P([1., 2.])) == norm([1., 2.])
         @test norm(P([1., 2.]), 1) == norm([1., 2.], 1)
