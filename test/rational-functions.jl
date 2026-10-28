@@ -112,6 +112,12 @@ end
     ps = poles(pq)
     @test length(ps.zs) == 3
 
+    # factored polynomials know their roots
+    P = FactoredPolynomial
+    fpq = fromroots(P, [1,2,3,4]) // fromroots(P, [2,2,3,5])
+    @test sort(poles(fpq).zs) ≈ [2, 5]
+    @test sort(roots(fpq).zs) ≈ [1, 4]
+
     ## residues
     d,r = residues(pq)
     @test d ≈ 9 - 4x + x^2
