@@ -1810,6 +1810,30 @@ end
         @test SparsePolynomial(q) == p
         @test_throws ArgumentError Polynomial(p)
     end
+    @testset "setindex! with zero" begin
+        p = SparsePolynomial(Dict(0=>1, 2=>3))
+        p[2] = 0
+        @test !haskey(p.coeffs, 2)
+        @test degree(p) == 0
+        @test p == SparsePolynomial([1])
+    end
+    @testset "map!" begin
+        p = SparsePolynomial(Dict(0=>1, 2=>3))
+        q = SparsePolynomial(Dict(0=>5, 5=>9))
+        map!(x -> 2x, q, p)
+        @test q == SparsePolynomial(Dict(0=>2, 2=>6)) # terms of q not in p are removed
+        @test p == SparsePolynomial(Dict(0=>1, 2=>3))
+        map!(x -> 2x, p, p)
+        @test p == SparsePolynomial(Dict(0=>2, 2=>6))
+
+        SVP = Polynomials.SparseVectorPolynomial
+        p, q = SVP([1.0, 2.0, 3.0]), SVP([7.0, 7.0, 7.0])
+        map!(x -> 10x, q, p)
+        @test q == SVP([10.0, 20.0, 30.0])
+        @test p == SVP([1.0, 2.0, 3.0]) # p is not modified
+        map!(+, q, p, 1.0)
+        @test q == SVP([2.0, 3.0, 4.0])
+    end
 end
 
 @testset "LaurentPolynomial" begin
