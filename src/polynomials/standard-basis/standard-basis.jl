@@ -113,14 +113,6 @@ function LinearAlgebra.mul!(cs, p::AbstractDenseUnivariatePolynomial, q::Abstrac
     nothing
 end
 
-# check for finite
-function is_finite_polynomial(pᵢ, P)
-    isfinite(pᵢ) && return (true, nothing)
-    isnan(pᵢ) && return (false, P([NaN]))
-    isinf(pᵢ) && return (false, P([Inf]))
-    return (true, nothing)
-end
-
 
 # derivative
 function derivative(p::P) where {B<:StandardBasis, T,X,P<:AbstractDenseUnivariatePolynomial{B,T,X}}
@@ -462,8 +454,8 @@ function companion_pencil(p::P) where {T, P<:AbstractUnivariatePolynomial{Standa
 end
 
 # block version
-function companion_pencil(p::P) where {T, M <: AbstractMatrix{T}, P<:AbstractUnivariatePolynomial{StandardBasis,M}}
-
+function companion_pencil(p::P) where {M <: AbstractMatrix, P<:AbstractUnivariatePolynomial{StandardBasis,M}}
+    T = eltype(M)
     m,m′ = size(p[0])
     @assert m == m′  # square matrix
 

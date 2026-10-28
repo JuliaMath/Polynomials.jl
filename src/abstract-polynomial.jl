@@ -24,7 +24,6 @@ Abstract type for specifying a polynomial basis.
 abstract type AbstractBasis end
 export AbstractUnivariatePolynomial
 
-#XXX() = throw(ArgumentError("No default method defined"))
 
 ## --------------------------------------------------
 
@@ -81,9 +80,6 @@ indeterminate(::Type{P}) where {P <: AbstractUnivariatePolynomial} = something(_
 # * may not be in increasing or decreasing i
 # * for standardbasis i -> xⁱ
 # * possibly skipping when iszero(cᵢ)
-#Base.firstindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
-#Base.lastindex(p::AbstractUnivariatePolynomial{B, T, X}) where {B,T,X} = XXX()
-#Base.iterate(p::AbstractUnivariatePolynomial, args...) = Base.iterate(values(p), args...)
 Base.iterate(p::AbstractUnivariatePolynomial, state = firstindex(p)) = _iterate(p, state) # _iterate in common.jl
 
 Base.keys(p::AbstractUnivariatePolynomial)   = eachindex(p)
@@ -252,12 +248,12 @@ end
 
 ## Interface
 ## These must be implemented for a storage type / basis
-# minimumexponent(::Type{P}) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
-# Base.one(::Type{P}) where {B,T,X,P<:AbstractUnivariatePolynomial{B,T,X}} = XXX()
-# variable(::Type{P}) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
-# evalpoly(x, p::P) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
-# scalar_add(c, p::P) where {B,P<:AbstractUnivariatePolynomial{B}} = XXX()
-# ⊗(p::P, q::Q) where {B,P<:AbstractUnivariatePolynomial{B},Q<:AbstractUnivariatePolynomial{B}} = XXX()
+# * minimumexponent(::Type{P})
+# * Base.one(::Type{P})
+# * variable(::Type{P})
+# * evalpoly(x, p::P)
+# * scalar_add(c, p::P)
+# * ⊗(p::P, q::Q)
 
 # these *may* be implemented for a basis type
 # * basis_symbol/printbasis
@@ -273,7 +269,6 @@ end
 macro poly_register(name)
     poly = esc(name)
     quote
-        #Base.convert(::Type{P}, p::P) where {P<:$poly} = p
         Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{<:$poly{B,S,X}}) where {B,T,S,X} =  $poly{B,promote_type(T, S),X}
         Base.promote_rule(::Type{<:$poly{B,T,X}}, ::Type{S}) where {B,T,S<:Scalar,X} =
             $poly{B,promote_type(T, S), X}

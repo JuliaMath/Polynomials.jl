@@ -27,3 +27,5 @@ jobs:
           skip: Pkg,TOML
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+        env:
+          POLYNOMIALS_DOWNGRADE_CI: "true"

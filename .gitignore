@@ -3,6 +3,12 @@ docs/site/
 .idea/
 *.iml
 .vscode/
+*.code-workspace
+.vs/
+*.swp
+*.swo
+*~
+.DS_Store
 *.jl.cov
 *.jl.*.cov
 *.jl.mem

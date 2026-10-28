@@ -5,7 +5,6 @@ Basic arithmetic, integration, differentiation, evaluation, root finding, and fi
 """
 module Polynomials
 
-#  using GenericLinearAlgebra ## remove for now. cf: https://github.com/JuliaLinearAlgebra/GenericLinearAlgebra.jl/pull/71#issuecomment-743928205
 using LinearAlgebra
 import Base: evalpoly
 using Setfield
