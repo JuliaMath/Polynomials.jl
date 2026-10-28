@@ -53,13 +53,13 @@ end
 constructorof(::Type{<:MutableSparseVectorPolynomial{B}}) where {B <: AbstractBasis} = MutableSparseVectorPolynomial{B}
 @poly_register MutableSparseVectorPolynomial
 
-function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableSparseVectorPolynomial{B,T,X}}
+function Base.map(fn::F, p::P, args...)  where {F,B,T,X, P<:MutableSparseVectorPolynomial{B,T,X}}
     xs = map(fn, p.coeffs)
     R = eltype(xs)
     return MutableSparseVectorPolynomial{B, R, X}(xs)
 end
 
-function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableSparseVectorPolynomial{B,T,X},S,Q<:MutableSparseVectorPolynomial{B,S,X}}
+function Base.map!(fn::F, q::Q, p::P, args...)  where {F,B,T,X, P<:MutableSparseVectorPolynomial{B,T,X},S,Q<:MutableSparseVectorPolynomial{B,S,X}}
     map!(x -> fn(x, args...), q.coeffs, p.coeffs)
     nothing
 end

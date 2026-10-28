@@ -152,9 +152,8 @@ function Base.:*(p1::MutableDensePolynomial{B,T,X}, p2::MutableDensePolynomial{B
     z1 = _c_to_z(coeffs(p1))
     z2 = _c_to_z(coeffs(p2))
     prod = fastconv(z1, z2)
-    cs = _z_to_c(prod)
-    ret = ChebyshevT(cs, Var(X))
-    return ret
+    cs = trim_trailing_zeros!!(_z_to_c(prod))
+    return MutableDensePolynomial{B,eltype(cs),X}(Val(false), cs)
 end
 
 function derivative(p::P) where {B<:ChebyshevTBasis,T,X,P<:MutableDensePolynomial{B,T,X}}
@@ -209,7 +208,7 @@ function vander(P::Type{<:ChebyshevT}, x::AbstractVector{T}, n::Integer) where {
     if n > 0
         A[:, 2] .= x
         @inbounds for i in 3:n + 1
-            A[:, i] .= A[:, i - 1] .* 2x .- A[:, i - 2]
+            @views A[:, i] .= A[:, i - 1] .* (2 .* x) .- A[:, i - 2]
         end
     end
     return A
@@ -264,14 +263,23 @@ function _c_to_z(cs::AbstractVector{T}) where {T}
     n = length(cs)
     U = typeof(one(T) / 2)
     zs = zeros(U, 2n - 1)
-    zs[n:end] = cs ./ 2
-    return zs .+ reverse(zs)
+    z = zero(U)
+    # fill zs = (cs/2 padded) .+ reverse(cs/2 padded) in a single pass
+    @inbounds for k in 1:n
+        h = cs[k] / 2
+        i = n - 1 + k
+        zs[i] = k == 1 ? h + h : h + z
+        k == 1 || (zs[2n - i] = z + h)
+    end
+    return zs
 end
 
 function _z_to_c(z::AbstractVector{T}) where {T}
     n = (length(z) + 1) ÷ 2
     cs = z[n:end]
-    cs[2:n] *= 2
+    @inbounds for k in 2:n
+        cs[k] *= 2
+    end
     return cs
 end
 

@@ -414,7 +414,7 @@ Rounds off all coefficients close to zero, as determined by `rtol` and `atol`, a
 function Base.truncate(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
     atol::Real = 0,) where {T}
-    _truncate!(deepcopy(p), rtol = rtol, atol = atol)
+    _truncate!(copy(p), rtol = rtol, atol = atol)
 end
 
 """
@@ -477,7 +477,7 @@ Removes any leading coefficients that are approximately 0 (using `rtol` and `ato
 function Base.chop(p::AbstractPolynomial{T};
     rtol::Real = Base.rtoldefault(real(T)),
     atol::Real = 0,) where {T}
-    chop!(deepcopy(p), rtol = rtol, atol = atol)
+    chop!(copy(p), rtol = rtol, atol = atol)
 end
 
 
@@ -616,7 +616,7 @@ Transform coefficients of `p` by applying a function (or other callables) `fn` t
 
 You can implement `real`, etc., to a `Polynomial` by using `map`. The element type of `p` may narrow using this function.
 """
-function Base.map(fn, p::P, args...)  where {P<:AbstractPolynomial}
+function Base.map(fn::F, p::P, args...)  where {F,P<:AbstractPolynomial}
     xs = map(fn, p.coeffs, args...)
     R = eltype(xs)
     X = indeterminate(p)
@@ -659,7 +659,7 @@ ismonic(p::AbstractPolynomial) = isone(convert(Polynomial, p)[end])
 
 "`hasnan(p::AbstractPolynomial)` are any coefficients `NaN`"
 hasnan(p::AbstractPolynomial) = any(hasnan, p)::Bool
-hasnan(p::AbstractArray) = any(hasnan.(p))
+hasnan(p::AbstractArray) = any(hasnan, p)
 hasnan(x) = isnan(x)
 
 """

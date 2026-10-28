@@ -40,21 +40,21 @@ function Base.convert(::Type{MutableDensePolynomial{B,T,X}}, q::MutableDensePoly
     MutableDensePolynomial{B,T,X}(Val(false), convert(Vector{T},q.coeffs))
 end
 
-function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableDensePolynomial{B,T,X}}
+function Base.map(fn::F, p::P, args...)  where {F,B,T,X, P<:MutableDensePolynomial{B,T,X}}
     xs = map(fn, p.coeffs, args...) # faster than q=copy(p); map!(fn,q,p, args...); q
     xs = trim_trailing_zeros!!(xs)
     R = eltype(xs)
     return ⟒(P){R,X}(Val(false), xs)
 end
 
-function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableDensePolynomial{B,T,X},S,Q<:MutableDensePolynomial{B,S,X}}
+function Base.map!(fn::F, q::Q, p::P, args...)  where {F,B,T,X, P<:MutableDensePolynomial{B,T,X},S,Q<:MutableDensePolynomial{B,S,X}}
     xs = map!(fn, q.coeffs, p.coeffs, args...)
     xs = trim_trailing_zeros!!(q.coeffs)
     nothing
 end
 
 Base.copy(p::MutableDensePolynomial{B,T,X}) where {B,T,X} =
-    MutableDensePolynomial{B,T,Var(X)}(copy(p.coeffs))
+    MutableDensePolynomial{B,T,X}(Val(false), copy(p.coeffs))
 
 Base.firstindex(p::MutableDensePolynomial) = 0
 Base.length(p::MutableDensePolynomial) = length(p.coeffs)
