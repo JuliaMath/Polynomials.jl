@@ -768,6 +768,17 @@ end
     # cs = numpy.polynomial.polynomial.polyfit(x, y, 4, w=wts)
     cs = [0.0006441172319036863, 0.985961582190304, 0.04999233434370933, -0.23162369757680354, 0.036864056406570644]
     @test maximum(abs, coeffs(fit(x, y, 4, weights=wts.^2)) - cs) <= sqrt(eps())
+
+    # abstractly-typed data is narrowed to the type of its values before solving
+    x, y = Number[1,2,3,4], Number[2,3,1,5]
+    @test fit(Polynomial, x, y, 2) ≈ fit(Polynomial, Float64.(x), Float64.(y), 2)
+    @test fit(Polynomial, x, y, 2) isa Polynomial{Float64}
+    @test fit(Polynomial, x, y, 2, weights=ones(4)) ≈ fit(Polynomial, Float64.(x), Float64.(y), 2)
+    # integer data with a vector of degrees
+    p = fit(Polynomial, [1,2,3,4], [2,3,1,5], [0,2])
+    @test p isa Polynomial{Float64}
+    @test p ≈ fit(Polynomial, [1.0,2,3,4], [2.0,3,1,5], [0,2])
+    @test p[1] == 0
 end
 
 @testset "Values" begin

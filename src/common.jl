@@ -184,6 +184,13 @@ function _fit(P::Type{<:AbstractPolynomial},
              deg = length(x) - 1;
              weights = nothing,
              var = :x,) where {T}
+    if !isconcretetype(T)
+        # e.g. `Number[1,2,3]`: narrow to the type of the stored values, as
+        # LinearAlgebra's `\` does not support an abstractly-typed right-hand side
+        S = mapreduce(typeof, promote_type, Iterators.flatten((x, y)); init=Union{})
+        isconcretetype(S) &&
+            return _fit(P, convert(AbstractVector{S}, x), convert(AbstractVector{S}, y), deg; weights=weights, var=var)
+    end
     x = mapdomain(P, x)
     vand = vander(P, x, deg)
     if !isnothing(weights)
@@ -195,7 +202,7 @@ function _fit(P::Type{<:AbstractPolynomial},
     if isa(deg, Integer)
         return P(R.(coeffs), var)
     else
-        cs = zeros(T, 1 + maximum(deg))
+        cs = zeros(R, 1 + maximum(deg))
         for (i,aᵢ) ∈ zip(deg, coeffs)
             cs[1 + i] = aᵢ
         end
