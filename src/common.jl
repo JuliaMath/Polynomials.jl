@@ -649,6 +649,15 @@ See also: [`isreal`](@ref)
 Base.real(p::AbstractPolynomial) = map(real, p)
 
 """
+    imag(p::AbstractPolynomial)
+
+Construct a real polynomial from the imaginary parts of the coefficients of `p`, so that `p == real(p) + im * imag(p)`.
+
+See also: [`real`](@ref)
+"""
+Base.imag(p::AbstractPolynomial) = map(imag, p)
+
+"""
     isintegral(p::AbstractPolynomial)
 
 Determine whether a polynomial is an integer polynomial, i.e., having only integers as coefficients.

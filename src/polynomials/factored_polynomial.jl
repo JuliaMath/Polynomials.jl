@@ -139,6 +139,10 @@ function copy_with_eltype(::Type{T}, ::Val{X}, p::P) where {T, X, S, Y, P<:Facto
     FactoredPolynomial{T, X}(d)
 end
 
+## `real` and `imag` act on the coefficients, which `map` does not give access to
+Base.real(p::FactoredPolynomial) = convert(FactoredPolynomial, real(convert(Polynomial, p)))
+Base.imag(p::FactoredPolynomial) = convert(FactoredPolynomial, imag(convert(Polynomial, p)))
+
 ## ----
 ## apply map to factors and the leading coefficient, not the coefficients
 function Base.map(fn::F, p::P, args...)  where {F,T,X,P<:FactoredPolynomial{T,X}}
