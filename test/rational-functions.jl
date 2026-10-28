@@ -95,6 +95,22 @@ using LinearAlgebra
     p = Polynomial([0,1])
     r = p//1
     @test (p//1) ≈ p
+
+    # issue 566: `convert` returns the requested type
+    s, p = SparsePolynomial([1,2]), Polynomial([1,2])
+    rs, rp = s // SparsePolynomial([3,4]), p // Polynomial([3,4])
+    RFS = RationalFunction{Int,:x,SparsePolynomial{Int,:x}}
+    RFP = RationalFunction{Int,:x,Polynomial{Int,:x}}
+    @test oftype(rs, s) isa RFS
+    @test convert(RFS, p) isa RFS
+    @test convert(RFP, s) isa RFP
+    @test convert(RFS, rp) isa RFS
+    @test convert(RFP, rs) isa RFP
+    @test convert(RFS, rp)(2) == rp(2)
+    v = [rs]
+    v[1] = rp
+    @test v[1] isa RFS && v[1](2) == rp(2)
+    @test rs + p isa RationalFunction{Int,:x,LaurentPolynomial{Int,:x}} # promotion still widens
 end
 
 @testset "zeros, poles, residues" begin
