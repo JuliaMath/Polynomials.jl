@@ -78,7 +78,9 @@ function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B
 end
 
 function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableSparsePolynomial{B,T,X},S,Q<:MutableSparsePolynomial{B,S,X}}
-    for (k,v) ∈ pairs(p.coeffs)
+    cs = q === p ? copy(p.coeffs) : p.coeffs
+    empty!(q.coeffs) # q's terms are replaced, not merged
+    for (k,v) ∈ pairs(cs)
         val = fn(v, args...)
         iszero(val) ? delete!(q,k) : (q[k] = val)
     end
@@ -117,8 +119,12 @@ function Base.getindex(p::MutableSparsePolynomial{B,T,X}, i::Int) where {B,T,X}
 end
 
 function Base.setindex!(p::MutableSparsePolynomial{B,T,X}, value, i::Int) where {B,T,X}
-    iszero(value) && delete!(p.coeffs, i)
-    p.coeffs[i] = value
+    if iszero(value)
+        delete!(p.coeffs, i)
+    else
+        p.coeffs[i] = value
+    end
+    p
 end
 
 Base.keys(p::MutableSparsePolynomial) = keys(p.coeffs)

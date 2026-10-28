@@ -60,7 +60,7 @@ function Base.map(fn, p::P, args...)  where {B,T,X, P<:MutableSparseVectorPolyno
 end
 
 function Base.map!(fn, q::Q, p::P, args...)  where {B,T,X, P<:MutableSparseVectorPolynomial{B,T,X},S,Q<:MutableSparseVectorPolynomial{B,S,X}}
-    map!(fn, p.coeffs, p.coeffs)
+    map!(x -> fn(x, args...), q.coeffs, p.coeffs)
     nothing
 end
 
