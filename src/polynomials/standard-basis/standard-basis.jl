@@ -561,6 +561,8 @@ function fit(P::Type{<:StandardBasisPolynomial},
              weights = nothing,
              var = :x,) where {T}
 
+    xy = _narrow_eltype(x, y)
+    isnothing(xy) || return fit(P, xy..., deg; weights=weights, var=var)
     if deg == length(x) -1 && isnothing(weights)
         _polynomial_fit(P, x, y; var=var)
     else
@@ -698,7 +700,7 @@ To manipulate the fitted polynomial, conversion is necessary. Conversion can lea
 """
 function polyfitA(x, y, n::Int=length(x)-1; var=Var(:x))
     m = length(x)
-    T = eltype(y)
+    T = float(promote_type(eltype(x), eltype(y)))
     Q = ones(T, m, n+1)
     #H = UpperHessenberg(zeros(T, n+1, n))
     H = zeros(T, n+1, n)
@@ -796,7 +798,11 @@ Base.show(io::IO, mimetype::MIME"text/plain", p::ArnoldiFit) = print(io, "Arnold
 
 evalpoly(x, p::ArnoldiFit) = polyvalA(p.coeffs, p.H, x)
 
-fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T} = polyfitA(x, y, deg; var=var)
+function fit(::Type{ArnoldiFit}, x::AbstractVector{T}, y::AbstractVector{T}, deg::Int=length(x)-1;  var=:x, kwargs...) where{T}
+    xy = _narrow_eltype(x, y)
+    isnothing(xy) || return fit(ArnoldiFit, xy..., deg; var=var, kwargs...)
+    polyfitA(x, y, deg; var=var)
+end
 
 Base.convert(::Type{P}, p::ArnoldiFit{T,X}) where {P <: AbstractPolynomial,T,X} = p(variable(P,indeterminate(p)))
 

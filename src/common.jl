@@ -176,19 +176,24 @@ fit(x::AbstractVector,
     weights = nothing,
     var = :x,) = fit(Polynomial, x, y, deg; weights = weights, var = var)
 
+# e.g. `Number[1,2,3]`: narrow `x` and `y` to the type of the stored values, as
+# the solvers do not support an abstract element type. Returns `nothing` if
+# there is nothing to narrow.
+function _narrow_eltype(x::AbstractVector{T}, y::AbstractVector{T}) where {T}
+    isconcretetype(T) && return nothing
+    S = mapreduce(typeof, promote_type, Iterators.flatten((x, y)); init=Union{})
+    isconcretetype(S) || return nothing
+    (convert(AbstractVector{S}, x), convert(AbstractVector{S}, y))
+end
+
 function _fit(P::Type{<:AbstractPolynomial},
              x::AbstractVector{T},
              y::AbstractVector{T},
              deg = length(x) - 1;
              weights = nothing,
              var = :x,) where {T}
-    if !isconcretetype(T)
-        # e.g. `Number[1,2,3]`: narrow to the type of the stored values, as
-        # LinearAlgebra's `\` does not support an abstractly-typed right-hand side
-        S = mapreduce(typeof, promote_type, Iterators.flatten((x, y)); init=Union{})
-        isconcretetype(S) &&
-            return _fit(P, convert(AbstractVector{S}, x), convert(AbstractVector{S}, y), deg; weights=weights, var=var)
-    end
+    xy = _narrow_eltype(x, y)
+    isnothing(xy) || return _fit(P, xy..., deg; weights=weights, var=var)
     x = mapdomain(P, x)
     vand = vander(P, x, deg)
     if !isnothing(weights)
